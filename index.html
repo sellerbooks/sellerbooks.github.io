@@ -12276,7 +12276,7 @@ function sellerBooksOpenApplication(){
 }
 async function loginGoogle(){
     try{
-        const {error}=await sellerBooksSupabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin+window.location.pathname}});
+        const {error}=await sellerBooksSupabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:"https://sellerbooks.github.io/"}});
         if(error){console.error("Google Login gagal:",error);alert("❌ Login Google gagal.\n\n"+error.message);}
     }catch(error){console.error(error);alert("❌ Terjadi kesalahan saat menghubungkan Login Google.");}
 }
