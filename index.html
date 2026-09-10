@@ -8161,20 +8161,40 @@ document.addEventListener(
     onchange="changeDashboardPeriod()"
 >
 
-    <option value="month">
-        Bulan Ini
+    <option value="today">
+        Hari Ini
+    </option>
+
+    <option value="yesterday">
+        Kemarin
     </option>
 
     <option value="week">
         Minggu Ini
     </option>
 
-    <option value="today">
-        Hari Ini
+    <option value="lastWeek">
+        Minggu Lalu
+    </option>
+
+    <option value="month">
+        Bulan Ini
+    </option>
+
+    <option value="lastMonth">
+        Bulan Lalu
+    </option>
+
+    <option value="last3Months">
+        3 Bulan Terakhir
     </option>
 
     <option value="year">
         Tahun Ini
+    </option>
+
+    <option value="all">
+        Semua Periode
     </option>
 
 </select>
@@ -14139,26 +14159,42 @@ function renderMarketplacePerformance(){
                     ".stat-info"
                 );
 
+        const dashboardPeriodNames = {
+            today:"Hari Ini",
+            yesterday:"Kemarin",
+            week:"Minggu Ini",
+            lastWeek:"Minggu Lalu",
+            month:"Bulan Ini",
+            lastMonth:"Bulan Lalu",
+            last3Months:"3 Bulan Terakhir",
+            year:"Tahun Ini",
+            all:"Semua Periode"
+        };
+
+        const dashboardPeriodLabel =
+            dashboardPeriodNames[currentDashboardPeriod] ||
+            "Hari Ini";
+
         if(salesInfo){
             salesInfo.textContent =
                 transactions.length
-                    ? "Total semua marketplace"
-                    : "Belum ada data penjualan";
+                    ? "Total semua marketplace • " + dashboardPeriodLabel
+                    : "Tidak ada penjualan • " + dashboardPeriodLabel;
         }
 
         if(qtyInfo){
             qtyInfo.textContent =
-                "Total produk semua marketplace";
+                "Total produk semua marketplace • " + dashboardPeriodLabel;
         }
 
         if(profitInfo){
             profitInfo.textContent =
-                "Laba bersih semua marketplace";
+                "Laba bersih semua marketplace • " + dashboardPeriodLabel;
         }
 
         if(marginInfo){
             marginInfo.textContent =
-                "Margin bersih semua marketplace";
+                "Margin bersih semua marketplace • " + dashboardPeriodLabel;
         }
 
     }
@@ -22031,146 +22067,15 @@ function isDateInPeriod(dateValue, period){
         return false;
     }
 
-
-    const date =
-        getReportDateOnly(dateValue);
-
-
-    if(!date){
-        return false;
-    }
-
-
-    const today =
-        getIndonesiaTodayDate();
-
-    const now =
-        today;
-
-
-    /* =====================================
-       HARI INI
-    ===================================== */
-
-    if(period === "today"){
-
-        return (
-
-            date.getDate() ===
-            now.getDate()
-
-            &&
-
-            date.getMonth() ===
-            now.getMonth()
-
-            &&
-
-            date.getFullYear() ===
-            now.getFullYear()
-
-        );
-
-    }
-
-
-    /* =====================================
-       MINGGU INI
-    ===================================== */
-
-    if(period === "week"){
-
-        const today =
-            getIndonesiaTodayDate();
-
-
-        const day =
-            today.getDay();
-
-
-        const diff =
-            day === 0
-            ? 6
-            : day - 1;
-
-
-        const monday =
-            new Date(today);
-
-
-        monday.setDate(
-            today.getDate() - diff
-        );
-
-
-        monday.setHours(
-            0,0,0,0
-        );
-
-
-        const sunday =
-            new Date(monday);
-
-
-        sunday.setDate(
-            monday.getDate() + 6
-        );
-
-
-        sunday.setHours(
-            23,59,59,999
-        );
-
-
-        return (
-
-            date >= monday
-            &&
-            date <= sunday
-
-        );
-
-    }
-
-
-    /* =====================================
-       BULAN INI
-    ===================================== */
-
-    if(period === "month"){
-
-        return (
-
-            date.getMonth() ===
-            now.getMonth()
-
-            &&
-
-            date.getFullYear() ===
-            now.getFullYear()
-
-        );
-
-    }
-
-
-    /* =====================================
-       TAHUN INI
-    ===================================== */
-
-    if(period === "year"){
-
-        return (
-
-            date.getFullYear() ===
-            now.getFullYear()
-
-        );
-
-    }
-
-
-    return false;
+    /*
+       DASHBOARD MENGGUNAKAN LOGIKA PERIODE YANG SAMA
+       DENGAN KOLOM LAPORAN.
+       Semua perhitungan tanggal mengikuti WIB/Indonesia.
+    */
+    return isTransactionInReportPeriod(
+        { reportDate: dateValue },
+        period
+    );
 
 }
 /* =========================================
