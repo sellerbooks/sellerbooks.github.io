@@ -12322,28 +12322,12 @@ function sellerBooksQueueCloudSave(){
 }
 
 async function sellerBooksMigrateLogoDataUrl(settings){
-    if(!settings || !settings.logo || !String(settings.logo).startsWith("data:image/"))return settings;
-    try{
-        const dataUrl=String(settings.logo);
-        const response=await fetch(dataUrl);
-        const blob=await response.blob();
-        const mime=blob.type || "image/png";
-        const extension=mime.includes("jpeg") ? "jpg" : (mime.includes("webp") ? "webp" : "png");
-        const path=sellerBooksAuthUser.id+"/logo."+extension;
-        const {error}=await sellerBooksSupabase.storage
-            .from("sellerbooks-logos")
-            .upload(path,blob,{contentType:mime,upsert:true,cacheControl:"3600"});
-        if(error)throw error;
-        const {data}=sellerBooksSupabase.storage
-            .from("sellerbooks-logos")
-            .getPublicUrl(path);
-        settings.logo=data?.publicUrl || settings.logo;
-        settings.logoPath=path;
-        return settings;
-    }catch(error){
-        console.warn("Migrasi logo lama ke Supabase Storage gagal:",error);
-        return settings;
-    }
+    /*
+       Logo lama tetap disimpan sebagai data URL di
+       sellerbooks_user_data agar seluruh data SellerBooks
+       berada pada Supabase dan tidak bergantung pada Storage RLS.
+    */
+    return settings;
 }
 
 async function sellerBooksLoadCloudData(){
@@ -24020,73 +24004,29 @@ function handleSettingsLogoUpload(input){
         return;
     }
 
-    (async function(){
+    if(!sellerBooksAuthUser || !sellerBooksCloudReady){
+        alert("❌ Sesi SellerBooks belum siap. Silakan login kembali.");
+        input.value = "";
+        return;
+    }
+
+    const reader =
+        new FileReader();
+
+    reader.onload = function(event){
         try{
-            if(!sellerBooksAuthUser || !sellerBooksCloudReady){
-                throw new Error("Sesi SellerBooks belum siap. Silakan login kembali.");
-            }
-
-            const extension =
-                file.type === "image/jpeg"
-                    ? "jpg"
-                    : file.type === "image/webp"
-                        ? "webp"
-                        : "png";
-
             const current =
                 getSellerBooksSettings();
 
-            const path =
-                sellerBooksAuthUser.id +
-                "/logo." +
-                extension;
-
-            const {error:uploadError}=
-                await sellerBooksSupabase.storage
-                    .from("sellerbooks-logos")
-                    .upload(
-                        path,
-                        file,
-                        {
-                            contentType:file.type,
-                            upsert:true,
-                            cacheControl:"3600"
-                        }
-                    );
-
-            if(uploadError){
-                throw uploadError;
-            }
-
-            const {data:urlData}=
-                sellerBooksSupabase.storage
-                    .from("sellerbooks-logos")
-                    .getPublicUrl(path);
-
-            const oldPath =
-                current.logoPath || "";
-
             current.logo =
-                urlData?.publicUrl || "";
+                event.target.result || "";
 
-            current.logoPath =
-                path;
+            current.logoPath = "";
 
             sellerBooksStorage.setItem(
                 SELLERBOOKS_SETTINGS_KEY,
                 JSON.stringify(current)
             );
-
-            await sellerBooksPersistCloudDataNow();
-
-            if(
-                oldPath &&
-                oldPath !== path
-            ){
-                await sellerBooksSupabase.storage
-                    .from("sellerbooks-logos")
-                    .remove([oldPath]);
-            }
 
             renderSettingsLogo();
             input.value = "";
@@ -24105,9 +24045,15 @@ function handleSettingsLogoUpload(input){
                 error.message
             );
         }
-    })();
-}
+    };
 
+    reader.onerror = function(){
+        input.value = "";
+        alert("❌ Logo gagal dibaca.");
+    };
+
+    reader.readAsDataURL(file);
+}
 function removeSettingsLogo(){
     const confirmed =
         confirm(
@@ -24118,53 +24064,39 @@ function removeSettingsLogo(){
         return;
     }
 
-    (async function(){
-        try{
-            const settings =
-                getSellerBooksSettings();
+    try{
+        const settings =
+            getSellerBooksSettings();
 
-            const logoPath =
-                settings.logoPath || "";
+        settings.logo = "";
+        settings.logoPath = "";
 
-            settings.logo = "";
-            settings.logoPath = "";
+        sellerBooksStorage.setItem(
+            SELLERBOOKS_SETTINGS_KEY,
+            JSON.stringify(settings)
+        );
 
-            sellerBooksStorage.setItem(
-                SELLERBOOKS_SETTINGS_KEY,
-                JSON.stringify(settings)
+        renderSettingsLogo();
+
+        const input =
+            document.getElementById(
+                "settingsLogoInput"
             );
 
-            await sellerBooksPersistCloudDataNow();
-
-            if(logoPath){
-                await sellerBooksSupabase.storage
-                    .from("sellerbooks-logos")
-                    .remove([logoPath]);
-            }
-
-            renderSettingsLogo();
-
-            const input =
-                document.getElementById(
-                    "settingsLogoInput"
-                );
-
-            if(input){
-                input.value = "";
-            }
-        }catch(error){
-            console.error(
-                "Gagal menghapus logo bisnis:",
-                error
-            );
-            alert(
-                "❌ Logo gagal dihapus dari Supabase.\n\n"+
-                error.message
-            );
+        if(input){
+            input.value = "";
         }
-    })();
+    }catch(error){
+        console.error(
+            "Gagal menghapus logo bisnis:",
+            error
+        );
+        alert(
+            "❌ Logo gagal dihapus dari Supabase.\n\n"+
+            error.message
+        );
+    }
 }
-
 function backupSellerBooksData(){
     const backup = {
         app:"SellerBooks",
