@@ -12282,7 +12282,20 @@ async function sellerBooksCheckApproval(showAlert){
         const status=String(sellerBooksProfile.status||"pending").toLowerCase();
         if(status==="approved"){
             if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
-            if(sellerBooksProfile.owner_name)localStorage.setItem("sellerbooks_owner_name",sellerBooksProfile.owner_name);
+
+            /*
+               Setelah akun disetujui Core Adiimasa:
+               - Jika Nama Pemilik sudah tersimpan di profile akun ini -> masuk Dashboard.
+               - Jika belum ada -> tampilkan tingkat 2 untuk membuat Nama Pemilik.
+               - localStorage TIDAK dipakai untuk menentukan apakah setup sudah selesai,
+                 agar identitas antar akun Google tidak tercampur.
+            */
+            if(sellerBooksProfile.owner_name && String(sellerBooksProfile.owner_name).trim()!==""){
+                localStorage.setItem("sellerbooks_owner_name",sellerBooksProfile.owner_name);
+            }else{
+                localStorage.removeItem("sellerbooks_owner_name");
+            }
+
             sellerBooksOpenApplication(); return;
         }
         if(status==="rejected"){sellerBooksShowApproval("Permintaan akses SellerBooks Anda ditolak oleh Core Adiimasa. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.");return;}
@@ -12292,8 +12305,26 @@ async function sellerBooksCheckApproval(showAlert){
     }catch(error){console.error(error);sellerBooksShowApproval("Tidak dapat membaca status akun saat ini. Periksa koneksi internet lalu coba lagi.");}
 }
 function sellerBooksOpenApplication(){
-    sellerBooksShowOnly(localStorage.getItem("sellerbooks_owner_name")?"app":"ownerSetupPage");
-    if(!localStorage.getItem("sellerbooks_owner_name")){const input=document.getElementById("ownerNameInput");if(input)input.value=sellerBooksProfile?.owner_name||"";}
+    const ownerName = String(sellerBooksProfile?.owner_name || "").trim();
+
+    /*
+       Penentu utama identitas adalah profile SellerBooks milik user Google
+       yang sedang login, bukan localStorage.
+    */
+    if(ownerName){
+        localStorage.setItem("sellerbooks_owner_name",ownerName);
+        sellerBooksShowOnly("app");
+    }else{
+        localStorage.removeItem("sellerbooks_owner_name");
+        sellerBooksShowOnly("ownerSetupPage");
+
+        const input=document.getElementById("ownerNameInput");
+        if(input){
+            input.value="";
+            setTimeout(function(){input.focus();},50);
+        }
+    }
+
     if(typeof updateSidebarOwner==="function")updateSidebarOwner();
 }
 async function loginGoogle(){
@@ -21520,10 +21551,42 @@ function logoutSellerBooks(){
    RESET IDENTITAS
 ========================================= */
 
-function resetIdentity(){
-    const confirmReset=confirm("Keluar dari akun SellerBooks?\n\nAnda akan kembali ke halaman Login Google.");
+async function resetIdentity(){
+    const confirmReset=confirm("Reset Nama Pemilik?\n\nNama Pemilik akan dikosongkan dan Anda akan kembali ke halaman pengisian Nama Pemilik.\n\nAkun Gmail dan status persetujuan Core Adiimasa tetap tersimpan.");
     if(!confirmReset)return;
-    sellerBooksLogout();
+
+    if(!sellerBooksAuthUser){
+        alert("Sesi login tidak ditemukan. Silakan login kembali.");
+        sellerBooksShowOnly("loginPage");
+        return;
+    }
+
+    try{
+        /*
+           RESET IDENTITAS HANYA MENGOSONGKAN NAMA PEMILIK.
+           Gmail, user_id Auth, dan status approval TIDAK DIUBAH.
+        */
+        const {error}=await sellerBooksSupabase
+            .from("sellerbooks_profiles")
+            .update({
+                owner_name:null,
+                updated_at:new Date().toISOString()
+            })
+            .eq("user_id",sellerBooksAuthUser.id);
+
+        if(error)throw error;
+
+        sellerBooksProfile=await sellerBooksLoadProfile(sellerBooksAuthUser);
+        localStorage.removeItem("sellerbooks_owner_name");
+
+        /* Kembali ke tingkat 2 tanpa logout Google */
+        sellerBooksOpenApplication();
+
+        alert("✅ Nama Pemilik berhasil direset.\n\nAkun Gmail dan persetujuan Core Adiimasa tetap tersimpan. Silakan masukkan Nama Pemilik yang baru.");
+    }catch(error){
+        console.error("Gagal mereset Nama Pemilik:",error);
+        alert("❌ Nama Pemilik gagal direset.\n\n"+error.message);
+    }
 }
 
 /* =====================================================
@@ -21615,15 +21678,32 @@ window.addEventListener(
 
 function updateSidebarOwner(){
 
-    const ownerName =
-        sellerBooksProfile?.owner_name ||
-        localStorage.getItem(
-            "sellerbooks_owner_name"
-        );
+    /*
+       Nama di baris atas = Nama Pemilik yang disimpan pada
+       sellerbooks_profiles untuk akun Google yang sedang login.
+    */
+    const ownerName = String(
+        sellerBooksProfile?.owner_name || ""
+    ).trim();
+
+    /*
+       Email di bawah = email Google/Supabase Auth yang sedang login.
+       Tidak pernah mengambil email dari localStorage.
+    */
+    const userEmailValue = String(
+        sellerBooksAuthUser?.email ||
+        sellerBooksProfile?.email ||
+        ""
+    ).trim();
 
     const userName =
         document.getElementById(
             "userName"
+        );
+
+    const userEmail =
+        document.getElementById(
+            "userEmail"
         );
 
     const userAvatar =
@@ -21632,29 +21712,21 @@ function updateSidebarOwner(){
         );
 
 
-    /* JIKA ADA NAMA PEMILIK */
+    if(userName){
+        userName.innerText =
+            ownerName || "Nama Pemilik";
+    }
 
-    if(ownerName && ownerName.trim() !== ""){
+    if(userEmail){
+        userEmail.innerText =
+            userEmailValue || "Email Google";
+    }
 
-        if(userName){
-
-            userName.innerText = ownerName;
-
-        }
-
-
-        /* AMBIL HURUF PERTAMA */
-
-        if(userAvatar){
-
-            userAvatar.innerText =
-                ownerName
-                .trim()
-                .charAt(0)
-                .toUpperCase();
-
-        }
-
+    if(userAvatar){
+        userAvatar.innerText =
+            ownerName
+            ? ownerName.charAt(0).toUpperCase()
+            : "U";
     }
 
 }
