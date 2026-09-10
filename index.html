@@ -10883,7 +10883,7 @@ document.addEventListener(
                                         class="form-control"
                                         min="0.000001"
                                         step="0.01"
-                                        placeholder="Contoh: 16500"
+                                        placeholder="Contoh: 17590"
                                     >
                                 </div>
 
@@ -10895,7 +10895,7 @@ document.addEventListener(
                                         class="form-control"
                                         min="0.000001"
                                         step="0.01"
-                                        placeholder="Contoh: 12900"
+                                        placeholder="Contoh: 13881"
                                     >
                                 </div>
 
@@ -10907,13 +10907,13 @@ document.addEventListener(
                                         class="form-control"
                                         min="0.000001"
                                         step="0.01"
-                                        placeholder="Contoh: 3900"
+                                        placeholder="Contoh: 4325"
                                     >
                                 </div>
                             </div>
 
                             <div class="settings-note">
-                                💱 Masukkan nilai rupiah untuk 1 unit mata uang asing. Contoh: jika 1 USD = Rp16.500, isi <strong>16500</strong>. Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.
+                                💱 Masukkan nilai rupiah untuk 1 unit mata uang asing. Contoh: jika 1 USD = Rp17.590, isi <strong>17590</strong>. Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.
                             </div>
 
                             <div class="settings-card-footer">
@@ -15689,9 +15689,9 @@ function getSellerBooksExchangeRates(){
 
     const defaults = {
         IDR: 1,
-        USD: 16500,
-        SGD: 12900,
-        MYR: 3900
+        USD: 17590,
+        SGD: 13881,
+        MYR: 4325
     };
 
     const savedRates =
@@ -23373,9 +23373,9 @@ const DEFAULT_SELLERBOOKS_SETTINGS = {
     rounding: "none",
     exchangeRates: {
         IDR: 1,
-        USD: 16500,
-        SGD: 12900,
-        MYR: 3900
+        USD: 17590,
+        SGD: 13881,
+        MYR: 4325
     }
 };
 
@@ -23580,7 +23580,7 @@ function loadSellerBooksSettings(){
 
     if(rateUSD){
         rateUSD.value =
-            Number(exchangeRates.USD) || 16500;
+            Number(exchangeRates.USD) || 17590;
     }
 
     const rateSGD =
@@ -23590,7 +23590,7 @@ function loadSellerBooksSettings(){
 
     if(rateSGD){
         rateSGD.value =
-            Number(exchangeRates.SGD) || 12900;
+            Number(exchangeRates.SGD) || 13881;
     }
 
     const rateMYR =
@@ -23600,7 +23600,7 @@ function loadSellerBooksSettings(){
 
     if(rateMYR){
         rateMYR.value =
-            Number(exchangeRates.MYR) || 3900;
+            Number(exchangeRates.MYR) || 4325;
     }
 
     const packingInfo =
