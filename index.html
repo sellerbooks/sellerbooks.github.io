@@ -4629,15 +4629,61 @@ function getAllReportTransactions(){
    FILTER TANGGAL
 ========================================================= */
 
+function getIndonesiaDateString(value){
+    const date = value instanceof Date ? value : new Date(value);
+    if(isNaN(date.getTime())){ return null; }
+
+    const parts = new Intl.DateTimeFormat("en-CA",{
+        timeZone:"Asia/Jakarta",
+        year:"numeric",
+        month:"2-digit",
+        day:"2-digit"
+    }).formatToParts(date);
+
+    const map = {};
+    parts.forEach(function(part){
+        if(part.type !== "literal"){
+            map[part.type] = part.value;
+        }
+    });
+
+    if(!map.year || !map.month || !map.day){ return null; }
+    return map.year + "-" + map.month + "-" + map.day;
+}
+
+function getIndonesiaTodayDate(){
+    const todayString = getIndonesiaDateString(new Date());
+    if(!todayString){ return null; }
+    return new Date(todayString + "T00:00:00");
+}
+
+function getLocalDateString(date){
+    return date.getFullYear() + "-" +
+        String(date.getMonth()+1).padStart(2,"0") + "-" +
+        String(date.getDate()).padStart(2,"0");
+}
+
 function getReportDateOnly(value){
     if(!value){ return null; }
-    if(value instanceof Date){ return new Date(value.getFullYear(), value.getMonth(), value.getDate()); }
+    if(value instanceof Date){
+        const dateString = getIndonesiaDateString(value);
+        return dateString ? new Date(dateString + "T00:00:00") : null;
+    }
+
     const text = String(value).trim();
-    const isoDate = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if(isoDate){ return new Date(Number(isoDate[1]), Number(isoDate[2])-1, Number(isoDate[3])); }
+    const isoDate = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(isoDate){
+        return new Date(Number(isoDate[1]), Number(isoDate[2])-1, Number(isoDate[3]));
+    }
+
     const parsed = new Date(text);
     if(isNaN(parsed.getTime())){ return null; }
-    return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+
+    /* Timestamp seperti 2026-09-10T20:21:00.000Z wajib
+       dikonversi ke WIB terlebih dahulu sebelum mengambil tanggal. */
+    const indonesiaDate = getIndonesiaDateString(parsed);
+    if(!indonesiaDate){ return null; }
+    return new Date(indonesiaDate + "T00:00:00");
 }
 
 function getReportInputDate(id){
@@ -4655,8 +4701,7 @@ function isTransactionInReportPeriod(transaction, period){
     const date = getReportDateOnly(transaction.reportDate || transaction.importedAt);
     if(!date){ return true; }
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = getIndonesiaTodayDate();
 
     if(period === "today"){
         return date.getTime() === today.getTime();
@@ -4719,10 +4764,9 @@ function updateReportCustomDateUI(){
     box.style.display = show ? "block" : "none";
     if(!show){ return; }
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const maxDate = today.toISOString().split("T")[0];
-    const minDate = new Date(today.getFullYear(), today.getMonth()-2, 1).toISOString().split("T")[0];
+    const today = getIndonesiaTodayDate();
+    const maxDate = getLocalDateString(today);
+    const minDate = getLocalDateString(new Date(today.getFullYear(), today.getMonth()-2, 1));
     const from = document.getElementById("reportDateFrom");
     const to = document.getElementById("reportDateTo");
 
@@ -4872,13 +4916,7 @@ function deleteReportsByDateRange(){
         return;
     }
 
-    const now = new Date();
-    const today =
-        new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate()
-        );
+    const today = getIndonesiaTodayDate();
 
     const minDate =
         new Date(
@@ -12640,13 +12678,7 @@ function isTransactionInProductAnalysisPeriod(transaction, period){
         return true;
     }
 
-    const now = new Date();
-    const today =
-        new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate()
-        );
+    const today = getIndonesiaTodayDate();
 
     if(period === "today"){
         return date.getTime() === today.getTime();
@@ -12769,26 +12801,19 @@ function updateProductAnalysisDateUI(){
         return;
     }
 
-    const now = new Date();
-
-    const today =
-        new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate()
-        );
+    const today = getIndonesiaTodayDate();
 
     const maxDate =
-        today.toISOString().split("T")[0];
+        getLocalDateString(today);
 
     const minDate =
-        new Date(
-            today.getFullYear(),
-            today.getMonth() - 2,
-            1
-        )
-        .toISOString()
-        .split("T")[0];
+        getLocalDateString(
+            new Date(
+                today.getFullYear(),
+                today.getMonth() - 2,
+                1
+            )
+        );
 
     const from =
         document.getElementById(
@@ -19155,8 +19180,11 @@ function saveSalesImportData(){
        Tanggal dari file marketplace TIDAK dipakai
        untuk filter periode laporan.
     ===================================================== */
+    /* Tanggal import selalu menggunakan tanggal Indonesia (WIB).
+       Disimpan sebagai YYYY-MM-DD agar pergantian hari setelah 00:00
+       WIB tidak bergeser ke tanggal UTC sebelumnya. */
     const reportDate =
-        new Date().toISOString();
+        getIndonesiaDateString(new Date());
 
     const transactions =
         rows.map(function(row){
@@ -21925,10 +21953,7 @@ document.addEventListener(
    ketika kalender berganti hari.
 ========================================= */
 function getSellerBooksDayKey(){
-    const now = new Date();
-    return now.getFullYear() + "-" +
-        String(now.getMonth()+1).padStart(2,"0") + "-" +
-        String(now.getDate()).padStart(2,"0");
+    return getIndonesiaDateString(new Date());
 }
 
 function prepareDailyViewState(){
@@ -22008,16 +22033,19 @@ function isDateInPeriod(dateValue, period){
 
 
     const date =
-        new Date(dateValue);
+        getReportDateOnly(dateValue);
 
 
-    if(isNaN(date.getTime())){
+    if(!date){
         return false;
     }
 
 
+    const today =
+        getIndonesiaTodayDate();
+
     const now =
-        new Date();
+        today;
 
 
     /* =====================================
@@ -22053,11 +22081,7 @@ function isDateInPeriod(dateValue, period){
     if(period === "week"){
 
         const today =
-            new Date(
-                now.getFullYear(),
-                now.getMonth(),
-                now.getDate()
-            );
+            getIndonesiaTodayDate();
 
 
         const day =
