@@ -10883,7 +10883,7 @@ document.addEventListener(
                                         class="form-control"
                                         min="0.000001"
                                         step="0.01"
-                                        placeholder="Contoh: 17590"
+                                        placeholder="Contoh: 16500"
                                     >
                                 </div>
 
@@ -10895,7 +10895,7 @@ document.addEventListener(
                                         class="form-control"
                                         min="0.000001"
                                         step="0.01"
-                                        placeholder="Contoh: 13881"
+                                        placeholder="Contoh: 12900"
                                     >
                                 </div>
 
@@ -10907,13 +10907,13 @@ document.addEventListener(
                                         class="form-control"
                                         min="0.000001"
                                         step="0.01"
-                                        placeholder="Contoh: 4325"
+                                        placeholder="Contoh: 3900"
                                     >
                                 </div>
                             </div>
 
                             <div class="settings-note">
-                                💱 Masukkan nilai rupiah untuk 1 unit mata uang asing. Contoh: jika 1 USD = Rp17.590, isi <strong>17590</strong>. Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.
+                                💱 Masukkan nilai rupiah untuk 1 unit mata uang asing. Contoh: jika 1 USD = Rp16.500, isi <strong>16500</strong>. Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.
                             </div>
 
                             <div class="settings-card-footer">
@@ -12194,6 +12194,8 @@ document.addEventListener(
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
 
 /* =====================================================
@@ -12212,126 +12214,110 @@ document.addEventListener(
    NANTI DIGANTI SUPABASE AUTH
 ===================================================== */
 
-function loginGoogle(){
+/* =====================================================
+   SELLERBOOKS SUPABASE AUTH
+   Google Login + Core Adiimasa Approval
+===================================================== */
+const SELLERBOOKS_SUPABASE_URL="https://fysaxpqpqexjnlpkbwap.supabase.co";
+const SELLERBOOKS_SUPABASE_KEY="sb_publishable_DWRaEZTcNMjhglwN3nqCOw_pua8rsjD";
+const sellerBooksSupabase=window.supabase.createClient(SELLERBOOKS_SUPABASE_URL,SELLERBOOKS_SUPABASE_KEY);
+let sellerBooksAuthUser=null;
+let sellerBooksProfile=null;
+let sellerBooksApprovalTimer=null;
 
-    const savedOwnerName =
-        localStorage.getItem(
-            "sellerbooks_owner_name"
-        );
-
-
-    /* JIKA NAMA PEMILIK SUDAH ADA
-       LANGSUNG MASUK DASHBOARD */
-
-    if(savedOwnerName){
-
-        document.getElementById(
-            "loginPage"
-        ).style.display = "none";
-
-
-        document.getElementById(
-            "ownerSetupPage"
-        ).style.display = "none";
-
-
-        document.getElementById(
-            "app"
-        ).style.display = "block";
-
-        return;
-
-    }
-
-
-    /* JIKA BELUM ADA NAMA PEMILIK
-       TAMPILKAN FORM NAMA PEMILIK */
-
-    document.getElementById(
-        "loginPage"
-    ).style.display = "none";
-
-
-    document.getElementById(
-        "ownerSetupPage"
-    ).style.display = "flex";
-
-
-    document.getElementById(
-        "app"
-    ).style.display = "none";
-
+function sellerBooksShowOnly(pageId){
+    ["loginPage","ownerSetupPage","app","sellerbooksApprovalPage"].forEach(function(id){
+        const el=document.getElementById(id);
+        if(!el)return;
+        el.style.display=id===pageId?(id==="app"?"block":"flex"):"none";
+    });
 }
-
+function sellerBooksGetApprovalPage(){
+    let page=document.getElementById("sellerbooksApprovalPage");
+    if(page)return page;
+    page=document.createElement("section"); page.id="sellerbooksApprovalPage";
+    page.style.cssText="min-height:100vh;display:none;align-items:center;justify-content:center;padding:20px;background:#f8fafc;";
+    page.innerHTML=`<div style="width:100%;max-width:560px;background:#fff;border-radius:24px;padding:40px 30px;text-align:center;box-shadow:0 20px 60px rgba(15,23,42,.12);border:1px solid #e2e8f0"><div style="font-size:54px;margin-bottom:14px">⏳</div><h2 style="margin-bottom:10px;color:#0f172a">Menunggu Persetujuan Core Adiimasa</h2><p id="sellerbooksApprovalEmail" style="color:#2563eb;font-weight:700;margin-bottom:16px;word-break:break-word"></p><p id="sellerbooksApprovalText" style="color:#64748b;line-height:1.7;margin-bottom:24px">Akun Anda sudah berhasil login. Silakan menunggu persetujuan dari Core Adiimasa sebelum menggunakan SellerBooks.</p><button type="button" onclick="sellerBooksCheckApproval(true)" style="border:0;background:#2563eb;color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;cursor:pointer">🔄 Cek Status Persetujuan</button><button type="button" onclick="sellerBooksLogout()" style="display:block;margin:14px auto 0;border:0;background:transparent;color:#64748b;padding:8px 16px;cursor:pointer">Keluar</button></div>`;
+    document.body.appendChild(page); return page;
+}
+function sellerBooksShowApproval(message){
+    const page=sellerBooksGetApprovalPage();
+    const email=document.getElementById("sellerbooksApprovalEmail");
+    const text=document.getElementById("sellerbooksApprovalText");
+    if(email)email.textContent=sellerBooksAuthUser?.email||"";
+    if(text&&message)text.textContent=message;
+    sellerBooksShowOnly("sellerbooksApprovalPage");
+}
+async function sellerBooksLoadProfile(user){
+    const {data,error}=await sellerBooksSupabase.from("sellerbooks_profiles").select("user_id,email,owner_name,contact_name,status,approved_at,approved_by,created_at,updated_at").eq("user_id",user.id).maybeSingle();
+    if(error)throw error; return data;
+}
+async function sellerBooksCheckApproval(showAlert){
+    if(!sellerBooksAuthUser)return;
+    try{
+        sellerBooksProfile=await sellerBooksLoadProfile(sellerBooksAuthUser);
+        if(!sellerBooksProfile){ sellerBooksShowApproval("Akun berhasil login, tetapi profile SellerBooks belum terbentuk. Silakan coba lagi beberapa saat lagi."); return; }
+        const status=String(sellerBooksProfile.status||"pending").toLowerCase();
+        if(status==="approved"){
+            if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
+            if(sellerBooksProfile.owner_name)localStorage.setItem("sellerbooks_owner_name",sellerBooksProfile.owner_name);
+            sellerBooksOpenApplication(); return;
+        }
+        if(status==="rejected"){sellerBooksShowApproval("Permintaan akses SellerBooks Anda ditolak oleh Core Adiimasa. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.");return;}
+        if(status==="suspended"){sellerBooksShowApproval("Akun SellerBooks Anda sedang ditangguhkan oleh Core Adiimasa. Silakan hubungi Core Adiimasa.");return;}
+        sellerBooksShowApproval("Akun Anda sudah berhasil login. Silakan menunggu persetujuan dari Core Adiimasa sebelum menggunakan SellerBooks.");
+        if(showAlert)alert("Status akun masih menunggu persetujuan Core Adiimasa.");
+    }catch(error){console.error(error);sellerBooksShowApproval("Tidak dapat membaca status akun saat ini. Periksa koneksi internet lalu coba lagi.");}
+}
+function sellerBooksOpenApplication(){
+    sellerBooksShowOnly(localStorage.getItem("sellerbooks_owner_name")?"app":"ownerSetupPage");
+    if(!localStorage.getItem("sellerbooks_owner_name")){const input=document.getElementById("ownerNameInput");if(input)input.value=sellerBooksProfile?.owner_name||"";}
+    if(typeof updateSidebarOwner==="function")updateSidebarOwner();
+}
+async function loginGoogle(){
+    try{
+        const {error}=await sellerBooksSupabase.auth.signInWithOAuth({provider:"google",options:{redirectTo:window.location.origin+window.location.pathname}});
+        if(error){console.error("Google Login gagal:",error);alert("❌ Login Google gagal.\n\n"+error.message);}
+    }catch(error){console.error(error);alert("❌ Terjadi kesalahan saat menghubungkan Login Google.");}
+}
+async function sellerBooksHandleAuthSession(){
+    try{
+        const {data,error}=await sellerBooksSupabase.auth.getSession(); if(error)throw error;
+        if(!data?.session?.user){sellerBooksShowOnly("loginPage");return;}
+        sellerBooksAuthUser=data.session.user; await sellerBooksCheckApproval(false);
+        if(sellerBooksProfile&&String(sellerBooksProfile.status).toLowerCase()==="pending"&&!sellerBooksApprovalTimer){sellerBooksApprovalTimer=setInterval(function(){sellerBooksCheckApproval(false);},30000);}
+    }catch(error){console.error("Inisialisasi SellerBooks Auth gagal:",error);sellerBooksShowOnly("loginPage");}
+}
+sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
+    if(session?.user){sellerBooksAuthUser=session.user;setTimeout(function(){sellerBooksCheckApproval(false);},0);}else{sellerBooksAuthUser=null;sellerBooksProfile=null;sellerBooksShowOnly("loginPage");}
+});
+async function sellerBooksLogout(){
+    try{await sellerBooksSupabase.auth.signOut();}catch(error){console.error("Logout gagal:",error);}
+    if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
+    localStorage.removeItem("sellerbooks_owner_name"); sellerBooksShowOnly("loginPage");
+}
 
 /* =====================================================
-   SIMPAN NAMA PEMILIK
+   SIMPAN NAMA PEMILIK KE SUPABASE
 ===================================================== */
 
-function saveOwnerName(){
-
-    const input =
-        document.getElementById(
-            "ownerNameInput"
-        );
-
-
-    const ownerName =
-        input.value.trim();
-
-
-    /* VALIDASI */
-
-    if(!ownerName){
-
-        alert(
-            "Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu."
-        );
-
-        input.focus();
-
-        return;
-
-    }
-
-
-    /* SIMPAN */
-
-    localStorage.setItem(
-        "sellerbooks_owner_name",
-        ownerName
-    );
-
-updateSidebarOwner();
-
-    /* TUTUP HALAMAN NAMA PEMILIK */
-
-    document.getElementById(
-        "ownerSetupPage"
-    ).style.display = "none";
-
-
-    /* TUTUP LOGIN */
-
-    document.getElementById(
-        "loginPage"
-    ).style.display = "none";
-
-
-    /* BUKA DASHBOARD */
-
-    document.getElementById(
-        "app"
-    ).style.display = "block";
-
-
-    alert(
-        "✅ Data berhasil disimpan!\n\n" +
-        "Selamat datang, " + ownerName
-    );
-
+async function saveOwnerName(){
+    const input=document.getElementById("ownerNameInput");
+    const ownerName=input.value.trim();
+    if(!ownerName){alert("Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu.");input.focus();return;}
+    if(!sellerBooksAuthUser){alert("Sesi login tidak ditemukan. Silakan login kembali.");sellerBooksShowOnly("loginPage");return;}
+    try{
+        const {error}=await sellerBooksSupabase.from("sellerbooks_profiles").update({owner_name:ownerName,contact_name:ownerName,updated_at:new Date().toISOString()}).eq("user_id",sellerBooksAuthUser.id);
+        if(error)throw error;
+        sellerBooksProfile=await sellerBooksLoadProfile(sellerBooksAuthUser);
+        localStorage.setItem("sellerbooks_owner_name",ownerName);
+        updateSidebarOwner();
+        document.getElementById("ownerSetupPage").style.display="none";
+        document.getElementById("loginPage").style.display="none";
+        document.getElementById("app").style.display="block";
+        alert("✅ Data berhasil disimpan!\n\nSelamat datang, "+ownerName);
+    }catch(error){console.error("Gagal menyimpan Nama Pemilik:",error);alert("❌ Nama Pemilik gagal disimpan ke server.\n\n"+error.message);}
 }
-
 
 /* =====================================================
    NAVIGATION
@@ -15689,9 +15675,9 @@ function getSellerBooksExchangeRates(){
 
     const defaults = {
         IDR: 1,
-        USD: 17590,
-        SGD: 13881,
-        MYR: 4325
+        USD: 16500,
+        SGD: 12900,
+        MYR: 3900
     };
 
     const savedRates =
@@ -21513,69 +21499,9 @@ function logoutSellerBooks(){
 ========================================= */
 
 function resetIdentity(){
-
-    const confirmReset = confirm(
-        "Reset identitas?\n\n" +
-        "Nama pemilik yang tersimpan akan dihapus."
-    );
-
-    if(!confirmReset){
-        return;
-    }
-
-
-    /* HAPUS NAMA PEMILIK */
-
-    localStorage.removeItem(
-        "sellerbooks_owner_name"
-    );
-
-
-    /* KOSONGKAN INPUT NAMA */
-
-    const ownerInput =
-        document.getElementById("ownerNameInput");
-
-    if(ownerInput){
-        ownerInput.value = "";
-    }
-
-
-    /* SEMBUNYIKAN DASHBOARD */
-
-    const app =
-        document.getElementById("app");
-
-    if(app){
-        app.style.display = "none";
-    }
-
-
-    /* SEMBUNYIKAN OWNER SETUP */
-
-    const ownerSetup =
-        document.getElementById("ownerSetupPage");
-
-    if(ownerSetup){
-        ownerSetup.style.display = "none";
-    }
-
-
-    /* TAMPILKAN LOGIN AWAL */
-
-    const loginPage =
-        document.getElementById("loginPage");
-
-    if(loginPage){
-        loginPage.style.display = "flex";
-    }
-
-
-    alert(
-        "✅ Identitas berhasil direset.\n\n" +
-        "Silakan login kembali untuk membuat Nama Pemilik baru."
-    );
-
+    const confirmReset=confirm("Keluar dari akun SellerBooks?\n\nAnda akan kembali ke halaman Login Google.");
+    if(!confirmReset)return;
+    sellerBooksLogout();
 }
 
 /* =====================================================
@@ -21668,6 +21594,7 @@ window.addEventListener(
 function updateSidebarOwner(){
 
     const ownerName =
+        sellerBooksProfile?.owner_name ||
         localStorage.getItem(
             "sellerbooks_owner_name"
         );
@@ -23373,9 +23300,9 @@ const DEFAULT_SELLERBOOKS_SETTINGS = {
     rounding: "none",
     exchangeRates: {
         IDR: 1,
-        USD: 17590,
-        SGD: 13881,
-        MYR: 4325
+        USD: 16500,
+        SGD: 12900,
+        MYR: 3900
     }
 };
 
@@ -23580,7 +23507,7 @@ function loadSellerBooksSettings(){
 
     if(rateUSD){
         rateUSD.value =
-            Number(exchangeRates.USD) || 17590;
+            Number(exchangeRates.USD) || 16500;
     }
 
     const rateSGD =
@@ -23590,7 +23517,7 @@ function loadSellerBooksSettings(){
 
     if(rateSGD){
         rateSGD.value =
-            Number(exchangeRates.SGD) || 13881;
+            Number(exchangeRates.SGD) || 12900;
     }
 
     const rateMYR =
@@ -23600,7 +23527,7 @@ function loadSellerBooksSettings(){
 
     if(rateMYR){
         rateMYR.value =
-            Number(exchangeRates.MYR) || 4325;
+            Number(exchangeRates.MYR) || 3900;
     }
 
     const packingInfo =
@@ -24035,6 +23962,7 @@ document.addEventListener(
     "DOMContentLoaded",
     function(){
         loadSellerBooksSettings();
+        sellerBooksHandleAuthSession();
     }
 );
 
