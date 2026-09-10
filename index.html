@@ -12249,8 +12249,30 @@ function sellerBooksShowApproval(message){
     sellerBooksShowOnly("sellerbooksApprovalPage");
 }
 async function sellerBooksLoadProfile(user){
-    const {data,error}=await sellerBooksSupabase.from("sellerbooks_profiles").select("user_id,email,owner_name,contact_name,status,approved_at,approved_by,created_at,updated_at").eq("user_id",user.id).maybeSingle();
-    if(error)throw error; return data;
+    const columns="user_id,email,owner_name,contact_name,status,approved_at,approved_by,created_at,updated_at";
+    const {data,error}=await sellerBooksSupabase.from("sellerbooks_profiles").select(columns).eq("user_id",user.id).maybeSingle();
+    if(error)throw error;
+    if(data)return data;
+
+    /*
+       Jika user Auth sudah ada tetapi profile SellerBooks belum terbentuk
+       (misalnya akun dibuat sebelum trigger profile dipasang), buat profile
+       secara otomatis sebagai PENDING. Status tidak pernah diambil dari client.
+    */
+    const metadata=user.user_metadata||{};
+    const ownerName=metadata.full_name||metadata.name||"";
+    const {error:insertError}=await sellerBooksSupabase.from("sellerbooks_profiles").insert({
+        user_id:user.id,
+        email:user.email||null,
+        owner_name:ownerName,
+        status:"pending"
+    });
+
+    if(insertError && insertError.code!=="23505")throw insertError;
+
+    const {data:profile,error:reloadError}=await sellerBooksSupabase.from("sellerbooks_profiles").select(columns).eq("user_id",user.id).maybeSingle();
+    if(reloadError)throw reloadError;
+    return profile;
 }
 async function sellerBooksCheckApproval(showAlert){
     if(!sellerBooksAuthUser)return;
