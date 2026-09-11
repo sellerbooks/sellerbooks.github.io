@@ -12511,7 +12511,39 @@ async function sellerBooksLoadCloudData(){
 function sellerBooksRefreshRuntimeFromCloud(){
     try{
         if(typeof marketplaces!=="undefined"){
-            marketplaces=JSON.parse(sellerBooksStorageGetItem("sellerbooks_marketplaces")||"[]") || marketplaces;
+            const cloudMarketplaces = JSON.parse(
+                sellerBooksStorageGetItem("sellerbooks_marketplaces") || "[]"
+            ) || [];
+
+            /*
+               Marketplace sistem wajib tetap tersedia setelah
+               sinkronisasi realtime. Jika data cloud lama/hasil
+               sinkronisasi tidak membawa TikTok, Shopee, dll.,
+               jangan sampai daftar marketplace sistem hilang.
+               Data marketplace lain milik user tetap dipertahankan.
+            */
+            const systemMarketplaces = [
+                {id:"shopee",name:"Shopee",icon:"🛍️",status:"active",system:true},
+                {id:"tiktok",name:"TikTok Shop",icon:"🎵",status:"active",system:true},
+                {id:"tokopedia",name:"Tokopedia",icon:"🟢",status:"inactive",system:true},
+                {id:"lazada",name:"Lazada",icon:"🔵",status:"inactive",system:true},
+                {id:"toco",name:"Toco",icon:"🟣",status:"inactive",system:true},
+                {id:"blibli",name:"Blibli",icon:"🔷",status:"inactive",system:true}
+            ];
+
+            const mergedMarketplaces = [...cloudMarketplaces];
+
+            systemMarketplaces.forEach(function(systemMarketplace){
+                const exists = mergedMarketplaces.some(function(item){
+                    return String(item?.id || "").trim().toLowerCase() === systemMarketplace.id;
+                });
+
+                if(!exists){
+                    mergedMarketplaces.push(systemMarketplace);
+                }
+            });
+
+            marketplaces = mergedMarketplaces;
         }
     }catch(error){}
     try{
