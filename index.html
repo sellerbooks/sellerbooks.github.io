@@ -12539,6 +12539,8 @@ function sellerBooksRefreshRuntimeFromCloud(){
                     marketplaces.push({...systemMarketplace});
                 }
             });
+
+            marketplaces = sellerBooksNormalizeMarketplaceList(marketplaces);
         }
     }catch(error){}
     try{
@@ -14181,6 +14183,8 @@ function saveMarketplaceData(){
 
 function renderMarketplaces(){
 
+    marketplaces = sellerBooksNormalizeMarketplaceList(marketplaces);
+
     const grid =
         document.getElementById("marketplaceGrid");
 
@@ -14702,9 +14706,11 @@ function renderMarketplacePerformance(){
     */
 
     const activeMarketplaces =
-        marketplacesData.filter(function(marketplace){
-            return marketplace.status === "active";
-        });
+        sellerBooksNormalizeMarketplaceList(
+            marketplacesData.filter(function(marketplace){
+                return marketplace.status === "active";
+            })
+        );
 
     if(!activeMarketplaces.length){
 
@@ -15322,13 +15328,64 @@ function saveStoreData(){
    AMBIL MARKETPLACE AKTIF
 ===================================================== */
 
+
+/* =====================================================
+   HINDARI DUPLIKAT MARKETPLACE
+   TikTok Shop sistem dan Tiktokshop custom dianggap
+   marketplace yang sama. Prioritaskan custom karena
+   akun toko pengguna tersimpan pada marketplace custom.
+===================================================== */
+function sellerBooksNormalizeMarketplaceList(list){
+    const source = Array.isArray(list) ? list : [];
+    const result = [];
+    const seen = {};
+
+    source.forEach(function(marketplace){
+        const id = String(marketplace?.id || "").trim().toLowerCase();
+        const name = String(marketplace?.name || "").trim().toLowerCase();
+
+        const isTikTok =
+            id === "tiktok" ||
+            name === "tiktok" ||
+            name === "tiktok shop" ||
+            name === "tiktokshop" ||
+            name === "tiktok_shop";
+
+        const key = isTikTok ? "tiktok" : (id || name);
+
+        if(!key){
+            result.push(marketplace);
+            return;
+        }
+
+        if(!seen[key]){
+            seen[key] = marketplace;
+            result.push(marketplace);
+            return;
+        }
+
+        if(isTikTok){
+            const existing = seen[key];
+
+            /* Jika ada versi custom/non-system, gunakan itu. */
+            if(existing?.system === true && marketplace?.system !== true){
+                const index = result.indexOf(existing);
+                if(index >= 0) result[index] = marketplace;
+                seen[key] = marketplace;
+            }
+        }
+    });
+
+    return result;
+}
+
 function getActiveMarketplaces(){
 
-    return marketplaces.filter(function(marketplace){
-
-        return marketplace.status === "active";
-
-    });
+    return sellerBooksNormalizeMarketplaceList(
+        marketplaces.filter(function(marketplace){
+            return marketplace.status === "active";
+        })
+    );
 
 }
 
@@ -15392,6 +15449,32 @@ function renderStoreMarketplaceOptions(){
         select.value = currentValue;
 
     }
+
+
+
+    /* Hilangkan opsi marketplace yang tampil ganda di dropdown.
+       Pertahankan opsi pertama; khusus TikTok/Shopee, variasi nama dianggap sama. */
+    (function(){
+        const seen = {};
+        Array.from(select.options).forEach(function(option){
+            const raw = String(option.textContent || "").trim().toLowerCase();
+            if(!raw || option.value === "") return;
+
+            let key = raw;
+            if(raw.includes("shopee")) key = "shopee";
+            else if(
+                raw.includes("tiktok") ||
+                raw.includes("tiktokshop") ||
+                raw.includes("tiktok shop")
+            ) key = "tiktok";
+
+            if(seen[key]){
+                option.remove();
+            }else{
+                seen[key] = true;
+            }
+        });
+    })();
 
 }
 
