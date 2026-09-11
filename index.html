@@ -12563,6 +12563,16 @@ async function sellerBooksCheckApproval(showAlert){
             if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
 
             /*
+               APK OWNER: LEVEL 2 WAJIB JIKA profile belum memiliki Nama Pemilik.
+               Cek dilakukan langsung dari profile akun Google yang sedang login.
+               Jangan gunakan localStorage untuk menentukan status setup.
+            */
+            if(/SellerBooksAPK\/1\.0/i.test(navigator.userAgent||"") && !String(sellerBooksProfile?.owner_name||"").trim()){
+                sellerBooksOpenApplication();
+                return;
+            }
+
+            /*
                Setelah akun disetujui Core Adiimasa:
                - Jika Nama Pemilik sudah tersimpan di profile akun ini -> masuk Dashboard.
                - Jika belum ada -> tampilkan tingkat 2 untuk membuat Nama Pemilik.
@@ -24845,99 +24855,76 @@ document.addEventListener(
 </script>
 
 
+
 <script>
 /* =========================================================
-   SELLERBOOKS OWNER READ ONLY - APK UI MODE
-   TIDAK MENGUBAH SUPABASE AUTH / GOOGLE LOGIN
-========================================================= */
+   SELLERBOOKS OWNER READ ONLY - APK SAJA
+   - Login Google tetap menggunakan logic asli.
+   - Level 2 Nama Pemilik tetap wajib jika profile kosong.
+   - Hapus Laporan (seluruh kartu) disembunyikan.
+   ========================================================= */
 (function(){
     "use strict";
+    if(!/SellerBooksAPK\/1\.0/i.test(navigator.userAgent||"")) return;
 
-    const isOwnerAPK =
-        /SellerBooksAPK\/1\.0/i.test(navigator.userAgent || "");
+    function hideOwnerRestrictedUI(){
+        /* Sembunyikan seluruh kartu "Hapus Laporan", bukan hanya tombolnya. */
+        document.querySelectorAll("#reports .content-section").forEach(function(card){
+            const heading=card.querySelector("h3");
+            if(heading && /hapus laporan/i.test((heading.textContent||"").trim())){
+                card.style.setProperty("display","none","important");
+            }
+        });
 
-    if(!isOwnerAPK) return;
+        /* Pengamanan tambahan untuk tombol Hapus Laporan. */
+        document.querySelectorAll("button,a").forEach(function(el){
+            const text=(el.innerText||"").trim().toLowerCase();
+            if(text.includes("hapus laporan")){
+                el.style.setProperty("display","none","important");
+            }
+        });
 
-    function hide(el){
-        if(el) el.style.setProperty("display","none","important");
-    }
+        /* Tombol reset identitas tidak tersedia untuk Owner. */
+        document.querySelectorAll(".reset-identity-button").forEach(function(el){
+            el.style.setProperty("display","none","important");
+        });
 
-    function show(el){
-        if(el) el.style.removeProperty("display");
-    }
-
-    function applyOwnerMode(){
-        /* HANYA menu yang boleh terlihat */
-        const allowedViews = new Set(["dashboard","productAnalysis","reports"]);
-
+        /* Menu Owner: hanya Dashboard, Rincian, Laporan, Gmail, identitas, Logout. */
         document.querySelectorAll(".sidebar .menu-item").forEach(function(btn){
-            const text = (btn.innerText || "").trim().toLowerCase();
-
-            const onclick = btn.getAttribute("onclick") || "";
-            const match = onclick.match(/showView\(\s*['"]([^'"]+)['"]/i);
-            const view = match ? match[1] : "";
-
+            const text=(btn.innerText||"").trim().toLowerCase();
+            const onclick=btn.getAttribute("onclick")||"";
+            const match=onclick.match(/showView\(\s*['\"]([^'\"]+)['\"]/i);
+            const view=match?match[1].toLowerCase():"";
             const allowed =
-                view === "dashboard" ||
-                view === "productAnalysis" ||
-                view === "reports" ||
+                view==="dashboard" ||
+                view==="productanalysis" ||
+                view==="reports" ||
                 text.includes("dashboard") ||
                 text.includes("rincian") ||
                 text.includes("laporan");
-
-            if(!allowed) hide(btn);
+            if(!allowed){
+                btn.style.setProperty("display","none","important");
+            }
         });
 
-        /* Tombol "Lihat Marketplace" */
-        document.querySelectorAll("button, a").forEach(function(el){
-            const text = (el.innerText || "").trim().toLowerCase();
-            if(text.includes("lihat marketplace")) hide(el);
-        });
-
-        /* Reset Identitas */
-        document.querySelectorAll(".reset-identity-button").forEach(hide);
-
-        /* Hapus Laporan / aksi hapus */
-        document.querySelectorAll("button, a").forEach(function(el){
-            const text = (el.innerText || "").trim().toLowerCase();
-            if(text.includes("hapus laporan")) hide(el);
-        });
-
-        /* Aksi mutasi yang umum di halaman Rincian/Laporan */
-        document.querySelectorAll(
-            ".product-edit,.product-delete,.product-toggle," +
-            ".store-edit-button,.store-delete-button,.store-toggle-button," +
-            ".product-bulk-delete-button," +
-            ".marketplace-more"
-        ).forEach(hide);
-
-        /* Semua elemen yang ditandai khusus sebagai aksi owner */
-        document.querySelectorAll(".sellerbooks-owner-mutation").forEach(hide);
-
-        /* Pastikan identitas + logout tetap tampil */
-        document.querySelectorAll(".sidebar-user,.logout-button").forEach(function(el){
-            el.style.removeProperty("display");
+        /* Tombol Dashboard "Lihat Marketplace" tidak boleh muncul. */
+        document.querySelectorAll("button,a").forEach(function(el){
+            const text=(el.innerText||"").trim().toLowerCase();
+            if(text.includes("lihat marketplace")){
+                el.style.setProperty("display","none","important");
+            }
         });
     }
 
-    /* Jalankan setelah DOM dan setelah render dinamis */
-    if(document.readyState === "loading"){
-        document.addEventListener("DOMContentLoaded", applyOwnerMode);
+    if(document.readyState==="loading"){
+        document.addEventListener("DOMContentLoaded",function(){
+            hideOwnerRestrictedUI();
+            setTimeout(hideOwnerRestrictedUI,700);
+        });
     }else{
-        applyOwnerMode();
+        hideOwnerRestrictedUI();
+        setTimeout(hideOwnerRestrictedUI,700);
     }
-
-    setTimeout(applyOwnerMode, 500);
-    setTimeout(applyOwnerMode, 1500);
-
-    const observer = new MutationObserver(function(){
-        applyOwnerMode();
-    });
-
-    observer.observe(document.documentElement, {
-        childList:true,
-        subtree:true
-    });
 })();
 </script>
 
