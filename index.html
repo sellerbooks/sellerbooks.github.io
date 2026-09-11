@@ -7693,21 +7693,6 @@ document.addEventListener(
 @media(max-width:650px){.product-pagination{align-items:stretch;flex-direction:column;}.product-pagination-controls{justify-content:flex-start;}}
 </style>
 
-
-<style id="sellerbooks-apk-owner-css">
-/* OWNER MODE KHUSUS APK ANDROID */
-body.sellerbooks-apk-owner .admin-only,
-body.sellerbooks-apk-owner [data-admin-only],
-body.sellerbooks-apk-owner .desktop-admin-only{display:none!important}
-
-body.sellerbooks-apk-owner #marketplacePage,
-body.sellerbooks-apk-owner #storePage,
-body.sellerbooks-apk-owner #productsPage,
-body.sellerbooks-apk-owner #importPage,
-body.sellerbooks-apk-owner #expensesPage,
-body.sellerbooks-apk-owner #settingsPage{display:none!important}
-</style>
-
 </head>
 
 
@@ -24860,113 +24845,300 @@ document.addEventListener(
 </script>
 
 
-<script id="sellerbooks-apk-owner-mode">
+
+<!-- =========================================================
+     SELLERBOOKS APK OWNER READ ONLY
+     SUMBER: index seller normal.html
+     MASTER TIDAK DIUBAH
+
+     APK dideteksi melalui User-Agent marker:
+     SellerBooksAPK/1.0
+
+     Mode Owner hanya aktif di APK.
+     Browser/website tetap NORMAL.
+========================================================= -->
+<style id="sellerbooks-apk-owner-readonly-style">
+/* Menu yang tidak boleh terlihat di APK Owner */
+body.sellerbooks-apk-owner .sellerbooks-owner-hidden{
+    display:none !important;
+}
+
+/* Hilangkan kategori/judul menu agar sidebar hanya berisi
+   Dashboard, Rincian, Laporan */
+body.sellerbooks-apk-owner .sidebar-menu .menu-title{
+    display:none !important;
+}
+
+/* Tombol Reset Identitas bukan untuk Owner APK */
+body.sellerbooks-apk-owner .reset-identity-button{
+    display:none !important;
+}
+
+/* Jangan tampilkan area yang bersifat mutasi data */
+body.sellerbooks-apk-owner .marketplace-card-actions,
+body.sellerbooks-apk-owner .store-actions,
+body.sellerbooks-apk-owner .product-actions,
+body.sellerbooks-apk-owner .import-upload-box,
+body.sellerbooks-apk-owner .import-analysis .analysis-footer,
+body.sellerbooks-apk-owner .danger-button{
+    display:none !important;
+}
+
+/* Hapus panel "Hapus Laporan" seluruhnya */
+body.sellerbooks-apk-owner .sellerbooks-owner-delete-report{
+    display:none !important;
+}
+
+/* Tombol mutasi yang ditandai oleh script */
+body.sellerbooks-apk-owner .sellerbooks-owner-mutation{
+    display:none !important;
+}
+</style>
+
+<script id="sellerbooks-apk-owner-readonly-script">
 (function(){
-"use strict";
 
-var ua = navigator.userAgent || "";
+    "use strict";
 
-/*
- * Android WebView standar biasanya memiliki "; wv)".
- * Dukungan tambahan untuk WebView yang tidak menampilkan marker tersebut.
- */
-var isAndroid = /Android/i.test(ua);
-var isWebView =
-    /;\\s*wv\\)/i.test(ua) ||
-    /Version\\/4\\.0.*Chrome\\//i.test(ua) ||
-    (isAndroid && /; wv\\)/i.test(ua));
+    /*
+       =====================================================
+       DETEKSI APK OWNER
+       =====================================================
+       APK baru SellerBooks mengirim:
+       SellerBooksAPK/1.0
+    */
+    function sellerBooksIsOwnerAPK(){
+        var ua = String(navigator.userAgent || "");
 
-var isSellerBooksAPK =
-    /SellerBooksAPK/i.test(ua) ||
-    (isAndroid && isWebView);
+        return /SellerBooksAPK\/1\.0/i.test(ua);
+    }
 
-if(!isSellerBooksAPK) return;
+    /*
+       =====================================================
+       TERAPKAN MODE OWNER
+       =====================================================
+    */
+    function sellerBooksApplyOwnerMode(){
 
-function applyOwnerMode(){
-
-    if(!document.body) return;
-
-    document.documentElement.classList.add("sellerbooks-apk-owner");
-    document.body.classList.add("sellerbooks-apk-owner");
-
-    /* Menu yang tidak boleh tampil di APK Owner */
-    var blocked = [
-        "marketplace",
-        "akun toko",
-        "master produk",
-        "import penjualan",
-        "biaya lain",
-        "pengaturan",
-        "lihat marketplace",
-        "hapus laporan"
-    ];
-
-    document.querySelectorAll(
-        "button,a,[role='button'],.menu-item"
-    ).forEach(function(el){
-
-        var text = (el.innerText || el.textContent || "")
-            .trim()
-            .toLowerCase();
-
-        if(!text) return;
-
-        if(blocked.some(function(term){
-            return text.indexOf(term) !== -1;
-        })){
-            el.style.setProperty("display","none","important");
+        if(!sellerBooksIsOwnerAPK()){
+            return;
         }
-    });
 
-    /* Tombol yang melakukan perubahan data */
-    document.querySelectorAll(
-        "button,a,[role='button'],input[type='button'],input[type='submit']"
-    ).forEach(function(el){
+        document.body.classList.add("sellerbooks-apk-owner");
 
-        var text = (
-            el.innerText ||
-            el.textContent ||
-            el.value ||
-            ""
-        ).trim().toLowerCase();
+        /*
+           Hanya 3 halaman yang boleh dibuka:
+           Dashboard, Rincian, Laporan.
+        */
+        var allowedViews = {
+            dashboard:true,
+            productAnalysis:true,
+            reports:true
+        };
 
-        if(!text) return;
+        /*
+           Sembunyikan menu yang tidak diperbolehkan.
+        */
+        document.querySelectorAll(".sidebar-menu .menu-item").forEach(function(btn){
 
-        if(/^(tambah|add|edit|ubah|simpan|save|hapus|delete|import|upload|buat|create|update|reset)\\b/i.test(text) ||
-           /hapus laporan|delete report|tambah produk|edit produk|hapus produk/i.test(text)){
+            var onclick = String(btn.getAttribute("onclick") || "");
+            var match = onclick.match(/showView\(\s*['"]([^'"]+)['"]/i);
 
-            el.style.setProperty("display","none","important");
+            if(match){
+                var viewId = match[1];
+
+                if(!allowedViews[viewId]){
+                    btn.classList.add("sellerbooks-owner-hidden");
+                }
+            }
+        });
+
+        /*
+           Dashboard:
+           sembunyikan "Lihat Marketplace".
+        */
+        document.querySelectorAll("button").forEach(function(btn){
+
+            var text = String(btn.textContent || "")
+                .replace(/\s+/g," ")
+                .trim()
+                .toLowerCase();
+
+            var title = String(btn.getAttribute("title") || "")
+                .trim()
+                .toLowerCase();
+
+            var onclick = String(btn.getAttribute("onclick") || "")
+                .trim()
+                .toLowerCase();
+
+            if(text.indexOf("lihat marketplace") !== -1){
+                btn.classList.add("sellerbooks-owner-hidden");
+            }
+
+            /*
+               Reset identitas harus tetap tersembunyi walaupun
+               class/CSS berubah.
+            */
+            if(text.indexOf("reset identitas") !== -1){
+                btn.classList.add("sellerbooks-owner-hidden");
+            }
+
+            /*
+               Sembunyikan tombol mutasi berdasarkan fungsi onclick.
+               Refresh/filter tidak termasuk.
+            */
+            if(
+                /(delete|remove|hapus|edit|update|add|tambah|import|save|simpan|toggle|resetidentity|deleteproduct|deleteReportsByDateRange)/i.test(onclick)
+                &&
+                !/refresh/i.test(onclick)
+            ){
+                btn.classList.add("sellerbooks-owner-mutation");
+            }
+
+            /*
+               Jangan sembunyikan Logout.
+               Jangan sembunyikan tombol navigasi yang diizinkan.
+            */
+            if(text === "logout" || text.indexOf("logout") !== -1){
+                btn.classList.remove("sellerbooks-owner-mutation");
+                btn.classList.remove("sellerbooks-owner-hidden");
+            }
+
+            /*
+               Tombol refresh dashboard tetap boleh.
+            */
+            if(
+                title.indexOf("refresh dashboard") !== -1 ||
+                text === "↻"
+            ){
+                btn.classList.remove("sellerbooks-owner-mutation");
+                btn.classList.remove("sellerbooks-owner-hidden");
+            }
+        });
+
+        /*
+           Panel Hapus Laporan:
+           cari heading-nya lalu sembunyikan content-section
+           terdekat.
+        */
+        document.querySelectorAll(".content-section").forEach(function(section){
+
+            var text = String(section.textContent || "")
+                .replace(/\s+/g," ")
+                .trim()
+                .toLowerCase();
+
+            if(
+                text.indexOf("hapus laporan") !== -1 &&
+                text.indexOf("hapus data import penjualan") !== -1
+            ){
+                section.classList.add("sellerbooks-owner-delete-report");
+            }
+        });
+
+        /*
+           Jika ada tombol/elemen yang masih mengarah ke halaman
+           terlarang, cegah melalui showView.
+        */
+        if(!window.sellerBooksOwnerOriginalShowView && typeof window.showView === "function"){
+
+            window.sellerBooksOwnerOriginalShowView = window.showView;
+
+            window.showView = function(viewId, button, saveHistory){
+
+                if(
+                    sellerBooksIsOwnerAPK() &&
+                    !allowedViews[String(viewId)]
+                ){
+                    return false;
+                }
+
+                return window.sellerBooksOwnerOriginalShowView
+                    .apply(this, arguments);
+            };
         }
-    });
 
-    /* Halaman administrasi tidak boleh dibuka dari APK Owner */
-    [
-        "marketplacePage",
-        "storePage",
-        "productsPage",
-        "importPage",
-        "expensesPage",
-        "settingsPage"
-    ].forEach(function(id){
+        /*
+           Pastikan halaman yang sedang aktif bukan halaman terlarang.
+        */
+        document.querySelectorAll(".view").forEach(function(view){
 
-        var el = document.getElementById(id);
+            var id = String(view.id || "");
 
-        if(el){
-            el.style.setProperty("display","none","important");
+            if(
+                id &&
+                !allowedViews[id] &&
+                view.classList.contains("active")
+            ){
+                view.classList.remove("active");
+            }
+        });
+
+        /*
+           Pastikan Dashboard menjadi halaman awal Owner.
+        */
+        var dashboard = document.getElementById("dashboard");
+
+        if(dashboard && !dashboard.classList.contains("active")){
+
+            document.querySelectorAll(".view").forEach(function(view){
+                view.classList.remove("active");
+            });
+
+            dashboard.classList.add("active");
+
+            var dashboardButton =
+                document.querySelector(
+                    '.sidebar-menu .menu-item[onclick*="showView(\'dashboard\'"]'
+                );
+
+            if(dashboardButton){
+                document
+                    .querySelectorAll(".sidebar-menu .menu-item")
+                    .forEach(function(btn){
+                        btn.classList.remove("active");
+                    });
+
+                dashboardButton.classList.add("active");
+            }
         }
-    });
-}
+    }
 
-if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", applyOwnerMode);
-}else{
-    applyOwnerMode();
-}
+    /*
+       Script ini ditempatkan menjelang </body>, jadi DOM umumnya
+       sudah tersedia. Jalankan langsung + sekali setelah DOMReady.
+    */
+    sellerBooksApplyOwnerMode();
 
-/* UI SellerBooks dirender dinamis, jadi cek ulang */
-setTimeout(applyOwnerMode,500);
-setTimeout(applyOwnerMode,1200);
-setTimeout(applyOwnerMode,2500);
+    if(document.readyState === "loading"){
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            sellerBooksApplyOwnerMode
+        );
+
+    }else{
+
+        sellerBooksApplyOwnerMode();
+    }
+
+    /*
+       Beberapa bagian aplikasi dapat melakukan render ulang.
+       Observer hanya aktif untuk APK Owner dan tidak mengubah
+       website biasa.
+    */
+    if(sellerBooksIsOwnerAPK()){
+
+        var observer = new MutationObserver(function(){
+            sellerBooksApplyOwnerMode();
+        });
+
+        observer.observe(document.body,{
+            childList:true,
+            subtree:true
+        });
+    }
 
 })();
 </script>
