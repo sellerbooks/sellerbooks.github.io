@@ -3675,7 +3675,17 @@ td{
     background:#f8fafc;
     color:#334155;
 }
+   
+.sidebar .reset-identity-button{
+    color:#cbd5e1;
+    border-color:rgba(255,255,255,.12);
+    background:transparent;
+}
 
+.sidebar .reset-identity-button:hover{
+    background:rgba(255,255,255,.08);
+    color:#ffffff;
+}
 /* =========================================
    NOTIFICATION
 ========================================= */
@@ -7818,13 +7828,6 @@ document.addEventListener(
 
                 </button>
 
-<button
-    type="button"
-    class="reset-identity-button"
-    onclick="resetIdentity()"
->
-    🔄 Reset Identitas
-</button>
                 <div class="security-info">
 
                     <div class="security-icon">
@@ -8103,15 +8106,25 @@ document.addEventListener(
 
         </div>
 
+<!-- RESET IDENTITAS -->
+
+<button
+    type="button"
+    class="reset-identity-button"
+    onclick="resetIdentity()"
+>
+    🔄 <span>Reset Identitas</span>
+</button>
+
 <!-- TOMBOL LOGOUT -->
 
-    <button
-        type="button"
-        class="logout-button"
-        onclick="logoutSellerBooks()"
-    >
-        🚪 <span>Logout</span>
-    </button>
+<button
+    type="button"
+    class="logout-button"
+    onclick="logoutSellerBooks()"
+>
+    🚪 <span>Logout</span>
+</button>
 
 </div>
     </aside>
@@ -12515,14 +12528,13 @@ async function sellerBooksLoadProfile(user){
        (misalnya akun dibuat sebelum trigger profile dipasang), buat profile
        secara otomatis sebagai PENDING. Status tidak pernah diambil dari client.
     */
-    const metadata=user.user_metadata||{};
-    const ownerName=metadata.full_name||metadata.name||"";
     const {error:insertError}=await sellerBooksSupabase.from("sellerbooks_profiles").insert({
-        user_id:user.id,
-        email:user.email||null,
-        owner_name:ownerName,
-        status:"pending"
-    });
+    user_id:user.id,
+    email:user.email||null,
+    owner_name:null,
+    contact_name:null,
+    status:"pending"
+});
 
     if(insertError && insertError.code!=="23505")throw insertError;
 
