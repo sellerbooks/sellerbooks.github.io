@@ -12571,6 +12571,7 @@ async function sellerBooksCheckApproval(showAlert){
             */
             await sellerBooksLoadCloudData();
             sellerBooksRefreshRuntimeFromCloud();
+            if(typeof initializeReports==="function")initializeReports();
             if(typeof loadSellerBooksSettings==="function")loadSellerBooksSettings();
             if(typeof renderMarketplaces==="function")renderMarketplaces();
             if(typeof renderStores==="function")renderStores();
@@ -14381,8 +14382,68 @@ function renderMarketplacePerformance(){
     */
 
     const activeMarketplaces =
-        marketplacesData.filter(function(marketplace){
-            return marketplace.status === "active";
+        marketplacesData.filter(function(marketplace, index, allMarketplaces){
+            if(marketplace.status !== "active"){
+                return false;
+            }
+
+            const marketplaceName =
+                String(marketplace.name || "")
+                    .trim()
+                    .toLowerCase();
+
+            const isShopeeOrTiktok =
+                marketplaceName === "shopee" ||
+                marketplaceName === "tiktok" ||
+                marketplaceName === "tiktok shop";
+
+            if(!isShopeeOrTiktok){
+                return true;
+            }
+
+            const marketplaceId =
+                String(marketplace.id || "");
+
+            const storesForThisMarketplace =
+                storesData.filter(function(store){
+                    return String(store.marketplaceId || "") === marketplaceId;
+                });
+
+            if(storesForThisMarketplace.length > 0){
+                return true;
+            }
+
+            const hasAnotherSameMarketplaceWithStore =
+                allMarketplaces.some(function(otherMarketplace, otherIndex){
+                    if(otherIndex === index || otherMarketplace.status !== "active"){
+                        return false;
+                    }
+
+                    const otherName =
+                        String(otherMarketplace.name || "")
+                            .trim()
+                            .toLowerCase();
+
+                    const sameMarketplace =
+                        (marketplaceName === "shopee" && otherName === "shopee") ||
+                        (
+                            (marketplaceName === "tiktok" || marketplaceName === "tiktok shop") &&
+                            (otherName === "tiktok" || otherName === "tiktok shop")
+                        );
+
+                    if(!sameMarketplace){
+                        return false;
+                    }
+
+                    const otherId =
+                        String(otherMarketplace.id || "");
+
+                    return storesData.some(function(store){
+                        return String(store.marketplaceId || "") === otherId;
+                    });
+                });
+
+            return !hasAnotherSameMarketplaceWithStore;
         });
 
     if(!activeMarketplaces.length){
