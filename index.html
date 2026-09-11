@@ -12513,15 +12513,13 @@ function sellerBooksRefreshRuntimeFromCloud(){
         if(typeof marketplaces!=="undefined"){
             const cloudMarketplaces = JSON.parse(
                 sellerBooksStorageGetItem("sellerbooks_marketplaces") || "[]"
-            ) || [];
+            );
 
-            /*
-               Marketplace sistem wajib tetap tersedia setelah
-               sinkronisasi realtime. Jika data cloud lama/hasil
-               sinkronisasi tidak membawa TikTok, Shopee, dll.,
-               jangan sampai daftar marketplace sistem hilang.
-               Data marketplace lain milik user tetap dipertahankan.
-            */
+            if(Array.isArray(cloudMarketplaces) && cloudMarketplaces.length){
+                marketplaces = cloudMarketplaces;
+            }
+
+            /* Pastikan marketplace sistem tetap tersedia setelah sinkronisasi realtime. */
             const systemMarketplaces = [
                 {id:"shopee",name:"Shopee",icon:"🛍️",status:"active",system:true},
                 {id:"tiktok",name:"TikTok Shop",icon:"🎵",status:"active",system:true},
@@ -12531,34 +12529,46 @@ function sellerBooksRefreshRuntimeFromCloud(){
                 {id:"blibli",name:"Blibli",icon:"🔷",status:"inactive",system:true}
             ];
 
-            const mergedMarketplaces = [...cloudMarketplaces];
-
             systemMarketplaces.forEach(function(systemMarketplace){
-                const exists = mergedMarketplaces.some(function(item){
-                    return String(item?.id || "").trim().toLowerCase() === systemMarketplace.id;
+                const exists = marketplaces.some(function(item){
+                    return String(item?.id || "").trim().toLowerCase() ===
+                           systemMarketplace.id;
                 });
 
                 if(!exists){
-                    mergedMarketplaces.push(systemMarketplace);
+                    marketplaces.push({...systemMarketplace});
                 }
             });
-
-            marketplaces = mergedMarketplaces;
         }
     }catch(error){}
     try{
         if(typeof stores!=="undefined"){
-            stores=JSON.parse(sellerBooksStorageGetItem("sellerbooks_stores")||"[]") || stores;
+            const cloudStores = JSON.parse(
+                sellerBooksStorageGetItem("sellerbooks_stores") || "[]"
+            );
+            if(Array.isArray(cloudStores)){
+                stores = cloudStores;
+            }
         }
     }catch(error){}
     try{
         if(typeof products!=="undefined"){
-            products=JSON.parse(sellerBooksStorageGetItem("sellerbooks_products")||"[]") || products;
+            const cloudProducts = JSON.parse(
+                sellerBooksStorageGetItem("sellerbooks_products") || "[]"
+            );
+            if(Array.isArray(cloudProducts)){
+                products = cloudProducts;
+            }
         }
     }catch(error){}
     try{
         if(typeof costs!=="undefined"){
-            costs=JSON.parse(sellerBooksStorageGetItem("sellerbooks_costs")||"[]") || costs;
+            const cloudCosts = JSON.parse(
+                sellerBooksStorageGetItem("sellerbooks_costs") || "[]"
+            );
+            if(Array.isArray(cloudCosts)){
+                costs = cloudCosts;
+            }
         }
     }catch(error){}
 }
@@ -19544,20 +19554,28 @@ function populateSalesStoreAccounts(){
     const list =
         stores.filter(function(store){
 
-            return (
+            if(store.status !== "active")return false;
 
-                store.status === "active"
+            const storeMarketplaceId =
+                String(store.marketplaceId || "")
+                    .trim()
+                    .toLowerCase();
 
-                &&
+            const detectedMarketplaceId =
+                String(currentSalesImport.marketplaceId || "")
+                    .trim()
+                    .toLowerCase();
 
-                String(
-                    store.marketplaceId
-                ) ===
-                String(
-                    currentSalesImport.marketplaceId
-                )
+            /* TikTok disimpan dengan beberapa nama pada data lama. */
+            if(detectedMarketplaceId === "tiktok"){
+                return (
+                    storeMarketplaceId === "tiktok" ||
+                    storeMarketplaceId === "tiktok shop" ||
+                    storeMarketplaceId === "tiktok_shop"
+                );
+            }
 
-            );
+            return storeMarketplaceId === detectedMarketplaceId;
 
         });
 
