@@ -19489,6 +19489,12 @@ function populateSalesStoreAccounts(){
                 .toLowerCase();
 
 
+            const normalizedItemName =
+                itemName.replace(/[^a-z0-9]/g, "");
+
+            const normalizedDetectedName =
+                detectedMarketplace.replace(/[^a-z0-9]/g, "");
+
             return (
 
                 itemId ===
@@ -19501,11 +19507,16 @@ function populateSalesStoreAccounts(){
 
                 ||
 
+                normalizedItemName ===
+                normalizedDetectedName
+
+                ||
+
                 (
                     normalizedMarketplace === "tiktok" &&
                     (
                         itemId === "tiktok" ||
-                        itemName === "tiktok shop"
+                        normalizedItemName === "tiktokshop"
                     )
                 )
 
@@ -19554,7 +19565,12 @@ function populateSalesStoreAccounts(){
     const list =
         stores.filter(function(store){
 
-            if(store.status !== "active")return false;
+            const storeStatus =
+                String(store.status || "")
+                    .trim()
+                    .toLowerCase();
+
+            if(storeStatus !== "active")return false;
 
             const storeMarketplaceId =
                 String(store.marketplaceId || "")
@@ -19566,7 +19582,19 @@ function populateSalesStoreAccounts(){
                     .trim()
                     .toLowerCase();
 
-            /* TikTok disimpan dengan beberapa nama pada data lama. */
+            /*
+               Cocokkan ID marketplace hasil database terlebih dahulu.
+               Marketplace custom dapat memakai ID seperti
+               marketplace_1789098401341, bukan "tiktok".
+            */
+            if(
+                detectedMarketplaceId &&
+                storeMarketplaceId === detectedMarketplaceId
+            ){
+                return true;
+            }
+
+            /* TikTok disimpan dengan beberapa nama/format pada data lama. */
             if(detectedMarketplaceId === "tiktok"){
                 return (
                     storeMarketplaceId === "tiktok" ||
@@ -19575,7 +19603,7 @@ function populateSalesStoreAccounts(){
                 );
             }
 
-            return storeMarketplaceId === detectedMarketplaceId;
+            return false;
 
         });
 
