@@ -12744,6 +12744,251 @@ async function sellerBooksHandleAuthSession(){
 sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
     if(session?.user){sellerBooksAuthUser=session.user;setTimeout(function(){sellerBooksCheckApproval(false);},0);}else{sellerBooksAuthUser=null;sellerBooksProfile=null;sellerBooksShowOnly("loginPage");}
 });
+/* =====================================================
+   SELLERBOOKS REALTIME ACCOUNT GUARD
+   Hanya memantau perubahan status akun / penghapusan profile.
+   Tidak mengubah alur login atau data aplikasi.
+===================================================== */
+let sellerBooksAccountRealtimeChannel=null;
+let sellerBooksAccountRealtimeHandling=false;
+let sellerBooksDataRealtimeChannel=null;
+let sellerBooksDataRealtimeApplying=false;
+
+function sellerBooksRefreshAllViewsFromCloud(){
+    if(typeof sellerBooksRefreshRuntimeFromCloud==="function")sellerBooksRefreshRuntimeFromCloud();
+    if(typeof loadSellerBooksSettings==="function")loadSellerBooksSettings();
+    if(typeof renderMarketplaces==="function")renderMarketplaces();
+    if(typeof renderStores==="function")renderStores();
+    if(typeof renderProducts==="function")renderProducts();
+    if(typeof renderCosts==="function")renderCosts();
+    if(typeof updateDashboardByPeriod==="function")updateDashboardByPeriod();
+    if(typeof updateReports==="function")updateReports();
+
+    /* Data marketplace dan akun toko baru saja masuk dari Supabase.
+       Isi ulang filter Laporan agar tidak tetap kosong dari inisialisasi
+       sebelum data cloud selesai dimuat. */
+    if(typeof loadReportMarketplaceFilter==="function")loadReportMarketplaceFilter();
+    if(typeof loadReportStoreFilter==="function")loadReportStoreFilter();
+    if(typeof loadDeleteReportMarketplaceFilter==="function")loadDeleteReportMarketplaceFilter();
+    if(typeof loadDeleteReportStoreFilter==="function")loadDeleteReportStoreFilter();
+    if(typeof renderProductAnalysis==="function")renderProductAnalysis();
+    if(typeof renderNotifications==="function")renderNotifications();
+}
+
+function sellerBooksStopDataRealtime(){
+    if(sellerBooksDataRealtimeChannel){
+        sellerBooksSupabase.removeChannel(sellerBooksDataRealtimeChannel);
+        sellerBooksDataRealtimeChannel=null;
+    }
+}
+
+function sellerBooksStartDataRealtime(){
+    if(!sellerBooksAuthUser)return;
+
+    sellerBooksStopDataRealtime();
+    const userId=sellerBooksAuthUser.id;
+
+    sellerBooksDataRealtimeChannel=sellerBooksSupabase
+        .channel("sellerbooks-data-"+userId)
+        .on("postgres_changes",{
+            event:"INSERT",
+            schema:"public",
+            table:"sellerbooks_user_data",
+            filter:"user_id=eq."+userId
+        },function(payload){
+            sellerBooksApplyRealtimeCloudData(payload?.new?.data);
+        })
+        .on("postgres_changes",{
+            event:"UPDATE",
+            schema:"public",
+            table:"sellerbooks_user_data",
+            filter:"user_id=eq."+userId
+        },function(payload){
+            sellerBooksApplyRealtimeCloudData(payload?.new?.data);
+        })
+        .on("postgres_changes",{
+            event:"DELETE",
+            schema:"public",
+            table:"sellerbooks_user_data"
+        },function(payload){
+            const deletedUserId=String(payload?.old?.user_id||"");
+            if(deletedUserId===String(userId)){
+                sellerBooksCloudState={};
+                sellerBooksCloudReady=true;
+                sellerBooksRefreshAllViewsFromCloud();
+            }
+        })
+        .subscribe(function(status){
+            if(status!=="SUBSCRIBED" && status!=="CHANNEL_ERROR" && status!=="TIMED_OUT")return;
+            if(status!=="SUBSCRIBED")console.warn("Realtime data SellerBooks:",status);
+        });
+}
+
+function sellerBooksApplyRealtimeCloudData(data){
+    if(sellerBooksDataRealtimeApplying)return;
+    if(!data || typeof data!=="object")return;
+
+    sellerBooksDataRealtimeApplying=true;
+    try{
+        sellerBooksCloudState={...data};
+        sellerBooksCloudReady=true;
+        sellerBooksRefreshAllViewsFromCloud();
+    }catch(error){
+        console.error("Refresh realtime data SellerBooks gagal:",error);
+    }finally{
+        sellerBooksDataRealtimeApplying=false;
+    }
+}
+
+function sellerBooksStopAccountRealtime(){
+    if(sellerBooksAccountRealtimeChannel){
+        sellerBooksSupabase.removeChannel(sellerBooksAccountRealtimeChannel);
+        sellerBooksAccountRealtimeChannel=null;
+    }
+}
+
+function sellerBooksHandleRealtimeAccountAction(status){
+    if(sellerBooksAccountRealtimeHandling)return;
+    sellerBooksAccountRealtimeHandling=true;
+
+    const normalized=String(status||"").toLowerCase();
+    let message="Akun SellerBooks Anda sudah tidak dapat digunakan. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
+
+    if(normalized==="suspended"){
+        message="Akun SellerBooks Anda telah ditangguhkan oleh Core Adiimasa. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
+    }else if(normalized==="rejected"){
+        message="Akun SellerBooks Anda telah ditolak oleh Core Adiimasa. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
+    }else if(normalized==="pending"){
+        message="Akses akun SellerBooks Anda saat ini tidak aktif. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
+    }else if(normalized==="deleted"){
+        message="Akun SellerBooks Anda telah dihapus oleh Core Adiimasa. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
+    }
+
+    sellerBooksStopAccountRealtime();
+    sellerBooksStopDataRealtime();
+    sellerBooksStopAccountPolling();
+    if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
+
+    sellerBooksSupabase.auth.signOut().catch(function(error){
+        console.error("Realtime logout gagal:",error);
+    }).finally(function(){
+        sellerBooksAuthUser=null;
+        sellerBooksProfile=null;
+        sellerBooksStorage.removeItem("sellerbooks_owner_name");
+        sellerBooksShowOnly("loginPage");
+        alert("⚠️ Akses Akun Berubah\n\n"+message);
+        sellerBooksAccountRealtimeHandling=false;
+    });
+}
+
+function sellerBooksStartAccountRealtime(){
+    if(!sellerBooksAuthUser)return;
+
+    sellerBooksStopAccountRealtime();
+    const userId=sellerBooksAuthUser.id;
+
+    sellerBooksAccountRealtimeChannel=sellerBooksSupabase
+        .channel("sellerbooks-account-"+userId)
+        .on("postgres_changes",{
+            event:"UPDATE",
+            schema:"public",
+            table:"sellerbooks_profiles",
+            filter:"user_id=eq."+userId
+        },function(payload){
+            const status=String(payload?.new?.status||"").toLowerCase();
+            if(status!=="approved"){
+                sellerBooksHandleRealtimeAccountAction(status);
+            }
+        })
+        .on("postgres_changes",{
+            event:"DELETE",
+            schema:"public",
+            table:"sellerbooks_profiles"
+        },function(payload){
+            const deletedUserId=String(payload?.old?.user_id||"");
+            if(deletedUserId===String(userId)){
+                sellerBooksHandleRealtimeAccountAction("deleted");
+            }
+        })
+        .subscribe(function(status){
+            if(status!=="SUBSCRIBED" && status!=="CHANNEL_ERROR" && status!=="TIMED_OUT"){
+                return;
+            }
+            if(status!=="SUBSCRIBED"){
+                console.warn("Realtime status akun:",status);
+            }
+        });
+}
+
+/* Mulai / hentikan guard mengikuti sesi login yang sudah ada. */
+sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
+    if(session?.user){
+        sellerBooksAuthUser=session.user;
+        sellerBooksStartAccountRealtime();
+        sellerBooksStartDataRealtime();
+        sellerBooksStartAccountPolling();
+    }else{
+        sellerBooksStopAccountRealtime();
+        sellerBooksStopDataRealtime();
+        sellerBooksStopAccountPolling();
+    }
+});
+
+/* =====================================================
+   APK FALLBACK ACCOUNT GUARD
+   WebView HP kadang tidak mempertahankan WebSocket Realtime.
+   Karena itu APK melakukan pengecekan ringan berkala hanya
+   saat aplikasi berjalan aktif. Tidak mengubah data aplikasi.
+===================================================== */
+let sellerBooksAccountPollingTimer=null;
+let sellerBooksAccountPollingBusy=false;
+
+function sellerBooksStartAccountPolling(){
+    if(!/SellerBooksAPK\/1\.0/i.test(navigator.userAgent||""))return;
+    if(sellerBooksAccountPollingTimer)clearInterval(sellerBooksAccountPollingTimer);
+
+    const check=function(){
+        if(sellerBooksAccountPollingBusy || !sellerBooksAuthUser || sellerBooksAccountRealtimeHandling)return;
+        sellerBooksAccountPollingBusy=true;
+
+        sellerBooksSupabase
+            .from("sellerbooks_profiles")
+            .select("status")
+            .eq("user_id",sellerBooksAuthUser.id)
+            .maybeSingle()
+            .then(function(result){
+                if(result.error){
+                    console.warn("Pengecekan status akun APK gagal:",result.error);
+                    return;
+                }
+
+                if(!result.data){
+                    sellerBooksHandleRealtimeAccountAction("deleted");
+                    return;
+                }
+
+                const status=String(result.data.status||"").toLowerCase();
+                if(status!=="approved")sellerBooksHandleRealtimeAccountAction(status);
+            })
+            .catch(function(error){
+                console.warn("Pengecekan status akun APK gagal:",error);
+            })
+            .finally(function(){
+                sellerBooksAccountPollingBusy=false;
+            });
+    };
+
+    check();
+    sellerBooksAccountPollingTimer=setInterval(check,3000);
+}
+
+function sellerBooksStopAccountPolling(){
+    if(sellerBooksAccountPollingTimer){
+        clearInterval(sellerBooksAccountPollingTimer);
+        sellerBooksAccountPollingTimer=null;
+    }
+}
+
 async function sellerBooksLogout(){
     try{await sellerBooksSupabase.auth.signOut();}catch(error){console.error("Logout gagal:",error);}
     if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
