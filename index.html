@@ -5060,10 +5060,27 @@ async function deleteReportsByDateRange(){
 
     updateReports();
 
-    /* Pastikan perubahan benar-benar tersimpan ke Supabase
-       sebelum memberi konfirmasi bahwa laporan sudah terhapus. */
+    /* Pastikan penghapusan benar-benar tersimpan di Supabase
+       sebelum memberi konfirmasi berhasil. */
     try{
-        await sellerBooksPersistCloudDataNow();
+        if(sellerBooksCloudSaveTimer){
+            clearTimeout(sellerBooksCloudSaveTimer);
+            sellerBooksCloudSaveTimer=null;
+        }
+
+        await sellerBooksCloudSavePromise;
+
+        if(sellerBooksAuthUser && sellerBooksCloudReady){
+            const {error:deleteSaveError}=await sellerBooksSupabase
+                .from("sellerbooks_user_data")
+                .upsert({
+                    user_id:sellerBooksAuthUser.id,
+                    data:{...sellerBooksCloudState},
+                    updated_at:new Date().toISOString()
+                },{onConflict:"user_id"});
+
+            if(deleteSaveError)throw deleteSaveError;
+        }
     }catch(error){
         console.error("Penghapusan laporan gagal disimpan ke Supabase:",error);
         alert(
@@ -12774,6 +12791,86 @@ sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
 ===================================================== */
 let sellerBooksAccountRealtimeChannel=null;
 let sellerBooksAccountRealtimeHandling=false;
+let sellerBooksDataRealtimeChannel=null;
+let sellerBooksDataRealtimeApplying=false;
+
+function sellerBooksRefreshAllViewsFromCloud(){
+    if(typeof sellerBooksRefreshRuntimeFromCloud==="function")sellerBooksRefreshRuntimeFromCloud();
+    if(typeof loadSellerBooksSettings==="function")loadSellerBooksSettings();
+    if(typeof renderMarketplaces==="function")renderMarketplaces();
+    if(typeof renderStores==="function")renderStores();
+    if(typeof renderProducts==="function")renderProducts();
+    if(typeof renderCosts==="function")renderCosts();
+    if(typeof updateDashboardByPeriod==="function")updateDashboardByPeriod();
+    if(typeof updateReports==="function")updateReports();
+    if(typeof renderProductAnalysis==="function")renderProductAnalysis();
+    if(typeof renderNotifications==="function")renderNotifications();
+}
+
+function sellerBooksStopDataRealtime(){
+    if(sellerBooksDataRealtimeChannel){
+        sellerBooksSupabase.removeChannel(sellerBooksDataRealtimeChannel);
+        sellerBooksDataRealtimeChannel=null;
+    }
+}
+
+function sellerBooksStartDataRealtime(){
+    if(!sellerBooksAuthUser)return;
+
+    sellerBooksStopDataRealtime();
+    const userId=sellerBooksAuthUser.id;
+
+    sellerBooksDataRealtimeChannel=sellerBooksSupabase
+        .channel("sellerbooks-data-"+userId)
+        .on("postgres_changes",{
+            event:"INSERT",
+            schema:"public",
+            table:"sellerbooks_user_data",
+            filter:"user_id=eq."+userId
+        },function(payload){
+            sellerBooksApplyRealtimeCloudData(payload?.new?.data);
+        })
+        .on("postgres_changes",{
+            event:"UPDATE",
+            schema:"public",
+            table:"sellerbooks_user_data",
+            filter:"user_id=eq."+userId
+        },function(payload){
+            sellerBooksApplyRealtimeCloudData(payload?.new?.data);
+        })
+        .on("postgres_changes",{
+            event:"DELETE",
+            schema:"public",
+            table:"sellerbooks_user_data"
+        },function(payload){
+            const deletedUserId=String(payload?.old?.user_id||"");
+            if(deletedUserId===String(userId)){
+                sellerBooksCloudState={};
+                sellerBooksCloudReady=true;
+                sellerBooksRefreshAllViewsFromCloud();
+            }
+        })
+        .subscribe(function(status){
+            if(status!=="SUBSCRIBED" && status!=="CHANNEL_ERROR" && status!=="TIMED_OUT")return;
+            if(status!=="SUBSCRIBED")console.warn("Realtime data SellerBooks:",status);
+        });
+}
+
+function sellerBooksApplyRealtimeCloudData(data){
+    if(sellerBooksDataRealtimeApplying)return;
+    if(!data || typeof data!=="object")return;
+
+    sellerBooksDataRealtimeApplying=true;
+    try{
+        sellerBooksCloudState={...data};
+        sellerBooksCloudReady=true;
+        sellerBooksRefreshAllViewsFromCloud();
+    }catch(error){
+        console.error("Refresh realtime data SellerBooks gagal:",error);
+    }finally{
+        sellerBooksDataRealtimeApplying=false;
+    }
+}
 
 function sellerBooksStopAccountRealtime(){
     if(sellerBooksAccountRealtimeChannel){
@@ -12800,6 +12897,7 @@ function sellerBooksHandleRealtimeAccountAction(status){
     }
 
     sellerBooksStopAccountRealtime();
+    sellerBooksStopDataRealtime();
     sellerBooksStopAccountPolling();
     if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
 
@@ -12859,9 +12957,11 @@ sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
     if(session?.user){
         sellerBooksAuthUser=session.user;
         sellerBooksStartAccountRealtime();
+        sellerBooksStartDataRealtime();
         sellerBooksStartAccountPolling();
     }else{
         sellerBooksStopAccountRealtime();
+        sellerBooksStopDataRealtime();
         sellerBooksStopAccountPolling();
     }
 });
