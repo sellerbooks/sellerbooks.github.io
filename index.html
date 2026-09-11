@@ -7693,6 +7693,20 @@ document.addEventListener(
 @media(max-width:650px){.product-pagination{align-items:stretch;flex-direction:column;}.product-pagination-controls{justify-content:flex-start;}}
 </style>
 
+
+<style id="sellerbooks-apk-owner-css">
+/* APK OWNER: aktif hanya di Android WebView/APK */
+body.sellerbooks-apk-owner .admin-only,
+body.sellerbooks-apk-owner [data-admin-only],
+body.sellerbooks-apk-owner .desktop-admin-only{display:none!important}
+body.sellerbooks-apk-owner #marketplacePage,
+body.sellerbooks-apk-owner #storePage,
+body.sellerbooks-apk-owner #productsPage,
+body.sellerbooks-apk-owner #importPage,
+body.sellerbooks-apk-owner #expensesPage,
+body.sellerbooks-apk-owner #settingsPage{display:none!important}
+</style>
+
 </head>
 
 
@@ -24841,6 +24855,50 @@ document.addEventListener(
         }
     );
 
+})();
+</script>
+
+
+<script id="sellerbooks-apk-owner-mode">
+(function(){
+"use strict";
+var ua=navigator.userAgent||"";
+var isAPK=/SellerBooksAPK/i.test(ua) ||
+    (/Android/i.test(ua) && (/\\bwv\\)/i.test(ua) || /Version\\/4\\.0.*Chrome/i.test(ua)));
+if(!isAPK)return;
+
+function ownerMode(){
+    document.documentElement.classList.add("sellerbooks-apk-owner");
+    if(document.body)document.body.classList.add("sellerbooks-apk-owner");
+
+    var blocked=[
+        "marketplace","akun toko","master produk","import penjualan",
+        "biaya lain","pengaturan","lihat marketplace","hapus laporan"
+    ];
+    document.querySelectorAll("button,a,[role='button'],.menu-item").forEach(function(el){
+        var t=(el.innerText||el.textContent||"").trim().toLowerCase();
+        if(!t)return;
+        if(blocked.some(function(x){return t.indexOf(x)!==-1;}))
+            el.style.setProperty("display","none","important");
+    });
+
+    /* Sembunyikan aksi perubahan data di APK */
+    document.querySelectorAll("button,a,[role='button']").forEach(function(el){
+        var t=(el.innerText||el.textContent||"").trim().toLowerCase();
+        if(/^(tambah|add|edit|ubah|simpan|save|hapus|delete|import|upload|buat|create|update|reset)\\b/i.test(t))
+            el.style.setProperty("display","none","important");
+    });
+
+    ["marketplacePage","storePage","productsPage","importPage","expensesPage","settingsPage"]
+    .forEach(function(id){
+        var el=document.getElementById(id);
+        if(el)el.style.setProperty("display","none","important");
+    });
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",ownerMode);
+else ownerMode();
+setTimeout(ownerMode,700);
+setTimeout(ownerMode,1800);
 })();
 </script>
 
