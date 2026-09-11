@@ -12787,6 +12787,7 @@ function sellerBooksHandleRealtimeAccountAction(status){
     }
 
     sellerBooksStopAccountRealtime();
+    sellerBooksStopAccountPolling();
     if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
 
     sellerBooksSupabase.auth.signOut().catch(function(error){
@@ -12845,12 +12846,70 @@ sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
     if(session?.user){
         sellerBooksAuthUser=session.user;
         sellerBooksStartAccountRealtime();
+        sellerBooksStartAccountPolling();
     }else{
         sellerBooksStopAccountRealtime();
+        sellerBooksStopAccountPolling();
     }
 });
 
+/* =====================================================
+   APK FALLBACK ACCOUNT GUARD
+   WebView HP kadang tidak mempertahankan WebSocket Realtime.
+   Karena itu APK melakukan pengecekan ringan berkala hanya
+   saat aplikasi berjalan aktif. Tidak mengubah data aplikasi.
+===================================================== */
+let sellerBooksAccountPollingTimer=null;
+let sellerBooksAccountPollingBusy=false;
+
+function sellerBooksStartAccountPolling(){
+    if(!/SellerBooksAPK\/1\.0/i.test(navigator.userAgent||""))return;
+    if(sellerBooksAccountPollingTimer)clearInterval(sellerBooksAccountPollingTimer);
+
+    const check=function(){
+        if(sellerBooksAccountPollingBusy || !sellerBooksAuthUser || sellerBooksAccountRealtimeHandling)return;
+        sellerBooksAccountPollingBusy=true;
+
+        sellerBooksSupabase
+            .from("sellerbooks_profiles")
+            .select("status")
+            .eq("user_id",sellerBooksAuthUser.id)
+            .maybeSingle()
+            .then(function(result){
+                if(result.error){
+                    console.warn("Pengecekan status akun APK gagal:",result.error);
+                    return;
+                }
+
+                if(!result.data){
+                    sellerBooksHandleRealtimeAccountAction("deleted");
+                    return;
+                }
+
+                const status=String(result.data.status||"").toLowerCase();
+                if(status!=="approved")sellerBooksHandleRealtimeAccountAction(status);
+            })
+            .catch(function(error){
+                console.warn("Pengecekan status akun APK gagal:",error);
+            })
+            .finally(function(){
+                sellerBooksAccountPollingBusy=false;
+            });
+    };
+
+    check();
+    sellerBooksAccountPollingTimer=setInterval(check,3000);
+}
+
+function sellerBooksStopAccountPolling(){
+    if(sellerBooksAccountPollingTimer){
+        clearInterval(sellerBooksAccountPollingTimer);
+        sellerBooksAccountPollingTimer=null;
+    }
+}
+
 async function sellerBooksLogout(){
+    sellerBooksStopAccountPolling();
     try{await sellerBooksSupabase.auth.signOut();}catch(error){console.error("Logout gagal:",error);}
     if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
     sellerBooksStorage.removeItem("sellerbooks_owner_name"); sellerBooksShowOnly("loginPage");
