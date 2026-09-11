@@ -14705,12 +14705,42 @@ function renderMarketplacePerformance(){
        =====================================================
     */
 
+    /* Tampilkan hanya satu baris untuk setiap marketplace.
+       Jika ada marketplace custom dengan nama yang sama (contoh:
+       Shopee/Shopee atau TikTok/Tiktokshop), pertahankan yang pertama
+       agar baris duplikat 0 Akun tidak ikut tampil. */
+    const dashboardMarketplaceSeen = {};
+
     const activeMarketplaces =
-        sellerBooksNormalizeMarketplaceList(
-            marketplacesData.filter(function(marketplace){
-                return marketplace.status === "active";
-            })
-        );
+        marketplacesData
+        .filter(function(marketplace){
+            return marketplace.status === "active";
+        })
+        .filter(function(marketplace){
+            const name =
+                String(marketplace?.name || "")
+                    .trim()
+                    .toLowerCase();
+
+            let key = name;
+
+            if(name.includes("shopee")){
+                key = "shopee";
+            }else if(
+                name.includes("tiktok") ||
+                name.includes("tiktokshop") ||
+                name.includes("tiktok shop")
+            ){
+                key = "tiktok";
+            }
+
+            if(dashboardMarketplaceSeen[key]){
+                return false;
+            }
+
+            dashboardMarketplaceSeen[key] = true;
+            return true;
+        });
 
     if(!activeMarketplaces.length){
 
