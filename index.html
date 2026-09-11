@@ -7695,10 +7695,11 @@ document.addEventListener(
 
 
 <style id="sellerbooks-apk-owner-css">
-/* APK OWNER: aktif hanya di Android WebView/APK */
+/* OWNER MODE KHUSUS APK ANDROID */
 body.sellerbooks-apk-owner .admin-only,
 body.sellerbooks-apk-owner [data-admin-only],
 body.sellerbooks-apk-owner .desktop-admin-only{display:none!important}
+
 body.sellerbooks-apk-owner #marketplacePage,
 body.sellerbooks-apk-owner #storePage,
 body.sellerbooks-apk-owner #productsPage,
@@ -24862,43 +24863,111 @@ document.addEventListener(
 <script id="sellerbooks-apk-owner-mode">
 (function(){
 "use strict";
-var ua=navigator.userAgent||"";
-var isAPK=/SellerBooksAPK/i.test(ua) ||
-    (/Android/i.test(ua) && (/\\bwv\\)/i.test(ua) || /Version\\/4\\.0.*Chrome/i.test(ua)));
-if(!isAPK)return;
 
-function ownerMode(){
+var ua = navigator.userAgent || "";
+
+/*
+ * Android WebView standar biasanya memiliki "; wv)".
+ * Dukungan tambahan untuk WebView yang tidak menampilkan marker tersebut.
+ */
+var isAndroid = /Android/i.test(ua);
+var isWebView =
+    /;\\s*wv\\)/i.test(ua) ||
+    /Version\\/4\\.0.*Chrome\\//i.test(ua) ||
+    (isAndroid && /; wv\\)/i.test(ua));
+
+var isSellerBooksAPK =
+    /SellerBooksAPK/i.test(ua) ||
+    (isAndroid && isWebView);
+
+if(!isSellerBooksAPK) return;
+
+function applyOwnerMode(){
+
+    if(!document.body) return;
+
     document.documentElement.classList.add("sellerbooks-apk-owner");
-    if(document.body)document.body.classList.add("sellerbooks-apk-owner");
+    document.body.classList.add("sellerbooks-apk-owner");
 
-    var blocked=[
-        "marketplace","akun toko","master produk","import penjualan",
-        "biaya lain","pengaturan","lihat marketplace","hapus laporan"
+    /* Menu yang tidak boleh tampil di APK Owner */
+    var blocked = [
+        "marketplace",
+        "akun toko",
+        "master produk",
+        "import penjualan",
+        "biaya lain",
+        "pengaturan",
+        "lihat marketplace",
+        "hapus laporan"
     ];
-    document.querySelectorAll("button,a,[role='button'],.menu-item").forEach(function(el){
-        var t=(el.innerText||el.textContent||"").trim().toLowerCase();
-        if(!t)return;
-        if(blocked.some(function(x){return t.indexOf(x)!==-1;}))
+
+    document.querySelectorAll(
+        "button,a,[role='button'],.menu-item"
+    ).forEach(function(el){
+
+        var text = (el.innerText || el.textContent || "")
+            .trim()
+            .toLowerCase();
+
+        if(!text) return;
+
+        if(blocked.some(function(term){
+            return text.indexOf(term) !== -1;
+        })){
             el.style.setProperty("display","none","important");
+        }
     });
 
-    /* Sembunyikan aksi perubahan data di APK */
-    document.querySelectorAll("button,a,[role='button']").forEach(function(el){
-        var t=(el.innerText||el.textContent||"").trim().toLowerCase();
-        if(/^(tambah|add|edit|ubah|simpan|save|hapus|delete|import|upload|buat|create|update|reset)\\b/i.test(t))
+    /* Tombol yang melakukan perubahan data */
+    document.querySelectorAll(
+        "button,a,[role='button'],input[type='button'],input[type='submit']"
+    ).forEach(function(el){
+
+        var text = (
+            el.innerText ||
+            el.textContent ||
+            el.value ||
+            ""
+        ).trim().toLowerCase();
+
+        if(!text) return;
+
+        if(/^(tambah|add|edit|ubah|simpan|save|hapus|delete|import|upload|buat|create|update|reset)\\b/i.test(text) ||
+           /hapus laporan|delete report|tambah produk|edit produk|hapus produk/i.test(text)){
+
             el.style.setProperty("display","none","important");
+        }
     });
 
-    ["marketplacePage","storePage","productsPage","importPage","expensesPage","settingsPage"]
-    .forEach(function(id){
-        var el=document.getElementById(id);
-        if(el)el.style.setProperty("display","none","important");
+    /* Halaman administrasi tidak boleh dibuka dari APK Owner */
+    [
+        "marketplacePage",
+        "storePage",
+        "productsPage",
+        "importPage",
+        "expensesPage",
+        "settingsPage"
+    ].forEach(function(id){
+
+        var el = document.getElementById(id);
+
+        if(el){
+            el.style.setProperty("display","none","important");
+        }
     });
 }
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",ownerMode);
-else ownerMode();
-setTimeout(ownerMode,700);
-setTimeout(ownerMode,1800);
+
+if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", applyOwnerMode);
+}else{
+    applyOwnerMode();
+}
+
+/* UI SellerBooks dirender dinamis, jadi cek ulang */
+setTimeout(applyOwnerMode,500);
+setTimeout(applyOwnerMode,1200);
+setTimeout(applyOwnerMode,2500);
+
 })();
 </script>
 
