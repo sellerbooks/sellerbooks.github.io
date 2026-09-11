@@ -12631,12 +12631,103 @@ async function loginGoogle(){
     }
 }
 async function sellerBooksHandleAuthSession(){
+
     try{
-        const {data,error}=await sellerBooksSupabase.auth.getSession(); if(error)throw error;
-        if(!data?.session?.user){sellerBooksShowOnly("loginPage");return;}
-        sellerBooksAuthUser=data.session.user; await sellerBooksCheckApproval(false);
-        if(sellerBooksProfile&&String(sellerBooksProfile.status).toLowerCase()==="pending"&&!sellerBooksApprovalTimer){sellerBooksApprovalTimer=setInterval(function(){sellerBooksCheckApproval(false);},30000);}
-    }catch(error){console.error("Inisialisasi SellerBooks Auth gagal:",error);sellerBooksShowOnly("loginPage");}
+
+        const {
+            data,
+            error
+        } =
+            await sellerBooksSupabase
+                .auth
+                .getSession();
+
+        if(error){
+            throw error;
+        }
+
+        /*
+           TIDAK ADA SESI SUPABASE
+           = WAJIB LOGIN ULANG
+        */
+        if(!data?.session?.user){
+
+            sellerBooksAuthUser = null;
+            sellerBooksProfile = null;
+
+            if(sellerBooksApprovalTimer){
+                clearInterval(
+                    sellerBooksApprovalTimer
+                );
+
+                sellerBooksApprovalTimer = null;
+            }
+
+            sellerBooksShowOnly(
+                "loginPage"
+            );
+
+            return;
+        }
+
+        /*
+           SESI MASIH VALID
+           = LANJUTKAN LOGIN NORMAL
+        */
+        sellerBooksAuthUser =
+            data.session.user;
+
+        await sellerBooksCheckApproval(
+            false
+        );
+
+        /*
+           TIMER APPROVAL
+        */
+        if(
+            sellerBooksProfile &&
+            String(
+                sellerBooksProfile.status
+            ).toLowerCase() === "pending" &&
+            !sellerBooksApprovalTimer
+        ){
+
+            sellerBooksApprovalTimer =
+                setInterval(
+                    function(){
+
+                        sellerBooksCheckApproval(
+                            false
+                        );
+
+                    },
+                    30000
+                );
+        }
+
+    }catch(error){
+
+        console.error(
+            "Inisialisasi SellerBooks Auth gagal:",
+            error
+        );
+
+        sellerBooksAuthUser = null;
+        sellerBooksProfile = null;
+
+        if(sellerBooksApprovalTimer){
+
+            clearInterval(
+                sellerBooksApprovalTimer
+            );
+
+            sellerBooksApprovalTimer = null;
+        }
+
+        sellerBooksShowOnly(
+            "loginPage"
+        );
+    }
 }
 sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
     if(session?.user){sellerBooksAuthUser=session.user;setTimeout(function(){sellerBooksCheckApproval(false);},0);}else{sellerBooksAuthUser=null;sellerBooksProfile=null;sellerBooksShowOnly("loginPage");}
@@ -21823,75 +21914,232 @@ document.addEventListener(
 
 );
 /* =========================================
-   LOGOUT SELLERBOOKS
+   LOGOUT SELLERBOOKS - BENAR-BENAR KELUAR
 ========================================= */
 
-function logoutSellerBooks(){
+async function logoutSellerBooks(){
 
-    /* SEMBUNYIKAN DASHBOARD */
+    try{
 
-    document.getElementById("app").style.display = "none";
+        /*
+           HENTIKAN TIMER APPROVAL
+        */
+        if(sellerBooksApprovalTimer){
+            clearInterval(
+                sellerBooksApprovalTimer
+            );
 
+            sellerBooksApprovalTimer = null;
+        }
 
-    /* SEMBUNYIKAN FORM NAMA PEMILIK */
+        /*
+           HAPUS IDENTITAS LOKAL
+        */
+        sellerBooksStorage.removeItem(
+            "sellerbooks_owner_name"
+        );
 
-    const ownerSetup =
-        document.getElementById("ownerSetupPage");
+        /*
+           KOSONGKAN STATE USER
+        */
+        sellerBooksAuthUser = null;
+        sellerBooksProfile = null;
 
-    if(ownerSetup){
+        /*
+           LOGOUT DARI SUPABASE AUTH
+           INI BAGIAN PALING PENTING.
+           Setelah ini refresh TIDAK boleh
+           mengembalikan user ke dashboard.
+        */
+        const { error } =
+            await sellerBooksSupabase.auth.signOut();
 
-        ownerSetup.style.display = "none";
+        if(error){
+            throw error;
+        }
 
+        /*
+           PAKSA TAMPIL LOGIN
+        */
+        sellerBooksShowOnly(
+            "loginPage"
+        );
+
+    }catch(error){
+
+        console.error(
+            "Logout SellerBooks gagal:",
+            error
+        );
+
+        /*
+           Walaupun terjadi error,
+           jangan biarkan tampilan dashboard
+           tetap terbuka.
+        */
+        sellerBooksAuthUser = null;
+        sellerBooksProfile = null;
+
+        if(sellerBooksApprovalTimer){
+            clearInterval(
+                sellerBooksApprovalTimer
+            );
+
+            sellerBooksApprovalTimer = null;
+        }
+
+        sellerBooksStorage.removeItem(
+            "sellerbooks_owner_name"
+        );
+
+        sellerBooksShowOnly(
+            "loginPage"
+        );
+
+        alert(
+            "❌ Logout gagal.\n\n" +
+            error.message
+        );
     }
-
-
-    /* TAMPILKAN LOGIN */
-
-    document.getElementById("loginPage").style.display = "flex";
-
 }
 /* =========================================
    RESET IDENTITAS
 ========================================= */
 
 async function resetIdentity(){
-    const confirmReset=confirm("Reset Nama Pemilik?\n\nNama Pemilik akan dikosongkan dan Anda akan kembali ke halaman pengisian Nama Pemilik.\n\nAkun Gmail dan status persetujuan Core Adiimasa tetap tersimpan.");
-    if(!confirmReset)return;
 
+    const confirmReset = confirm(
+        "Reset Nama Pemilik?\n\n" +
+        "Nama Pemilik akan dikosongkan dan Anda " +
+        "akan kembali ke halaman pengisian Nama Pemilik.\n\n" +
+        "Akun Gmail dan status persetujuan Core Adiimasa " +
+        "tetap tersimpan."
+    );
+
+    if(!confirmReset){
+        return;
+    }
+
+    /*
+       PASTIKAN USER MASIH LOGIN
+    */
     if(!sellerBooksAuthUser){
-        alert("Sesi login tidak ditemukan. Silakan login kembali.");
-        sellerBooksShowOnly("loginPage");
+
+        alert(
+            "Sesi login tidak ditemukan. " +
+            "Silakan login kembali."
+        );
+
+        sellerBooksShowOnly(
+            "loginPage"
+        );
+
         return;
     }
 
     try{
+
         /*
-           RESET IDENTITAS HANYA MENGOSONGKAN NAMA PEMILIK.
-           Gmail, user_id Auth, dan status approval TIDAK DIUBAH.
+           RESET HANYA IDENTITAS PEMILIK.
+           TIDAK LOGOUT GOOGLE.
+           TIDAK MENGUBAH STATUS APPROVAL.
         */
-        const {error}=await sellerBooksSupabase
-            .from("sellerbooks_profiles")
-            .update({
-                owner_name:null,
-                updated_at:new Date().toISOString()
-            })
-            .eq("user_id",sellerBooksAuthUser.id);
+        const {
+            error
+        } =
+            await sellerBooksSupabase
+                .from("sellerbooks_profiles")
+                .update({
+                    owner_name:null,
+                    contact_name:null,
+                    updated_at:
+                        new Date().toISOString()
+                })
+                .eq(
+                    "user_id",
+                    sellerBooksAuthUser.id
+                );
 
-        if(error)throw error;
+        if(error){
+            throw error;
+        }
 
-        sellerBooksProfile=await sellerBooksLoadProfile(sellerBooksAuthUser);
-        sellerBooksStorage.removeItem("sellerbooks_owner_name");
+        /*
+           AMBIL PROFILE TERBARU
+        */
+        sellerBooksProfile =
+            await sellerBooksLoadProfile(
+                sellerBooksAuthUser
+            );
 
-        /* Kembali ke tingkat 2 tanpa logout Google */
-        sellerBooksOpenApplication();
+        /*
+           HAPUS IDENTITAS LOKAL
+        */
+        sellerBooksStorage.removeItem(
+            "sellerbooks_owner_name"
+        );
 
-        alert("✅ Nama Pemilik berhasil direset.\n\nAkun Gmail dan persetujuan Core Adiimasa tetap tersimpan. Silakan masukkan Nama Pemilik yang baru.");
+        /*
+           PAKSA MASUK KE LEVEL 2
+           TANPA LOGOUT GOOGLE
+        */
+        sellerBooksShowOnly(
+            "ownerSetupPage"
+        );
+
+        /*
+           KOSONGKAN INPUT NAMA
+        */
+        const input =
+            document.getElementById(
+                "ownerNameInput"
+            );
+
+        if(input){
+
+            input.value = "";
+
+            setTimeout(
+                function(){
+
+                    input.focus();
+
+                },
+                100
+            );
+        }
+
+        /*
+           UPDATE SIDEBAR JIKA ADA
+        */
+        if(
+            typeof updateSidebarOwner ===
+            "function"
+        ){
+
+            updateSidebarOwner();
+        }
+
+        alert(
+            "✅ Nama Pemilik berhasil direset.\n\n" +
+            "Akun Gmail dan persetujuan Core Adiimasa " +
+            "tetap tersimpan.\n\n" +
+            "Silakan masukkan Nama Pemilik yang baru."
+        );
+
     }catch(error){
-        console.error("Gagal mereset Nama Pemilik:",error);
-        alert("❌ Nama Pemilik gagal direset.\n\n"+error.message);
+
+        console.error(
+            "Gagal mereset Nama Pemilik:",
+            error
+        );
+
+        alert(
+            "❌ Nama Pemilik gagal direset.\n\n" +
+            error.message
+        );
     }
 }
-
 /* =====================================================
    SELLERBOOKS
    BACK BUTTON HP / BROWSER
