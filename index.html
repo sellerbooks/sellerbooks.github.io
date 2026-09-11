@@ -12847,6 +12847,14 @@ function sellerBooksRefreshAllViewsFromCloud(){
     if(typeof renderCosts==="function")renderCosts();
     if(typeof updateDashboardByPeriod==="function")updateDashboardByPeriod();
     if(typeof updateReports==="function")updateReports();
+
+    /* Data marketplace dan akun toko baru saja masuk dari Supabase.
+       Isi ulang filter Laporan agar tidak tetap kosong dari inisialisasi
+       sebelum data cloud selesai dimuat. */
+    if(typeof loadReportMarketplaceFilter==="function")loadReportMarketplaceFilter();
+    if(typeof loadReportStoreFilter==="function")loadReportStoreFilter();
+    if(typeof loadDeleteReportMarketplaceFilter==="function")loadDeleteReportMarketplaceFilter();
+    if(typeof loadDeleteReportStoreFilter==="function")loadDeleteReportStoreFilter();
     if(typeof renderProductAnalysis==="function")renderProductAnalysis();
     if(typeof renderNotifications==="function")renderNotifications();
 }
