@@ -12753,6 +12753,103 @@ async function sellerBooksHandleAuthSession(){
 sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
     if(session?.user){sellerBooksAuthUser=session.user;setTimeout(function(){sellerBooksCheckApproval(false);},0);}else{sellerBooksAuthUser=null;sellerBooksProfile=null;sellerBooksShowOnly("loginPage");}
 });
+
+/* =====================================================
+   SELLERBOOKS REALTIME ACCOUNT GUARD
+   Hanya memantau perubahan status akun / penghapusan profile.
+   Tidak mengubah alur login atau data aplikasi.
+===================================================== */
+let sellerBooksAccountRealtimeChannel=null;
+let sellerBooksAccountRealtimeHandling=false;
+
+function sellerBooksStopAccountRealtime(){
+    if(sellerBooksAccountRealtimeChannel){
+        sellerBooksSupabase.removeChannel(sellerBooksAccountRealtimeChannel);
+        sellerBooksAccountRealtimeChannel=null;
+    }
+}
+
+function sellerBooksHandleRealtimeAccountAction(status){
+    if(sellerBooksAccountRealtimeHandling)return;
+    sellerBooksAccountRealtimeHandling=true;
+
+    const normalized=String(status||"").toLowerCase();
+    let message="Akun SellerBooks Anda sudah tidak dapat digunakan. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
+
+    if(normalized==="suspended"){
+        message="Akun SellerBooks Anda telah ditangguhkan oleh Core Adiimasa. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
+    }else if(normalized==="rejected"){
+        message="Akun SellerBooks Anda telah ditolak oleh Core Adiimasa. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
+    }else if(normalized==="pending"){
+        message="Akses akun SellerBooks Anda saat ini tidak aktif. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
+    }else if(normalized==="deleted"){
+        message="Akun SellerBooks Anda telah dihapus oleh Core Adiimasa. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
+    }
+
+    sellerBooksStopAccountRealtime();
+    if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
+
+    sellerBooksSupabase.auth.signOut().catch(function(error){
+        console.error("Realtime logout gagal:",error);
+    }).finally(function(){
+        sellerBooksAuthUser=null;
+        sellerBooksProfile=null;
+        sellerBooksStorage.removeItem("sellerbooks_owner_name");
+        sellerBooksShowOnly("loginPage");
+        alert("⚠️ Akses Akun Berubah\n\n"+message);
+        sellerBooksAccountRealtimeHandling=false;
+    });
+}
+
+function sellerBooksStartAccountRealtime(){
+    if(!sellerBooksAuthUser)return;
+
+    sellerBooksStopAccountRealtime();
+    const userId=sellerBooksAuthUser.id;
+
+    sellerBooksAccountRealtimeChannel=sellerBooksSupabase
+        .channel("sellerbooks-account-"+userId)
+        .on("postgres_changes",{
+            event:"UPDATE",
+            schema:"public",
+            table:"sellerbooks_profiles",
+            filter:"user_id=eq."+userId
+        },function(payload){
+            const status=String(payload?.new?.status||"").toLowerCase();
+            if(status!=="approved"){
+                sellerBooksHandleRealtimeAccountAction(status);
+            }
+        })
+        .on("postgres_changes",{
+            event:"DELETE",
+            schema:"public",
+            table:"sellerbooks_profiles"
+        },function(payload){
+            const deletedUserId=String(payload?.old?.user_id||"");
+            if(deletedUserId===String(userId)){
+                sellerBooksHandleRealtimeAccountAction("deleted");
+            }
+        })
+        .subscribe(function(status){
+            if(status!=="SUBSCRIBED" && status!=="CHANNEL_ERROR" && status!=="TIMED_OUT"){
+                return;
+            }
+            if(status!=="SUBSCRIBED"){
+                console.warn("Realtime status akun:",status);
+            }
+        });
+}
+
+/* Mulai / hentikan guard mengikuti sesi login yang sudah ada. */
+sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
+    if(session?.user){
+        sellerBooksAuthUser=session.user;
+        sellerBooksStartAccountRealtime();
+    }else{
+        sellerBooksStopAccountRealtime();
+    }
+});
+
 async function sellerBooksLogout(){
     try{await sellerBooksSupabase.auth.signOut();}catch(error){console.error("Logout gagal:",error);}
     if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
