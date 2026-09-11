@@ -8415,12 +8415,36 @@ document.addEventListener(
                         </div>
 
 
-                        <button
-                            class="secondary-button"
-                            onclick="showView('marketplace')"
-                        >
-                            Lihat Marketplace →
-                        </button>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <button
+                                type="button"
+                                onclick="refreshDashboard()"
+                                title="Refresh Dashboard"
+                                aria-label="Refresh Dashboard"
+                                style="
+                                    width:34px;
+                                    height:34px;
+                                    padding:0;
+                                    border:1px solid var(--border);
+                                    background:white;
+                                    border-radius:50%;
+                                    cursor:pointer;
+                                    display:flex;
+                                    align-items:center;
+                                    justify-content:center;
+                                    font-size:16px;
+                                "
+                            >
+                                ↻
+                            </button>
+
+                            <button
+                                class="secondary-button"
+                                onclick="showView('marketplace')"
+                            >
+                                Lihat Marketplace →
+                            </button>
+                        </div>
 
                     </div>
 
@@ -22022,6 +22046,33 @@ prepareDailyViewState();
 
 let currentDashboardPeriod = "today";
 
+
+function refreshDashboard(){
+
+    /* REFRESH DASHBOARD */
+    prepareDailyViewState();
+
+    const periodSelect =
+        document.getElementById(
+            "dashboardPeriod"
+        );
+
+    const savedPeriod =
+        sellerBooksStorage.getItem(
+            "sellerbooks_dashboard_period"
+        );
+
+    if(
+        savedPeriod &&
+        periodSelect
+    ){
+        periodSelect.value = savedPeriod;
+        currentDashboardPeriod = savedPeriod;
+    }
+
+    updateDashboardByPeriod();
+
+}
 
 function changeDashboardPeriod(){
 
