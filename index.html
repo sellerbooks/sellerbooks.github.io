@@ -24845,446 +24845,99 @@ document.addEventListener(
 </script>
 
 
-
-<!-- =========================================================
-     SELLERBOOKS APK OWNER READ ONLY - FIX 3
-     SUMBER ASLI: index seller normal.html
-     MASTER/NORMAL TIDAK DIUBAH
-========================================================= -->
-<style id="sellerbooks-apk-owner-fix3-style">
-/*
- * PENTING:
- * Jangan menyembunyikan menu yang diizinkan dengan selector umum.
- * Kita hanya sembunyikan menu terlarang berdasarkan onclick asli.
- */
-
-/* Menu terlarang */
-body.sellerbooks-apk-owner
-.sidebar-menu
-.menu-item[onclick*="showView('marketplace'"]{
-    display:none !important;
-}
-
-body.sellerbooks-apk-owner
-.sidebar-menu
-.menu-item[onclick*="showView('stores'"]{
-    display:none !important;
-}
-
-body.sellerbooks-apk-owner
-.sidebar-menu
-.menu-item[onclick*="showView('products'"]{
-    display:none !important;
-}
-
-body.sellerbooks-apk-owner
-.sidebar-menu
-.menu-item[onclick*="showView('import'"]{
-    display:none !important;
-}
-
-body.sellerbooks-apk-owner
-.sidebar-menu
-.menu-item[onclick*="showView('costs'"]{
-    display:none !important;
-}
-
-body.sellerbooks-apk-owner
-.sidebar-menu
-.menu-item[onclick*="showView('settings'"]{
-    display:none !important;
-}
-
-/* Hanya judul kategori sidebar yang disembunyikan */
-body.sellerbooks-apk-owner
-.sidebar-menu
-.menu-title{
-    display:none !important;
-}
-
-/*
- * TIGA MENU YANG HARUS SELALU TERLIHAT
- * Dashboard, Rincian, Laporan.
- */
-body.sellerbooks-apk-owner
-.sidebar-menu
-.menu-item[onclick*="showView('dashboard'"]{
-    display:flex !important;
-    visibility:visible !important;
-}
-
-body.sellerbooks-apk-owner
-.sidebar-menu
-.menu-item[onclick*="showView('productAnalysis'"]{
-    display:flex !important;
-    visibility:visible !important;
-}
-
-body.sellerbooks-apk-owner
-.sidebar-menu
-.menu-item[onclick*="showView('reports'"]{
-    display:flex !important;
-    visibility:visible !important;
-}
-
-/*
- * KARTU PEMILIK:
- * HTML normal memang sudah mempunyai .sidebar-user,
- * .user-card, #userName, #userEmail dan #userAvatar.
- * Jangan menyembunyikannya.
- */
-body.sellerbooks-apk-owner .sidebar-user{
-    display:block !important;
-    visibility:visible !important;
-}
-
-body.sellerbooks-apk-owner .user-card{
-    display:flex !important;
-    visibility:visible !important;
-    opacity:1 !important;
-}
-
-body.sellerbooks-apk-owner #userName,
-body.sellerbooks-apk-owner #userEmail,
-body.sellerbooks-apk-owner #userAvatar{
-    visibility:visible !important;
-    opacity:1 !important;
-}
-
-/* Gmail dan Nama Pemilik tetap tampil */
-body.sellerbooks-apk-owner #userName{
-    display:block !important;
-}
-
-body.sellerbooks-apk-owner #userEmail{
-    display:block !important;
-}
-
-/* Logout tetap tampil */
-body.sellerbooks-apk-owner .logout-button{
-    display:flex !important;
-    visibility:visible !important;
-    opacity:1 !important;
-}
-
-/* Reset Identitas disembunyikan */
-body.sellerbooks-apk-owner .reset-identity-button{
-    display:none !important;
-}
-
-/* Tombol Lihat Marketplace */
-body.sellerbooks-apk-owner button[onclick*="marketplace"]{
-    display:none !important;
-}
-
-/* Panel Hapus Laporan */
-body.sellerbooks-apk-owner .sellerbooks-owner-delete-report{
-    display:none !important;
-}
-
-/* Tombol/fungsi mutasi yang sudah ditandai */
-body.sellerbooks-apk-owner .sellerbooks-owner-mutation{
-    display:none !important;
-}
-</style>
-
-<script id="sellerbooks-apk-owner-fix3-script">
+<script>
+/* =========================================================
+   SELLERBOOKS OWNER READ ONLY - APK UI MODE
+   TIDAK MENGUBAH SUPABASE AUTH / GOOGLE LOGIN
+========================================================= */
 (function(){
-
     "use strict";
 
-    function sellerBooksIsOwnerAPK(){
-        return /SellerBooksAPK\/1\.0/i.test(
-            String(navigator.userAgent || "")
-        );
+    const isOwnerAPK =
+        /SellerBooksAPK\/1\.0/i.test(navigator.userAgent || "");
+
+    if(!isOwnerAPK) return;
+
+    function hide(el){
+        if(el) el.style.setProperty("display","none","important");
     }
 
-    if(!sellerBooksIsOwnerAPK()){
-        return;
+    function show(el){
+        if(el) el.style.removeProperty("display");
     }
 
-    document.documentElement.classList.add("sellerbooks-apk-owner");
+    function applyOwnerMode(){
+        /* HANYA menu yang boleh terlihat */
+        const allowedViews = new Set(["dashboard","productAnalysis","reports"]);
 
-    function applyOwner(){
+        document.querySelectorAll(".sidebar .menu-item").forEach(function(btn){
+            const text = (btn.innerText || "").trim().toLowerCase();
 
-        if(!document.body){
-            return;
-        }
+            const onclick = btn.getAttribute("onclick") || "";
+            const match = onclick.match(/showView\(\s*['"]([^'"]+)['"]/i);
+            const view = match ? match[1] : "";
 
-        document.body.classList.add("sellerbooks-apk-owner");
+            const allowed =
+                view === "dashboard" ||
+                view === "productAnalysis" ||
+                view === "reports" ||
+                text.includes("dashboard") ||
+                text.includes("rincian") ||
+                text.includes("laporan");
 
-        /*
-         * Hanya menu terlarang yang diberi class hidden.
-         * Dashboard/Rincian/Laporan tidak pernah diberi class hidden.
-         */
-        var forbiddenViews = [
-            "marketplace",
-            "stores",
-            "products",
-            "import",
-            "costs",
-            "settings"
-        ];
+            if(!allowed) hide(btn);
+        });
 
+        /* Tombol "Lihat Marketplace" */
+        document.querySelectorAll("button, a").forEach(function(el){
+            const text = (el.innerText || "").trim().toLowerCase();
+            if(text.includes("lihat marketplace")) hide(el);
+        });
+
+        /* Reset Identitas */
+        document.querySelectorAll(".reset-identity-button").forEach(hide);
+
+        /* Hapus Laporan / aksi hapus */
+        document.querySelectorAll("button, a").forEach(function(el){
+            const text = (el.innerText || "").trim().toLowerCase();
+            if(text.includes("hapus laporan")) hide(el);
+        });
+
+        /* Aksi mutasi yang umum di halaman Rincian/Laporan */
         document.querySelectorAll(
-            ".sidebar-menu .menu-item"
-        ).forEach(function(menu){
+            ".product-edit,.product-delete,.product-toggle," +
+            ".store-edit-button,.store-delete-button,.store-toggle-button," +
+            ".product-bulk-delete-button," +
+            ".marketplace-more"
+        ).forEach(hide);
 
-            var onclick =
-                String(menu.getAttribute("onclick") || "");
+        /* Semua elemen yang ditandai khusus sebagai aksi owner */
+        document.querySelectorAll(".sellerbooks-owner-mutation").forEach(hide);
 
-            forbiddenViews.forEach(function(viewId){
-
-                if(
-                    onclick.indexOf(
-                        "showView('" + viewId + "'"
-                    ) !== -1
-                ){
-                    menu.style.setProperty(
-                        "display",
-                        "none",
-                        "important"
-                    );
-                }
-            });
+        /* Pastikan identitas + logout tetap tampil */
+        document.querySelectorAll(".sidebar-user,.logout-button").forEach(function(el){
+            el.style.removeProperty("display");
         });
-
-        /*
-         * Paksa menu yang diizinkan kembali tampil.
-         */
-        [
-            "dashboard",
-            "productAnalysis",
-            "reports"
-        ].forEach(function(viewId){
-
-            var selector =
-                ".sidebar-menu .menu-item[onclick*=\"showView('" +
-                viewId +
-                "'\"]";
-
-            document.querySelectorAll(selector)
-                .forEach(function(menu){
-
-                    menu.style.setProperty(
-                        "display",
-                        "flex",
-                        "important"
-                    );
-
-                    menu.style.setProperty(
-                        "visibility",
-                        "visible",
-                        "important"
-                    );
-                });
-        });
-
-        /*
-         * Identitas pemilik dan Gmail:
-         * jangan pernah diberi display:none.
-         */
-        var sidebarUser =
-            document.querySelector(".sidebar-user");
-
-        if(sidebarUser){
-            sidebarUser.style.setProperty(
-                "display",
-                "block",
-                "important"
-            );
-            sidebarUser.style.setProperty(
-                "visibility",
-                "visible",
-                "important"
-            );
-        }
-
-        var userCard =
-            document.querySelector(".sidebar-user .user-card");
-
-        if(userCard){
-            userCard.style.setProperty(
-                "display",
-                "flex",
-                "important"
-            );
-            userCard.style.setProperty(
-                "visibility",
-                "visible",
-                "important"
-            );
-        }
-
-        [
-            "userName",
-            "userEmail",
-            "userAvatar"
-        ].forEach(function(id){
-
-            var el = document.getElementById(id);
-
-            if(el){
-                el.style.setProperty(
-                    "visibility",
-                    "visible",
-                    "important"
-                );
-                el.style.setProperty(
-                    "opacity",
-                    "1",
-                    "important"
-                );
-            }
-        });
-
-        var logout =
-            document.querySelector(".logout-button");
-
-        if(logout){
-            logout.style.setProperty(
-                "display",
-                "flex",
-                "important"
-            );
-            logout.style.setProperty(
-                "visibility",
-                "visible",
-                "important"
-            );
-        }
-
-        /*
-         * Reset identitas tetap disembunyikan.
-         */
-        document.querySelectorAll(
-            ".reset-identity-button"
-        ).forEach(function(el){
-
-            el.style.setProperty(
-                "display",
-                "none",
-                "important"
-            );
-        });
-
-        /*
-         * Lihat Marketplace tetap disembunyikan.
-         */
-        document.querySelectorAll("button").forEach(function(btn){
-
-            var text = String(
-                btn.textContent || ""
-            )
-            .replace(/\s+/g," ")
-            .trim()
-            .toLowerCase();
-
-            if(
-                text.indexOf("lihat marketplace") !== -1
-            ){
-                btn.style.setProperty(
-                    "display",
-                    "none",
-                    "important"
-                );
-            }
-        });
-
-        /*
-         * Hapus Laporan.
-         */
-        document.querySelectorAll(".content-section")
-            .forEach(function(section){
-
-                var text = String(
-                    section.textContent || ""
-                )
-                .replace(/\s+/g," ")
-                .trim()
-                .toLowerCase();
-
-                if(
-                    text.indexOf("hapus laporan") !== -1 &&
-                    text.indexOf(
-                        "hapus data import penjualan"
-                    ) !== -1
-                ){
-                    section.style.setProperty(
-                        "display",
-                        "none",
-                        "important"
-                    );
-                }
-            });
     }
 
-    /*
-     * Jalankan setelah DOM siap.
-     */
+    /* Jalankan setelah DOM dan setelah render dinamis */
     if(document.readyState === "loading"){
-
-        document.addEventListener(
-            "DOMContentLoaded",
-            applyOwner,
-            {once:true}
-        );
-
+        document.addEventListener("DOMContentLoaded", applyOwnerMode);
     }else{
-
-        applyOwner();
-
+        applyOwnerMode();
     }
 
-    /*
-     * Render ulang SellerBooks tidak boleh membuat
-     * menu Owner hilang lagi.
-     */
-    var observerStarted = false;
+    setTimeout(applyOwnerMode, 500);
+    setTimeout(applyOwnerMode, 1500);
 
-    function startObserver(){
+    const observer = new MutationObserver(function(){
+        applyOwnerMode();
+    });
 
-        if(
-            observerStarted ||
-            !document.body
-        ){
-            return;
-        }
-
-        observerStarted = true;
-
-        var observer =
-            new MutationObserver(function(){
-
-                applyOwner();
-
-            });
-
-        observer.observe(
-            document.body,
-            {
-                childList:true,
-                subtree:true,
-                attributes:true,
-                attributeFilter:["class","style"]
-            }
-        );
-    }
-
-    if(document.readyState === "loading"){
-
-        document.addEventListener(
-            "DOMContentLoaded",
-            startObserver,
-            {once:true}
-        );
-
-    }else{
-
-        startObserver();
-
-    }
-
+    observer.observe(document.documentElement, {
+        childList:true,
+        subtree:true
+    });
 })();
 </script>
 
