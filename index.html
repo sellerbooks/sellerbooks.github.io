@@ -14395,7 +14395,8 @@ function renderMarketplacePerformance(){
             const isShopeeOrTiktok =
                 marketplaceName === "shopee" ||
                 marketplaceName === "tiktok" ||
-                marketplaceName === "tiktok shop";
+                marketplaceName === "tiktok shop" ||
+                marketplaceName === "tiktokshop";
 
             if(!isShopeeOrTiktok){
                 return true;
@@ -14427,8 +14428,8 @@ function renderMarketplacePerformance(){
                     const sameMarketplace =
                         (marketplaceName === "shopee" && otherName === "shopee") ||
                         (
-                            (marketplaceName === "tiktok" || marketplaceName === "tiktok shop") &&
-                            (otherName === "tiktok" || otherName === "tiktok shop")
+                            (marketplaceName === "tiktok" || marketplaceName === "tiktok shop" || marketplaceName === "tiktokshop") &&
+                            (otherName === "tiktok" || otherName === "tiktok shop" || otherName === "tiktokshop")
                         );
 
                     if(!sameMarketplace){
@@ -19228,29 +19229,40 @@ function populateSalesStoreAccounts(){
                 .trim()
                 .toLowerCase();
 
-
-            return (
-
-                itemId ===
-                normalizedMarketplace
-
+            const sameMarketplace =
+                itemId === normalizedMarketplace
                 ||
-
-                itemName ===
-                detectedMarketplace
-
+                itemName === detectedMarketplace
                 ||
-
                 (
                     normalizedMarketplace === "tiktok" &&
                     (
                         itemId === "tiktok" ||
-                        itemName === "tiktok shop"
+                        itemName === "tiktok shop" ||
+                        itemName === "tiktokshop"
                     )
-                )
+                );
 
-            );
+            if(!sameMarketplace){
+                return false;
+            }
 
+            /* Jika ada marketplace duplikat, pilih yang memiliki
+               akun toko aktif agar dropdown Import tidak kosong. */
+            return stores.some(function(store){
+                return store.status === "active" &&
+                    String(store.marketplaceId || "") === String(item.id || "");
+            });
+
+        }) ||
+        marketplaces.find(function(item){
+            const itemId = String(item.id || "").trim().toLowerCase();
+            const itemName = String(item.name || "").trim().toLowerCase();
+
+            return itemId === normalizedMarketplace
+                || itemName === detectedMarketplace
+                || (normalizedMarketplace === "tiktok" &&
+                    (itemId === "tiktok" || itemName === "tiktok shop" || itemName === "tiktokshop"));
         });
 
 
