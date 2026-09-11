@@ -23048,9 +23048,7 @@ function openCostModal(){
     document.getElementById(
         "costDate"
     ).value =
-        new Date()
-            .toISOString()
-            .split("T")[0];
+        getIndonesiaDateString(new Date());
 
 
     loadCostMarketplaceOptions("");
