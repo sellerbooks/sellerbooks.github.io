@@ -8442,7 +8442,7 @@ document.addEventListener(
                         <div style="display:flex;align-items:center;gap:8px;">
                             <button
                                 type="button"
-                                onclick="refreshDashboard()"
+                                onclick="sellerBooksManualRefreshDashboard()"
                                 title="Refresh Dashboard"
                                 aria-label="Refresh Dashboard"
                                 style="
@@ -22675,6 +22675,73 @@ prepareDailyViewState();
 
 let currentDashboardPeriod = "today";
 
+
+async function sellerBooksManualRefreshDashboard(){
+
+    /*
+       REFRESH TOMBOL DASHBOARD:
+       Ambil ulang data langsung dari Supabase.
+       Tidak melakukan setItem / penyimpanan ulang,
+       sehingga tombol refresh tidak dapat menimpa data cloud.
+    */
+
+    if(!sellerBooksAuthUser){
+        return;
+    }
+
+    try{
+
+        const {data,error} =
+            await sellerBooksSupabase
+                .from("sellerbooks_user_data")
+                .select("data")
+                .eq(
+                    "user_id",
+                    sellerBooksAuthUser.id
+                )
+                .maybeSingle();
+
+        if(error){
+            console.error(
+                "Refresh Dashboard dari Supabase gagal:",
+                error
+            );
+            return;
+        }
+
+        sellerBooksCloudState =
+            (data &&
+             data.data &&
+             typeof data.data === "object")
+                ? {...data.data}
+                : {};
+
+        sellerBooksCloudReady = true;
+
+        if(
+            typeof sellerBooksRefreshRuntimeFromCloud ===
+            "function"
+        ){
+            sellerBooksRefreshRuntimeFromCloud();
+        }
+
+        if(
+            typeof updateDashboardByPeriod ===
+            "function"
+        ){
+            updateDashboardByPeriod();
+        }
+
+    }catch(error){
+
+        console.error(
+            "Refresh Dashboard dari Supabase gagal:",
+            error
+        );
+
+    }
+
+}
 
 function refreshDashboard(){
 
