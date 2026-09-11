@@ -3945,7 +3945,18 @@ td{
    SELLERBOOKS REPORT UI
    TAHAP 1 - FILTER LAPORAN
 ===================================================== */
+/* =========================================
+   RESET IDENTITAS HANYA TERSEDIA DI KOMPUTER
+   SEMBUNYIKAN DI HP / MOBILE
+========================================= */
 
+@media (max-width:900px){
+
+    .sidebar .reset-identity-button{
+        display:none !important;
+    }
+
+}
 </style>
 
 <script>
@@ -22007,7 +22018,23 @@ async function logoutSellerBooks(){
 ========================================= */
 
 async function resetIdentity(){
+    /* =========================================
+       PENGAMAN RESET IDENTITAS
+       HANYA BOLEH DARI KOMPUTER
+    ========================================= */
 
+    const mobileDevice =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+        .test(navigator.userAgent);
+
+    if(mobileDevice){
+
+        alert(
+            "⚠️ Reset Identitas hanya dapat dilakukan melalui komputer/laptop."
+        );
+
+        return;
+    }
     const confirmReset = confirm(
         "Reset Nama Pemilik?\n\n" +
         "Nama Pemilik akan dikosongkan dan Anda " +
