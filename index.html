@@ -8472,7 +8472,7 @@ document.addEventListener(
                         <div style="display:flex;align-items:center;gap:8px;">
                             <button
                                 type="button"
-                                onclick="sellerBooksManualRefreshDashboard()"
+                                onclick="refreshDashboard()"
                                 title="Refresh Dashboard"
                                 aria-label="Refresh Dashboard"
                                 style="
@@ -12511,66 +12511,22 @@ async function sellerBooksLoadCloudData(){
 function sellerBooksRefreshRuntimeFromCloud(){
     try{
         if(typeof marketplaces!=="undefined"){
-            const cloudMarketplaces = JSON.parse(
-                sellerBooksStorageGetItem("sellerbooks_marketplaces") || "[]"
-            );
-
-            if(Array.isArray(cloudMarketplaces) && cloudMarketplaces.length){
-                marketplaces = cloudMarketplaces;
-            }
-
-            /* Pastikan marketplace sistem tetap tersedia setelah sinkronisasi realtime. */
-            const systemMarketplaces = [
-                {id:"shopee",name:"Shopee",icon:"🛍️",status:"active",system:true},
-                {id:"tiktok",name:"TikTok Shop",icon:"🎵",status:"active",system:true},
-                {id:"tokopedia",name:"Tokopedia",icon:"🟢",status:"inactive",system:true},
-                {id:"lazada",name:"Lazada",icon:"🔵",status:"inactive",system:true},
-                {id:"toco",name:"Toco",icon:"🟣",status:"inactive",system:true},
-                {id:"blibli",name:"Blibli",icon:"🔷",status:"inactive",system:true}
-            ];
-
-            systemMarketplaces.forEach(function(systemMarketplace){
-                const exists = marketplaces.some(function(item){
-                    return String(item?.id || "").trim().toLowerCase() ===
-                           systemMarketplace.id;
-                });
-
-                if(!exists){
-                    marketplaces.push({...systemMarketplace});
-                }
-            });
-
-            marketplaces = sellerBooksNormalizeMarketplaceList(marketplaces);
+            marketplaces=JSON.parse(sellerBooksStorageGetItem("sellerbooks_marketplaces")||"[]") || marketplaces;
         }
     }catch(error){}
     try{
         if(typeof stores!=="undefined"){
-            const cloudStores = JSON.parse(
-                sellerBooksStorageGetItem("sellerbooks_stores") || "[]"
-            );
-            if(Array.isArray(cloudStores)){
-                stores = cloudStores;
-            }
+            stores=JSON.parse(sellerBooksStorageGetItem("sellerbooks_stores")||"[]") || stores;
         }
     }catch(error){}
     try{
         if(typeof products!=="undefined"){
-            const cloudProducts = JSON.parse(
-                sellerBooksStorageGetItem("sellerbooks_products") || "[]"
-            );
-            if(Array.isArray(cloudProducts)){
-                products = cloudProducts;
-            }
+            products=JSON.parse(sellerBooksStorageGetItem("sellerbooks_products")||"[]") || products;
         }
     }catch(error){}
     try{
         if(typeof costs!=="undefined"){
-            const cloudCosts = JSON.parse(
-                sellerBooksStorageGetItem("sellerbooks_costs") || "[]"
-            );
-            if(Array.isArray(cloudCosts)){
-                costs = cloudCosts;
-            }
+            costs=JSON.parse(sellerBooksStorageGetItem("sellerbooks_costs")||"[]") || costs;
         }
     }catch(error){}
 }
@@ -14192,43 +14148,6 @@ function saveMarketplaceData(){
    - Memverifikasi ulang isi database setelah upsert.
    - Jika gagal, perubahan lokal dikembalikan.
 ===================================================== */
-async function sellerBooksPersistCloudDataStrict(expectedSnapshot, verification){
-    if(!sellerBooksAuthUser || !sellerBooksCloudReady){
-        throw new Error("Sinkronisasi Supabase belum siap.");
-    }
-
-    const snapshot = expectedSnapshot || {...sellerBooksCloudState};
-
-    sellerBooksCloudSavePromise = sellerBooksCloudSavePromise.then(async function(){
-        const {error}=await sellerBooksSupabase
-            .from("sellerbooks_user_data")
-            .upsert({
-                user_id:sellerBooksAuthUser.id,
-                data:snapshot,
-                updated_at:new Date().toISOString()
-            },{onConflict:"user_id"});
-
-        if(error)throw error;
-
-        const {data:verifyRow,error:verifyError}=await sellerBooksSupabase
-            .from("sellerbooks_user_data")
-            .select("data")
-            .eq("user_id",sellerBooksAuthUser.id)
-            .maybeSingle();
-
-        if(verifyError)throw verifyError;
-        if(!verifyRow || !verifyRow.data){
-            throw new Error("Verifikasi gagal: data SellerBooks tidak ditemukan setelah disimpan.");
-        }
-
-        if(typeof verification === "function" && !verification(verifyRow.data)){
-            throw new Error("Verifikasi gagal: perubahan belum tersimpan sesuai permintaan.");
-        }
-    });
-
-    return sellerBooksCloudSavePromise;
-}
-
 async function deleteMarketplace(id){
 
     const marketplace =
@@ -14347,8 +14266,6 @@ async function deleteMarketplace(id){
 ===================================================== */
 
 function renderMarketplaces(){
-
-    marketplaces = sellerBooksNormalizeMarketplaceList(marketplaces);
 
     const grid =
         document.getElementById("marketplaceGrid");
@@ -14470,7 +14387,9 @@ function renderMarketplaces(){
                     style="background:#fef2f2;color:#dc2626;"
                     onclick="deleteMarketplace('${marketplace.id}')"
                 >
+
                     Hapus
+
                 </button>
 
 
@@ -23000,73 +22919,6 @@ prepareDailyViewState();
 
 let currentDashboardPeriod = "today";
 
-
-async function sellerBooksManualRefreshDashboard(){
-
-    /*
-       REFRESH TOMBOL DASHBOARD:
-       Ambil ulang data langsung dari Supabase.
-       Tidak melakukan setItem / penyimpanan ulang,
-       sehingga tombol refresh tidak dapat menimpa data cloud.
-    */
-
-    if(!sellerBooksAuthUser){
-        return;
-    }
-
-    try{
-
-        const {data,error} =
-            await sellerBooksSupabase
-                .from("sellerbooks_user_data")
-                .select("data")
-                .eq(
-                    "user_id",
-                    sellerBooksAuthUser.id
-                )
-                .maybeSingle();
-
-        if(error){
-            console.error(
-                "Refresh Dashboard dari Supabase gagal:",
-                error
-            );
-            return;
-        }
-
-        sellerBooksCloudState =
-            (data &&
-             data.data &&
-             typeof data.data === "object")
-                ? {...data.data}
-                : {};
-
-        sellerBooksCloudReady = true;
-
-        if(
-            typeof sellerBooksRefreshRuntimeFromCloud ===
-            "function"
-        ){
-            sellerBooksRefreshRuntimeFromCloud();
-        }
-
-        if(
-            typeof updateDashboardByPeriod ===
-            "function"
-        ){
-            updateDashboardByPeriod();
-        }
-
-    }catch(error){
-
-        console.error(
-            "Refresh Dashboard dari Supabase gagal:",
-            error
-        );
-
-    }
-
-}
 
 function refreshDashboard(){
 
