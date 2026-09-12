@@ -12419,6 +12419,49 @@ async function sellerBooksPersistCloudDataNow(){
     return sellerBooksCloudSavePromise;
 }
 
+/*
+   PERSIST KHUSUS OPERASI KRITIS
+   Berbeda dari fungsi save biasa, fungsi ini TIDAK menelan error.
+   Setelah upsert berhasil, data dibaca kembali dari Supabase untuk
+   memastikan perubahan benar-benar sudah tersimpan di database.
+*/
+async function sellerBooksPersistCloudDataStrict(expectedSnapshot, verification){
+    if(!sellerBooksAuthUser || !sellerBooksCloudReady){
+        throw new Error("Sinkronisasi Supabase belum siap.");
+    }
+
+    const snapshot = expectedSnapshot || {...sellerBooksCloudState};
+
+    sellerBooksCloudSavePromise = sellerBooksCloudSavePromise.then(async function(){
+        const {error}=await sellerBooksSupabase
+            .from("sellerbooks_user_data")
+            .upsert({
+                user_id:sellerBooksAuthUser.id,
+                data:snapshot,
+                updated_at:new Date().toISOString()
+            },{onConflict:"user_id"});
+
+        if(error)throw error;
+
+        const {data:verifyRow,error:verifyError}=await sellerBooksSupabase
+            .from("sellerbooks_user_data")
+            .select("data")
+            .eq("user_id",sellerBooksAuthUser.id)
+            .maybeSingle();
+
+        if(verifyError)throw verifyError;
+        if(!verifyRow || !verifyRow.data){
+            throw new Error("Verifikasi gagal: data SellerBooks tidak ditemukan setelah disimpan.");
+        }
+
+        if(typeof verification === "function" && !verification(verifyRow.data)){
+            throw new Error("Verifikasi gagal: perubahan belum tersimpan sesuai permintaan.");
+        }
+    });
+
+    return sellerBooksCloudSavePromise;
+}
+
 function sellerBooksQueueCloudSave(){
     if(!sellerBooksAuthUser || !sellerBooksCloudReady)return;
     clearTimeout(sellerBooksCloudSaveTimer);
@@ -15218,6 +15261,12 @@ async function deleteMarketplace(id){
         return;
     }
 
+    /* Simpan kondisi lama agar bisa dikembalikan jika database gagal. */
+    const oldMarketplaces = JSON.parse(JSON.stringify(marketplaces));
+    const oldStores = Array.isArray(stores)
+        ? JSON.parse(JSON.stringify(stores))
+        : stores;
+
     marketplaces = marketplaces.filter(function(item){
         return item.id !== id;
     });
@@ -15234,8 +15283,77 @@ async function deleteMarketplace(id){
     renderMarketplaces();
     if(typeof renderStores === "function")renderStores();
 
-    if(typeof sellerBooksPersistCloudDataNow === "function")
-        await sellerBooksPersistCloudDataNow();
+    try{
+        if(typeof sellerBooksPersistCloudDataStrict !== "function")
+            throw new Error("Fungsi sinkronisasi kritis belum tersedia.");
+
+        /*
+           Karena storage SellerBooks disimpan sebagai JSON di
+           sellerbooks_user_data.data, verifikasi dilakukan terhadap
+           field marketplace dan toko setelah Supabase membaca ulang data.
+        */
+        const expectedSnapshot = {...sellerBooksCloudState};
+
+        await sellerBooksPersistCloudDataStrict(
+            expectedSnapshot,
+            function(savedData){
+                let savedMarketplaces = [];
+                let savedStores = [];
+
+                try{
+                    savedMarketplaces = JSON.parse(
+                        savedData["sellerbooks_marketplaces"] || "[]"
+                    ) || [];
+                }catch(error){
+                    return false;
+                }
+
+                try{
+                    savedStores = JSON.parse(
+                        savedData["sellerbooks_stores"] || "[]"
+                    ) || [];
+                }catch(error){
+                    return false;
+                }
+
+                const marketplaceStillExists = savedMarketplaces.some(function(item){
+                    return String(item.id || "") === String(id);
+                });
+
+                if(marketplaceStillExists)return false;
+
+                const linkedStoreStillExists = savedStores.some(function(store){
+                    return String(store.marketplaceId || "") === String(id);
+                });
+
+                return !linkedStoreStillExists;
+            }
+        );
+
+        alert(
+            "Marketplace \"" +
+            (marketplace.name || "Marketplace") +
+            "\" berhasil dihapus dan perubahan sudah terverifikasi tersimpan di database."
+        );
+
+    }catch(error){
+        console.error("Penghapusan marketplace gagal disimpan ke Supabase:",error);
+
+        /* Jangan biarkan tampilan lokal berbeda dari database jika gagal. */
+        marketplaces = oldMarketplaces;
+        stores = oldStores;
+
+        saveMarketplaceData();
+        if(typeof saveStoreData === "function")saveStoreData();
+        renderMarketplaces();
+        if(typeof renderStores === "function")renderStores();
+
+        alert(
+            "Marketplace belum jadi dihapus dari database.\n\n" +
+            "Perubahan dibatalkan karena verifikasi Supabase gagal.\n\n" +
+            "Detail: " + (error && error.message ? error.message : error)
+        );
+    }
 }
 
 function toggleMarketplace(id){
