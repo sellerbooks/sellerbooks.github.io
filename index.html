@@ -14221,6 +14221,16 @@ function renderMarketplaces(){
 
                 </button>
 
+                <button
+                    class="card-button"
+                    style="background:#fef2f2;color:#dc2626;"
+                    onclick="deleteMarketplace('${marketplace.id}')"
+                >
+
+                    Hapus
+
+                </button>
+
 
             </div>
 
@@ -15190,6 +15200,43 @@ function editMarketplace(id){
 /* =====================================================
    ACTIVATE / DEACTIVATE
 ===================================================== */
+
+async function deleteMarketplace(id){
+
+    const marketplace =
+        marketplaces.find(function(item){
+            return item.id === id;
+        });
+
+    if(!marketplace) return;
+
+    if(!confirm(
+        "Hapus marketplace \"" +
+        (marketplace.name || "Marketplace") +
+        "\"?\n\nData akun toko yang terhubung dengan marketplace ini juga akan dihapus."
+    )){
+        return;
+    }
+
+    marketplaces = marketplaces.filter(function(item){
+        return item.id !== id;
+    });
+
+    if(Array.isArray(stores)){
+        stores = stores.filter(function(store){
+            return String(store.marketplaceId || "") !== String(id);
+        });
+    }
+
+    saveMarketplaceData();
+    if(typeof saveStoreData === "function")saveStoreData();
+
+    renderMarketplaces();
+    if(typeof renderStores === "function")renderStores();
+
+    if(typeof sellerBooksPersistCloudDataNow === "function")
+        await sellerBooksPersistCloudDataNow();
+}
 
 function toggleMarketplace(id){
 
