@@ -8913,18 +8913,14 @@ document.addEventListener(
         <div class="product-toolbar-right">
 
 
-            <label
+            <button
                 class="secondary-button"
-                for="productImportFile"
-                role="button"
-                tabindex="0"
-                onclick="event.stopPropagation()"
-                onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('productImportFile').click();}"
+                onclick="sellerBooksOpenFilePicker('productImportFile')"
             >
 
                 📥 Import Excel
 
-            </label>
+            </button>
 
 
             <button
@@ -8971,7 +8967,6 @@ document.addEventListener(
         type="file"
         id="productImportFile"
         accept=".xlsx,.xls,.csv"
-        data-sellerbooks-file-input
         style="display:none"
         onchange="importProducts(this)"
     >
@@ -9152,11 +9147,9 @@ document.addEventListener(
 
     <!-- UPLOAD AREA -->
 
-    <label
+    <div
         class="import-upload-box"
-        for="salesImportFile"
-        role="button"
-        tabindex="0"
+        onclick="sellerBooksOpenFilePicker('salesImportFile')"
     >
 
         <div class="import-upload-icon">
@@ -9205,7 +9198,7 @@ document.addEventListener(
         </button>
 
 
-    </label>
+    </div>
 
 
     <!-- INPUT FILE -->
@@ -9214,7 +9207,6 @@ document.addEventListener(
         type="file"
         id="salesImportFile"
         accept=".xlsx,.xls,.csv"
-        data-sellerbooks-file-input
         style="display:none"
         onchange="analyzeSalesFile(this)"
     >
@@ -12287,21 +12279,9 @@ document.addEventListener(
 
 </div>
 
-<!-- SELLERBOOKS MOBILE FILE INPUT COMPATIBILITY -->
-<style>
-.secondary-button[for] {
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    text-decoration:none;
-    user-select:none;
-    -webkit-tap-highlight-color:transparent;
-}
-</style>
-
 <!-- ENGINE PEMBACA FILE SELLERBOOKS -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/xlsx/dist/xlsx.full.min.js'"></script>
-<script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js" onerror="this.onerror=null;this.src='https://unpkg.com/exceljs/dist/exceljs.min.js'"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
 
 <!-- =====================================================
      COST MODAL
@@ -18383,6 +18363,122 @@ function deleteProduct(id){
    IMPORT EXCEL
 ===================================================== */
 
+/* =====================================================
+   MOBILE FILE PICKER + EXCEL LIBRARY SAFETY
+   Tidak mengubah tampilan tombol/input.
+===================================================== */
+
+window.sellerBooksExcelLoader = window.sellerBooksExcelLoader || null;
+
+function sellerBooksOpenFilePicker(inputId){
+
+    const input = document.getElementById(inputId);
+
+    if(!input){
+        alert("Input file tidak ditemukan.");
+        return;
+    }
+
+    /* Izinkan memilih file yang sama lagi. */
+    input.value = "";
+
+    try{
+        /* showPicker() lebih konsisten pada browser mobile modern. */
+        if(typeof input.showPicker === "function"){
+            input.showPicker();
+            return;
+        }
+    }catch(error){
+        /* Lanjut ke fallback click(). */
+    }
+
+    try{
+        input.click();
+    }catch(error){
+        alert("Pemilih file tidak dapat dibuka pada perangkat ini.");
+    }
+}
+
+function sellerBooksLoadScript(src){
+
+    return new Promise(function(resolve, reject){
+
+        const existing = document.querySelector(
+            'script[data-sellerbooks-excel-src="' + src + '"]'
+        );
+
+        if(existing){
+            existing.addEventListener("load", resolve, {once:true});
+            existing.addEventListener("error", reject, {once:true});
+            return;
+        }
+
+        const script = document.createElement("script");
+        script.src = src;
+        script.async = true;
+        script.setAttribute("data-sellerbooks-excel-src", src);
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
+async function sellerBooksEnsureExcelLibraries(needExcelJS){
+
+    if(
+        typeof XLSX !== "undefined" &&
+        (!needExcelJS || typeof ExcelJS !== "undefined")
+    ){
+        return;
+    }
+
+    if(!window.sellerBooksExcelLoader){
+
+        window.sellerBooksExcelLoader = (async function(){
+
+            /* SheetJS: primary CDN lalu fallback CDN. */
+            if(typeof XLSX === "undefined"){
+
+                try{
+                    await sellerBooksLoadScript(
+                        "https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"
+                    );
+                }catch(error){
+                    await sellerBooksLoadScript(
+                        "https://unpkg.com/xlsx/dist/xlsx.full.min.js"
+                    );
+                }
+            }
+
+            /* ExcelJS hanya diperlukan untuk Export Master Produk. */
+            if(needExcelJS && typeof ExcelJS === "undefined"){
+
+                try{
+                    await sellerBooksLoadScript(
+                        "https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"
+                    );
+                }catch(error){
+                    await sellerBooksLoadScript(
+                        "https://unpkg.com/exceljs/dist/exceljs.min.js"
+                    );
+                }
+            }
+
+        })();
+    }
+
+    await window.sellerBooksExcelLoader;
+
+    if(typeof XLSX === "undefined"){
+        throw new Error("SheetJS tidak berhasil dimuat.");
+    }
+
+    if(needExcelJS && typeof ExcelJS === "undefined"){
+        throw new Error("ExcelJS tidak berhasil dimuat.");
+    }
+}
+
+
 function importProducts(input){
 
     const file = input.files[0];
@@ -18397,12 +18493,15 @@ function importProducts(input){
 
     if(typeof XLSX === "undefined"){
 
-        alert(
-
-            "Library Excel belum dimuat. " +
-            "Pastikan SheetJS sudah ditambahkan."
-
-        );
+        sellerBooksEnsureExcelLibraries(false)
+            .then(function(){
+                importProducts(input);
+            })
+            .catch(function(){
+                alert(
+                    "Engine Excel belum dapat dimuat. Periksa koneksi internet lalu coba lagi."
+                );
+            });
 
         return;
 
@@ -18866,43 +18965,19 @@ const stock = Math.max(
    DENGAN DROPDOWN STATUS
 ===================================================== */
 
-async function sellerBooksDownloadBlob(blob, filename){
-    /* MOBILE SAFE DOWNLOAD: Android WebView dapat memakai Share/Save */
-    try{
-        if(navigator.share && typeof File !== "undefined"){
-            const file = new File([blob], filename, {type:blob.type || "application/octet-stream"});
-            if(!navigator.canShare || navigator.canShare({files:[file]})){
-                await navigator.share({files:[file], title:filename});
-                return true;
-            }
-        }
-    }catch(error){}
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    link.rel = "noopener";
-    link.style.display = "none";
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(function(){
-        if(link.parentNode) link.parentNode.removeChild(link);
-        URL.revokeObjectURL(url);
-    },1000);
-    return true;
-}
-
 async function exportProducts(){
 
     /* CEK LIBRARY EXCEL */
     if(typeof ExcelJS === "undefined"){
 
-        alert(
-            "Library Excel belum dimuat."
-        );
-
-        return;
+        try{
+            await sellerBooksEnsureExcelLibraries(true);
+        }catch(error){
+            alert(
+                "Engine Excel belum dapat dimuat. Periksa koneksi internet lalu coba lagi."
+            );
+            return;
+        }
     }
 
 
@@ -19311,10 +19386,28 @@ async function exportProducts(){
         );
 
 
-    await sellerBooksDownloadBlob(
-        blob,
-        "MASTER_PRODUK_SELLERBOOKS.xlsx"
-    );
+    const url =
+        URL.createObjectURL(blob);
+
+
+    const link =
+        document.createElement("a");
+
+
+    link.href = url;
+
+    link.download =
+        "MASTER_PRODUK_SELLERBOOKS.xlsx";
+
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+
+    URL.revokeObjectURL(url);
 
 }
 /* =====================================================
@@ -20784,15 +20877,15 @@ function analyzeSalesFile(input){
 
     if(typeof XLSX === "undefined"){
 
-
-        alert(
-
-            "Engine pembaca file belum aktif.\n\n" +
-
-            "Pastikan SheetJS sudah dipasang."
-
-        );
-
+        sellerBooksEnsureExcelLibraries(false)
+            .then(function(){
+                analyzeSalesFile(input);
+            })
+            .catch(function(){
+                alert(
+                    "Engine pembaca file belum dapat dimuat. Periksa koneksi internet lalu coba lagi."
+                );
+            });
 
         return;
 
