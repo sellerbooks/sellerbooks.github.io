@@ -8472,7 +8472,7 @@ document.addEventListener(
                         <div style="display:flex;align-items:center;gap:8px;">
                             <button
                                 type="button"
-                                onclick="refreshDashboard()"
+                                onclick="sellerBooksManualRefreshDashboard()"
                                 title="Refresh Dashboard"
                                 aria-label="Refresh Dashboard"
                                 style="
@@ -12446,6 +12446,43 @@ async function sellerBooksPersistCloudDataNow(){
     }).catch(function(error){
         console.error("Sinkronisasi data SellerBooks ke Supabase gagal:",error);
     });
+    return sellerBooksCloudSavePromise;
+}
+
+function sellerBooksPersistCloudDataStrict(expectedSnapshot, verification){
+    if(!sellerBooksAuthUser || !sellerBooksCloudReady){
+        throw new Error("Sinkronisasi Supabase belum siap.");
+    }
+
+    const snapshot = expectedSnapshot || {...sellerBooksCloudState};
+
+    sellerBooksCloudSavePromise = sellerBooksCloudSavePromise.then(async function(){
+        const {error}=await sellerBooksSupabase
+            .from("sellerbooks_user_data")
+            .upsert({
+                user_id:sellerBooksAuthUser.id,
+                data:snapshot,
+                updated_at:new Date().toISOString()
+            },{onConflict:"user_id"});
+
+        if(error)throw error;
+
+        const {data:verifyRow,error:verifyError}=await sellerBooksSupabase
+            .from("sellerbooks_user_data")
+            .select("data")
+            .eq("user_id",sellerBooksAuthUser.id)
+            .maybeSingle();
+
+        if(verifyError)throw verifyError;
+        if(!verifyRow || !verifyRow.data){
+            throw new Error("Verifikasi gagal: data SellerBooks tidak ditemukan setelah disimpan.");
+        }
+
+        if(typeof verification === "function" && !verification(verifyRow.data)){
+            throw new Error("Verifikasi gagal: perubahan belum tersimpan sesuai permintaan.");
+        }
+    });
+
     return sellerBooksCloudSavePromise;
 }
 
@@ -22919,6 +22956,73 @@ prepareDailyViewState();
 
 let currentDashboardPeriod = "today";
 
+
+async function sellerBooksManualRefreshDashboard(){
+
+    /*
+       REFRESH TOMBOL DASHBOARD:
+       Ambil ulang data langsung dari Supabase.
+       Tidak melakukan setItem / penyimpanan ulang,
+       sehingga tombol refresh tidak dapat menimpa data cloud.
+    */
+
+    if(!sellerBooksAuthUser){
+        return;
+    }
+
+    try{
+
+        const {data,error} =
+            await sellerBooksSupabase
+                .from("sellerbooks_user_data")
+                .select("data")
+                .eq(
+                    "user_id",
+                    sellerBooksAuthUser.id
+                )
+                .maybeSingle();
+
+        if(error){
+            console.error(
+                "Refresh Dashboard dari Supabase gagal:",
+                error
+            );
+            return;
+        }
+
+        sellerBooksCloudState =
+            (data &&
+             data.data &&
+             typeof data.data === "object")
+                ? {...data.data}
+                : {};
+
+        sellerBooksCloudReady = true;
+
+        if(
+            typeof sellerBooksRefreshRuntimeFromCloud ===
+            "function"
+        ){
+            sellerBooksRefreshRuntimeFromCloud();
+        }
+
+        if(
+            typeof updateDashboardByPeriod ===
+            "function"
+        ){
+            updateDashboardByPeriod();
+        }
+
+    }catch(error){
+
+        console.error(
+            "Refresh Dashboard dari Supabase gagal:",
+            error
+        );
+
+    }
+
+}
 
 function refreshDashboard(){
 
