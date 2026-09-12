@@ -12449,6 +12449,47 @@ async function sellerBooksPersistCloudDataNow(){
     return sellerBooksCloudSavePromise;
 }
 
+/*
+   PERSIST KHUSUS OPERASI KRITIS
+   Tidak menelan error dan melakukan verifikasi ulang ke Supabase.
+*/
+async function sellerBooksPersistCloudDataStrict(expectedSnapshot, verification){
+    if(!sellerBooksAuthUser || !sellerBooksCloudReady){
+        throw new Error("Sinkronisasi Supabase belum siap.");
+    }
+
+    const snapshot = expectedSnapshot || {...sellerBooksCloudState};
+
+    sellerBooksCloudSavePromise = sellerBooksCloudSavePromise.then(async function(){
+        const {error}=await sellerBooksSupabase
+            .from("sellerbooks_user_data")
+            .upsert({
+                user_id:sellerBooksAuthUser.id,
+                data:snapshot,
+                updated_at:new Date().toISOString()
+            },{onConflict:"user_id"});
+
+        if(error)throw error;
+
+        const {data:verifyRow,error:verifyError}=await sellerBooksSupabase
+            .from("sellerbooks_user_data")
+            .select("data")
+            .eq("user_id",sellerBooksAuthUser.id)
+            .maybeSingle();
+
+        if(verifyError)throw verifyError;
+        if(!verifyRow || !verifyRow.data){
+            throw new Error("Verifikasi gagal: data SellerBooks tidak ditemukan setelah disimpan.");
+        }
+
+        if(typeof verification === "function" && !verification(verifyRow.data)){
+            throw new Error("Verifikasi gagal: perubahan belum tersimpan sesuai permintaan.");
+        }
+    });
+
+    return sellerBooksCloudSavePromise;
+}
+
 function sellerBooksQueueCloudSave(){
     if(!sellerBooksAuthUser || !sellerBooksCloudReady)return;
     clearTimeout(sellerBooksCloudSaveTimer);
@@ -22967,10 +23008,13 @@ let currentDashboardPeriod = "today";
 async function sellerBooksManualRefreshDashboard(){
 
     /*
-       REFRESH TOMBOL DASHBOARD:
-       Ambil ulang data langsung dari Supabase.
-       Tidak melakukan setItem / penyimpanan ulang,
-       sehingga tombol refresh tidak dapat menimpa data cloud.
+       REFRESH DASHBOARD:
+       - Jangan pernah mengganti cloudState dengan {} jika database
+         mengembalikan data kosong/tidak lengkap.
+       - Tunggu penyimpanan yang sedang berjalan agar refresh tidak
+         membaca data lama ketika ada perubahan yang baru saja dibuat.
+       - Setelah data Supabase berhasil dibaca, render ulang dashboard
+         menggunakan state yang sama dengan saat halaman pertama dibuka.
     */
 
     if(!sellerBooksAuthUser){
@@ -22978,57 +23022,86 @@ async function sellerBooksManualRefreshDashboard(){
     }
 
     try{
+        /* Jika ada timer save yang masih menunggu, jalankan sekarang. */
+        if(sellerBooksCloudSaveTimer){
+            clearTimeout(sellerBooksCloudSaveTimer);
+            sellerBooksCloudSaveTimer=null;
+            if(sellerBooksCloudReady){
+                await sellerBooksPersistCloudDataNow();
+            }
+        }else{
+            await sellerBooksCloudSavePromise;
+        }
 
-        const {data,error} =
-            await sellerBooksSupabase
-                .from("sellerbooks_user_data")
-                .select("data")
-                .eq(
-                    "user_id",
-                    sellerBooksAuthUser.id
-                )
-                .maybeSingle();
+        const {data,error}=await sellerBooksSupabase
+            .from("sellerbooks_user_data")
+            .select("data")
+            .eq("user_id",sellerBooksAuthUser.id)
+            .maybeSingle();
 
         if(error){
-            console.error(
-                "Refresh Dashboard dari Supabase gagal:",
-                error
-            );
+            console.error("Refresh Dashboard dari Supabase gagal:",error);
+            /* Database gagal dibaca: jangan hapus state yang sedang tampil. */
+            if(typeof updateDashboardByPeriod === "function"){
+                updateDashboardByPeriod();
+            }
             return;
         }
 
-        sellerBooksCloudState =
-            (data &&
-             data.data &&
-             typeof data.data === "object")
-                ? {...data.data}
-                : {};
+        const fetchedData =
+            (data && data.data && typeof data.data === "object")
+                ? data.data
+                : null;
 
-        sellerBooksCloudReady = true;
+        /*
+           Hanya mengganti state jika Supabase benar-benar mengembalikan
+           object data yang berisi isi aplikasi. Object kosong tidak boleh
+           membuat seluruh angka dashboard berubah menjadi Rp0/0 PCS.
+        */
+        if(fetchedData && Object.keys(fetchedData).length>0){
+            sellerBooksCloudState={...fetchedData};
+            sellerBooksCloudReady=true;
+        }else if(!sellerBooksCloudReady){
+            sellerBooksCloudState={};
+            sellerBooksCloudReady=true;
+        }
 
-        if(
-            typeof sellerBooksRefreshRuntimeFromCloud ===
-            "function"
-        ){
+        if(typeof sellerBooksRefreshRuntimeFromCloud === "function"){
             sellerBooksRefreshRuntimeFromCloud();
         }
 
-        if(
-            typeof updateDashboardByPeriod ===
-            "function"
-        ){
+        if(typeof loadSellerBooksSettings === "function"){
+            loadSellerBooksSettings();
+        }
+        if(typeof renderMarketplaces === "function"){
+            renderMarketplaces();
+        }
+        if(typeof renderStores === "function"){
+            renderStores();
+        }
+        if(typeof renderProducts === "function"){
+            renderProducts();
+        }
+        if(typeof renderCosts === "function"){
+            renderCosts();
+        }
+        if(typeof updateDashboardByPeriod === "function"){
             updateDashboardByPeriod();
+        }
+        if(typeof updateReports === "function"){
+            updateReports();
+        }
+        if(typeof renderProductAnalysis === "function"){
+            renderProductAnalysis();
         }
 
     }catch(error){
-
-        console.error(
-            "Refresh Dashboard dari Supabase gagal:",
-            error
-        );
-
+        console.error("Refresh Dashboard dari Supabase gagal:",error);
+        /* Jangan mengosongkan state jika refresh gagal. */
+        if(typeof updateDashboardByPeriod === "function"){
+            updateDashboardByPeriod();
+        }
     }
-
 }
 
 function refreshDashboard(){
