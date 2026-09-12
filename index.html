@@ -1186,6 +1186,23 @@ td{
 }
 
 
+/* MARKETPLACE LOGO IMAGE */
+
+.marketplace-icon img{
+
+    width:26px;
+    height:26px;
+
+    max-width:100%;
+    max-height:100%;
+
+    object-fit:contain;
+
+    display:block;
+
+}
+
+
 /* EMPTY */
 
 .empty-state{
@@ -1355,7 +1372,6 @@ td{
     display:block;
 
 }
-
 
 .store-marketplace-icon img{
 
@@ -14159,6 +14175,23 @@ let editingMarketplaceId = null;
 
 
 /* =====================================================
+   SAVE LOCAL
+===================================================== */
+
+function saveMarketplaceData(){
+
+    sellerBooksStorage.setItem(
+
+        "sellerbooks_marketplaces",
+
+        JSON.stringify(marketplaces)
+
+    );
+
+}
+
+
+/* =====================================================
    MARKETPLACE LOGO
    LOGO STATIS DARI GITHUB REPOSITORY
 ===================================================== */
@@ -14173,7 +14206,13 @@ function getMarketplaceLogoHTML(marketplace){
         "tiktok":
             "assets/marketplace/tiktok-shop.png",
 
+        "tiktokshop":
+            "assets/marketplace/tiktok-shop.png",
+
         "tokopedia":
+            "assets/marketplace/tokopedia.png",
+
+        "tokped":
             "assets/marketplace/tokopedia.png",
 
         "lazada":
@@ -14187,21 +14226,29 @@ function getMarketplaceLogoHTML(marketplace){
 
     };
 
+    const normalizeMarketplaceKey =
+        function(value){
+
+            return String(value || "")
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, "");
+
+        };
 
     const marketplaceId =
-        String(
-            marketplace &&
-            marketplace.id
-            ? marketplace.id
-            : ""
-        )
-        .trim()
-        .toLowerCase();
+        normalizeMarketplaceKey(
+            marketplace && marketplace.id
+        );
 
+    const marketplaceName =
+        normalizeMarketplaceKey(
+            marketplace && marketplace.name
+        );
 
     const logoPath =
-        logoMap[marketplaceId];
-
+        logoMap[marketplaceId] ||
+        logoMap[marketplaceName];
 
     if(!logoPath){
 
@@ -14211,37 +14258,18 @@ function getMarketplaceLogoHTML(marketplace){
 
     }
 
-
-    const marketplaceName =
+    const displayName =
         marketplace && marketplace.name
         ? String(marketplace.name)
         : "Marketplace";
 
-
     return `
         <img
             src="${logoPath}"
-            alt="${marketplaceName}"
+            alt="${displayName}"
             loading="lazy"
         >
     `;
-
-}
-
-
-/* =====================================================
-   SAVE LOCAL
-===================================================== */
-
-function saveMarketplaceData(){
-
-    sellerBooksStorage.setItem(
-
-        "sellerbooks_marketplaces",
-
-        JSON.stringify(marketplaces)
-
-    );
 
 }
 
@@ -15136,8 +15164,7 @@ function renderMarketplacePerformance(){
                     row.marketplace;
 
                 const marketplaceIcon =
-                    marketplace.icon ||
-                    "🛍️";
+                    getMarketplaceLogoHTML(marketplace);
 
                 return `
                     <tr>
