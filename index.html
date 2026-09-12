@@ -1821,6 +1821,146 @@ td{
 
 }
 
+/* DROPDOWN MARKETPLACE DENGAN LOGO PNG */
+
+.store-filter #storeMarketplaceFilter{
+
+    display:none !important;
+
+}
+
+.store-marketplace-custom-filter{
+
+    position:relative;
+    width:100%;
+
+}
+
+.store-marketplace-custom-button{
+
+    width:100%;
+    min-height:42px;
+    border:1px solid var(--border);
+    background:white;
+    border-radius:9px;
+    padding:6px 12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    cursor:pointer;
+    font:inherit;
+    color:var(--text);
+    text-align:left;
+}
+
+.store-marketplace-custom-button:hover{
+
+    border-color:#93c5fd;
+
+}
+
+.store-marketplace-custom-button-content{
+
+    display:flex;
+    align-items:center;
+    gap:9px;
+    min-width:0;
+    flex:1;
+
+}
+
+.store-marketplace-custom-logo{
+
+    width:28px;
+    height:28px;
+    border-radius:7px;
+    background:#f1f5f9;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 28px;
+    overflow:hidden;
+
+}
+
+.store-marketplace-custom-logo img{
+
+    width:22px;
+    height:22px;
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+    display:block;
+
+}
+
+.store-marketplace-custom-label{
+
+    font-size:13px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+
+}
+
+.store-marketplace-custom-arrow{
+
+    font-size:16px;
+    color:var(--muted);
+    line-height:1;
+    flex:0 0 auto;
+
+}
+
+.store-marketplace-custom-options{
+
+    display:none;
+    position:absolute;
+    left:0;
+    right:0;
+    top:calc(100% + 5px);
+    background:white;
+    border:1px solid var(--border);
+    border-radius:10px;
+    box-shadow:0 12px 28px rgba(15,23,42,.12);
+    padding:5px;
+    z-index:1000;
+    max-height:260px;
+    overflow-y:auto;
+
+}
+
+.store-marketplace-custom-filter.open .store-marketplace-custom-options{
+
+    display:block;
+
+}
+
+.store-marketplace-custom-option{
+
+    width:100%;
+    border:none;
+    background:transparent;
+    border-radius:8px;
+    padding:7px 8px;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    cursor:pointer;
+    color:var(--text);
+    font:inherit;
+    text-align:left;
+
+}
+
+.store-marketplace-custom-option:hover,
+.store-marketplace-custom-option.active{
+
+    background:#eff6ff;
+
+}
+
 
 .stores-grid{
 
@@ -8696,6 +8836,8 @@ document.addEventListener(
             id="storeMarketplaceFilter"
             class="form-control"
             onchange="renderStores()"
+            aria-hidden="true"
+            tabindex="-1"
         >
 
             <option value="all">
@@ -8705,6 +8847,34 @@ document.addEventListener(
             </option>
 
         </select>
+
+        <div
+            id="storeMarketplaceCustomFilter"
+            class="store-marketplace-custom-filter"
+        >
+
+            <button
+                type="button"
+                id="storeMarketplaceCustomButton"
+                class="store-marketplace-custom-button"
+                onclick="toggleStoreMarketplaceFilter(event)"
+            >
+
+                <span
+                    id="storeMarketplaceCustomButtonContent"
+                    class="store-marketplace-custom-button-content"
+                ></span>
+
+                <span class="store-marketplace-custom-arrow">⌄</span>
+
+            </button>
+
+            <div
+                id="storeMarketplaceCustomOptions"
+                class="store-marketplace-custom-options"
+            ></div>
+
+        </div>
 
     </div>
 
@@ -14164,7 +14334,7 @@ let marketplaces = JSON.parse(
     {
         id:"tiktok",
         name:"TikTok Shop",
-        icon:"🛍️",
+        icon:"🎵",
         status:"active",
         system:true
     },
@@ -14172,7 +14342,7 @@ let marketplaces = JSON.parse(
     {
         id:"tokopedia",
         name:"Tokopedia",
-        icon:"🛍️",
+        icon:"🟢",
         status:"inactive",
         system:true
     },
@@ -14180,7 +14350,7 @@ let marketplaces = JSON.parse(
     {
         id:"lazada",
         name:"Lazada",
-        icon:"🛍️",
+        icon:"🔵",
         status:"inactive",
         system:true
     },
@@ -14188,7 +14358,7 @@ let marketplaces = JSON.parse(
     {
         id:"toco",
         name:"Toco",
-        icon:"🛍️",
+        icon:"🟣",
         status:"inactive",
         system:true
     },
@@ -14196,7 +14366,7 @@ let marketplaces = JSON.parse(
     {
         id:"blibli",
         name:"Blibli",
-        icon:"🛍️",
+        icon:"🔷",
         status:"inactive",
         system:true
     }
@@ -15781,6 +15951,27 @@ function renderStoreMarketplaceFilter(){
         );
 
 
+    const customFilter =
+
+        document.getElementById(
+            "storeMarketplaceCustomFilter"
+        );
+
+
+    const customButtonContent =
+
+        document.getElementById(
+            "storeMarketplaceCustomButtonContent"
+        );
+
+
+    const customOptions =
+
+        document.getElementById(
+            "storeMarketplaceCustomOptions"
+        );
+
+
     if(!filter) return;
 
 
@@ -15809,7 +16000,6 @@ function renderStoreMarketplaceFilter(){
 
             <option value="${marketplace.id}">
 
-                ${marketplace.icon}
                 ${marketplace.name}
 
             </option>
@@ -15838,8 +16028,143 @@ function renderStoreMarketplaceFilter(){
         ? currentValue
         : "all";
 
+
+    if(!customFilter || !customButtonContent || !customOptions){
+        return;
+    }
+
+
+    const selectedMarketplace =
+
+        filter.value === "all"
+        ? null
+        : activeMarketplaces.find(function(marketplace){
+
+            return marketplace.id === filter.value;
+
+        });
+
+
+    customButtonContent.innerHTML = selectedMarketplace
+
+        ? `
+            <span class="store-marketplace-custom-logo">
+                ${getMarketplaceLogoHTML(selectedMarketplace)}
+            </span>
+            <span class="store-marketplace-custom-label">
+                ${selectedMarketplace.name}
+            </span>
+        `
+
+        : `
+            <span class="store-marketplace-custom-logo">
+                <span style="font-size:15px;">▦</span>
+            </span>
+            <span class="store-marketplace-custom-label">
+                Semua Marketplace
+            </span>
+        `;
+
+
+    customOptions.innerHTML = `
+
+        <button
+            type="button"
+            class="store-marketplace-custom-option ${filter.value === "all" ? "active" : ""}"
+            onclick="selectStoreMarketplaceFilter('all', event)"
+        >
+            <span class="store-marketplace-custom-logo">
+                <span style="font-size:15px;">▦</span>
+            </span>
+            <span class="store-marketplace-custom-label">
+                Semua Marketplace
+            </span>
+        </button>
+
+    `;
+
+
+    activeMarketplaces.forEach(function(marketplace){
+
+        customOptions.innerHTML += `
+
+            <button
+                type="button"
+                class="store-marketplace-custom-option ${filter.value === marketplace.id ? "active" : ""}"
+                onclick="selectStoreMarketplaceFilter('${marketplace.id}', event)"
+            >
+                <span class="store-marketplace-custom-logo">
+                    ${getMarketplaceLogoHTML(marketplace)}
+                </span>
+                <span class="store-marketplace-custom-label">
+                    ${marketplace.name}
+                </span>
+            </button>
+
+        `;
+
+    });
+
 }
 
+
+function toggleStoreMarketplaceFilter(event){
+
+    if(event){
+        event.stopPropagation();
+    }
+
+    const customFilter =
+        document.getElementById("storeMarketplaceCustomFilter");
+
+    if(!customFilter) return;
+
+    customFilter.classList.toggle("open");
+
+}
+
+
+function selectStoreMarketplaceFilter(value, event){
+
+    if(event){
+        event.stopPropagation();
+    }
+
+    const filter =
+        document.getElementById("storeMarketplaceFilter");
+
+    const customFilter =
+        document.getElementById("storeMarketplaceCustomFilter");
+
+    if(!filter) return;
+
+    filter.value = value;
+
+    if(customFilter){
+        customFilter.classList.remove("open");
+    }
+
+    renderStores();
+
+}
+
+
+if(!window.sellerBooksStoreMarketplaceFilterOutsideHandler){
+
+    window.sellerBooksStoreMarketplaceFilterOutsideHandler = true;
+
+    document.addEventListener("click", function(){
+
+        const customFilter =
+            document.getElementById("storeMarketplaceCustomFilter");
+
+        if(customFilter){
+            customFilter.classList.remove("open");
+        }
+
+    });
+
+}
 
 
 /* =====================================================
