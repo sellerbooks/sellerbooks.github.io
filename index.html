@@ -4903,7 +4903,7 @@ function loadDeleteReportStoreFilter(){
     }
 }
 
-function deleteReportsByDateRange(){
+async function deleteReportsByDateRange(){
     const fromValue = getReportInputDate("deleteReportDateFrom");
     const toValue = getReportInputDate("deleteReportDateTo");
 
@@ -5059,6 +5059,36 @@ function deleteReportsByDateRange(){
     );
 
     updateReports();
+
+    /* Pastikan penghapusan benar-benar tersimpan di Supabase
+       sebelum memberi konfirmasi berhasil. */
+    try{
+        if(sellerBooksCloudSaveTimer){
+            clearTimeout(sellerBooksCloudSaveTimer);
+            sellerBooksCloudSaveTimer=null;
+        }
+
+        await sellerBooksCloudSavePromise;
+
+        if(sellerBooksAuthUser && sellerBooksCloudReady){
+            const {error:deleteSaveError}=await sellerBooksSupabase
+                .from("sellerbooks_user_data")
+                .upsert({
+                    user_id:sellerBooksAuthUser.id,
+                    data:{...sellerBooksCloudState},
+                    updated_at:new Date().toISOString()
+                },{onConflict:"user_id"});
+
+            if(deleteSaveError)throw deleteSaveError;
+        }
+    }catch(error){
+        console.error("Penghapusan laporan gagal disimpan ke Supabase:",error);
+        alert(
+            "Laporan belum dapat dipastikan terhapus dari database.\n\n" +
+            "Silakan periksa koneksi internet lalu coba lagi."
+        );
+        return;
+    }
 
     alert(
         "Laporan berhasil dihapus.\n" +
@@ -8442,7 +8472,7 @@ document.addEventListener(
                         <div style="display:flex;align-items:center;gap:8px;">
                             <button
                                 type="button"
-                                onclick="sellerBooksManualRefreshDashboard()"
+                                onclick="refreshDashboard()"
                                 title="Refresh Dashboard"
                                 aria-label="Refresh Dashboard"
                                 style="
@@ -12419,49 +12449,6 @@ async function sellerBooksPersistCloudDataNow(){
     return sellerBooksCloudSavePromise;
 }
 
-/*
-   PERSIST KHUSUS OPERASI KRITIS
-   Berbeda dari fungsi save biasa, fungsi ini TIDAK menelan error.
-   Setelah upsert berhasil, data dibaca kembali dari Supabase untuk
-   memastikan perubahan benar-benar sudah tersimpan di database.
-*/
-async function sellerBooksPersistCloudDataStrict(expectedSnapshot, verification){
-    if(!sellerBooksAuthUser || !sellerBooksCloudReady){
-        throw new Error("Sinkronisasi Supabase belum siap.");
-    }
-
-    const snapshot = expectedSnapshot || {...sellerBooksCloudState};
-
-    sellerBooksCloudSavePromise = sellerBooksCloudSavePromise.then(async function(){
-        const {error}=await sellerBooksSupabase
-            .from("sellerbooks_user_data")
-            .upsert({
-                user_id:sellerBooksAuthUser.id,
-                data:snapshot,
-                updated_at:new Date().toISOString()
-            },{onConflict:"user_id"});
-
-        if(error)throw error;
-
-        const {data:verifyRow,error:verifyError}=await sellerBooksSupabase
-            .from("sellerbooks_user_data")
-            .select("data")
-            .eq("user_id",sellerBooksAuthUser.id)
-            .maybeSingle();
-
-        if(verifyError)throw verifyError;
-        if(!verifyRow || !verifyRow.data){
-            throw new Error("Verifikasi gagal: data SellerBooks tidak ditemukan setelah disimpan.");
-        }
-
-        if(typeof verification === "function" && !verification(verifyRow.data)){
-            throw new Error("Verifikasi gagal: perubahan belum tersimpan sesuai permintaan.");
-        }
-    });
-
-    return sellerBooksCloudSavePromise;
-}
-
 function sellerBooksQueueCloudSave(){
     if(!sellerBooksAuthUser || !sellerBooksCloudReady)return;
     clearTimeout(sellerBooksCloudSaveTimer);
@@ -12524,22 +12511,66 @@ async function sellerBooksLoadCloudData(){
 function sellerBooksRefreshRuntimeFromCloud(){
     try{
         if(typeof marketplaces!=="undefined"){
-            marketplaces=JSON.parse(sellerBooksStorageGetItem("sellerbooks_marketplaces")||"[]") || marketplaces;
+            const cloudMarketplaces = JSON.parse(
+                sellerBooksStorageGetItem("sellerbooks_marketplaces") || "[]"
+            );
+
+            if(Array.isArray(cloudMarketplaces) && cloudMarketplaces.length){
+                marketplaces = cloudMarketplaces;
+            }
+
+            /* Pastikan marketplace sistem tetap tersedia setelah sinkronisasi realtime. */
+            const systemMarketplaces = [
+                {id:"shopee",name:"Shopee",icon:"🛍️",status:"active",system:true},
+                {id:"tiktok",name:"TikTok Shop",icon:"🎵",status:"active",system:true},
+                {id:"tokopedia",name:"Tokopedia",icon:"🟢",status:"inactive",system:true},
+                {id:"lazada",name:"Lazada",icon:"🔵",status:"inactive",system:true},
+                {id:"toco",name:"Toco",icon:"🟣",status:"inactive",system:true},
+                {id:"blibli",name:"Blibli",icon:"🔷",status:"inactive",system:true}
+            ];
+
+            systemMarketplaces.forEach(function(systemMarketplace){
+                const exists = marketplaces.some(function(item){
+                    return String(item?.id || "").trim().toLowerCase() ===
+                           systemMarketplace.id;
+                });
+
+                if(!exists){
+                    marketplaces.push({...systemMarketplace});
+                }
+            });
+
+            marketplaces = sellerBooksNormalizeMarketplaceList(marketplaces);
         }
     }catch(error){}
     try{
         if(typeof stores!=="undefined"){
-            stores=JSON.parse(sellerBooksStorageGetItem("sellerbooks_stores")||"[]") || stores;
+            const cloudStores = JSON.parse(
+                sellerBooksStorageGetItem("sellerbooks_stores") || "[]"
+            );
+            if(Array.isArray(cloudStores)){
+                stores = cloudStores;
+            }
         }
     }catch(error){}
     try{
         if(typeof products!=="undefined"){
-            products=JSON.parse(sellerBooksStorageGetItem("sellerbooks_products")||"[]") || products;
+            const cloudProducts = JSON.parse(
+                sellerBooksStorageGetItem("sellerbooks_products") || "[]"
+            );
+            if(Array.isArray(cloudProducts)){
+                products = cloudProducts;
+            }
         }
     }catch(error){}
     try{
         if(typeof costs!=="undefined"){
-            costs=JSON.parse(sellerBooksStorageGetItem("sellerbooks_costs")||"[]") || costs;
+            const cloudCosts = JSON.parse(
+                sellerBooksStorageGetItem("sellerbooks_costs") || "[]"
+            );
+            if(Array.isArray(cloudCosts)){
+                costs = cloudCosts;
+            }
         }
     }catch(error){}
 }
@@ -12606,6 +12637,16 @@ async function sellerBooksCheckApproval(showAlert){
             if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
 
             /*
+               APK OWNER: LEVEL 2 WAJIB JIKA profile belum memiliki Nama Pemilik.
+               Cek dilakukan langsung dari profile akun Google yang sedang login.
+               Jangan gunakan localStorage untuk menentukan status setup.
+            */
+            if(/SellerBooksAPK\/1\.0/i.test(navigator.userAgent||"") && !String(sellerBooksProfile?.owner_name||"").trim()){
+                sellerBooksOpenApplication();
+                return;
+            }
+
+            /*
                Setelah akun disetujui Core Adiimasa:
                - Jika Nama Pemilik sudah tersimpan di profile akun ini -> masuk Dashboard.
                - Jika belum ada -> tampilkan tingkat 2 untuk membuat Nama Pemilik.
@@ -12614,7 +12655,6 @@ async function sellerBooksCheckApproval(showAlert){
             */
             await sellerBooksLoadCloudData();
             sellerBooksRefreshRuntimeFromCloud();
-            if(typeof initializeReports==="function")initializeReports();
             if(typeof loadSellerBooksSettings==="function")loadSellerBooksSettings();
             if(typeof renderMarketplaces==="function")renderMarketplaces();
             if(typeof renderStores==="function")renderStores();
@@ -12787,6 +12827,7 @@ async function sellerBooksHandleAuthSession(){
 sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
     if(session?.user){sellerBooksAuthUser=session.user;setTimeout(function(){sellerBooksCheckApproval(false);},0);}else{sellerBooksAuthUser=null;sellerBooksProfile=null;sellerBooksShowOnly("loginPage");}
 });
+
 /* =====================================================
    SELLERBOOKS REALTIME ACCOUNT GUARD
    Hanya memantau perubahan status akun / penghapusan profile.
@@ -13033,6 +13074,7 @@ function sellerBooksStopAccountPolling(){
 }
 
 async function sellerBooksLogout(){
+    sellerBooksStopAccountPolling();
     try{await sellerBooksSupabase.auth.signOut();}catch(error){console.error("Logout gagal:",error);}
     if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
     sellerBooksStorage.removeItem("sellerbooks_owner_name"); sellerBooksShowOnly("loginPage");
@@ -14144,10 +14186,140 @@ function saveMarketplaceData(){
 
 
 /* =====================================================
+   HAPUS MARKETPLACE + VERIFIKASI SUPABASE
+   - Menghapus marketplace dari data cloud user.
+   - Menghapus akun toko yang terhubung.
+   - Memverifikasi ulang isi database setelah upsert.
+   - Jika gagal, perubahan lokal dikembalikan.
+===================================================== */
+async function deleteMarketplace(id){
+
+    const marketplace =
+        marketplaces.find(function(item){
+            return item.id === id;
+        });
+
+    if(!marketplace) return;
+
+    if(!confirm(
+        "Hapus marketplace \"" +
+        (marketplace.name || "Marketplace") +
+        "\"?\n\nData akun toko yang terhubung dengan marketplace ini juga akan dihapus."
+    )){
+        return;
+    }
+
+    const previousMarketplaces = marketplaces.slice();
+    const previousStores = Array.isArray(stores) ? stores.slice() : [];
+
+    marketplaces = marketplaces.filter(function(item){
+        return item.id !== id;
+    });
+
+    if(Array.isArray(stores)){
+        stores = stores.filter(function(store){
+            return String(store.marketplaceId || "") !== String(id);
+        });
+    }
+
+    saveMarketplaceData();
+    if(typeof saveStoreData === "function") saveStoreData();
+
+    renderMarketplaces();
+    if(typeof renderStores === "function") renderStores();
+
+    try{
+        if(!sellerBooksAuthUser || !sellerBooksCloudReady){
+            throw new Error("Sesi Supabase belum siap.");
+        }
+
+        if(typeof sellerBooksCloudState === "object" && sellerBooksCloudState){
+            sellerBooksCloudState["sellerbooks_marketplaces"] = marketplaces;
+            sellerBooksCloudState["sellerbooks_stores"] = stores;
+        }
+
+        const snapshot = {...sellerBooksCloudState};
+
+        sellerBooksCloudSavePromise = sellerBooksCloudSavePromise.then(async function(){
+            const {error} = await sellerBooksSupabase
+                .from("sellerbooks_user_data")
+                .upsert({
+                    user_id:sellerBooksAuthUser.id,
+                    data:snapshot,
+                    updated_at:new Date().toISOString()
+                },{onConflict:"user_id"});
+
+            if(error) throw error;
+
+            const {data:verifiedRow,error:verifyError} = await sellerBooksSupabase
+                .from("sellerbooks_user_data")
+                .select("data")
+                .eq("user_id",sellerBooksAuthUser.id)
+                .maybeSingle();
+
+            if(verifyError) throw verifyError;
+
+            const verifiedData = verifiedRow?.data || {};
+            const verifiedMarketplaces = Array.isArray(verifiedData["sellerbooks_marketplaces"])
+                ? verifiedData["sellerbooks_marketplaces"]
+                : [];
+            const verifiedStores = Array.isArray(verifiedData["sellerbooks_stores"])
+                ? verifiedData["sellerbooks_stores"]
+                : [];
+
+            const stillExists = verifiedMarketplaces.some(function(item){
+                return String(item?.id || "") === String(id);
+            });
+
+            const relatedStoreExists = verifiedStores.some(function(store){
+                return String(store?.marketplaceId || "") === String(id);
+            });
+
+            if(stillExists || relatedStoreExists){
+                throw new Error(
+                    "Verifikasi database gagal: marketplace atau akun toko terkait masih tersimpan."
+                );
+            }
+        });
+
+        await sellerBooksCloudSavePromise;
+
+        alert(
+            "✅ Marketplace berhasil dihapus dan penghapusan sudah terverifikasi di database Supabase."
+        );
+
+    }catch(error){
+        console.error("Hapus marketplace gagal:",error);
+
+        marketplaces = previousMarketplaces;
+        stores = previousStores;
+
+        saveMarketplaceData();
+        if(typeof saveStoreData === "function") saveStoreData();
+
+        if(typeof sellerBooksCloudState === "object" && sellerBooksCloudState){
+            sellerBooksCloudState["sellerbooks_marketplaces"] = marketplaces;
+            sellerBooksCloudState["sellerbooks_stores"] = stores;
+        }
+
+        renderMarketplaces();
+        if(typeof renderStores === "function") renderStores();
+
+        alert(
+            "❌ Marketplace tidak jadi dihapus dari database.\n\n" +
+            error.message
+        );
+    }
+}
+
+
+/* =====================================================
    RENDER MARKETPLACE
 ===================================================== */
 
 function renderMarketplaces(){
+
+    marketplaces = sellerBooksNormalizeMarketplaceList(marketplaces);
 
     const grid =
         document.getElementById("marketplaceGrid");
@@ -14269,9 +14441,7 @@ function renderMarketplaces(){
                     style="background:#fef2f2;color:#dc2626;"
                     onclick="deleteMarketplace('${marketplace.id}')"
                 >
-
                     Hapus
-
                 </button>
 
 
@@ -14679,70 +14849,41 @@ function renderMarketplacePerformance(){
        =====================================================
     */
 
-    const activeMarketplaces =
-        marketplacesData.filter(function(marketplace, index, allMarketplaces){
-            if(marketplace.status !== "active"){
-                return false;
-            }
+    /* Tampilkan hanya satu baris untuk setiap marketplace.
+       Jika ada marketplace custom dengan nama yang sama (contoh:
+       Shopee/Shopee atau TikTok/Tiktokshop), pertahankan yang pertama
+       agar baris duplikat 0 Akun tidak ikut tampil. */
+    const dashboardMarketplaceSeen = {};
 
-            const marketplaceName =
-                String(marketplace.name || "")
+    const activeMarketplaces =
+        marketplacesData
+        .filter(function(marketplace){
+            return marketplace.status === "active";
+        })
+        .filter(function(marketplace){
+            const name =
+                String(marketplace?.name || "")
                     .trim()
                     .toLowerCase();
 
-            const isShopeeOrTiktok =
-                marketplaceName === "shopee" ||
-                marketplaceName === "tiktok" ||
-                marketplaceName === "tiktok shop" ||
-                marketplaceName === "tiktokshop";
+            let key = name;
 
-            if(!isShopeeOrTiktok){
-                return true;
+            if(name.includes("shopee")){
+                key = "shopee";
+            }else if(
+                name.includes("tiktok") ||
+                name.includes("tiktokshop") ||
+                name.includes("tiktok shop")
+            ){
+                key = "tiktok";
             }
 
-            const marketplaceId =
-                String(marketplace.id || "");
-
-            const storesForThisMarketplace =
-                storesData.filter(function(store){
-                    return String(store.marketplaceId || "") === marketplaceId;
-                });
-
-            if(storesForThisMarketplace.length > 0){
-                return true;
+            if(dashboardMarketplaceSeen[key]){
+                return false;
             }
 
-            const hasAnotherSameMarketplaceWithStore =
-                allMarketplaces.some(function(otherMarketplace, otherIndex){
-                    if(otherIndex === index || otherMarketplace.status !== "active"){
-                        return false;
-                    }
-
-                    const otherName =
-                        String(otherMarketplace.name || "")
-                            .trim()
-                            .toLowerCase();
-
-                    const sameMarketplace =
-                        (marketplaceName === "shopee" && otherName === "shopee") ||
-                        (
-                            (marketplaceName === "tiktok" || marketplaceName === "tiktok shop" || marketplaceName === "tiktokshop") &&
-                            (otherName === "tiktok" || otherName === "tiktok shop" || otherName === "tiktokshop")
-                        );
-
-                    if(!sameMarketplace){
-                        return false;
-                    }
-
-                    const otherId =
-                        String(otherMarketplace.id || "");
-
-                    return storesData.some(function(store){
-                        return String(store.marketplaceId || "") === otherId;
-                    });
-                });
-
-            return !hasAnotherSameMarketplaceWithStore;
+            dashboardMarketplaceSeen[key] = true;
+            return true;
         });
 
     if(!activeMarketplaces.length){
@@ -15244,118 +15385,6 @@ function editMarketplace(id){
    ACTIVATE / DEACTIVATE
 ===================================================== */
 
-async function deleteMarketplace(id){
-
-    const marketplace =
-        marketplaces.find(function(item){
-            return item.id === id;
-        });
-
-    if(!marketplace) return;
-
-    if(!confirm(
-        "Hapus marketplace \"" +
-        (marketplace.name || "Marketplace") +
-        "\"?\n\nData akun toko yang terhubung dengan marketplace ini juga akan dihapus."
-    )){
-        return;
-    }
-
-    /* Simpan kondisi lama agar bisa dikembalikan jika database gagal. */
-    const oldMarketplaces = JSON.parse(JSON.stringify(marketplaces));
-    const oldStores = Array.isArray(stores)
-        ? JSON.parse(JSON.stringify(stores))
-        : stores;
-
-    marketplaces = marketplaces.filter(function(item){
-        return item.id !== id;
-    });
-
-    if(Array.isArray(stores)){
-        stores = stores.filter(function(store){
-            return String(store.marketplaceId || "") !== String(id);
-        });
-    }
-
-    saveMarketplaceData();
-    if(typeof saveStoreData === "function")saveStoreData();
-
-    renderMarketplaces();
-    if(typeof renderStores === "function")renderStores();
-
-    try{
-        if(typeof sellerBooksPersistCloudDataStrict !== "function")
-            throw new Error("Fungsi sinkronisasi kritis belum tersedia.");
-
-        /*
-           Karena storage SellerBooks disimpan sebagai JSON di
-           sellerbooks_user_data.data, verifikasi dilakukan terhadap
-           field marketplace dan toko setelah Supabase membaca ulang data.
-        */
-        const expectedSnapshot = {...sellerBooksCloudState};
-
-        await sellerBooksPersistCloudDataStrict(
-            expectedSnapshot,
-            function(savedData){
-                let savedMarketplaces = [];
-                let savedStores = [];
-
-                try{
-                    savedMarketplaces = JSON.parse(
-                        savedData["sellerbooks_marketplaces"] || "[]"
-                    ) || [];
-                }catch(error){
-                    return false;
-                }
-
-                try{
-                    savedStores = JSON.parse(
-                        savedData["sellerbooks_stores"] || "[]"
-                    ) || [];
-                }catch(error){
-                    return false;
-                }
-
-                const marketplaceStillExists = savedMarketplaces.some(function(item){
-                    return String(item.id || "") === String(id);
-                });
-
-                if(marketplaceStillExists)return false;
-
-                const linkedStoreStillExists = savedStores.some(function(store){
-                    return String(store.marketplaceId || "") === String(id);
-                });
-
-                return !linkedStoreStillExists;
-            }
-        );
-
-        alert(
-            "Marketplace \"" +
-            (marketplace.name || "Marketplace") +
-            "\" berhasil dihapus dan perubahan sudah terverifikasi tersimpan di database."
-        );
-
-    }catch(error){
-        console.error("Penghapusan marketplace gagal disimpan ke Supabase:",error);
-
-        /* Jangan biarkan tampilan lokal berbeda dari database jika gagal. */
-        marketplaces = oldMarketplaces;
-        stores = oldStores;
-
-        saveMarketplaceData();
-        if(typeof saveStoreData === "function")saveStoreData();
-        renderMarketplaces();
-        if(typeof renderStores === "function")renderStores();
-
-        alert(
-            "Marketplace belum jadi dihapus dari database.\n\n" +
-            "Perubahan dibatalkan karena verifikasi Supabase gagal.\n\n" +
-            "Detail: " + (error && error.message ? error.message : error)
-        );
-    }
-}
-
 function toggleMarketplace(id){
 
     const marketplace =
@@ -15473,13 +15502,64 @@ function saveStoreData(){
    AMBIL MARKETPLACE AKTIF
 ===================================================== */
 
+
+/* =====================================================
+   HINDARI DUPLIKAT MARKETPLACE
+   TikTok Shop sistem dan Tiktokshop custom dianggap
+   marketplace yang sama. Prioritaskan custom karena
+   akun toko pengguna tersimpan pada marketplace custom.
+===================================================== */
+function sellerBooksNormalizeMarketplaceList(list){
+    const source = Array.isArray(list) ? list : [];
+    const result = [];
+    const seen = {};
+
+    source.forEach(function(marketplace){
+        const id = String(marketplace?.id || "").trim().toLowerCase();
+        const name = String(marketplace?.name || "").trim().toLowerCase();
+
+        const isTikTok =
+            id === "tiktok" ||
+            name === "tiktok" ||
+            name === "tiktok shop" ||
+            name === "tiktokshop" ||
+            name === "tiktok_shop";
+
+        const key = isTikTok ? "tiktok" : (id || name);
+
+        if(!key){
+            result.push(marketplace);
+            return;
+        }
+
+        if(!seen[key]){
+            seen[key] = marketplace;
+            result.push(marketplace);
+            return;
+        }
+
+        if(isTikTok){
+            const existing = seen[key];
+
+            /* Jika ada versi custom/non-system, gunakan itu. */
+            if(existing?.system === true && marketplace?.system !== true){
+                const index = result.indexOf(existing);
+                if(index >= 0) result[index] = marketplace;
+                seen[key] = marketplace;
+            }
+        }
+    });
+
+    return result;
+}
+
 function getActiveMarketplaces(){
 
-    return marketplaces.filter(function(marketplace){
-
-        return marketplace.status === "active";
-
-    });
+    return sellerBooksNormalizeMarketplaceList(
+        marketplaces.filter(function(marketplace){
+            return marketplace.status === "active";
+        })
+    );
 
 }
 
@@ -15543,6 +15623,32 @@ function renderStoreMarketplaceOptions(){
         select.value = currentValue;
 
     }
+
+
+
+    /* Hilangkan opsi marketplace yang tampil ganda di dropdown.
+       Pertahankan opsi pertama; khusus TikTok/Shopee, variasi nama dianggap sama. */
+    (function(){
+        const seen = {};
+        Array.from(select.options).forEach(function(option){
+            const raw = String(option.textContent || "").trim().toLowerCase();
+            if(!raw || option.value === "") return;
+
+            let key = raw;
+            if(raw.includes("shopee")) key = "shopee";
+            else if(
+                raw.includes("tiktok") ||
+                raw.includes("tiktokshop") ||
+                raw.includes("tiktok shop")
+            ) key = "tiktok";
+
+            if(seen[key]){
+                option.remove();
+            }else{
+                seen[key] = true;
+            }
+        });
+    })();
 
 }
 
@@ -19639,40 +19745,40 @@ function populateSalesStoreAccounts(){
                 .trim()
                 .toLowerCase();
 
-            const sameMarketplace =
-                itemId === normalizedMarketplace
+
+            const normalizedItemName =
+                itemName.replace(/[^a-z0-9]/g, "");
+
+            const normalizedDetectedName =
+                detectedMarketplace.replace(/[^a-z0-9]/g, "");
+
+            return (
+
+                itemId ===
+                normalizedMarketplace
+
                 ||
-                itemName === detectedMarketplace
+
+                itemName ===
+                detectedMarketplace
+
                 ||
+
+                normalizedItemName ===
+                normalizedDetectedName
+
+                ||
+
                 (
                     normalizedMarketplace === "tiktok" &&
                     (
                         itemId === "tiktok" ||
-                        itemName === "tiktok shop" ||
-                        itemName === "tiktokshop"
+                        normalizedItemName === "tiktokshop"
                     )
-                );
+                )
 
-            if(!sameMarketplace){
-                return false;
-            }
+            );
 
-            /* Jika ada marketplace duplikat, pilih yang memiliki
-               akun toko aktif agar dropdown Import tidak kosong. */
-            return stores.some(function(store){
-                return store.status === "active" &&
-                    String(store.marketplaceId || "") === String(item.id || "");
-            });
-
-        }) ||
-        marketplaces.find(function(item){
-            const itemId = String(item.id || "").trim().toLowerCase();
-            const itemName = String(item.name || "").trim().toLowerCase();
-
-            return itemId === normalizedMarketplace
-                || itemName === detectedMarketplace
-                || (normalizedMarketplace === "tiktok" &&
-                    (itemId === "tiktok" || itemName === "tiktok shop" || itemName === "tiktokshop"));
         });
 
 
@@ -19716,20 +19822,45 @@ function populateSalesStoreAccounts(){
     const list =
         stores.filter(function(store){
 
-            return (
+            const storeStatus =
+                String(store.status || "")
+                    .trim()
+                    .toLowerCase();
 
-                store.status === "active"
+            if(storeStatus !== "active")return false;
 
-                &&
+            const storeMarketplaceId =
+                String(store.marketplaceId || "")
+                    .trim()
+                    .toLowerCase();
 
-                String(
-                    store.marketplaceId
-                ) ===
-                String(
-                    currentSalesImport.marketplaceId
-                )
+            const detectedMarketplaceId =
+                String(currentSalesImport.marketplaceId || "")
+                    .trim()
+                    .toLowerCase();
 
-            );
+            /*
+               Cocokkan ID marketplace hasil database terlebih dahulu.
+               Marketplace custom dapat memakai ID seperti
+               marketplace_1789098401341, bukan "tiktok".
+            */
+            if(
+                detectedMarketplaceId &&
+                storeMarketplaceId === detectedMarketplaceId
+            ){
+                return true;
+            }
+
+            /* TikTok disimpan dengan beberapa nama/format pada data lama. */
+            if(detectedMarketplaceId === "tiktok"){
+                return (
+                    storeMarketplaceId === "tiktok" ||
+                    storeMarketplaceId === "tiktok shop" ||
+                    storeMarketplaceId === "tiktok_shop"
+                );
+            }
+
+            return false;
 
         });
 
@@ -22841,73 +22972,6 @@ prepareDailyViewState();
 let currentDashboardPeriod = "today";
 
 
-async function sellerBooksManualRefreshDashboard(){
-
-    /*
-       REFRESH TOMBOL DASHBOARD:
-       Ambil ulang data langsung dari Supabase.
-       Tidak melakukan setItem / penyimpanan ulang,
-       sehingga tombol refresh tidak dapat menimpa data cloud.
-    */
-
-    if(!sellerBooksAuthUser){
-        return;
-    }
-
-    try{
-
-        const {data,error} =
-            await sellerBooksSupabase
-                .from("sellerbooks_user_data")
-                .select("data")
-                .eq(
-                    "user_id",
-                    sellerBooksAuthUser.id
-                )
-                .maybeSingle();
-
-        if(error){
-            console.error(
-                "Refresh Dashboard dari Supabase gagal:",
-                error
-            );
-            return;
-        }
-
-        sellerBooksCloudState =
-            (data &&
-             data.data &&
-             typeof data.data === "object")
-                ? {...data.data}
-                : {};
-
-        sellerBooksCloudReady = true;
-
-        if(
-            typeof sellerBooksRefreshRuntimeFromCloud ===
-            "function"
-        ){
-            sellerBooksRefreshRuntimeFromCloud();
-        }
-
-        if(
-            typeof updateDashboardByPeriod ===
-            "function"
-        ){
-            updateDashboardByPeriod();
-        }
-
-    }catch(error){
-
-        console.error(
-            "Refresh Dashboard dari Supabase gagal:",
-            error
-        );
-
-    }
-
-}
-
 function refreshDashboard(){
 
     /* REFRESH DASHBOARD */
@@ -25391,6 +25455,80 @@ document.addEventListener(
         }
     );
 
+})();
+</script>
+
+
+
+<script>
+/* =========================================================
+   SELLERBOOKS OWNER READ ONLY - APK SAJA
+   - Login Google tetap menggunakan logic asli.
+   - Level 2 Nama Pemilik tetap wajib jika profile kosong.
+   - Hapus Laporan (seluruh kartu) disembunyikan.
+   ========================================================= */
+(function(){
+    "use strict";
+    if(!/SellerBooksAPK\/1\.0/i.test(navigator.userAgent||"")) return;
+
+    function hideOwnerRestrictedUI(){
+        /* Sembunyikan seluruh kartu "Hapus Laporan", bukan hanya tombolnya. */
+        document.querySelectorAll("#reports .content-section").forEach(function(card){
+            const heading=card.querySelector("h3");
+            if(heading && /hapus laporan/i.test((heading.textContent||"").trim())){
+                card.style.setProperty("display","none","important");
+            }
+        });
+
+        /* Pengamanan tambahan untuk tombol Hapus Laporan. */
+        document.querySelectorAll("button,a").forEach(function(el){
+            const text=(el.innerText||"").trim().toLowerCase();
+            if(text.includes("hapus laporan")){
+                el.style.setProperty("display","none","important");
+            }
+        });
+
+        /* Tombol reset identitas tidak tersedia untuk Owner. */
+        document.querySelectorAll(".reset-identity-button").forEach(function(el){
+            el.style.setProperty("display","none","important");
+        });
+
+        /* Menu Owner: hanya Dashboard, Rincian, Laporan, Gmail, identitas, Logout. */
+        document.querySelectorAll(".sidebar .menu-item").forEach(function(btn){
+            const text=(btn.innerText||"").trim().toLowerCase();
+            const onclick=btn.getAttribute("onclick")||"";
+            const match=onclick.match(/showView\(\s*['\"]([^'\"]+)['\"]/i);
+            const view=match?match[1].toLowerCase():"";
+            const allowed =
+                view==="dashboard" ||
+                view==="productanalysis" ||
+                view==="reports" ||
+                text.includes("dashboard") ||
+                text.includes("rincian") ||
+                text.includes("laporan");
+            if(!allowed){
+                btn.style.setProperty("display","none","important");
+            }
+        });
+
+        /* Tombol Dashboard "Lihat Marketplace" tidak boleh muncul. */
+        document.querySelectorAll("button,a").forEach(function(el){
+            const text=(el.innerText||"").trim().toLowerCase();
+            if(text.includes("lihat marketplace")){
+                el.style.setProperty("display","none","important");
+            }
+        });
+    }
+
+    if(document.readyState==="loading"){
+        document.addEventListener("DOMContentLoaded",function(){
+            hideOwnerRestrictedUI();
+            setTimeout(hideOwnerRestrictedUI,700);
+        });
+    }else{
+        hideOwnerRestrictedUI();
+        setTimeout(hideOwnerRestrictedUI,700);
+    }
 })();
 </script>
 
