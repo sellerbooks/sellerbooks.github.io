@@ -3647,11 +3647,6 @@ td{
 
     }
 
-    #dashboard .stat-number{
-        font-size:21px;
-        word-break:break-word;
-    }
-
     .marketplace-grid{
 
         grid-template-columns:1fr;
@@ -4754,6 +4749,121 @@ document.addEventListener(
 #reports .chart-card {
     border-radius: 0 !important;
 }
+/* =========================================================
+   DASHBOARD STATISTIK DIAGRAM - RESPONSIVE
+========================================================= */
+.dashboard-charts-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);
+    gap:18px;
+    margin:18px 0;
+}
+.dashboard-chart-card{
+    background:var(--card,#fff);
+    border:1px solid var(--border,#e2e8f0);
+    border-radius:14px;
+    padding:18px;
+    min-width:0;
+    overflow:hidden;
+}
+.dashboard-chart-header h3{margin:0;font-size:17px;}
+.dashboard-chart-header p{margin:5px 0 0;color:#64748b;font-size:12px;}
+.dashboard-chart-area{
+    display:flex;
+    height:250px;
+    margin-top:18px;
+    min-width:0;
+}
+.dashboard-y-axis{
+    width:66px;
+    flex:0 0 66px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:0 7px 28px 0;
+    color:#64748b;
+    font-size:10px;
+    text-align:right;
+}
+.dashboard-bar-chart{
+    flex:1;
+    min-width:0;
+    display:flex;
+    align-items:flex-end;
+    gap:7px;
+    padding:0 2px 28px;
+    border-bottom:1px solid #cbd5e1;
+    background:repeating-linear-gradient(to bottom,transparent 0,transparent 48px,#eef2f7 49px);
+    overflow-x:auto;
+}
+.dashboard-bar-item{
+    flex:1 0 24px;
+    min-width:24px;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    align-items:center;
+    position:relative;
+}
+.dashboard-bar{
+    width:min(34px,80%);
+    min-height:2px;
+    background:var(--primary,#2563eb);
+    border-radius:5px 5px 0 0;
+    transition:height .25s ease;
+}
+.dashboard-bar-label{
+    position:absolute;
+    bottom:-25px;
+    width:70px;
+    font-size:9px;
+    color:#64748b;
+    text-align:center;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.dashboard-bar-value{
+    font-size:9px;
+    color:#334155;
+    margin-bottom:3px;
+    max-width:70px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.dashboard-chart-empty{
+    width:100%;
+    align-self:center;
+    text-align:center;
+    color:#94a3b8;
+    font-size:13px;
+}
+.dashboard-marketplace-chart{
+    margin-top:22px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+}
+.dashboard-marketplace-row{display:grid;grid-template-columns:90px minmax(0,1fr) 82px;gap:9px;align-items:center;}
+.dashboard-marketplace-name{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dashboard-marketplace-track{height:13px;background:#f1f5f9;border-radius:10px;overflow:hidden;}
+.dashboard-marketplace-fill{height:100%;background:var(--primary,#2563eb);border-radius:10px;min-width:0;transition:width .25s ease;}
+.dashboard-marketplace-value{font-size:10px;text-align:right;color:#475569;white-space:nowrap;}
+@media screen and (max-width:900px){
+    .dashboard-charts-grid{grid-template-columns:1fr;}
+}
+@media screen and (max-width:600px){
+    .dashboard-chart-card{padding:14px;border-radius:10px;}
+    .dashboard-chart-area{height:210px;}
+    .dashboard-y-axis{width:58px;flex-basis:58px;font-size:9px;}
+    .dashboard-bar-chart{gap:5px;}
+    .dashboard-bar-item{flex-basis:20px;min-width:20px;}
+    .dashboard-bar{width:18px;}
+    .dashboard-marketplace-row{grid-template-columns:72px minmax(0,1fr) 72px;}
+}
+
 /* =========================================================
    SELLERBOOKS REPORT ENGINE - TAHAP 2
    TOTAL PENJUALAN + QTY + TRANSAKSI
@@ -8611,110 +8721,48 @@ document.addEventListener(
                     </div>
 
 
-                    <!-- STATISTIK TAMBAHAN DASHBOARD -->
-
-                    <div class="stat-card">
-
-                        <div class="stat-top">
-
-                            <div class="stat-label">
-                                TOTAL PESANAN
-                            </div>
-
-                            <div class="stat-icon">
-                                🧾
-                            </div>
-
-                        </div>
-
-                        <div class="stat-number" id="dashboardTotalOrders">
-                            0 ORDER
-                        </div>
-
-                        <div class="stat-info">
-                            Pesanan unik pada periode terpilih
-                        </div>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <div class="stat-top">
-
-                            <div class="stat-label">
-                                PENJUALAN BERSIH
-                            </div>
-
-                            <div class="stat-icon">
-                                💳
-                            </div>
-
-                        </div>
-
-                        <div class="stat-number" id="dashboardNetSales">
-                            Rp0
-                        </div>
-
-                        <div class="stat-info">
-                            Setelah potongan admin marketplace
-                        </div>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <div class="stat-top">
-
-                            <div class="stat-label">
-                                TOTAL HPP
-                            </div>
-
-                            <div class="stat-icon">
-                                🏷️
-                            </div>
-
-                        </div>
-
-                        <div class="stat-number" id="dashboardTotalHpp">
-                            Rp0
-                        </div>
-
-                        <div class="stat-info">
-                            Modal produk berdasarkan Master Produk
-                        </div>
-
-                    </div>
-
-
-                    <div class="stat-card">
-
-                        <div class="stat-top">
-
-                            <div class="stat-label">
-                                LABA KOTOR
-                            </div>
-
-                            <div class="stat-icon">
-                                📈
-                            </div>
-
-                        </div>
-
-                        <div class="stat-number" id="dashboardGrossProfit">
-                            Rp0
-                        </div>
-
-                        <div class="stat-info">
-                            Setelah admin, HPP, dan packing
-                        </div>
-
-                    </div>
-
-
                 </div>
 
+
+
+                <!-- =====================================================
+                     DIAGRAM STATISTIK DASHBOARD
+                     Tambahan saja - tidak mengubah modul lama
+                ====================================================== -->
+                <div class="dashboard-charts-grid">
+
+                    <div class="dashboard-chart-card">
+                        <div class="dashboard-chart-header">
+                            <div>
+                                <h3>Grafik Penjualan</h3>
+                                <p id="dashboardSalesChartInfo">Pergerakan penjualan berdasarkan periode</p>
+                            </div>
+                        </div>
+                        <div class="dashboard-chart-area">
+                            <div class="dashboard-y-axis">
+                                <span id="dashboardChartMax">Rp0</span>
+                                <span id="dashboardChartMid">Rp0</span>
+                                <span>Rp0</span>
+                            </div>
+                            <div id="dashboardSalesChart" class="dashboard-bar-chart">
+                                <div class="dashboard-chart-empty">Belum ada data penjualan</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-chart-card">
+                        <div class="dashboard-chart-header">
+                            <div>
+                                <h3>Penjualan per Marketplace</h3>
+                                <p>Perbandingan omzet berdasarkan marketplace</p>
+                            </div>
+                        </div>
+                        <div id="dashboardMarketplaceChart" class="dashboard-marketplace-chart">
+                            <div class="dashboard-chart-empty">Belum ada data penjualan</div>
+                        </div>
+                    </div>
+
+                </div>
 
 
                 <div class="content-section">
@@ -14728,6 +14776,95 @@ if(typeof renderStores === "function"){
 }
 
 /* =====================================================
+   DASHBOARD DIAGRAM STATISTIK
+   Menggunakan data transaksi yang sama dengan kartu Dashboard.
+===================================================== */
+function sellerBooksDashboardFormatShortRupiah(value){
+    value = Number(value) || 0;
+    if(value >= 1000000000) return "Rp" + (value/1000000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " M";
+    if(value >= 1000000) return "Rp" + (value/1000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " jt";
+    if(value >= 1000) return "Rp" + (value/1000).toLocaleString("id-ID",{maximumFractionDigits:0}) + " rb";
+    return "Rp" + Math.round(value).toLocaleString("id-ID");
+}
+
+function sellerBooksDashboardDateKey(value){
+    const d = new Date(value);
+    if(isNaN(d.getTime())) return null;
+    return d;
+}
+
+function sellerBooksRenderDashboardCharts(transactions){
+    const salesChart = document.getElementById("dashboardSalesChart");
+    const marketplaceChart = document.getElementById("dashboardMarketplaceChart");
+    const info = document.getElementById("dashboardSalesChartInfo");
+    if(!salesChart || !marketplaceChart) return;
+
+    const periodNames = {today:"Hari Ini",yesterday:"Kemarin",week:"Minggu Ini",lastWeek:"Minggu Lalu",month:"Bulan Ini",lastMonth:"Bulan Lalu",last3Months:"3 Bulan Terakhir",year:"Tahun Ini",all:"Semua Periode"};
+    if(info) info.textContent = "Pergerakan penjualan • " + (periodNames[currentDashboardPeriod] || "Hari Ini");
+
+    const buckets = new Map();
+    const marketplaceTotals = new Map();
+
+    transactions.forEach(function(item){
+        const amount = Number(getReportTransactionSalesAmount(item)) || 0;
+        const date = sellerBooksDashboardDateKey(item.reportDate || item.importedAt);
+        if(!date) return;
+
+        let key = "";
+        let label = "";
+        if(currentDashboardPeriod === "today" || currentDashboardPeriod === "yesterday") {
+            key = String(date.getHours()).padStart(2,"0");
+            label = key + ":00";
+        } else if(currentDashboardPeriod === "year") {
+            key = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0");
+            label = date.toLocaleDateString("id-ID",{month:"short"});
+        } else if(currentDashboardPeriod === "last3Months" || currentDashboardPeriod === "all") {
+            key = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0");
+            label = date.toLocaleDateString("id-ID",{month:"short",year:"2-digit"});
+        } else {
+            key = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
+            label = date.toLocaleDateString("id-ID",{day:"2-digit",month:"short"});
+        }
+        if(!buckets.has(key)) buckets.set(key,{key:key,label:label,value:0,date:date});
+        buckets.get(key).value += amount;
+
+        const marketplace = String(item.marketplace || item.platform || item.marketplaceName || "Lainnya").trim() || "Lainnya";
+        marketplaceTotals.set(marketplace,(marketplaceTotals.get(marketplace)||0)+amount);
+    });
+
+    let bucketList = Array.from(buckets.values()).sort((a,b)=>a.key.localeCompare(b.key));
+    if(bucketList.length === 0){
+        salesChart.innerHTML = '<div class="dashboard-chart-empty">Belum ada data penjualan pada periode ini</div>';
+        marketplaceChart.innerHTML = '<div class="dashboard-chart-empty">Belum ada data penjualan pada periode ini</div>';
+        ["dashboardChartMax","dashboardChartMid"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="Rp0";});
+        return;
+    }
+
+    // Isi titik nol agar grafik hari/minggu tetap menunjukkan seluruh periode.
+    if(currentDashboardPeriod === "today" || currentDashboardPeriod === "yesterday") {
+        const full=[]; for(let h=0;h<24;h++){const k=String(h).padStart(2,"0"); full.push(buckets.get(k)||{key:k,label:k+":00",value:0});} bucketList=full;
+    }
+
+    const max = Math.max(...bucketList.map(x=>x.value),1);
+    const mid = max/2;
+    const maxEl=document.getElementById("dashboardChartMax"); const midEl=document.getElementById("dashboardChartMid");
+    if(maxEl) maxEl.textContent=sellerBooksDashboardFormatShortRupiah(max);
+    if(midEl) midEl.textContent=sellerBooksDashboardFormatShortRupiah(mid);
+
+    salesChart.innerHTML = bucketList.map(function(item){
+        const height = item.value > 0 ? Math.max(3,(item.value/max)*100) : 1;
+        return '<div class="dashboard-bar-item" title="'+item.label+' • '+formatRupiah(item.value)+'"><div class="dashboard-bar-value">'+(item.value? sellerBooksDashboardFormatShortRupiah(item.value):"")+'</div><div class="dashboard-bar" style="height:'+height+'%"></div><div class="dashboard-bar-label">'+item.label+'</div></div>';
+    }).join("");
+
+    const mpList=Array.from(marketplaceTotals.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const mpMax=Math.max(...mpList.map(x=>x[1]),1);
+    marketplaceChart.innerHTML=mpList.map(function(pair){
+        const pct=(pair[1]/mpMax)*100;
+        return '<div class="dashboard-marketplace-row"><div class="dashboard-marketplace-name" title="'+pair[0]+'">'+pair[0]+'</div><div class="dashboard-marketplace-track"><div class="dashboard-marketplace-fill" style="width:'+pct+'%"></div></div><div class="dashboard-marketplace-value">'+sellerBooksDashboardFormatShortRupiah(pair[1])+'</div></div>';
+    }).join("");
+}
+
+/* =====================================================
    DASHBOARD PERFORMANCE MARKETPLACE
    MENAMPILKAN MARKETPLACE YANG AKTIF
 ===================================================== */
@@ -14833,24 +14970,6 @@ function renderMarketplacePerformance(){
     let totalQty = 0;
     let totalHpp = 0;
     let totalAdmin = 0;
-
-    /* Pesanan unik: mengikuti logika laporan yang sudah ada. */
-    const dashboardOrderSet = new Set();
-
-    transactions.forEach(function(item){
-
-        const orderId = String(item.orderId || "").trim();
-
-        if(orderId){
-            dashboardOrderSet.add(orderId);
-        }
-
-    });
-
-    const totalOrders =
-        dashboardOrderSet.size > 0
-            ? dashboardOrderSet.size
-            : transactions.length;
 
     transactions.forEach(function(item){
 
@@ -14976,6 +15095,9 @@ function renderMarketplacePerformance(){
             ) * 100
             : 0;
 
+    // Update diagram statistik berdasarkan transaksi periode aktif.
+    sellerBooksRenderDashboardCharts(transactions);
+
     /*
        =====================================================
        UPDATE 4 KARTU ATAS
@@ -15000,26 +15122,6 @@ function renderMarketplacePerformance(){
     const dashboardMargin =
         document.getElementById(
             "dashboardMargin"
-        );
-
-    const dashboardTotalOrders =
-        document.getElementById(
-            "dashboardTotalOrders"
-        );
-
-    const dashboardNetSales =
-        document.getElementById(
-            "dashboardNetSales"
-        );
-
-    const dashboardTotalHpp =
-        document.getElementById(
-            "dashboardTotalHpp"
-        );
-
-    const dashboardGrossProfit =
-        document.getElementById(
-            "dashboardGrossProfit"
         );
 
     if(dashboardTotalSales){
@@ -15054,27 +15156,6 @@ function renderMarketplacePerformance(){
                 }
             ) +
             "%";
-    }
-
-    if(dashboardTotalOrders){
-        dashboardTotalOrders.textContent =
-            totalOrders.toLocaleString("id-ID") +
-            " ORDER";
-    }
-
-    if(dashboardNetSales){
-        dashboardNetSales.textContent =
-            formatRupiah(totalNetSales);
-    }
-
-    if(dashboardTotalHpp){
-        dashboardTotalHpp.textContent =
-            formatRupiah(totalHpp);
-    }
-
-    if(dashboardGrossProfit){
-        dashboardGrossProfit.textContent =
-            formatRupiah(totalGrossProfit);
     }
 
     /*
