@@ -7540,19 +7540,220 @@ async function downloadReportPDF(){
             button.innerHTML = "⏳ Menyiapkan PDF...";
         }
 
-        /* Pastikan data laporan terbaru */
+        /*
+         * Ambil FILTER AKTIF SEBELUM refresh laporan.
+         * PDF tidak boleh mengambil SKU dari akun toko lain.
+         */
+        const pdfPeriod =
+            document.getElementById("reportPeriod")?.value || "month";
+
+        const pdfMarketplaceId =
+            document.getElementById("reportMarketplace")?.value || "all";
+
+        const pdfStoreId =
+            document.getElementById("reportStore")?.value || "all";
+
+        const pdfDateFrom =
+            document.getElementById("reportDateFrom")?.value || "";
+
+        const pdfDateTo =
+            document.getElementById("reportDateTo")?.value || "";
+
+        /* Pastikan tampilan laporan terbaru */
         updateReports();
 
-        const financial =
+        /*
+         * Gunakan filter laporan secara STRICT untuk PDF.
+         * Khusus akun toko: jika akun B dipilih, hanya transaksi
+         * dengan storeId B yang boleh masuk. Jika tidak ada transaksi,
+         * hasil harus benar-benar [] sehingga SKU juga kosong.
+         */
+        let transactions =
+            getAllReportTransactions().filter(function(transaction){
+
+                if(!isTransactionInReportPeriod(
+                    transaction,
+                    pdfPeriod
+                )){
+                    return false;
+                }
+
+                if(
+                    pdfMarketplaceId !== "all" &&
+                    pdfMarketplaceId !== ""
+                ){
+                    const transactionMarketplaceId =
+                        String(transaction.marketplaceId || "")
+                            .trim()
+                            .toLowerCase();
+
+                    const transactionMarketplace =
+                        String(transaction.marketplace || "")
+                            .trim()
+                            .toLowerCase();
+
+                    const selectedMarketplaceId =
+                        String(pdfMarketplaceId)
+                            .trim()
+                            .toLowerCase();
+
+                    const aliases = {
+                        "tiktok":["tiktok","tiktok shop"],
+                        "tokopedia":["tokopedia"],
+                        "toco":["toco"],
+                        "blibli":["blibli"],
+                        "shopee":["shopee"],
+                        "lazada":["lazada"]
+                    };
+
+                    const allowed =
+                        aliases[selectedMarketplaceId] ||
+                        [selectedMarketplaceId];
+
+                    if(
+                        transactionMarketplaceId !== selectedMarketplaceId &&
+                        !allowed.includes(transactionMarketplaceId) &&
+                        !allowed.includes(transactionMarketplace)
+                    ){
+                        return false;
+                    }
+                }
+
+                /*
+                 * FILTER AKUN TOKO WAJIB STRICT.
+                 * Jangan pernah fallback ke storeName karena itu
+                 * bisa membuat data akun lain ikut terbawa.
+                 */
+                if(
+                    pdfStoreId !== "all" &&
+                    pdfStoreId !== ""
+                ){
+                    if(
+                        String(transaction.storeId || "").trim() !==
+                        String(pdfStoreId).trim()
+                    ){
+                        return false;
+                    }
+                }
+
+                if(pdfPeriod === "custom"){
+                    const from = pdfDateFrom ? getReportDateOnly(pdfDateFrom) : null;
+                    const to = pdfDateTo ? getReportDateOnly(pdfDateTo) : null;
+                    const transactionDate =
+                        getReportDateOnly(
+                            transaction.reportDate || transaction.importedAt
+                        );
+
+                    if(from && (!transactionDate || transactionDate < from)){
+                        return false;
+                    }
+
+                    if(to && (!transactionDate || transactionDate > to)){
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+        /*
+         * Jika akun toko yang dipilih tidak mempunyai transaksi,
+         * paksa semua bagian rincian PDF kosong.
+         */
+        if(!transactions.length){
+            transactions = [];
+        }
+
+        /*
+         * Hitung keuangan berdasarkan transaksi PDF yang sama,
+         * bukan berdasarkan kemungkinan filter lain.
+         */
+        const financialBase =
             calculateReportFinancial();
 
-        const transactions =
-            getFilteredReportTransactions();
+        const financial =
+            transactions.length
+                ? financialBase
+                : {
+                    totalSales:0,
+                    netSales:0,
+                    totalQty:0,
+                    totalHpp:0,
+                    totalAdmin:0,
+                    totalPacking:0,
+                    otherCosts:0,
+                    grossProfit:0,
+                    netProfit:0,
+                    margin:0
+                };
 
-        const productRows =
-            typeof calculateProductAnalysisRows === "function"
-                ? calculateProductAnalysisRows()
-                : [];
+        /*
+           RINCIAN SKU PDF HARUS MENGIKUTI TRANSAKSI LAPORAN YANG SAMA.
+           Jangan memakai calculateProductAnalysisRows() karena fungsi tersebut
+           mengikuti filter Product Analysis sendiri, bukan filter Report.
+           Dengan cara ini SEMUA SKU yang terjual pada periode/filter laporan
+           akan masuk PDF, termasuk SKU yang belum ada di Master Produk.
+        */
+        const productRowsMap = new Map();
+
+        transactions.forEach(function(item){
+
+            const sku =
+                String(item.sku || "").trim();
+
+            if(!sku){
+                return;
+            }
+
+            const key = sku.toLowerCase();
+
+            if(!productRowsMap.has(key)){
+                const product = getMasterProductBySku(sku);
+
+                productRowsMap.set(key,{
+                    sku:sku,
+                    qty:0,
+                    sales:0,
+                    hpp:0,
+                    admin:0,
+                    product:product || null
+                });
+            }
+
+            const row = productRowsMap.get(key);
+            const qty = Number(item.qty) || 0;
+            const sales = getReportTransactionSalesAmount(item);
+            const product = row.product || getMasterProductBySku(sku);
+            const cost = product ? (Number(product.cost) || 0) : 0;
+            const feePercent = getReportStoreFeePercent(item.storeId);
+            const admin = sales * (feePercent / 100);
+
+            row.qty += qty;
+            row.sales += sales;
+            row.hpp += cost * qty;
+            row.admin += admin;
+
+            if(!row.product && product){
+                row.product = product;
+            }
+        });
+
+        const productRows = Array.from(productRowsMap.values())
+            .map(function(row){
+                row.price = row.product ? (Number(row.product.price) || 0) : 0;
+                row.name = row.product
+                    ? (row.product.name || row.sku)
+                    : "SKU belum ada di Master Produk";
+                row.profit = row.sales - row.admin - row.hpp;
+                row.isLoss = row.profit < 0;
+                return row;
+            })
+            .sort(function(a,b){
+                return String(a.sku).localeCompare(String(b.sku), "id", {
+                    numeric:true,
+                    sensitivity:"base"
+                });
+            });
 
         await sellerBooksLoadPdfLibraries();
 
