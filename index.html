@@ -7360,6 +7360,583 @@ function changeReportTransactionPageSize(value){
     renderReportTransactionTable();
 }
 
+
+/* =========================================================
+   SELLERBOOKS - DOWNLOAD PDF LAPORAN
+   Mengikuti filter Periode + Marketplace + Akun Toko
+========================================================= */
+
+let sellerBooksPdfLibrariesPromise = null;
+
+function sellerBooksLoadPdfLibraries(){
+    if(window.jspdf && window.jspdf.jsPDF && window.jspdfAutoTableLoaded){
+        return Promise.resolve();
+    }
+
+    if(sellerBooksPdfLibrariesPromise){
+        return sellerBooksPdfLibrariesPromise;
+    }
+
+    sellerBooksPdfLibrariesPromise = new Promise(function(resolve,reject){
+
+        function loadScript(src, done){
+            const existing = document.querySelector('script[data-sellerbooks-pdf="' + src + '"]');
+
+            if(existing){
+                if(existing.dataset.loaded === "true"){
+                    done();
+                    return;
+                }
+
+                existing.addEventListener("load", done, {once:true});
+                existing.addEventListener("error", function(){
+                    reject(new Error("Gagal memuat library PDF."));
+                }, {once:true});
+                return;
+            }
+
+            const script = document.createElement("script");
+            script.src = src;
+            script.async = true;
+            script.dataset.sellerbooksPdf = src;
+
+            script.onload = function(){
+                script.dataset.loaded = "true";
+                done();
+            };
+
+            script.onerror = function(){
+                reject(new Error("Gagal memuat library PDF."));
+            };
+
+            document.head.appendChild(script);
+        }
+
+        loadScript(
+            "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+            function(){
+                loadScript(
+                    "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js",
+                    function(){
+                        window.jspdfAutoTableLoaded = true;
+                        resolve();
+                    }
+                );
+            }
+        );
+    });
+
+    return sellerBooksPdfLibrariesPromise;
+}
+
+function sellerBooksPdfEscapeFileName(value){
+    return String(value || "SellerBooks")
+        .replace(/[\\\/:*?"<>|]+/g,"-")
+        .replace(/\s+/g," ")
+        .trim();
+}
+
+function sellerBooksPdfGetPeriodLabel(){
+    const period =
+        document.getElementById("reportPeriod")?.value || "today";
+
+    const names = {
+        today:"Hari Ini",
+        yesterday:"Kemarin",
+        week:"Minggu Ini",
+        lastWeek:"Minggu Lalu",
+        month:"Bulan Ini",
+        lastMonth:"Bulan Lalu",
+        last3Months:"3 Bulan Terakhir",
+        year:"Tahun Ini",
+        custom:"Pilih Tanggal",
+        all:"Semua Periode"
+    };
+
+    let label = names[period] || period;
+
+    if(period === "custom"){
+        const from =
+            document.getElementById("reportDateFrom")?.value || "";
+
+        const to =
+            document.getElementById("reportDateTo")?.value || "";
+
+        if(from || to){
+            label += " (" +
+                (from ? from.split("-").reverse().join("/") : "...") +
+                " s/d " +
+                (to ? to.split("-").reverse().join("/") : "...") +
+                ")";
+        }
+    }
+
+    return label;
+}
+
+function sellerBooksPdfGetMarketplaceLabel(){
+    const element =
+        document.getElementById("reportMarketplace");
+
+    if(!element){
+        return "Semua Marketplace";
+    }
+
+    const option = element.options[element.selectedIndex];
+
+    return option
+        ? String(option.textContent || option.value || "Semua Marketplace").trim()
+        : "Semua Marketplace";
+}
+
+function sellerBooksPdfGetStoreLabel(){
+    const element =
+        document.getElementById("reportStore");
+
+    if(!element){
+        return "Semua Akun Toko";
+    }
+
+    const option = element.options[element.selectedIndex];
+
+    return option
+        ? String(option.textContent || option.value || "Semua Akun Toko").trim()
+        : "Semua Akun Toko";
+}
+
+function sellerBooksPdfFormatNumber(value){
+    return Number(value || 0).toLocaleString("id-ID");
+}
+
+function sellerBooksPdfFormatRupiah(value){
+    return "Rp" + Number(value || 0).toLocaleString("id-ID");
+}
+
+function sellerBooksPdfFormatDateNow(){
+    try{
+        const d = getIndonesiaTodayDate();
+        return d.toLocaleDateString("id-ID",{
+            day:"2-digit",
+            month:"2-digit",
+            year:"numeric"
+        });
+    }catch(error){
+        return new Date().toLocaleDateString("id-ID");
+    }
+}
+
+async function downloadReportPDF(){
+
+    const button =
+        document.getElementById("downloadReportPDFButton");
+
+    const originalText =
+        button ? button.innerHTML : "";
+
+    try{
+
+        if(button){
+            button.disabled = true;
+            button.innerHTML = "⏳ Menyiapkan PDF...";
+        }
+
+        /* Pastikan data laporan terbaru */
+        updateReports();
+
+        const financial =
+            calculateReportFinancial();
+
+        const transactions =
+            getFilteredReportTransactions();
+
+        const productRows =
+            typeof calculateProductAnalysisRows === "function"
+                ? calculateProductAnalysisRows()
+                : [];
+
+        await sellerBooksLoadPdfLibraries();
+
+        const jsPDF =
+            window.jspdf.jsPDF;
+
+        const doc =
+            new jsPDF({
+                orientation:"landscape",
+                unit:"mm",
+                format:"a4"
+            });
+
+        const pageWidth =
+            doc.internal.pageSize.getWidth();
+
+        const pageHeight =
+            doc.internal.pageSize.getHeight();
+
+        const periodLabel =
+            sellerBooksPdfGetPeriodLabel();
+
+        const marketplaceLabel =
+            sellerBooksPdfGetMarketplaceLabel();
+
+        const storeLabel =
+            sellerBooksPdfGetStoreLabel();
+
+        /* HEADER */
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(18);
+        doc.text("SellerBooks - Laporan Bisnis",14,16);
+
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(9);
+        doc.text(
+            "Dicetak: " + sellerBooksPdfFormatDateNow(),
+            pageWidth - 14,
+            16,
+            {align:"right"}
+        );
+
+        doc.setFontSize(10);
+        doc.text("Periode: " + periodLabel,14,23);
+        doc.text("Marketplace: " + marketplaceLabel,14,29);
+        doc.text("Akun Toko: " + storeLabel,14,35);
+
+        /* RINGKASAN KEUANGAN */
+        const summaryRows = [
+            ["Total Penjualan", sellerBooksPdfFormatRupiah(financial.totalSales)],
+            ["Penjualan Bersih", sellerBooksPdfFormatRupiah(financial.netSales)],
+            ["Produk Terjual", sellerBooksPdfFormatNumber(financial.totalQty) + " PCS"],
+            ["HPP", sellerBooksPdfFormatRupiah(financial.totalHpp)],
+            ["Admin Marketplace", sellerBooksPdfFormatRupiah(financial.totalAdmin)],
+            ["Packing", sellerBooksPdfFormatRupiah(financial.totalPacking)],
+            ["Biaya Lain", sellerBooksPdfFormatRupiah(financial.otherCosts)],
+            ["Laba Kotor", sellerBooksPdfFormatRupiah(financial.grossProfit)],
+            ["Laba Bersih", sellerBooksPdfFormatRupiah(financial.netProfit)],
+            ["Margin Bersih", Number(financial.margin || 0).toLocaleString("id-ID",{maximumFractionDigits:2}) + "%"]
+        ];
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(12);
+        doc.text("Ringkasan Keuangan",14,44);
+
+        doc.autoTable({
+            startY:47,
+            margin:{left:14,right:14},
+            theme:"grid",
+            head:[["Komponen","Nilai"]],
+            body:summaryRows,
+            styles:{
+                font:"helvetica",
+                fontSize:8,
+                cellPadding:2.2
+            },
+            headStyles:{
+                fontStyle:"bold"
+            },
+            columnStyles:{
+                0:{cellWidth:65},
+                1:{halign:"right"}
+            }
+        });
+
+        let y =
+            doc.lastAutoTable.finalY + 8;
+
+        /* SKU / PRODUK */
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(12);
+        doc.text("Rincian Penjualan per SKU",14,y);
+
+        y += 3;
+
+        const skuBody =
+            productRows.map(function(row,index){
+                return [
+                    index + 1,
+                    String(row.sku || "-"),
+                    String(row.name || "-"),
+                    sellerBooksPdfFormatNumber(row.qty),
+                    sellerBooksPdfFormatRupiah(row.price),
+                    sellerBooksPdfFormatRupiah(row.sales),
+                    sellerBooksPdfFormatRupiah(row.hpp),
+                    sellerBooksPdfFormatRupiah(row.admin),
+                    sellerBooksPdfFormatRupiah(row.profit),
+                    row.isLoss ? "MINUS" : "UNTUNG"
+                ];
+            });
+
+        if(!skuBody.length){
+            skuBody.push([
+                "-",
+                "-",
+                "Tidak ada transaksi pada periode ini.",
+                "-","-","-","-","-","-","-"
+            ]);
+        }
+
+        doc.autoTable({
+            startY:y + 2,
+            margin:{left:14,right:14},
+            theme:"grid",
+            head:[[
+                "No",
+                "SKU",
+                "Nama Produk",
+                "QTY",
+                "Harga Jual",
+                "Penjualan",
+                "HPP",
+                "Admin",
+                "Laba Produk",
+                "Status"
+            ]],
+            body:skuBody,
+            styles:{
+                font:"helvetica",
+                fontSize:6.7,
+                cellPadding:1.8,
+                overflow:"linebreak"
+            },
+            headStyles:{
+                fontStyle:"bold",
+                fontSize:6.7
+            },
+            columnStyles:{
+                0:{cellWidth:8,halign:"center"},
+                1:{cellWidth:25},
+                2:{cellWidth:48},
+                3:{cellWidth:14,halign:"right"},
+                4:{cellWidth:25,halign:"right"},
+                5:{cellWidth:27,halign:"right"},
+                6:{cellWidth:25,halign:"right"},
+                7:{cellWidth:25,halign:"right"},
+                8:{cellWidth:27,halign:"right"},
+                9:{cellWidth:18,halign:"center"}
+            },
+            didParseCell:function(data){
+                if(
+                    data.section === "body" &&
+                    data.column.index === 9 &&
+                    String(data.cell.raw) === "MINUS"
+                ){
+                    data.cell.styles.fontStyle = "bold";
+                }
+            }
+        });
+
+        y =
+            doc.lastAutoTable.finalY + 8;
+
+        /* MARKETPLACE */
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(12);
+        doc.text("Ringkasan Marketplace",14,y);
+
+        const marketplaceMap = new Map();
+
+        transactions.forEach(function(item){
+
+            const key =
+                String(
+                    item.marketplaceId ||
+                    item.marketplace ||
+                    "unknown"
+                );
+
+            if(!marketplaceMap.has(key)){
+                marketplaceMap.set(key,{
+                    name:String(item.marketplace || key || "Lainnya"),
+                    sales:0,
+                    qty:0,
+                    hpp:0,
+                    admin:0
+                });
+            }
+
+            const group =
+                marketplaceMap.get(key);
+
+            const sales =
+                getReportTransactionSalesAmount(item);
+
+            const qty =
+                Number(item.qty) || 0;
+
+            const product =
+                getMasterProductBySku(item.sku);
+
+            const hpp =
+                product
+                    ? (Number(product.cost) || 0) * qty
+                    : 0;
+
+            const admin =
+                sales *
+                getReportStoreFeePercent(item.storeId) /
+                100;
+
+            group.sales += sales;
+            group.qty += qty;
+            group.hpp += hpp;
+            group.admin += admin;
+        });
+
+        const marketplaceBody =
+            Array.from(marketplaceMap.values()).map(function(group){
+                const profit =
+                    group.sales -
+                    group.admin -
+                    group.hpp;
+
+                return [
+                    group.name,
+                    sellerBooksPdfFormatNumber(group.qty),
+                    sellerBooksPdfFormatRupiah(group.sales),
+                    sellerBooksPdfFormatRupiah(group.admin),
+                    sellerBooksPdfFormatRupiah(group.hpp),
+                    sellerBooksPdfFormatRupiah(profit)
+                ];
+            });
+
+        if(!marketplaceBody.length){
+            marketplaceBody.push([
+                "Tidak ada data",
+                "-","-","-","-","-"
+            ]);
+        }
+
+        doc.autoTable({
+            startY:y + 3,
+            margin:{left:14,right:14},
+            theme:"grid",
+            head:[[
+                "Marketplace",
+                "QTY",
+                "Penjualan",
+                "Admin",
+                "HPP",
+                "Laba Produk"
+            ]],
+            body:marketplaceBody,
+            styles:{
+                font:"helvetica",
+                fontSize:7,
+                cellPadding:2
+            },
+            headStyles:{
+                fontStyle:"bold",
+                fontSize:7
+            },
+            columnStyles:{
+                0:{cellWidth:55},
+                1:{cellWidth:20,halign:"right"},
+                2:{cellWidth:40,halign:"right"},
+                3:{cellWidth:35,halign:"right"},
+                4:{cellWidth:35,halign:"right"},
+                5:{cellWidth:40,halign:"right"}
+            }
+        });
+
+        /* FOOTER NOMOR HALAMAN */
+        const totalPages =
+            doc.internal.getNumberOfPages();
+
+        for(
+            let page = 1;
+            page <= totalPages;
+            page++
+        ){
+            doc.setPage(page);
+
+            doc.setFont("helvetica","normal");
+            doc.setFontSize(7);
+
+            doc.text(
+                "SellerBooks | Laporan Bisnis | Halaman " +
+                page +
+                " dari " +
+                totalPages,
+                pageWidth / 2,
+                pageHeight - 7,
+                {align:"center"}
+            );
+        }
+
+        const safePeriod =
+            sellerBooksPdfEscapeFileName(
+                periodLabel
+            );
+
+        const fileName =
+            "SellerBooks_Laporan_" +
+            safePeriod +
+            "_" +
+            new Date().toISOString().slice(0,10) +
+            ".pdf";
+
+        /*
+           WEB BROWSER + ANDROID WEBVIEW
+        */
+        const blob =
+            doc.output("blob");
+
+        const url =
+            URL.createObjectURL(blob);
+
+        const anchor =
+            document.createElement("a");
+
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.style.display = "none";
+
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+
+        /*
+           Beri waktu browser/WebView membaca Blob URL
+           sebelum object URL dilepas.
+        */
+        setTimeout(function(){
+            try{
+                URL.revokeObjectURL(url);
+            }catch(error){}
+        },15000);
+
+        alert(
+            "✅ PDF laporan berhasil dibuat.\n\n" +
+            "Periode: " + periodLabel + "\n" +
+            "Marketplace: " + marketplaceLabel + "\n" +
+            "Akun Toko: " + storeLabel
+        );
+
+    }catch(error){
+
+        console.error(
+            "Gagal membuat PDF laporan:",
+            error
+        );
+
+        alert(
+            "❌ PDF gagal dibuat.\n\n" +
+            (
+                error && error.message
+                    ? error.message
+                    : "Silakan coba lagi."
+            )
+        );
+
+    }finally{
+
+        if(button){
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+
+    }
+}
+
+
 /* =========================================================
    UPDATE SEMUA LAPORAN
 ========================================================= */
@@ -10250,6 +10827,17 @@ document.addEventListener(
             seluruh marketplace serta akun toko.
         </p>
 
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin:-8px 0 18px 0;">
+        <button
+            type="button"
+            class="primary-button"
+            onclick="downloadReportPDF()"
+            id="downloadReportPDFButton"
+        >
+            📄 Download PDF Laporan
+        </button>
     </div>
 
 
