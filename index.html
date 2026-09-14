@@ -3647,6 +3647,11 @@ td{
 
     }
 
+    #dashboard .stat-number{
+        font-size:21px;
+        word-break:break-word;
+    }
+
     .marketplace-grid{
 
         grid-template-columns:1fr;
@@ -8601,6 +8606,108 @@ document.addEventListener(
 
                         <div class="stat-info">
                             Performa keuntungan bisnis
+                        </div>
+
+                    </div>
+
+
+                    <!-- STATISTIK TAMBAHAN DASHBOARD -->
+
+                    <div class="stat-card">
+
+                        <div class="stat-top">
+
+                            <div class="stat-label">
+                                TOTAL PESANAN
+                            </div>
+
+                            <div class="stat-icon">
+                                🧾
+                            </div>
+
+                        </div>
+
+                        <div class="stat-number" id="dashboardTotalOrders">
+                            0 ORDER
+                        </div>
+
+                        <div class="stat-info">
+                            Pesanan unik pada periode terpilih
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-top">
+
+                            <div class="stat-label">
+                                PENJUALAN BERSIH
+                            </div>
+
+                            <div class="stat-icon">
+                                💳
+                            </div>
+
+                        </div>
+
+                        <div class="stat-number" id="dashboardNetSales">
+                            Rp0
+                        </div>
+
+                        <div class="stat-info">
+                            Setelah potongan admin marketplace
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-top">
+
+                            <div class="stat-label">
+                                TOTAL HPP
+                            </div>
+
+                            <div class="stat-icon">
+                                🏷️
+                            </div>
+
+                        </div>
+
+                        <div class="stat-number" id="dashboardTotalHpp">
+                            Rp0
+                        </div>
+
+                        <div class="stat-info">
+                            Modal produk berdasarkan Master Produk
+                        </div>
+
+                    </div>
+
+
+                    <div class="stat-card">
+
+                        <div class="stat-top">
+
+                            <div class="stat-label">
+                                LABA KOTOR
+                            </div>
+
+                            <div class="stat-icon">
+                                📈
+                            </div>
+
+                        </div>
+
+                        <div class="stat-number" id="dashboardGrossProfit">
+                            Rp0
+                        </div>
+
+                        <div class="stat-info">
+                            Setelah admin, HPP, dan packing
                         </div>
 
                     </div>
@@ -14727,6 +14834,24 @@ function renderMarketplacePerformance(){
     let totalHpp = 0;
     let totalAdmin = 0;
 
+    /* Pesanan unik: mengikuti logika laporan yang sudah ada. */
+    const dashboardOrderSet = new Set();
+
+    transactions.forEach(function(item){
+
+        const orderId = String(item.orderId || "").trim();
+
+        if(orderId){
+            dashboardOrderSet.add(orderId);
+        }
+
+    });
+
+    const totalOrders =
+        dashboardOrderSet.size > 0
+            ? dashboardOrderSet.size
+            : transactions.length;
+
     transactions.forEach(function(item){
 
         const sales =
@@ -14877,6 +15002,26 @@ function renderMarketplacePerformance(){
             "dashboardMargin"
         );
 
+    const dashboardTotalOrders =
+        document.getElementById(
+            "dashboardTotalOrders"
+        );
+
+    const dashboardNetSales =
+        document.getElementById(
+            "dashboardNetSales"
+        );
+
+    const dashboardTotalHpp =
+        document.getElementById(
+            "dashboardTotalHpp"
+        );
+
+    const dashboardGrossProfit =
+        document.getElementById(
+            "dashboardGrossProfit"
+        );
+
     if(dashboardTotalSales){
         dashboardTotalSales.textContent =
             formatRupiah(
@@ -14909,6 +15054,27 @@ function renderMarketplacePerformance(){
                 }
             ) +
             "%";
+    }
+
+    if(dashboardTotalOrders){
+        dashboardTotalOrders.textContent =
+            totalOrders.toLocaleString("id-ID") +
+            " ORDER";
+    }
+
+    if(dashboardNetSales){
+        dashboardNetSales.textContent =
+            formatRupiah(totalNetSales);
+    }
+
+    if(dashboardTotalHpp){
+        dashboardTotalHpp.textContent =
+            formatRupiah(totalHpp);
+    }
+
+    if(dashboardGrossProfit){
+        dashboardGrossProfit.textContent =
+            formatRupiah(totalGrossProfit);
     }
 
     /*
