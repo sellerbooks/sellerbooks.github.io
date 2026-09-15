@@ -4149,54 +4149,77 @@ td{
 .analysis-fix-button{
     display:none !important;
 }
-.dashboard-custom-date-range{
-    display:none;
-    position:absolute;
-    top:calc(100% + 8px);
-    right:0;
-    width:320px;
-    background:white;
-    border:1px solid var(--border);
-    border-radius:12px;
-    padding:12px;
-    box-shadow:0 12px 30px rgba(15,23,42,.14);
-}
 
-.dashboard-custom-date-range.show{
-    display:block;
-}
 
-.dashboard-custom-date-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
-}
+/* =====================================================
+   PERBAIKAN RESPONSIVE PILIH TANGGAL
+   Hanya memengaruhi tampilan HP/tablet kecil.
+===================================================== */
+@media (max-width: 600px){
+    #reportCustomDateRange{
+        width:100% !important;
+        max-width:100% !important;
+        box-sizing:border-box !important;
+        overflow:hidden !important;
+    }
 
-.dashboard-custom-date-grid label{
-    display:block;
-    margin-bottom:6px;
-    font-size:11px;
-    color:var(--muted);
-    font-weight:600;
-}
+    #reportCustomDateRange > div{
+        display:grid !important;
+        grid-template-columns:minmax(0,1fr) !important;
+        gap:10px !important;
+        width:100% !important;
+        max-width:100% !important;
+        box-sizing:border-box !important;
+    }
 
-.dashboard-custom-date-grid input{
-    width:100%;
-    min-width:0;
-}
+    #reportCustomDateRange > div > div{
+        min-width:0 !important;
+        width:100% !important;
+        box-sizing:border-box !important;
+    }
 
-.dashboard-custom-date-info{
-    display:block;
-    margin-top:7px;
-    font-size:10px;
-    color:var(--muted);
-    line-height:1.4;
-}
+    #reportCustomDateRange input[type="date"]{
+        width:100% !important;
+        max-width:100% !important;
+        min-width:0 !important;
+        box-sizing:border-box !important;
+    }
 
-@media(max-width:650px){
-    .dashboard-custom-date-range{
-        width:290px;
-        right:-55px;
+    #reportCustomDateRange small{
+        display:block !important;
+        width:100% !important;
+        max-width:100% !important;
+        white-space:normal !important;
+        box-sizing:border-box !important;
+    }
+
+    #productAnalysisCustomDateRange{
+        width:100% !important;
+        max-width:100% !important;
+        box-sizing:border-box !important;
+        overflow:hidden !important;
+    }
+
+    #productAnalysisCustomDateRange .product-analysis-date-grid{
+        display:grid !important;
+        grid-template-columns:minmax(0,1fr) !important;
+        gap:10px !important;
+        width:100% !important;
+        max-width:100% !important;
+        box-sizing:border-box !important;
+    }
+
+    #productAnalysisCustomDateRange .product-analysis-date-grid > div{
+        min-width:0 !important;
+        width:100% !important;
+        box-sizing:border-box !important;
+    }
+
+    #productAnalysisCustomDateRange input[type="date"]{
+        width:100% !important;
+        max-width:100% !important;
+        min-width:0 !important;
+        box-sizing:border-box !important;
     }
 }
 </style>
@@ -6548,20 +6571,6 @@ function getReportStoreFeePercent(storeId){
 
 
 /* =========================================================
-   BIAYA ADMIN TRANSAKSI - SNAPSHOT ADMIN SAAT IMPORT
-   Import baru memakai nilai admin akun toko saat itu.
-   Data lama tetap fallback ke pengaturan akun toko.
-========================================================= */
-
-function getReportTransactionFeePercent(transaction){
-    if(transaction && transaction.adminFeePercent !== undefined && transaction.adminFeePercent !== null && transaction.adminFeePercent !== ""){
-        const fee = Number(transaction.adminFeePercent);
-        if(Number.isFinite(fee)){ return fee; }
-    }
-    return getReportStoreFeePercent(transaction ? transaction.storeId : "");
-}
-
-/* =========================================================
    HITUNG PACKING DARI TRANSAKSI
 ========================================================= */
 
@@ -6765,7 +6774,9 @@ function calculateReportFinancial(){
         */
 
         const feePercent =
-            getReportTransactionFeePercent(item);
+            getReportStoreFeePercent(
+                item.storeId
+            );
 
 
         totalAdmin +=
@@ -7119,7 +7130,7 @@ function renderReportMarketplaceTable(){
             group.sales += sales;
             group.qty += qty;
 
-            const fee = getReportTransactionFeePercent(item);
+            const fee = getReportStoreFeePercent(item.storeId);
             group.admin += sales * fee / 100;
 
             const product = getMasterProductBySku(item.sku);
@@ -7213,7 +7224,7 @@ function renderReportStoreTable(){
             group.sales += sales;
             group.qty += qty;
 
-            const fee = getReportTransactionFeePercent(item);
+            const fee = getReportStoreFeePercent(item.storeId);
             group.admin += sales * fee / 100;
 
             const product = getMasterProductBySku(item.sku);
@@ -7820,7 +7831,7 @@ async function downloadReportPDF(){
             const sales = getReportTransactionSalesAmount(item);
             const product = row.product || getMasterProductBySku(sku);
             const cost = product ? (Number(product.cost) || 0) : 0;
-            const feePercent = getReportTransactionFeePercent(item);
+            const feePercent = getReportStoreFeePercent(item.storeId);
             const admin = sales * (feePercent / 100);
 
             row.qty += qty;
@@ -8067,7 +8078,7 @@ async function downloadReportPDF(){
 
             const admin =
                 sales *
-                getReportTransactionFeePercent(item) /
+                getReportStoreFeePercent(item.storeId) /
                 100;
 
             group.sales += sales;
@@ -9394,61 +9405,11 @@ document.addEventListener(
         Tahun Ini
     </option>
 
-    <option value="custom">
-        Pilih Tanggal
-    </option>
-
     <option value="all">
         Semua Periode
     </option>
 
 </select>
-
-
-                <div
-                    id="dashboardCustomDateRange"
-                    class="dashboard-custom-date-range"
-                >
-                    <div class="dashboard-custom-date-grid">
-                        <div>
-                            <label>Dari Tanggal</label>
-                            <input
-                                type="date"
-                                id="dashboardDateFrom"
-                                class="form-control"
-                                onchange="changeDashboardCustomDateRange()"
-                            >
-                        </div>
-
-                        <div>
-                            <label>Sampai Dengan</label>
-                            <input
-                                type="date"
-                                id="dashboardDateTo"
-                                class="form-control"
-                                onchange="changeDashboardCustomDateRange()"
-                            >
-                        </div>
-                    </div>
-
-                    <small
-                        id="dashboardDateRangeInfo"
-                        class="dashboard-custom-date-info"
-                    >
-                        Maksimal rentang tanggal 3 bulan terakhir sampai hari ini.
-                    </small>
-
-                    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
-                        <button
-                            type="button"
-                            class="primary-button"
-                            onclick="confirmDashboardCustomDateRange()"
-                            style="padding:8px 16px;font-size:12px;"
-                        >
-                            OK
-                        </button>
-                    </div>
-                </div>
 
 
                 <div class="notification-wrapper">
@@ -14823,7 +14784,9 @@ function calculateProductAnalysisRows(){
                 : 0;
 
         const feePercent =
-            getReportTransactionFeePercent(item);
+            getReportStoreFeePercent(
+                item.storeId
+            );
 
         const admin =
             sales *
@@ -15945,7 +15908,9 @@ function renderMarketplacePerformance(){
 
         totalAdmin +=
             sales *
-            getReportTransactionFeePercent(item) /
+            getReportStoreFeePercent(
+                item.storeId
+            ) /
             100;
 
     });
@@ -16586,63 +16551,9 @@ function sellerBooksDashboardFormatShortRupiah(value){
 }
 
 function sellerBooksDashboardDateKey(value){
-
-    if(!value){
-        return null;
-    }
-
-    const text = String(value).trim();
-
-    /* Tanggal murni tidak boleh dianggap UTC karena
-       bisa bergeser menjadi 07:00 WIB. */
-    if(/^\d{4}-\d{2}-\d{2}$/.test(text)){
-        return new Date(text + "T00:00:00");
-    }
-
     const d = new Date(value);
-
-    if(isNaN(d.getTime())){
-        return null;
-    }
-
-    /* Seluruh jam grafik dipaksa mengikuti WIB/Asia Jakarta. */
-    const parts =
-        new Intl.DateTimeFormat("en-CA",{
-            timeZone:"Asia/Jakarta",
-            year:"numeric",
-            month:"2-digit",
-            day:"2-digit",
-            hour:"2-digit",
-            minute:"2-digit",
-            second:"2-digit",
-            hour12:false
-        }).formatToParts(d);
-
-    const map = {};
-
-    parts.forEach(function(part){
-        if(part.type !== "literal"){
-            map[part.type] = part.value;
-        }
-    });
-
-    if(
-        !map.year ||
-        !map.month ||
-        !map.day ||
-        !map.hour
-    ){
-        return d;
-    }
-
-    return new Date(
-        Number(map.year),
-        Number(map.month)-1,
-        Number(map.day),
-        Number(map.hour),
-        Number(map.minute || 0),
-        Number(map.second || 0)
-    );
+    if(isNaN(d.getTime())) return null;
+    return d;
 }
 
 function sellerBooksRenderDashboardCharts(transactions){
@@ -16659,7 +16570,7 @@ function sellerBooksRenderDashboardCharts(transactions){
 
     transactions.forEach(function(item){
         const amount = Number(getReportTransactionSalesAmount(item)) || 0;
-        const date = sellerBooksDashboardDateKey(item.importedAt || item.reportDate);
+        const date = sellerBooksDashboardDateKey(item.reportDate || item.importedAt);
         if(!date) return;
 
         let key = "";
@@ -21575,16 +21486,13 @@ function saveSalesImportData(){
             "salesStoreAccount"
         ).value;
 
-    const storesForImport =
-        getReportStoresData();
-
     const store =
-        storesForImport.find(function(x){
+        stores.find(function(x){
             return String(x.id) ===
                 String(storeId);
         });
 
-    let packing =
+    const packing =
         calculateUniquePacking(
             currentSalesImport
         );
@@ -21639,11 +21547,8 @@ function saveSalesImportData(){
     /* Tanggal import selalu menggunakan tanggal Indonesia (WIB).
        Disimpan sebagai YYYY-MM-DD agar pergantian hari setelah 00:00
        WIB tidak bergeser ke tanggal UTC sebelumnya. */
-    const importedAt =
-        new Date().toISOString();
-
     const reportDate =
-        getIndonesiaDateString(importedAt);
+        getIndonesiaDateString(new Date());
 
     const transactions =
         rows.map(function(row){
@@ -21683,13 +21588,6 @@ function saveSalesImportData(){
                         ? store.name
                         : "",
 
-                /* Admin mengikuti persentase akun toko
-                   yang aktif saat import dilakukan. */
-                adminFeePercent:
-                    store
-                        ? (Number(store.feePercent) || 0)
-                        : 0,
-
                 sku:
                     skuIndex >= 0
                         ? String(
@@ -21727,7 +21625,7 @@ function saveSalesImportData(){
                     reportDate,
 
                 importedAt:
-                    importedAt
+                    reportDate
             };
 
         });
@@ -21739,47 +21637,6 @@ function saveSalesImportData(){
                 "sellerbooks_sales_imports"
             ) || "[]"
         );
-
-    /* =====================================================
-       UPDATE / MERGE IMPORT PENJUALAN
-       Import berikutnya hanya menambahkan transaksi yang
-       belum pernah tersimpan untuk marketplace + akun toko.
-       Order/SKU lama tidak digandakan.
-    ===================================================== */
-    const existingTransactionKeys = new Set();
-
-    imports.forEach(function(importRecord){
-        (importRecord.transactions || []).forEach(function(item){
-            const marketplaceKey = String(item.marketplaceId || item.marketplace || "").trim().toLowerCase();
-            const storeKey = String(item.storeId || "").trim();
-            const orderKey = String(item.orderId || "").trim();
-            const packingKey = String(item.packingId || "").trim();
-            const skuKey = String(item.sku || "").trim().toLowerCase();
-            if(orderKey){
-                existingTransactionKeys.add(marketplaceKey + "|" + storeKey + "|ORDER|" + orderKey.toLowerCase() + "|" + skuKey);
-            }else if(packingKey){
-                existingTransactionKeys.add(marketplaceKey + "|" + storeKey + "|PACKING|" + packingKey.toLowerCase() + "|" + skuKey);
-            }
-        });
-    });
-
-    const newTransactions = transactions.filter(function(item){
-        const marketplaceKey = String(item.marketplaceId || item.marketplace || "").trim().toLowerCase();
-        const storeKey = String(item.storeId || "").trim();
-        const orderKey = String(item.orderId || "").trim();
-        const packingKey = String(item.packingId || "").trim();
-        const skuKey = String(item.sku || "").trim().toLowerCase();
-        if(!orderKey && !packingKey){ return true; }
-        const key = orderKey
-            ? marketplaceKey + "|" + storeKey + "|ORDER|" + orderKey.toLowerCase() + "|" + skuKey
-            : marketplaceKey + "|" + storeKey + "|PACKING|" + packingKey.toLowerCase() + "|" + skuKey;
-        if(existingTransactionKeys.has(key)){ return false; }
-        existingTransactionKeys.add(key);
-        return true;
-    });
-
-    transactions.splice(0, transactions.length, ...newTransactions);
-    packing = calculateUniquePacking(transactions);
 
 
     const totalSales =
@@ -21834,12 +21691,6 @@ function saveSalesImportData(){
                 ? store.name
                 : "",
 
-        /* Admin akun toko saat file import disimpan. */
-        adminFeePercent:
-            store
-                ? (Number(store.feePercent) || 0)
-                : 0,
-
         skuColumn:
             currentSalesImport.skuColumn,
 
@@ -21873,7 +21724,7 @@ function saveSalesImportData(){
             reportDate,
 
         importedAt:
-            importedAt,
+            reportDate,
 
         transactions:
             transactions
@@ -23534,9 +23385,12 @@ function updatePreviewColumns(){
 
     /*
     AKTIFKAN TOMBOL KONFIRMASI
+    PERBAIKAN IMPORT PERTAMA:
+    hapus atribut disabled juga agar tombol benar-benar dapat diklik.
     */
 
     confirmButton.disabled = false;
+    confirmButton.removeAttribute("disabled");
 
 /*
 UPDATE PREVIEW TABLE
@@ -24763,7 +24617,6 @@ function refreshDashboard(){
         currentDashboardPeriod = savedPeriod;
     }
 
-    loadDashboardCustomDates();
     updateDashboardByPeriod();
 
 }
@@ -24783,11 +24636,6 @@ function changeDashboardPeriod(){
 
     currentDashboardPeriod =
         periodSelect.value;
-
-    dashboardCustomDateConfirmed =
-        currentDashboardPeriod !== "custom";
-
-    updateDashboardCustomDateUI();
 
 
     /* SIMPAN PILIHAN */
@@ -24820,279 +24668,6 @@ function isDateInPeriod(dateValue, period){
     /*
        DASHBOARD MENGGUNAKAN LOGIKA PERIODE YANG SAMA
        DENGAN KOLOM LAPORAN.
-       Semua perhitungan tanggal mengikuti WIB/Indonesia.
-    */
-    return isTransactionInReportPeriod(
-        { reportDate: dateValue },
-        period
-    );
-
-}
-/* =========================================
-   UPDATE DASHBOARD BERDASARKAN PERIODE
-========================================= */
-
-let dashboardCustomDateConfirmed = false;
-
-function getDashboardDateRange(){
-
-    const fromValue =
-        document.getElementById("dashboardDateFrom")?.value || "";
-
-    const toValue =
-        document.getElementById("dashboardDateTo")?.value || "";
-
-    return {
-        from:fromValue ? getReportDateOnly(fromValue) : null,
-        to:toValue ? getReportDateOnly(toValue) : null
-    };
-}
-
-function updateDashboardCustomDateUI(){
-
-    const periodSelect =
-        document.getElementById("dashboardPeriod");
-
-    const box =
-        document.getElementById("dashboardCustomDateRange");
-
-    if(!periodSelect || !box){
-        return;
-    }
-
-    const show =
-        periodSelect.value === "custom" &&
-        !dashboardCustomDateConfirmed;
-
-    box.classList.toggle("show",show);
-
-    const today =
-        getIndonesiaTodayDate();
-
-    if(!today){
-        return;
-    }
-
-    const maxDate =
-        getLocalDateString(today);
-
-    const minDate =
-        getLocalDateString(
-            new Date(
-                today.getFullYear(),
-                today.getMonth()-2,
-                1
-            )
-        );
-
-    const from =
-        document.getElementById("dashboardDateFrom");
-
-    const to =
-        document.getElementById("dashboardDateTo");
-
-    if(from){
-        from.min = minDate;
-        from.max = maxDate;
-    }
-
-    if(to){
-        to.min = minDate;
-        to.max = maxDate;
-    }
-
-    const info =
-        document.getElementById("dashboardDateRangeInfo");
-
-    if(info){
-        info.textContent =
-            "Rentang tanggal maksimal: 3 bulan terakhir sampai hari ini (" +
-            minDate.split("-").reverse().join("/") +
-            " s/d " +
-            maxDate.split("-").reverse().join("/") +
-            ").";
-    }
-}
-
-function changeDashboardCustomDateRange(){
-
-    dashboardCustomDateConfirmed = false;
-
-    const fromValue =
-        document.getElementById("dashboardDateFrom")?.value || "";
-
-    const toValue =
-        document.getElementById("dashboardDateTo")?.value || "";
-
-    if(fromValue && toValue){
-        const from = getReportDateOnly(fromValue);
-        const to = getReportDateOnly(toValue);
-
-        if(from && to && from > to){
-            alert("Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.");
-            return;
-        }
-    }
-
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_date_from",
-        fromValue
-    );
-
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_date_to",
-        toValue
-    );
-
-    updateDashboardByPeriod();
-}
-
-function confirmDashboardCustomDateRange(){
-
-    const fromValue =
-        document.getElementById("dashboardDateFrom")?.value || "";
-
-    const toValue =
-        document.getElementById("dashboardDateTo")?.value || "";
-
-    if(!fromValue || !toValue){
-        alert("Silakan pilih Dari Tanggal dan Sampai Dengan terlebih dahulu.");
-        return;
-    }
-
-    const from = getReportDateOnly(fromValue);
-    const to = getReportDateOnly(toValue);
-
-    if(from && to && from > to){
-        alert("Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.");
-        return;
-    }
-
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_date_from",
-        fromValue
-    );
-
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_date_to",
-        toValue
-    );
-
-    dashboardCustomDateConfirmed = true;
-
-    const box =
-        document.getElementById("dashboardCustomDateRange");
-
-    if(box){
-        box.classList.remove("show");
-    }
-
-    updateDashboardByPeriod();
-}
-
-function loadDashboardCustomDates(){
-
-    const from =
-        document.getElementById("dashboardDateFrom");
-
-    const to =
-        document.getElementById("dashboardDateTo");
-
-    if(from){
-        from.value =
-            sellerBooksStorage.getItem(
-                "sellerbooks_dashboard_date_from"
-            ) || "";
-    }
-
-    if(to){
-        to.value =
-            sellerBooksStorage.getItem(
-                "sellerbooks_dashboard_date_to"
-            ) || "";
-    }
-
-    updateDashboardCustomDateUI();
-}
-
-function changeDashboardPeriod(){
-
-    const periodSelect =
-        document.getElementById(
-            "dashboardPeriod"
-        );
-
-
-    if(!periodSelect){
-        return;
-    }
-
-
-    currentDashboardPeriod =
-        periodSelect.value;
-
-    dashboardCustomDateConfirmed =
-        currentDashboardPeriod !== "custom";
-
-    updateDashboardCustomDateUI();
-
-
-    /* SIMPAN PILIHAN */
-
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_period",
-        currentDashboardPeriod
-    );
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_view_day",
-        getSellerBooksDayKey()
-    );
-
-
-    /* UPDATE DASHBOARD */
-
-    updateDashboardByPeriod();
-
-}
-/* =========================================
-   CEK APAKAH TANGGAL MASUK PERIODE
-========================================= */
-
-function isDateInPeriod(dateValue, period){
-
-    if(!dateValue){
-        return false;
-    }
-
-    /*
-       DASHBOARD CUSTOM MENGGUNAKAN RENTANG TANGGAL
-       MILIK DASHBOARD, bukan filter Laporan.
-    */
-    if(period === "custom"){
-
-        const date =
-            getReportDateOnly(dateValue);
-
-        if(!date){
-            return false;
-        }
-
-        const range =
-            getDashboardDateRange();
-
-        if(range.from && date < range.from){
-            return false;
-        }
-
-        if(range.to && date > range.to){
-            return false;
-        }
-
-        return true;
-    }
-
-    /*
-       Periode standar tetap memakai logika Laporan.
        Semua perhitungan tanggal mengikuti WIB/Indonesia.
     */
     return isTransactionInReportPeriod(
