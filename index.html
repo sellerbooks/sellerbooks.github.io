@@ -809,14 +809,6 @@ body{
 }
 
 
-.dashboard-period-control{
-    position:relative;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-end;
-    z-index:2000;
-}
-
 .dashboard-custom-date-range{
     display:none;
     position:absolute;
@@ -867,8 +859,6 @@ body{
         right:-55px;
     }
 }
-
-
 
 .top-button{
 
@@ -6558,6 +6548,10 @@ function getReportStoreFeePercent(storeId){
 }
 
 
+/* =========================================================
+   HITUNG PACKING DARI TRANSAKSI
+========================================================= */
+
 function getReportTransactionFeePercent(transaction){
 
     if(
@@ -6579,12 +6573,6 @@ function getReportTransactionFeePercent(transaction){
             : ""
     );
 }
-
-
-/* =========================================================
-   HITUNG PACKING DARI TRANSAKSI
-========================================================= */
-
 function calculateReportPacking(transactions){
 
     const packingSet =
@@ -6785,7 +6773,9 @@ function calculateReportFinancial(){
         */
 
         const feePercent =
-            getReportTransactionFeePercent(item);
+            getReportTransactionFeePercent(
+                item
+            );
 
 
         totalAdmin +=
@@ -9376,6 +9366,8 @@ document.addEventListener(
 
             <div class="topbar-actions">
 
+                <div class="dashboard-period-control">
+
                 <select
     class="period-select"
     id="dashboardPeriod"
@@ -9472,10 +9464,7 @@ document.addEventListener(
             </div>
 
 
-                
-
-
-                <div class="notification-wrapper">
+                                <div class="notification-wrapper">
 
     <button
         class="top-button"
@@ -14847,7 +14836,9 @@ function calculateProductAnalysisRows(){
                 : 0;
 
         const feePercent =
-            getReportTransactionFeePercent(item);
+            getReportTransactionFeePercent(
+                item
+            );
 
         const admin =
             sales *
@@ -15969,7 +15960,9 @@ function renderMarketplacePerformance(){
 
         totalAdmin +=
             sales *
-            getReportTransactionFeePercent(item) /
+            getReportTransactionFeePercent(
+                item
+            ) /
             100;
 
     });
@@ -16407,8 +16400,8 @@ function renderMarketplacePerformance(){
 
                         admin +=
                             itemSales *
-                            getReportStoreFeePercent(
-                                item.storeId
+                            getReportTransactionFeePercent(
+                                item
                             ) /
                             100;
 
@@ -16683,7 +16676,7 @@ function sellerBooksRenderDashboardCharts(transactions){
 
     transactions.forEach(function(item){
         const amount = Number(getReportTransactionSalesAmount(item)) || 0;
-        const date = sellerBooksDashboardDateKey(item.reportDate || item.importedAt);
+        const date = sellerBooksDashboardDateKey(item.importedAt || item.reportDate);
         if(!date) return;
 
         let key = "";
@@ -21608,13 +21601,6 @@ function saveSalesImportData(){
                 String(storeId);
         });
 
-
-    const adminSnapshot =
-        store
-            ? (Number(store.feePercent) || 0)
-            : 0;
-
-
     const packing =
         calculateUniquePacking(
             currentSalesImport
@@ -21708,7 +21694,9 @@ function saveSalesImportData(){
                         : "",
 
                 adminFeePercent:
-                    adminSnapshot,
+                    store
+                        ? (Number(store.feePercent) || 0)
+                        : 0,
 
                 sku:
                     skuIndex >= 0
@@ -21762,15 +21750,78 @@ function saveSalesImportData(){
 
     /* =====================================================
        UPDATE / MERGE IMPORT
-       Import berikutnya:
-       - transaksi yang sama di-update, tidak digandakan
-       - transaksi baru ditambahkan
-       Kunci:
+       Import berikutnya tidak menggandakan transaksi lama.
+       Kunci transaksi:
        Marketplace + Akun Toko + Order ID + SKU.
        Jika Order ID kosong, gunakan Packing ID + SKU.
+       Transaksi yang sudah ada tetap dipertahankan;
+       hanya transaksi baru yang ditambahkan.
     ===================================================== */
+    const existingTransactionKeys =
+        new Set();
 
-    function getImportTransactionKey(transaction){
+    imports.forEach(function(existingImport){
+
+        (existingImport.transactions || [])
+            .forEach(function(existingTransaction){
+
+                const marketplaceKey =
+                    String(
+                        existingTransaction.marketplaceId ||
+                        existingTransaction.marketplace ||
+                        ""
+                    ).trim().toLowerCase();
+
+                const storeKey =
+                    String(
+                        existingTransaction.storeId ||
+                        ""
+                    ).trim().toLowerCase();
+
+                const orderKey =
+                    String(
+                        existingTransaction.orderId ||
+                        ""
+                    ).trim().toLowerCase();
+
+                const packingKey =
+                    String(
+                        existingTransaction.packingId ||
+                        ""
+                    ).trim().toLowerCase();
+
+                const skuKey =
+                    String(
+                        existingTransaction.sku ||
+                        ""
+                    ).trim().toLowerCase();
+
+                const identityKey =
+                    marketplaceKey + "|" +
+                    storeKey + "|" +
+                    (orderKey
+                        ? "ORDER:" + orderKey
+                        : "PACKING:" + packingKey) + "|" +
+                    skuKey;
+
+                if(
+                    orderKey ||
+                    packingKey
+                ){
+                    existingTransactionKeys.add(
+                        identityKey
+                    );
+                }
+
+            });
+
+    });
+
+
+    const newTransactions =
+        [];
+
+    transactions.forEach(function(transaction){
 
         const marketplaceKey =
             String(
@@ -21803,238 +21854,104 @@ function saveSalesImportData(){
                 ""
             ).trim().toLowerCase();
 
-        if(!orderKey && !packingKey){
-            return "";
-        }
-
-        return marketplaceKey + "|" +
+        const identityKey =
+            marketplaceKey + "|" +
             storeKey + "|" +
             (orderKey
                 ? "ORDER:" + orderKey
                 : "PACKING:" + packingKey) + "|" +
             skuKey;
-    }
 
+        /*
+           UPDATE / MERGE:
+           jika transaksi sudah pernah diimport, update QTY/sales
+           pada transaksi lama tanpa membuat baris duplikat.
+           Snapshot admin lama tetap dipertahankan.
+        */
+        if(
+            (orderKey || packingKey) &&
+            existingTransactionKeys.has(identityKey)
+        ){
+            let updated = false;
 
-    const transactionIndex =
-        new Map();
+            imports.forEach(function(existingImport){
+                (existingImport.transactions || []).forEach(function(existingTransaction){
 
-    imports.forEach(function(existingImport, importIndex){
+                    const existingMarketplaceKey =
+                        String(existingTransaction.marketplaceId || existingTransaction.marketplace || "")
+                            .trim().toLowerCase();
+                    const existingStoreKey =
+                        String(existingTransaction.storeId || "")
+                            .trim().toLowerCase();
+                    const existingOrderKey =
+                        String(existingTransaction.orderId || "")
+                            .trim().toLowerCase();
+                    const existingPackingKey =
+                        String(existingTransaction.packingId || "")
+                            .trim().toLowerCase();
+                    const existingSkuKey =
+                        String(existingTransaction.sku || "")
+                            .trim().toLowerCase();
 
-        (existingImport.transactions || [])
-            .forEach(function(existingTransaction, transactionIndexInImport){
+                    const existingIdentityKey =
+                        existingMarketplaceKey + "|" +
+                        existingStoreKey + "|" +
+                        (existingOrderKey
+                            ? "ORDER:" + existingOrderKey
+                            : "PACKING:" + existingPackingKey) + "|" +
+                        existingSkuKey;
 
-                const key =
-                    getImportTransactionKey(
-                        existingTransaction
-                    );
+                    if(existingIdentityKey !== identityKey || updated){
+                        return;
+                    }
 
-                if(key){
-                    transactionIndex.set(
-                        key,
-                        {
-                            importIndex:importIndex,
-                            transactionIndex:transactionIndexInImport
-                        }
-                    );
-                }
+                    const oldQty = Number(existingTransaction.qty) || 0;
+                    const newQty = Number(transaction.qty) || 0;
+                    const qtyDelta = newQty - oldQty;
 
+                    const oldAdmin = Number(existingTransaction.adminFeePercent);
+
+                    Object.assign(existingTransaction,transaction);
+
+                    if(Number.isFinite(oldAdmin)){
+                        existingTransaction.adminFeePercent = oldAdmin;
+                    }else{
+                        existingTransaction.adminFeePercent = transaction.adminFeePercent;
+                    }
+
+                    /* histori waktu transaksi tetap timestamp import pertama */
+                    existingTransaction.importedAt =
+                        existingTransaction.importedAt || transaction.importedAt;
+                    existingTransaction.reportDate =
+                        existingTransaction.reportDate || transaction.reportDate;
+
+                    /* simpan delta QTY untuk penyesuaian stok */
+                    existingTransaction._mergeQtyDelta = qtyDelta;
+                    updated = true;
+                });
             });
 
-    });
-
-
-    const newTransactions = [];
-    const updatedTransactions = [];
-    const seenInCurrentImport = new Set();
-
-    transactions.forEach(function(transaction){
-
-        const key =
-            getImportTransactionKey(
-                transaction
-            );
-
-        /*
-           Jika key tidak tersedia, perlakukan sebagai
-           transaksi baru agar data tanpa Order/Packing ID
-           tetap dapat disimpan.
-        */
-        if(!key){
-            newTransactions.push(transaction);
             return;
         }
 
-        /*
-           Hindari duplikat baris di dalam file yang sama.
-           Jika baris kedua memiliki key sama, gunakan data
-           terakhir sebagai data terbaru.
-        */
-        if(seenInCurrentImport.has(key)){
-            const lastIndex =
-                newTransactions.findIndex(function(item){
-                    return getImportTransactionKey(item) === key;
-                });
-
-            if(lastIndex >= 0){
-                newTransactions[lastIndex] = transaction;
-            }
-
-            return;
+        if(orderKey || packingKey){
+            existingTransactionKeys.add(identityKey);
         }
 
-        seenInCurrentImport.add(key);
-
-        const existingLocation =
-            transactionIndex.get(key);
-
-        if(existingLocation){
-
-            const existingImport =
-                imports[existingLocation.importIndex];
-
-            const existingTransaction =
-                existingImport.transactions[
-                    existingLocation.transactionIndex
-                ];
-
-            /*
-               Update/merge transaksi lama.
-               ID import lama tetap dipertahankan sehingga
-               transaksi tidak berpindah ke import baru.
-            */
-            const oldQty =
-                Number(existingTransaction.qty) || 0;
-
-            Object.assign(
-                existingTransaction,
-                transaction,
-                {
-                    adminFeePercent:
-                        adminSnapshot
-                }
-            );
-
-            /*
-               Jika QTY berubah, sesuaikan stok hanya sebesar
-               selisihnya. Jika QTY sama, stok tidak dipotong lagi.
-            */
-            const newQty =
-                Number(existingTransaction.qty) || 0;
-
-            const qtyDelta =
-                newQty - oldQty;
-
-            if(qtyDelta !== 0){
-
-                const stockTransactions = [{
-                    sku:existingTransaction.sku,
-                    qty:qtyDelta
-                }];
-
-                const productData =
-                    JSON.parse(
-                        sellerBooksStorage.getItem(
-                            "sellerbooks_products"
-                        ) || "[]"
-                    );
-
-                if(Array.isArray(productData)){
-
-                    stockTransactions.forEach(function(stockItem){
-
-                        const sku =
-                            String(
-                                stockItem.sku || ""
-                            ).trim().toLowerCase();
-
-                        const product =
-                            productData.find(function(item){
-                                return String(
-                                    item.sku || ""
-                                ).trim().toLowerCase() === sku;
-                            });
-
-                        if(!product){
-                            return;
-                        }
-
-                        const currentStock =
-                            Math.max(
-                                0,
-                                Number(product.stock) || 0
-                            );
-
-                        if(qtyDelta > 0){
-
-                            product.stock =
-                                Math.max(
-                                    0,
-                                    currentStock - qtyDelta
-                                );
-
-                        }else{
-
-                            product.stock =
-                                currentStock +
-                                Math.abs(qtyDelta);
-
-                        }
-
-                        product.updatedAt =
-                            new Date().toISOString();
-
-                    });
-
-                    sellerBooksStorage.setItem(
-                        "sellerbooks_products",
-                        JSON.stringify(productData)
-                    );
-
-                    products = productData;
-                }
-
-            }
-
-            updatedTransactions.push(
-                existingTransaction
-            );
-
-            return;
-        }
-
-        newTransactions.push(transaction);
-
-    });
-
-
-    /*
-       Simpan transaksi baru sebagai import baru.
-       Transaksi lama yang berhasil di-update tetap berada
-       pada import asalnya.
-    */
-    transactions =
-        newTransactions;
-
-
-    /*
-       Jika file hanya berisi transaksi yang sudah ada,
-       tidak membuat import baru.
-    */
-    if(!transactions.length){
-
-        sellerBooksStorage.setItem(
-            "sellerbooks_sales_imports",
-            JSON.stringify(imports)
+        newTransactions.push(
+            transaction
         );
 
-        return {
-            merged:true,
-            updatedCount:updatedTransactions.length,
-            newCount:0
-        };
+    });
 
-    }
+
+    /* =====================================================
+       HANYA DATA BARU YANG MASUK KE IMPORT BARU.
+       Dengan begitu stok dan packing tidak dihitung ulang
+       untuk order yang sudah pernah masuk.
+    ===================================================== */
+    transactions =
+        newTransactions;
 
 
     const totalSales =
@@ -22122,7 +22039,9 @@ function saveSalesImportData(){
                 : "",
 
         adminFeePercent:
-            adminSnapshot,
+            store
+                ? (Number(store.feePercent) || 0)
+                : 0,
 
         skuColumn:
             currentSalesImport.skuColumn,
@@ -22179,7 +22098,26 @@ function saveSalesImportData(){
        record import kosong yang dapat mengganggu laporan.
     */
     if(!transactions.length){
-        return null;
+        return {
+            id:"sales_merge_" + Date.now(),
+            fileName:currentSalesImport.fileName,
+            fileType:currentSalesImport.fileType,
+            marketplace:currentSalesImport.marketplace,
+            marketplaceId:currentSalesImport.marketplaceId,
+            storeId:storeId,
+            storeName:store ? store.name : "",
+            adminFeePercent:adminSnapshot,
+            rowCount:0,
+            totalSales:0,
+            totalQty:0,
+            uniquePackingCount:0,
+            totalPackingCost:0,
+            reportDate:reportDate,
+            importedAt:importedAt,
+            transactions:[],
+            mergedOnly:true,
+            updatedCount:0
+        };
     }
 
 
@@ -22200,6 +22138,7 @@ function saveSalesImportData(){
 
     return record;
 }
+
 /*
 ========================================================
 NORMALISASI HEADER
@@ -24379,6 +24318,13 @@ function confirmSalesColumns(){
         renderNotifications();
     }
 
+    /* REFRESH DASHBOARD AGAR GRAFIK LANGSUNG MEMBACA IMPORT TERBARU */
+    if(
+        typeof updateDashboardByPeriod === "function"
+    ){
+        updateDashboardByPeriod();
+    }
+
 }
 /* =====================================================
    SEMENTARA - PERSIAPAN FASE 3
@@ -25415,12 +25361,13 @@ document.addEventListener(
 
         }
 
-
         loadDashboardCustomDates();
         updateDashboardByPeriod();
 
     }
 );
+
+
 
 /* =========================================
    SELLERBOOKS NOTIFICATION SYSTEM
