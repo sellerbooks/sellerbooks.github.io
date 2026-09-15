@@ -15908,10 +15908,22 @@ function sellerBooksRenderDashboardCharts(transactions){
             if(d && d.getHours() > latestHour) latestHour = d.getHours();
         });
         if(latestHour >= 0) {
-            setTimeout(function(){
+            /*
+               Posisi grafik diatur langsung melalui scrollLeft agar
+               tidak kembali ke jam 00:00 ketika dashboard pertama kali dibuka.
+               Jam upload terakhir ditempatkan di tengah area yang terlihat.
+            */
+            const positionLatestUploadHour = function(){
                 const bars = salesChart.querySelectorAll(".dashboard-bar-item");
-                if(bars[latestHour]) bars[latestHour].scrollIntoView({behavior:"auto",block:"nearest",inline:"center"});
-            }, 0);
+                const target = bars[latestHour];
+                if(!target) return;
+                const targetCenter = target.offsetLeft + (target.offsetWidth / 2);
+                salesChart.scrollLeft = Math.max(0, targetCenter - (salesChart.clientWidth / 2));
+            };
+
+            requestAnimationFrame(function(){
+                requestAnimationFrame(positionLatestUploadHour);
+            });
         }
     }
 
