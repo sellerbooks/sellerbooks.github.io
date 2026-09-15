@@ -21556,21 +21556,14 @@ function saveSalesImportData(){
 
     /* =====================================================
        TANGGAL LAPORAN PERMANEN
-       Seluruh transaksi dari 1 kali import memakai
-       tanggal saat tombol import/simpan dijalankan.
-       Tanggal dari file marketplace TIDAK dipakai
-       untuk filter periode laporan.
     ===================================================== */
-    /* Tanggal import selalu menggunakan tanggal Indonesia (WIB).
-       Disimpan sebagai YYYY-MM-DD agar pergantian hari setelah 00:00
-       WIB tidak bergeser ke tanggal UTC sebelumnya. */
     const importedAt =
         new Date().toISOString();
 
     const reportDate =
         getIndonesiaDateString(importedAt);
 
-    const transactions =
+    let transactions =
         rows.map(function(row){
 
             const qty =
@@ -21608,8 +21601,6 @@ function saveSalesImportData(){
                         ? store.name
                         : "",
 
-                /* Admin mengikuti persentase akun toko
-                   yang aktif saat import dilakukan. */
                 adminFeePercent:
                     store
                         ? (Number(store.feePercent) || 0)
@@ -21647,7 +21638,6 @@ function saveSalesImportData(){
                 transactionDate:
                     transactionDate,
 
-                /* tanggal laporan = waktu import, permanen */
                 reportDate:
                     reportDate,
 
@@ -21664,6 +21654,163 @@ function saveSalesImportData(){
                 "sellerbooks_sales_imports"
             ) || "[]"
         );
+
+
+    /* =====================================================
+       UPDATE / MERGE IMPORT
+       Import berikutnya tidak menggandakan transaksi lama.
+       Kunci transaksi:
+       Marketplace + Akun Toko + Order ID + SKU.
+       Jika Order ID kosong, gunakan Packing ID + SKU.
+       Transaksi yang sudah ada tetap dipertahankan;
+       hanya transaksi baru yang ditambahkan.
+    ===================================================== */
+    const existingTransactionKeys =
+        new Set();
+
+    imports.forEach(function(existingImport){
+
+        (existingImport.transactions || [])
+            .forEach(function(existingTransaction){
+
+                const marketplaceKey =
+                    String(
+                        existingTransaction.marketplaceId ||
+                        existingTransaction.marketplace ||
+                        ""
+                    ).trim().toLowerCase();
+
+                const storeKey =
+                    String(
+                        existingTransaction.storeId ||
+                        ""
+                    ).trim().toLowerCase();
+
+                const orderKey =
+                    String(
+                        existingTransaction.orderId ||
+                        ""
+                    ).trim().toLowerCase();
+
+                const packingKey =
+                    String(
+                        existingTransaction.packingId ||
+                        ""
+                    ).trim().toLowerCase();
+
+                const skuKey =
+                    String(
+                        existingTransaction.sku ||
+                        ""
+                    ).trim().toLowerCase();
+
+                const identityKey =
+                    marketplaceKey + "|" +
+                    storeKey + "|" +
+                    (orderKey
+                        ? "ORDER:" + orderKey
+                        : "PACKING:" + packingKey) + "|" +
+                    skuKey;
+
+                if(
+                    orderKey ||
+                    packingKey
+                ){
+                    existingTransactionKeys.add(
+                        identityKey
+                    );
+                }
+
+            });
+
+    });
+
+
+    const newTransactions =
+        [];
+
+    transactions.forEach(function(transaction){
+
+        const marketplaceKey =
+            String(
+                transaction.marketplaceId ||
+                transaction.marketplace ||
+                ""
+            ).trim().toLowerCase();
+
+        const storeKey =
+            String(
+                transaction.storeId ||
+                ""
+            ).trim().toLowerCase();
+
+        const orderKey =
+            String(
+                transaction.orderId ||
+                ""
+            ).trim().toLowerCase();
+
+        const packingKey =
+            String(
+                transaction.packingId ||
+                ""
+            ).trim().toLowerCase();
+
+        const skuKey =
+            String(
+                transaction.sku ||
+                ""
+            ).trim().toLowerCase();
+
+        const identityKey =
+            marketplaceKey + "|" +
+            storeKey + "|" +
+            (orderKey
+                ? "ORDER:" + orderKey
+                : "PACKING:" + packingKey) + "|" +
+            skuKey;
+
+        /*
+           Jika transaksi sudah pernah diimport,
+           jangan masukkan lagi.
+        */
+        if(
+            (orderKey || packingKey) &&
+            existingTransactionKeys.has(identityKey)
+        ){
+            return;
+        }
+
+        /*
+           Hindari duplikat di dalam file import yang sama.
+        */
+        if(
+            (orderKey || packingKey) &&
+            existingTransactionKeys.has(identityKey)
+        ){
+            return;
+        }
+
+        if(orderKey || packingKey){
+            existingTransactionKeys.add(
+                identityKey
+            );
+        }
+
+        newTransactions.push(
+            transaction
+        );
+
+    });
+
+
+    /* =====================================================
+       HANYA DATA BARU YANG MASUK KE IMPORT BARU.
+       Dengan begitu stok dan packing tidak dihitung ulang
+       untuk order yang sudah pernah masuk.
+    ===================================================== */
+    transactions =
+        newTransactions;
 
 
     const totalSales =
@@ -21692,6 +21839,38 @@ function saveSalesImportData(){
         );
 
 
+    /* =====================================================
+       PACKING HANYA UNTUK TRANSAKSI BARU
+       Satu order tetap dihitung satu kali.
+    ===================================================== */
+    const newPackingKeys =
+        new Set();
+
+    transactions.forEach(function(item){
+
+        const packingKey =
+            String(
+                item.packingId ||
+                item.orderId ||
+                ""
+            ).trim().toLowerCase();
+
+        if(packingKey){
+            newPackingKeys.add(
+                String(item.marketplaceId || item.marketplace || "")
+                    .trim().toLowerCase() + "|" +
+                String(item.storeId || "")
+                    .trim().toLowerCase() + "|" +
+                packingKey
+            );
+        }
+
+    });
+
+    const newPackingCount =
+        newPackingKeys.size;
+
+
     const record = {
 
         id:
@@ -21718,7 +21897,6 @@ function saveSalesImportData(){
                 ? store.name
                 : "",
 
-        /* Admin akun toko saat file import disimpan. */
         adminFeePercent:
             store
                 ? (Number(store.feePercent) || 0)
@@ -21734,13 +21912,13 @@ function saveSalesImportData(){
             packing.column,
 
         uniquePackingCount:
-            packing.count,
+            newPackingCount,
 
         packingCostPerOrder:
             packingUnit,
 
         totalPackingCost:
-            packing.count *
+            newPackingCount *
             packingUnit,
 
         rowCount:
@@ -21752,7 +21930,6 @@ function saveSalesImportData(){
         totalQty:
             totalQty,
 
-        /* tanggal laporan permanen untuk seluruh file import */
         reportDate:
             reportDate,
 
@@ -21766,14 +21943,23 @@ function saveSalesImportData(){
 
     /* =====================================================
        STOK OTOMATIS
-       Setelah transaksi siap disimpan, QTY penjualan
-       langsung mengurangi stok Master Produk.
+       Hanya transaksi BARU yang dikurangi dari stok.
     ===================================================== */
     const stockResult =
         reduceProductStockFromImport(record);
 
     record.stockDeductedQty =
         stockResult.totalQty;
+
+
+    /*
+       Jika tidak ada transaksi baru, tidak perlu membuat
+       record import kosong yang dapat mengganggu laporan.
+    */
+    if(!transactions.length){
+        return null;
+    }
+
 
     imports.push(record);
 
@@ -21792,6 +21978,7 @@ function saveSalesImportData(){
 
     return record;
 }
+
 /*
 ========================================================
 NORMALISASI HEADER
