@@ -15835,7 +15835,7 @@ function sellerBooksRenderDashboardCharts(transactions){
     const maxEl=document.getElementById("dashboardChartMax"); const midEl=document.getElementById("dashboardChartMid"); const zeroEl=document.getElementById("dashboardChartZero");
     if(maxEl) maxEl.textContent=sellerBooksDashboardFormatShortRupiah(max);
     if(midEl) midEl.textContent=sellerBooksDashboardFormatShortRupiah(mid);
-    if(zeroEl) zeroEl.textContent=sellerBooksDashboardFormatShortRupiah(0);
+    if(zeroEl) zeroEl.textContent=formatRupiah(0);
 
     salesChart.innerHTML = bucketList.map(function(item){
         const height = item.value > 0 ? Math.max(3,Math.min(100,(item.value/max)*100)) : 1;
