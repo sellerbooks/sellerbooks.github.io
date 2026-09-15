@@ -809,6 +809,67 @@ body{
 }
 
 
+.dashboard-period-control{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    z-index:2000;
+}
+
+.dashboard-custom-date-range{
+    display:none;
+    position:absolute;
+    top:calc(100% + 8px);
+    right:0;
+    width:320px;
+    background:white;
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px;
+    box-shadow:0 12px 30px rgba(15,23,42,.14);
+}
+
+.dashboard-custom-date-range.show{
+    display:block;
+}
+
+.dashboard-custom-date-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.dashboard-custom-date-grid label{
+    display:block;
+    margin-bottom:6px;
+    font-size:11px;
+    color:var(--muted);
+    font-weight:600;
+}
+
+.dashboard-custom-date-grid input{
+    width:100%;
+    min-width:0;
+}
+
+.dashboard-custom-date-info{
+    display:block;
+    margin-top:7px;
+    font-size:10px;
+    color:var(--muted);
+    line-height:1.4;
+}
+
+@media(max-width:650px){
+    .dashboard-custom-date-range{
+        width:290px;
+        right:-55px;
+    }
+}
+
+
+
 .top-button{
 
     width:40px;
@@ -4144,182 +4205,11 @@ td{
 
 }
 
-/* =========================================================
-   DASHBOARD PERIODE CUSTOM + GRAFIK
-========================================================= */
-.dashboard-period-control{
-    position:relative;
-    display:flex;
-    flex-direction:column;
-    align-items:flex-end;
-    z-index:2000;
-}
 
-.dashboard-custom-date-range{
-    display:none;
-    position:absolute;
-    top:calc(100% + 8px);
-    right:0;
-    width:320px;
-    background:white;
-    border:1px solid var(--border);
-    border-radius:12px;
-    padding:12px;
-    box-shadow:0 12px 30px rgba(15,23,42,.14);
+/* READ ONLY - sembunyikan tombol Perbaiki pada Rincian Produk */
+.analysis-fix-button{
+    display:none !important;
 }
-
-.dashboard-custom-date-range.show{
-    display:block;
-}
-
-.dashboard-custom-date-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
-}
-
-.dashboard-custom-date-grid label{
-    display:block;
-    margin-bottom:6px;
-    font-size:11px;
-    color:var(--muted);
-    font-weight:600;
-}
-
-.dashboard-custom-date-grid input{
-    width:100%;
-    min-width:0;
-}
-
-.dashboard-custom-date-info{
-    display:block;
-    margin-top:7px;
-    font-size:10px;
-    color:var(--muted);
-    line-height:1.4;
-}
-
-@media(max-width:650px){
-    .dashboard-custom-date-range{
-        width:290px;
-        right:-55px;
-    }
-}
-
-
-.dashboard-charts-grid{
-    display:grid;
-    grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);
-    gap:18px;
-    margin:18px 0;
-}
-.dashboard-chart-card{
-    background:var(--card,#fff);
-    border:1px solid var(--border,#e2e8f0);
-    border-radius:14px;
-    padding:18px;
-    min-width:0;
-    overflow:hidden;
-}
-.dashboard-chart-header h3{margin:0;font-size:17px;}
-.dashboard-chart-header p{margin:5px 0 0;color:#64748b;font-size:12px;}
-.dashboard-chart-area{
-    display:flex;
-    height:250px;
-    margin-top:18px;
-    min-width:0;
-}
-.dashboard-y-axis{
-    width:66px;
-    flex:0 0 66px;
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
-    padding:0 7px 28px 0;
-    color:#64748b;
-    font-size:10px;
-    text-align:right;
-}
-.dashboard-bar-chart{
-    flex:1;
-    min-width:0;
-    display:flex;
-    align-items:flex-end;
-    gap:7px;
-    padding:0 2px 28px;
-    border-bottom:1px solid #cbd5e1;
-    background:repeating-linear-gradient(to bottom,transparent 0,transparent 48px,#eef2f7 49px);
-    overflow-x:auto;
-}
-.dashboard-bar-item{
-    flex:1 0 24px;
-    min-width:24px;
-    height:100%;
-    display:flex;
-    flex-direction:column;
-    justify-content:flex-end;
-    align-items:center;
-    position:relative;
-}
-.dashboard-bar{
-    width:min(34px,80%);
-    min-height:2px;
-    background:var(--primary,#2563eb);
-    border-radius:5px 5px 0 0;
-    transition:height .25s ease;
-}
-.dashboard-bar-label{
-    position:absolute;
-    bottom:-25px;
-    width:70px;
-    font-size:9px;
-    color:#64748b;
-    text-align:center;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-}
-.dashboard-bar-value{
-    font-size:9px;
-    color:#334155;
-    margin-bottom:3px;
-    max-width:70px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-}
-.dashboard-chart-empty{
-    width:100%;
-    align-self:center;
-    text-align:center;
-    color:#94a3b8;
-    font-size:13px;
-}
-.dashboard-marketplace-chart{
-    margin-top:22px;
-    display:flex;
-    flex-direction:column;
-    gap:14px;
-}
-.dashboard-marketplace-row{display:grid;grid-template-columns:90px minmax(0,1fr) 82px;gap:9px;align-items:center;}
-.dashboard-marketplace-name{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.dashboard-marketplace-track{height:13px;background:#f1f5f9;border-radius:10px;overflow:hidden;}
-.dashboard-marketplace-fill{height:100%;background:var(--primary,#2563eb);border-radius:10px;min-width:0;transition:width .25s ease;}
-.dashboard-marketplace-value{font-size:10px;text-align:right;color:#475569;white-space:nowrap;}
-@media screen and (max-width:900px){
-    .dashboard-charts-grid{grid-template-columns:1fr;}
-}
-@media screen and (max-width:600px){
-    .dashboard-chart-card{padding:14px;border-radius:10px;}
-    .dashboard-chart-area{height:210px;}
-    .dashboard-y-axis{width:58px;flex-basis:58px;font-size:9px;}
-    .dashboard-bar-chart{gap:5px;}
-    .dashboard-bar-item{flex-basis:20px;min-width:20px;}
-    .dashboard-bar{width:18px;}
-    .dashboard-marketplace-row{grid-template-columns:72px minmax(0,1fr) 72px;}
-}
-
-
 </style>
 
 <script>
@@ -4923,6 +4813,122 @@ document.addEventListener(
 #reports .chart-card {
     border-radius: 0 !important;
 }
+/* =========================================================
+   DASHBOARD STATISTIK DIAGRAM - RESPONSIVE
+========================================================= */
+.dashboard-charts-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);
+    gap:18px;
+    margin:18px 0;
+}
+.dashboard-chart-card{
+    background:var(--card,#fff);
+    border:1px solid var(--border,#e2e8f0);
+    border-radius:14px;
+    padding:18px;
+    min-width:0;
+    overflow:hidden;
+}
+.dashboard-chart-header h3{margin:0;font-size:17px;}
+.dashboard-chart-header p{margin:5px 0 0;color:#64748b;font-size:12px;}
+.dashboard-chart-area{
+    display:flex;
+    height:250px;
+    margin-top:18px;
+    min-width:0;
+}
+.dashboard-y-axis{
+    width:66px;
+    flex:0 0 66px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:0 7px 28px 0;
+    color:#64748b;
+    font-size:10px;
+    text-align:right;
+}
+.dashboard-bar-chart{
+    flex:1;
+    min-width:0;
+    display:flex;
+    align-items:flex-end;
+    gap:7px;
+    padding:0 2px 28px;
+    border-bottom:1px solid #cbd5e1;
+    background:repeating-linear-gradient(to bottom,transparent 0,transparent 48px,#eef2f7 49px);
+    overflow-x:auto;
+}
+.dashboard-bar-item{
+    flex:1 0 24px;
+    min-width:24px;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    align-items:center;
+    position:relative;
+}
+.dashboard-bar{
+    width:min(34px,80%);
+    min-height:2px;
+    background:var(--primary,#2563eb);
+    border-radius:5px 5px 0 0;
+    transition:height .25s ease;
+}
+.dashboard-bar-label{
+    position:absolute;
+    bottom:-25px;
+    width:70px;
+    font-size:9px;
+    color:#64748b;
+    text-align:center;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.dashboard-bar-value{
+    font-size:9px;
+    color:#334155;
+    margin-bottom:3px;
+    max-width:70px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.dashboard-chart-empty{
+    width:100%;
+    align-self:center;
+    text-align:center;
+    color:#94a3b8;
+    font-size:13px;
+}
+.dashboard-marketplace-chart{
+    margin-top:22px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+}
+.dashboard-marketplace-row{display:grid;grid-template-columns:90px minmax(0,1fr) 82px;gap:9px;align-items:center;}
+.dashboard-marketplace-name{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dashboard-marketplace-track{height:13px;background:#f1f5f9;border-radius:10px;overflow:hidden;}
+.dashboard-marketplace-fill{height:100%;background:var(--primary,#2563eb);border-radius:10px;min-width:0;transition:width .25s ease;}
+.dashboard-marketplace-value{font-size:10px;text-align:right;color:#475569;white-space:nowrap;}
+@media screen and (max-width:900px){
+    .dashboard-charts-grid{grid-template-columns:1fr;}
+}
+@media screen and (max-width:600px){
+    .dashboard-chart-card{padding:14px;border-radius:10px;}
+    .dashboard-chart-area{height:210px;}
+    .dashboard-y-axis{width:58px;flex-basis:58px;font-size:9px;}
+    .dashboard-bar-chart{gap:5px;}
+    .dashboard-bar-item{flex-basis:20px;min-width:20px;}
+    .dashboard-bar{width:18px;}
+    .dashboard-marketplace-row{grid-template-columns:72px minmax(0,1fr) 72px;}
+}
+
+
 /* =========================================================
    SELLERBOOKS REPORT ENGINE - TAHAP 2
    TOTAL PENJUALAN + QTY + TRANSAKSI
@@ -6551,19 +6557,28 @@ function getReportStoreFeePercent(storeId){
 
 }
 
-/* =========================================================
-   BIAYA ADMIN TRANSAKSI - SNAPSHOT
-   Import baru menyimpan nilai admin akun toko saat import.
-   Jika data lama belum memiliki snapshot, gunakan nilai toko saat ini.
-========================================================= */
-function getReportTransactionFeePercent(transaction){
-    if(transaction && transaction.adminFeePercent !== undefined && transaction.adminFeePercent !== null && transaction.adminFeePercent !== ""){
-        const fee = Number(transaction.adminFeePercent);
-        if(Number.isFinite(fee)){ return fee; }
-    }
-    return getReportStoreFeePercent(transaction ? transaction.storeId : "");
-}
 
+function getReportTransactionFeePercent(transaction){
+
+    if(
+        transaction &&
+        transaction.adminFeePercent !== undefined &&
+        transaction.adminFeePercent !== null &&
+        transaction.adminFeePercent !== ""
+    ){
+        const fee = Number(transaction.adminFeePercent);
+
+        if(Number.isFinite(fee)){
+            return fee;
+        }
+    }
+
+    return getReportStoreFeePercent(
+        transaction
+            ? transaction.storeId
+            : ""
+    );
+}
 
 
 /* =========================================================
@@ -7344,7 +7359,7 @@ function renderReportTransactionTable(){
 
             const sku = String(item.sku || "").trim();
             const product = getMasterProductBySku(sku);
-            const status = product ? "✓ Cocok" : "⚠ SKU belum ada";
+            const status = product ? "✓ Valid" : "⚠ SKU belum ada";
 
             html += `
                 <tr>
@@ -7460,6 +7475,783 @@ function changeReportTransactionPageSize(value){
     reportTransactionPage = 1;
     renderReportTransactionTable();
 }
+
+/* =========================================================
+   SELLERBOOKS - DOWNLOAD PDF LAPORAN
+   Mengikuti filter Periode + Marketplace + Akun Toko
+========================================================= */
+
+let sellerBooksPdfLibrariesPromise = null;
+
+function sellerBooksLoadPdfLibraries(){
+    if(window.jspdf && window.jspdf.jsPDF && window.jspdfAutoTableLoaded){
+        return Promise.resolve();
+    }
+
+    if(sellerBooksPdfLibrariesPromise){
+        return sellerBooksPdfLibrariesPromise;
+    }
+
+    sellerBooksPdfLibrariesPromise = new Promise(function(resolve,reject){
+
+        function loadScript(src, done){
+            const existing = document.querySelector('script[data-sellerbooks-pdf="' + src + '"]');
+
+            if(existing){
+                if(existing.dataset.loaded === "true"){
+                    done();
+                    return;
+                }
+
+                existing.addEventListener("load", done, {once:true});
+                existing.addEventListener("error", function(){
+                    reject(new Error("Gagal memuat library PDF."));
+                }, {once:true});
+                return;
+            }
+
+            const script = document.createElement("script");
+            script.src = src;
+            script.async = true;
+            script.dataset.sellerbooksPdf = src;
+
+            script.onload = function(){
+                script.dataset.loaded = "true";
+                done();
+            };
+
+            script.onerror = function(){
+                reject(new Error("Gagal memuat library PDF."));
+            };
+
+            document.head.appendChild(script);
+        }
+
+        loadScript(
+            "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+            function(){
+                loadScript(
+                    "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js",
+                    function(){
+                        window.jspdfAutoTableLoaded = true;
+                        resolve();
+                    }
+                );
+            }
+        );
+    });
+
+    return sellerBooksPdfLibrariesPromise;
+}
+
+function sellerBooksPdfEscapeFileName(value){
+    return String(value || "SellerBooks")
+        .replace(/[\\\/:*?"<>|]+/g,"-")
+        .replace(/\s+/g," ")
+        .trim();
+}
+
+function sellerBooksPdfGetPeriodLabel(){
+    const period =
+        document.getElementById("reportPeriod")?.value || "today";
+
+    const names = {
+        today:"Hari Ini",
+        yesterday:"Kemarin",
+        week:"Minggu Ini",
+        lastWeek:"Minggu Lalu",
+        month:"Bulan Ini",
+        lastMonth:"Bulan Lalu",
+        last3Months:"3 Bulan Terakhir",
+        year:"Tahun Ini",
+        custom:"Pilih Tanggal",
+        all:"Semua Periode"
+    };
+
+    let label = names[period] || period;
+
+    if(period === "custom"){
+        const from =
+            document.getElementById("reportDateFrom")?.value || "";
+
+        const to =
+            document.getElementById("reportDateTo")?.value || "";
+
+        if(from || to){
+            label += " (" +
+                (from ? from.split("-").reverse().join("/") : "...") +
+                " s/d " +
+                (to ? to.split("-").reverse().join("/") : "...") +
+                ")";
+        }
+    }
+
+    return label;
+}
+
+function sellerBooksPdfGetMarketplaceLabel(){
+    const element =
+        document.getElementById("reportMarketplace");
+
+    if(!element){
+        return "Semua Marketplace";
+    }
+
+    const option = element.options[element.selectedIndex];
+
+    return option
+        ? String(option.textContent || option.value || "Semua Marketplace").trim()
+        : "Semua Marketplace";
+}
+
+function sellerBooksPdfGetStoreLabel(){
+    const element =
+        document.getElementById("reportStore");
+
+    if(!element){
+        return "Semua Akun Toko";
+    }
+
+    const option = element.options[element.selectedIndex];
+
+    return option
+        ? String(option.textContent || option.value || "Semua Akun Toko").trim()
+        : "Semua Akun Toko";
+}
+
+function sellerBooksPdfFormatNumber(value){
+    return Number(value || 0).toLocaleString("id-ID");
+}
+
+function sellerBooksPdfFormatRupiah(value){
+    return "Rp" + Number(value || 0).toLocaleString("id-ID");
+}
+
+function sellerBooksPdfFormatDateNow(){
+    try{
+        const d = getIndonesiaTodayDate();
+        return d.toLocaleDateString("id-ID",{
+            day:"2-digit",
+            month:"2-digit",
+            year:"numeric"
+        });
+    }catch(error){
+        return new Date().toLocaleDateString("id-ID");
+    }
+}
+
+async function downloadReportPDF(){
+
+    const button =
+        document.getElementById("downloadReportPDFButton");
+
+    const originalText =
+        button ? button.innerHTML : "";
+
+    try{
+
+        if(button){
+            button.disabled = true;
+            button.innerHTML = "⏳ Menyiapkan PDF...";
+        }
+
+        /*
+         * Ambil FILTER AKTIF SEBELUM refresh laporan.
+         * PDF tidak boleh mengambil SKU dari akun toko lain.
+         */
+        const pdfPeriod =
+            document.getElementById("reportPeriod")?.value || "month";
+
+        const pdfMarketplaceId =
+            document.getElementById("reportMarketplace")?.value || "all";
+
+        const pdfStoreId =
+            document.getElementById("reportStore")?.value || "all";
+
+        const pdfDateFrom =
+            document.getElementById("reportDateFrom")?.value || "";
+
+        const pdfDateTo =
+            document.getElementById("reportDateTo")?.value || "";
+
+        /* Pastikan tampilan laporan terbaru */
+        updateReports();
+
+        /*
+         * Gunakan filter laporan secara STRICT untuk PDF.
+         * Khusus akun toko: jika akun B dipilih, hanya transaksi
+         * dengan storeId B yang boleh masuk. Jika tidak ada transaksi,
+         * hasil harus benar-benar [] sehingga SKU juga kosong.
+         */
+        let transactions =
+            getAllReportTransactions().filter(function(transaction){
+
+                if(!isTransactionInReportPeriod(
+                    transaction,
+                    pdfPeriod
+                )){
+                    return false;
+                }
+
+                if(
+                    pdfMarketplaceId !== "all" &&
+                    pdfMarketplaceId !== ""
+                ){
+                    const transactionMarketplaceId =
+                        String(transaction.marketplaceId || "")
+                            .trim()
+                            .toLowerCase();
+
+                    const transactionMarketplace =
+                        String(transaction.marketplace || "")
+                            .trim()
+                            .toLowerCase();
+
+                    const selectedMarketplaceId =
+                        String(pdfMarketplaceId)
+                            .trim()
+                            .toLowerCase();
+
+                    const aliases = {
+                        "tiktok":["tiktok","tiktok shop"],
+                        "tokopedia":["tokopedia"],
+                        "toco":["toco"],
+                        "blibli":["blibli"],
+                        "shopee":["shopee"],
+                        "lazada":["lazada"]
+                    };
+
+                    const allowed =
+                        aliases[selectedMarketplaceId] ||
+                        [selectedMarketplaceId];
+
+                    if(
+                        transactionMarketplaceId !== selectedMarketplaceId &&
+                        !allowed.includes(transactionMarketplaceId) &&
+                        !allowed.includes(transactionMarketplace)
+                    ){
+                        return false;
+                    }
+                }
+
+                /*
+                 * FILTER AKUN TOKO WAJIB STRICT.
+                 * Jangan pernah fallback ke storeName karena itu
+                 * bisa membuat data akun lain ikut terbawa.
+                 */
+                if(
+                    pdfStoreId !== "all" &&
+                    pdfStoreId !== ""
+                ){
+                    if(
+                        String(transaction.storeId || "").trim() !==
+                        String(pdfStoreId).trim()
+                    ){
+                        return false;
+                    }
+                }
+
+                if(pdfPeriod === "custom"){
+                    const from = pdfDateFrom ? getReportDateOnly(pdfDateFrom) : null;
+                    const to = pdfDateTo ? getReportDateOnly(pdfDateTo) : null;
+                    const transactionDate =
+                        getReportDateOnly(
+                            transaction.reportDate || transaction.importedAt
+                        );
+
+                    if(from && (!transactionDate || transactionDate < from)){
+                        return false;
+                    }
+
+                    if(to && (!transactionDate || transactionDate > to)){
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+        /*
+         * Jika akun toko yang dipilih tidak mempunyai transaksi,
+         * paksa semua bagian rincian PDF kosong.
+         */
+        if(!transactions.length){
+            transactions = [];
+        }
+
+        /*
+         * Hitung keuangan berdasarkan transaksi PDF yang sama,
+         * bukan berdasarkan kemungkinan filter lain.
+         */
+        const financialBase =
+            calculateReportFinancial();
+
+        const financial =
+            transactions.length
+                ? financialBase
+                : {
+                    totalSales:0,
+                    netSales:0,
+                    totalQty:0,
+                    totalHpp:0,
+                    totalAdmin:0,
+                    totalPacking:0,
+                    otherCosts:0,
+                    grossProfit:0,
+                    netProfit:0,
+                    margin:0
+                };
+
+        /*
+           RINCIAN SKU PDF HARUS MENGIKUTI TRANSAKSI LAPORAN YANG SAMA.
+           Jangan memakai calculateProductAnalysisRows() karena fungsi tersebut
+           mengikuti filter Product Analysis sendiri, bukan filter Report.
+           Dengan cara ini SEMUA SKU yang terjual pada periode/filter laporan
+           akan masuk PDF, termasuk SKU yang belum ada di Master Produk.
+        */
+        const productRowsMap = new Map();
+
+        transactions.forEach(function(item){
+
+            const sku =
+                String(item.sku || "").trim();
+
+            if(!sku){
+                return;
+            }
+
+            const key = sku.toLowerCase();
+
+            if(!productRowsMap.has(key)){
+                const product = getMasterProductBySku(sku);
+
+                productRowsMap.set(key,{
+                    sku:sku,
+                    qty:0,
+                    sales:0,
+                    hpp:0,
+                    admin:0,
+                    product:product || null
+                });
+            }
+
+            const row = productRowsMap.get(key);
+            const qty = Number(item.qty) || 0;
+            const sales = getReportTransactionSalesAmount(item);
+            const product = row.product || getMasterProductBySku(sku);
+            const cost = product ? (Number(product.cost) || 0) : 0;
+            const feePercent = getReportTransactionFeePercent(item);
+            const admin = sales * (feePercent / 100);
+
+            row.qty += qty;
+            row.sales += sales;
+            row.hpp += cost * qty;
+            row.admin += admin;
+
+            if(!row.product && product){
+                row.product = product;
+            }
+        });
+
+        const productRows = Array.from(productRowsMap.values())
+            .map(function(row){
+                row.price = row.product ? (Number(row.product.price) || 0) : 0;
+                row.name = row.product
+                    ? (row.product.name || row.sku)
+                    : "SKU belum ada di Master Produk";
+                row.profit = row.sales - row.admin - row.hpp;
+                row.isLoss = row.profit < 0;
+                return row;
+            })
+            .sort(function(a,b){
+                return String(a.sku).localeCompare(String(b.sku), "id", {
+                    numeric:true,
+                    sensitivity:"base"
+                });
+            });
+
+        await sellerBooksLoadPdfLibraries();
+
+        const jsPDF =
+            window.jspdf.jsPDF;
+
+        const doc =
+            new jsPDF({
+                orientation:"landscape",
+                unit:"mm",
+                format:"a4"
+            });
+
+        const pageWidth =
+            doc.internal.pageSize.getWidth();
+
+        const pageHeight =
+            doc.internal.pageSize.getHeight();
+
+        const periodLabel =
+            sellerBooksPdfGetPeriodLabel();
+
+        const marketplaceLabel =
+            sellerBooksPdfGetMarketplaceLabel();
+
+        const storeLabel =
+            sellerBooksPdfGetStoreLabel();
+
+        /* HEADER */
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(18);
+        doc.text("SellerBooks - Laporan Bisnis",14,16);
+
+        doc.setFont("helvetica","normal");
+        doc.setFontSize(9);
+        doc.text(
+            "Dicetak: " + sellerBooksPdfFormatDateNow(),
+            pageWidth - 14,
+            16,
+            {align:"right"}
+        );
+
+        doc.setFontSize(10);
+        doc.text("Periode: " + periodLabel,14,23);
+        doc.text("Marketplace: " + marketplaceLabel,14,29);
+        doc.text("Akun Toko: " + storeLabel,14,35);
+
+        /* RINGKASAN KEUANGAN */
+        const summaryRows = [
+            ["Total Penjualan", sellerBooksPdfFormatRupiah(financial.totalSales)],
+            ["Penjualan Bersih", sellerBooksPdfFormatRupiah(financial.netSales)],
+            ["Produk Terjual", sellerBooksPdfFormatNumber(financial.totalQty) + " PCS"],
+            ["HPP", sellerBooksPdfFormatRupiah(financial.totalHpp)],
+            ["Admin Marketplace", sellerBooksPdfFormatRupiah(financial.totalAdmin)],
+            ["Packing", sellerBooksPdfFormatRupiah(financial.totalPacking)],
+            ["Biaya Lain", sellerBooksPdfFormatRupiah(financial.otherCosts)],
+            ["Laba Kotor", sellerBooksPdfFormatRupiah(financial.grossProfit)],
+            ["Laba Bersih", sellerBooksPdfFormatRupiah(financial.netProfit)],
+            ["Margin Bersih", Number(financial.margin || 0).toLocaleString("id-ID",{maximumFractionDigits:2}) + "%"]
+        ];
+
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(12);
+        doc.text("Ringkasan Keuangan",14,44);
+
+        doc.autoTable({
+            startY:47,
+            margin:{left:14,right:14},
+            theme:"grid",
+            head:[["Komponen","Nilai"]],
+            body:summaryRows,
+            styles:{
+                font:"helvetica",
+                fontSize:8,
+                cellPadding:2.2
+            },
+            headStyles:{
+                fontStyle:"bold"
+            },
+            columnStyles:{
+                0:{cellWidth:65},
+                1:{halign:"right"}
+            }
+        });
+
+        let y =
+            doc.lastAutoTable.finalY + 8;
+
+        /* SKU / PRODUK */
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(12);
+        doc.text("Rincian Penjualan per SKU",14,y);
+
+        y += 3;
+
+        const skuBody =
+            productRows.map(function(row,index){
+                return [
+                    index + 1,
+                    String(row.sku || "-"),
+                    String(row.name || "-"),
+                    sellerBooksPdfFormatNumber(row.qty),
+                    sellerBooksPdfFormatRupiah(row.price),
+                    sellerBooksPdfFormatRupiah(row.sales),
+                    sellerBooksPdfFormatRupiah(row.hpp),
+                    sellerBooksPdfFormatRupiah(row.admin),
+                    sellerBooksPdfFormatRupiah(row.profit),
+                    row.isLoss ? "MINUS" : "UNTUNG"
+                ];
+            });
+
+        if(!skuBody.length){
+            skuBody.push([
+                "-",
+                "-",
+                "Tidak ada transaksi pada periode ini.",
+                "-","-","-","-","-","-","-"
+            ]);
+        }
+
+        doc.autoTable({
+            startY:y + 2,
+            margin:{left:14,right:14},
+            theme:"grid",
+            head:[[
+                "No",
+                "SKU",
+                "Nama Produk",
+                "QTY",
+                "Harga Jual",
+                "Penjualan",
+                "HPP",
+                "Admin",
+                "Laba Produk",
+                "Status"
+            ]],
+            body:skuBody,
+            styles:{
+                font:"helvetica",
+                fontSize:6.7,
+                cellPadding:1.8,
+                overflow:"linebreak"
+            },
+            headStyles:{
+                fontStyle:"bold",
+                fontSize:6.7
+            },
+            columnStyles:{
+                0:{cellWidth:8,halign:"center"},
+                1:{cellWidth:25},
+                2:{cellWidth:48},
+                3:{cellWidth:14,halign:"right"},
+                4:{cellWidth:25,halign:"right"},
+                5:{cellWidth:27,halign:"right"},
+                6:{cellWidth:25,halign:"right"},
+                7:{cellWidth:25,halign:"right"},
+                8:{cellWidth:27,halign:"right"},
+                9:{cellWidth:18,halign:"center"}
+            },
+            didParseCell:function(data){
+                if(
+                    data.section === "body" &&
+                    data.column.index === 9 &&
+                    String(data.cell.raw) === "MINUS"
+                ){
+                    data.cell.styles.fontStyle = "bold";
+                }
+            }
+        });
+
+        y =
+            doc.lastAutoTable.finalY + 8;
+
+        /* MARKETPLACE */
+        doc.setFont("helvetica","bold");
+        doc.setFontSize(12);
+        doc.text("Ringkasan Marketplace",14,y);
+
+        const marketplaceMap = new Map();
+
+        transactions.forEach(function(item){
+
+            const key =
+                String(
+                    item.marketplaceId ||
+                    item.marketplace ||
+                    "unknown"
+                );
+
+            if(!marketplaceMap.has(key)){
+                marketplaceMap.set(key,{
+                    name:String(item.marketplace || key || "Lainnya"),
+                    sales:0,
+                    qty:0,
+                    hpp:0,
+                    admin:0
+                });
+            }
+
+            const group =
+                marketplaceMap.get(key);
+
+            const sales =
+                getReportTransactionSalesAmount(item);
+
+            const qty =
+                Number(item.qty) || 0;
+
+            const product =
+                getMasterProductBySku(item.sku);
+
+            const hpp =
+                product
+                    ? (Number(product.cost) || 0) * qty
+                    : 0;
+
+            const admin =
+                sales *
+                getReportTransactionFeePercent(item) /
+                100;
+
+            group.sales += sales;
+            group.qty += qty;
+            group.hpp += hpp;
+            group.admin += admin;
+        });
+
+        const marketplaceBody =
+            Array.from(marketplaceMap.values()).map(function(group){
+                const profit =
+                    group.sales -
+                    group.admin -
+                    group.hpp;
+
+                return [
+                    group.name,
+                    sellerBooksPdfFormatNumber(group.qty),
+                    sellerBooksPdfFormatRupiah(group.sales),
+                    sellerBooksPdfFormatRupiah(group.admin),
+                    sellerBooksPdfFormatRupiah(group.hpp),
+                    sellerBooksPdfFormatRupiah(profit)
+                ];
+            });
+
+        if(!marketplaceBody.length){
+            marketplaceBody.push([
+                "Tidak ada data",
+                "-","-","-","-","-"
+            ]);
+        }
+
+        doc.autoTable({
+            startY:y + 3,
+            margin:{left:14,right:14},
+            theme:"grid",
+            head:[[
+                "Marketplace",
+                "QTY",
+                "Penjualan",
+                "Admin",
+                "HPP",
+                "Laba Produk"
+            ]],
+            body:marketplaceBody,
+            styles:{
+                font:"helvetica",
+                fontSize:7,
+                cellPadding:2
+            },
+            headStyles:{
+                fontStyle:"bold",
+                fontSize:7
+            },
+            columnStyles:{
+                0:{cellWidth:55},
+                1:{cellWidth:20,halign:"right"},
+                2:{cellWidth:40,halign:"right"},
+                3:{cellWidth:35,halign:"right"},
+                4:{cellWidth:35,halign:"right"},
+                5:{cellWidth:40,halign:"right"}
+            }
+        });
+
+        /* FOOTER NOMOR HALAMAN */
+        const totalPages =
+            doc.internal.getNumberOfPages();
+
+        for(
+            let page = 1;
+            page <= totalPages;
+            page++
+        ){
+            doc.setPage(page);
+
+            doc.setFont("helvetica","normal");
+            doc.setFontSize(7);
+
+            doc.text(
+                "SellerBooks | Laporan Bisnis | Halaman " +
+                page +
+                " dari " +
+                totalPages,
+                pageWidth / 2,
+                pageHeight - 7,
+                {align:"center"}
+            );
+        }
+
+        const safePeriod =
+            sellerBooksPdfEscapeFileName(
+                periodLabel
+            );
+
+        const fileName =
+            "SellerBooks_Laporan_" +
+            safePeriod +
+            "_" +
+            new Date().toISOString().slice(0,10) +
+            ".pdf";
+
+        /*
+           WEB BROWSER + ANDROID WEBVIEW
+        */
+        const blob =
+            doc.output("blob");
+
+        const url =
+            URL.createObjectURL(blob);
+
+        const anchor =
+            document.createElement("a");
+
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.style.display = "none";
+
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+
+        /*
+           Beri waktu browser/WebView membaca Blob URL
+           sebelum object URL dilepas.
+        */
+        setTimeout(function(){
+            try{
+                URL.revokeObjectURL(url);
+            }catch(error){}
+        },15000);
+
+        alert(
+            "✅ PDF laporan berhasil dibuat.\n\n" +
+            "Periode: " + periodLabel + "\n" +
+            "Marketplace: " + marketplaceLabel + "\n" +
+            "Akun Toko: " + storeLabel
+        );
+
+    }catch(error){
+
+        console.error(
+            "Gagal membuat PDF laporan:",
+            error
+        );
+
+        alert(
+            "❌ PDF gagal dibuat.\n\n" +
+            (
+                error && error.message
+                    ? error.message
+                    : "Silakan coba lagi."
+            )
+        );
+
+    }finally{
+
+        if(button){
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+
+    }
+}
+
 
 /* =========================================================
    UPDATE SEMUA LAPORAN
@@ -8584,8 +9376,6 @@ document.addEventListener(
 
             <div class="topbar-actions">
 
-                <div class="dashboard-period-control">
-
                 <select
     class="period-select"
     id="dashboardPeriod"
@@ -8680,6 +9470,9 @@ document.addEventListener(
                 </div>
 
             </div>
+
+
+                
 
 
                 <div class="notification-wrapper">
@@ -8877,6 +9670,46 @@ document.addEventListener(
 
                 </div>
 
+
+
+<!-- =====================================================
+                     DIAGRAM STATISTIK DASHBOARD
+                     Tambahan saja - tidak mengubah modul lama
+                ====================================================== -->
+                <div class="dashboard-charts-grid">
+
+                    <div class="dashboard-chart-card">
+                        <div class="dashboard-chart-header">
+                            <div>
+                                <h3>Grafik Penjualan</h3>
+                                <p id="dashboardSalesChartInfo">Pergerakan penjualan berdasarkan periode</p>
+                            </div>
+                        </div>
+                        <div class="dashboard-chart-area">
+                            <div class="dashboard-y-axis">
+                                <span id="dashboardChartMax">Rp0</span>
+                                <span id="dashboardChartMid">Rp0</span>
+                                <span>Rp0</span>
+                            </div>
+                            <div id="dashboardSalesChart" class="dashboard-bar-chart">
+                                <div class="dashboard-chart-empty">Belum ada data penjualan</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-chart-card">
+                        <div class="dashboard-chart-header">
+                            <div>
+                                <h3>Penjualan per Marketplace</h3>
+                                <p>Perbandingan omzet berdasarkan marketplace</p>
+                            </div>
+                        </div>
+                        <div id="dashboardMarketplaceChart" class="dashboard-marketplace-chart">
+                            <div class="dashboard-chart-empty">Belum ada data penjualan</div>
+                        </div>
+                    </div>
+
+                </div>
 
 
                 <div class="content-section">
@@ -10364,6 +11197,18 @@ document.addEventListener(
             seluruh marketplace serta akun toko.
         </p>
 
+    </div>
+
+
+<div style="display:flex;justify-content:flex-end;margin:-8px 0 18px 0;">
+        <button
+            type="button"
+            class="primary-button"
+            onclick="downloadReportPDF()"
+            id="downloadReportPDFButton"
+        >
+            📄 Download PDF Laporan
+        </button>
     </div>
 
 
@@ -15129,9 +15974,6 @@ function renderMarketplacePerformance(){
 
     });
 
-    // Grafik dashboard mengikuti transaksi periode aktif dan timestamp WIB.
-    if(typeof sellerBooksRenderDashboardCharts === "function") sellerBooksRenderDashboardCharts(transactions);
-
     const totalPackingCount =
         calculateReportPacking(
             transactions
@@ -15220,6 +16062,9 @@ function renderMarketplacePerformance(){
                 totalSales
             ) * 100
             : 0;
+
+    // Update diagram statistik berdasarkan transaksi periode aktif.
+    sellerBooksRenderDashboardCharts(transactions);
 
     /*
        =====================================================
@@ -15325,7 +16170,6 @@ function renderMarketplacePerformance(){
             lastMonth:"Bulan Lalu",
             last3Months:"3 Bulan Terakhir",
             year:"Tahun Ini",
-            custom:"Pilih Tanggal",
             all:"Semua Periode"
         };
 
@@ -15563,7 +16407,9 @@ function renderMarketplacePerformance(){
 
                         admin +=
                             itemSales *
-                            getReportTransactionFeePercent(item) /
+                            getReportStoreFeePercent(
+                                item.storeId
+                            ) /
                             100;
 
                     }
@@ -15752,6 +16598,146 @@ function renderMarketplacePerformance(){
             }
         ).join("");
 
+}
+
+
+function sellerBooksDashboardFormatShortRupiah(value){
+    value = Number(value) || 0;
+    if(value >= 1000000000) return "Rp" + (value/1000000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " M";
+    if(value >= 1000000) return "Rp" + (value/1000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " jt";
+    if(value >= 1000) return "Rp" + (value/1000).toLocaleString("id-ID",{maximumFractionDigits:0}) + " rb";
+    return "Rp" + Math.round(value).toLocaleString("id-ID");
+}
+
+function sellerBooksDashboardDateKey(value){
+
+    if(!value){
+        return null;
+    }
+
+    const text = String(value).trim();
+
+    /* Tanggal murni tidak boleh dianggap UTC karena
+       bisa bergeser menjadi 07:00 WIB. */
+    if(/^\d{4}-\d{2}-\d{2}$/.test(text)){
+        return new Date(text + "T00:00:00");
+    }
+
+    const d = new Date(value);
+
+    if(isNaN(d.getTime())){
+        return null;
+    }
+
+    /* Seluruh jam grafik dipaksa mengikuti WIB/Asia Jakarta. */
+    const parts =
+        new Intl.DateTimeFormat("en-CA",{
+            timeZone:"Asia/Jakarta",
+            year:"numeric",
+            month:"2-digit",
+            day:"2-digit",
+            hour:"2-digit",
+            minute:"2-digit",
+            second:"2-digit",
+            hour12:false
+        }).formatToParts(d);
+
+    const map = {};
+
+    parts.forEach(function(part){
+        if(part.type !== "literal"){
+            map[part.type] = part.value;
+        }
+    });
+
+    if(
+        !map.year ||
+        !map.month ||
+        !map.day ||
+        !map.hour
+    ){
+        return d;
+    }
+
+    return new Date(
+        Number(map.year),
+        Number(map.month)-1,
+        Number(map.day),
+        Number(map.hour),
+        Number(map.minute || 0),
+        Number(map.second || 0)
+    );
+}
+
+function sellerBooksRenderDashboardCharts(transactions){
+    const salesChart = document.getElementById("dashboardSalesChart");
+    const marketplaceChart = document.getElementById("dashboardMarketplaceChart");
+    const info = document.getElementById("dashboardSalesChartInfo");
+    if(!salesChart || !marketplaceChart) return;
+
+    const periodNames = {today:"Hari Ini",yesterday:"Kemarin",week:"Minggu Ini",lastWeek:"Minggu Lalu",month:"Bulan Ini",lastMonth:"Bulan Lalu",last3Months:"3 Bulan Terakhir",year:"Tahun Ini",all:"Semua Periode"};
+    if(info) info.textContent = "Pergerakan penjualan • " + (periodNames[currentDashboardPeriod] || "Hari Ini");
+
+    const buckets = new Map();
+    const marketplaceTotals = new Map();
+
+    transactions.forEach(function(item){
+        const amount = Number(getReportTransactionSalesAmount(item)) || 0;
+        const date = sellerBooksDashboardDateKey(item.reportDate || item.importedAt);
+        if(!date) return;
+
+        let key = "";
+        let label = "";
+        if(currentDashboardPeriod === "today" || currentDashboardPeriod === "yesterday") {
+            key = String(date.getHours()).padStart(2,"0");
+            label = key + ":00";
+        } else if(currentDashboardPeriod === "year") {
+            key = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0");
+            label = date.toLocaleDateString("id-ID",{month:"short"});
+        } else if(currentDashboardPeriod === "last3Months" || currentDashboardPeriod === "all") {
+            key = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0");
+            label = date.toLocaleDateString("id-ID",{month:"short",year:"2-digit"});
+        } else {
+            key = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
+            label = date.toLocaleDateString("id-ID",{day:"2-digit",month:"short"});
+        }
+        if(!buckets.has(key)) buckets.set(key,{key:key,label:label,value:0,date:date});
+        buckets.get(key).value += amount;
+
+        const marketplace = String(item.marketplace || item.platform || item.marketplaceName || "Lainnya").trim() || "Lainnya";
+        marketplaceTotals.set(marketplace,(marketplaceTotals.get(marketplace)||0)+amount);
+    });
+
+    let bucketList = Array.from(buckets.values()).sort((a,b)=>a.key.localeCompare(b.key));
+    if(bucketList.length === 0){
+        salesChart.innerHTML = '<div class="dashboard-chart-empty">Belum ada data penjualan pada periode ini</div>';
+        marketplaceChart.innerHTML = '<div class="dashboard-chart-empty">Belum ada data penjualan pada periode ini</div>';
+        ["dashboardChartMax","dashboardChartMid"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="Rp0";});
+        return;
+    }
+
+    // Isi titik nol agar grafik hari/minggu tetap menunjukkan seluruh periode.
+    if(currentDashboardPeriod === "today" || currentDashboardPeriod === "yesterday") {
+        const full=[]; for(let h=0;h<24;h++){const k=String(h).padStart(2,"0"); full.push(buckets.get(k)||{key:k,label:k+":00",value:0});} bucketList=full;
+    }
+
+    const max = Math.max(...bucketList.map(x=>x.value),1);
+    const mid = max/2;
+    const maxEl=document.getElementById("dashboardChartMax"); const midEl=document.getElementById("dashboardChartMid");
+    if(maxEl) maxEl.textContent=sellerBooksDashboardFormatShortRupiah(max);
+    if(midEl) midEl.textContent=sellerBooksDashboardFormatShortRupiah(mid);
+
+    salesChart.innerHTML = bucketList.map(function(item){
+        const height = item.value > 0 ? Math.max(3,(item.value/max)*100) : 1;
+        return '<div class="dashboard-bar-item" title="'+item.label+' • '+formatRupiah(item.value)+'"><div class="dashboard-bar-value">'+(item.value? sellerBooksDashboardFormatShortRupiah(item.value):"")+'</div><div class="dashboard-bar" style="height:'+height+'%"></div><div class="dashboard-bar-label">'+item.label+'</div></div>';
+    }).join("");
+
+    const mpList=Array.from(marketplaceTotals.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    const mpMax=Math.max(...mpList.map(x=>x[1]),1);
+    marketplaceChart.innerHTML=mpList.map(function(pair){
+        const pct=(pair[1]/mpMax)*100;
+        return '<div class="dashboard-marketplace-row"><div class="dashboard-marketplace-name" title="'+pair[0]+'">'+pair[0]+'</div><div class="dashboard-marketplace-track"><div class="dashboard-marketplace-fill" style="width:'+pct+'%"></div></div><div class="dashboard-marketplace-value">'+sellerBooksDashboardFormatShortRupiah(pair[1])+'</div></div>';
+    }).join("");
 }
 function openMarketplaceModal(){
 
@@ -20604,192 +21590,615 @@ function populateSalesStoreAccounts(){
 function updatePackingCalculation(){if(!currentSalesImport)return;const r=calculateUniquePacking(currentSalesImport),unit=Math.max(0,Number(document.getElementById("packingCostPerOrder")?.value)||0);const c=document.getElementById("uniquePackingCount"),t=document.getElementById("totalPackingImportCost"),i=document.getElementById("packingIdentifierInfo");if(c)c.innerText=r.count.toLocaleString("id-ID");if(t)t.innerText=formatRupiah(r.count*unit);if(i)i.innerText=r.column?"Identitas packing: "+r.column+" • 1 packing dihitung 1 ID unik.":"Identitas packing belum ditemukan pada file.";}
 function saveSalesImportData(){
 
-    if(!currentSalesImport){ return null; }
-
-    const storeId = document.getElementById("salesStoreAccount").value;
-    const storesForImport = getReportStoresData();
-    const store = storesForImport.find(function(x){ return String(x.id) === String(storeId); });
-
-    const packing = calculateUniquePacking(currentSalesImport);
-    const packingInput = document.getElementById("packingCostPerOrder");
-    const packingUnit = Math.max(0, Number(packingInput?.value) || 0);
-    const rows = getCleanSalesRows(currentSalesImport);
-    const skuIndex = currentSalesImport.headers.indexOf(currentSalesImport.skuColumn);
-    const qtyIndex = currentSalesImport.headers.indexOf(currentSalesImport.qtyColumn);
-    const rule = SALES_MARKETPLACE_RULES[currentSalesImport.marketplace];
-    const packingIndex = packing.column ? currentSalesImport.headers.indexOf(packing.column) : -1;
-
-    const importedAt = new Date().toISOString();
-    const reportDate = getIndonesiaDateString(importedAt);
-    const adminSnapshot = store ? (Number(store.feePercent) || 0) : 0;
-
-    const incoming = rows.map(function(row){
-        const qty = qtyIndex >= 0 ? parseSalesNumber(row[qtyIndex]) : 0;
-        const transactionDate = getSalesTransactionDate(row,currentSalesImport);
-        const orderId = rule ? getFirstValue(row,currentSalesImport.headers,rule.orderAliases) : "";
-        const packingId = packingIndex >= 0 ? String(row[packingIndex] || "").trim() : "";
-        const sku = skuIndex >= 0 ? String(row[skuIndex] || "").trim() : "";
-        return {
-            marketplace: currentSalesImport.marketplace,
-            marketplaceId: currentSalesImport.marketplaceId,
-            storeId: storeId,
-            storeName: store ? store.name : "",
-            adminFeePercent: adminSnapshot,
-            sku: sku,
-            qty: qty,
-            salesAmount: getSalesAmount(row,currentSalesImport),
-            orderId: String(orderId || "").trim(),
-            packingId: packingId,
-            transactionDate: transactionDate,
-            reportDate: reportDate,
-            importedAt: importedAt
-        };
-    });
-
-    let imports = [];
-    try{ imports = JSON.parse(sellerBooksStorage.getItem("sellerbooks_sales_imports") || "[]"); }catch(error){ imports=[]; }
-    if(!Array.isArray(imports)){ imports=[]; }
-
-    function transactionKey(item){
-        const mp = String(item.marketplaceId || item.marketplace || "").trim().toLowerCase();
-        const st = String(item.storeId || "").trim();
-        const order = String(item.orderId || "").trim().toLowerCase();
-        const sku = String(item.sku || "").trim().toLowerCase();
-        if(order && sku){ return mp + "|" + st + "|ORDER|" + order + "|SKU|" + sku; }
-        const packingId = String(item.packingId || "").trim().toLowerCase();
-        if(packingId && sku){ return mp + "|" + st + "|PACKING|" + packingId + "|SKU|" + sku; }
-        return "";
+    if(!currentSalesImport){
+        return null;
     }
 
-    function adjustStockForDelta(sku,delta){
-        if(!sku || !delta){ return; }
-        let latest=[];
-        try{ latest=JSON.parse(sellerBooksStorage.getItem("sellerbooks_products") || "[]"); }catch(error){ latest=[]; }
-        if(!Array.isArray(latest)){ return; }
-        const product=latest.find(function(p){ return String(p && p.sku || "").trim().toLowerCase()===String(sku).trim().toLowerCase(); });
-        if(!product){ return; }
-        const oldStock=Math.max(0,Number(product.stock)||0);
-        product.stock=Math.max(0,oldStock-delta);
-        product.updatedAt=new Date().toISOString();
-        products=latest;
-        saveProductData();
-    }
+    const storeId =
+        document.getElementById(
+            "salesStoreAccount"
+        ).value;
 
-    const existingIndex = new Map();
-    imports.forEach(function(record,ri){
-        if(!Array.isArray(record.transactions)){ return; }
-        record.transactions.forEach(function(tx,ti){
-            const key=transactionKey(tx);
-            if(key && !existingIndex.has(key)){ existingIndex.set(key,{ri:ri,ti:ti}); }
+    const storesForImport =
+        getReportStoresData();
+
+    const store =
+        storesForImport.find(function(x){
+            return String(x.id) ===
+                String(storeId);
         });
-    });
 
-    const seenIncoming = new Map();
-    const newTransactions = [];
-    const updatedKeys = new Set();
 
-    incoming.forEach(function(tx){
-        const key=transactionKey(tx);
-        if(key && seenIncoming.has(key)){
-            const prev=seenIncoming.get(key);
-            if(prev && prev.ri !== undefined){
-                const rec=imports[prev.ri];
-                const oldTx=rec && rec.transactions ? rec.transactions[prev.ti] : null;
-                if(oldTx){
-                    const delta=(Number(tx.qty)||0)-(Number(oldTx.qty)||0);
-                    if(delta) adjustStockForDelta(tx.sku,delta);
-                    rec.transactions[prev.ti]={...oldTx,...tx};
-                    rec.transactions[prev.ti].updatedAt=importedAt;
-                    updatedKeys.add(key);
+    const adminSnapshot =
+        store
+            ? (Number(store.feePercent) || 0)
+            : 0;
+
+
+    const packing =
+        calculateUniquePacking(
+            currentSalesImport
+        );
+
+    const packingInput =
+        document.getElementById(
+            "packingCostPerOrder"
+        );
+
+    const packingUnit =
+        Math.max(
+            0,
+            Number(
+                packingInput?.value
+            ) || 0
+        );
+
+    const rows =
+        getCleanSalesRows(
+            currentSalesImport
+        );
+
+    const skuIndex =
+        currentSalesImport.headers.indexOf(
+            currentSalesImport.skuColumn
+        );
+
+    const qtyIndex =
+        currentSalesImport.headers.indexOf(
+            currentSalesImport.qtyColumn
+        );
+
+    const rule =
+        SALES_MARKETPLACE_RULES[
+            currentSalesImport.marketplace
+        ];
+
+    const packingIndex =
+        packing.column
+            ? currentSalesImport.headers.indexOf(
+                packing.column
+            )
+            : -1;
+
+    /* =====================================================
+       TANGGAL LAPORAN PERMANEN
+    ===================================================== */
+    const importedAt =
+        new Date().toISOString();
+
+    const reportDate =
+        getIndonesiaDateString(importedAt);
+
+    let transactions =
+        rows.map(function(row){
+
+            const qty =
+                qtyIndex >= 0
+                    ? parseSalesNumber(
+                        row[qtyIndex]
+                    )
+                    : 0;
+
+            const salesAmount =
+                getSalesAmount(
+                    row,
+                    currentSalesImport
+                );
+
+            const transactionDate =
+                getSalesTransactionDate(
+                    row,
+                    currentSalesImport
+                );
+
+            return {
+
+                marketplace:
+                    currentSalesImport.marketplace,
+
+                marketplaceId:
+                    currentSalesImport.marketplaceId,
+
+                storeId:
+                    storeId,
+
+                storeName:
+                    store
+                        ? store.name
+                        : "",
+
+                adminFeePercent:
+                    adminSnapshot,
+
+                sku:
+                    skuIndex >= 0
+                        ? String(
+                            row[skuIndex] || ""
+                        ).trim()
+                        : "",
+
+                qty:
+                    qty,
+
+                salesAmount:
+                    salesAmount,
+
+                orderId:
+                    rule
+                        ? getFirstValue(
+                            row,
+                            currentSalesImport.headers,
+                            rule.orderAliases
+                        )
+                        : "",
+
+                packingId:
+                    packingIndex >= 0
+                        ? String(
+                            row[packingIndex] || ""
+                        ).trim()
+                        : "",
+
+                transactionDate:
+                    transactionDate,
+
+                reportDate:
+                    reportDate,
+
+                importedAt:
+                    importedAt
+            };
+
+        });
+
+
+    const imports =
+        JSON.parse(
+            sellerBooksStorage.getItem(
+                "sellerbooks_sales_imports"
+            ) || "[]"
+        );
+
+
+    /* =====================================================
+       UPDATE / MERGE IMPORT
+       Import berikutnya:
+       - transaksi yang sama di-update, tidak digandakan
+       - transaksi baru ditambahkan
+       Kunci:
+       Marketplace + Akun Toko + Order ID + SKU.
+       Jika Order ID kosong, gunakan Packing ID + SKU.
+    ===================================================== */
+
+    function getImportTransactionKey(transaction){
+
+        const marketplaceKey =
+            String(
+                transaction.marketplaceId ||
+                transaction.marketplace ||
+                ""
+            ).trim().toLowerCase();
+
+        const storeKey =
+            String(
+                transaction.storeId ||
+                ""
+            ).trim().toLowerCase();
+
+        const orderKey =
+            String(
+                transaction.orderId ||
+                ""
+            ).trim().toLowerCase();
+
+        const packingKey =
+            String(
+                transaction.packingId ||
+                ""
+            ).trim().toLowerCase();
+
+        const skuKey =
+            String(
+                transaction.sku ||
+                ""
+            ).trim().toLowerCase();
+
+        if(!orderKey && !packingKey){
+            return "";
+        }
+
+        return marketplaceKey + "|" +
+            storeKey + "|" +
+            (orderKey
+                ? "ORDER:" + orderKey
+                : "PACKING:" + packingKey) + "|" +
+            skuKey;
+    }
+
+
+    const transactionIndex =
+        new Map();
+
+    imports.forEach(function(existingImport, importIndex){
+
+        (existingImport.transactions || [])
+            .forEach(function(existingTransaction, transactionIndexInImport){
+
+                const key =
+                    getImportTransactionKey(
+                        existingTransaction
+                    );
+
+                if(key){
+                    transactionIndex.set(
+                        key,
+                        {
+                            importIndex:importIndex,
+                            transactionIndex:transactionIndexInImport
+                        }
+                    );
                 }
-            }else if(prev && prev._newIndex !== undefined){
-                const oldNew=newTransactions[prev._newIndex];
-                if(oldNew){ oldNew.qty=tx.qty; oldNew.salesAmount=tx.salesAmount; oldNew.adminFeePercent=tx.adminFeePercent; oldNew.importedAt=tx.importedAt; oldNew.reportDate=tx.reportDate; }
-            }
-            return;
-        }
 
-        if(key && existingIndex.has(key)){
-            const pos=existingIndex.get(key);
-            const rec=imports[pos.ri];
-            const oldTx=rec.transactions[pos.ti];
-            const delta=(Number(tx.qty)||0)-(Number(oldTx.qty)||0);
-            if(delta) adjustStockForDelta(tx.sku,delta);
-            rec.transactions[pos.ti]={...oldTx,...tx,updatedAt:importedAt};
-            updatedKeys.add(key);
-            seenIncoming.set(key,pos);
-            return;
-        }
+            });
 
-        newTransactions.push(tx);
-        seenIncoming.set(key || ("NEW|"+newTransactions.length),{_newIndex:newTransactions.length-1});
     });
 
-    if(newTransactions.length){
-        const newPackingIds = new Set();
-        newTransactions.forEach(function(item){
-            let pid=String(item.packingId || "").trim();
-            if(!pid){ pid=String(item.orderId || "").trim(); }
-            if(pid){ newPackingIds.add(String(item.marketplaceId || "")+"|"+String(item.storeId || "")+"|"+pid); }
-        });
 
-        const record={
-            id:"sales_import_"+Date.now(),
-            fileName:currentSalesImport.fileName,
-            fileType:currentSalesImport.fileType,
-            marketplace:currentSalesImport.marketplace,
-            marketplaceId:currentSalesImport.marketplaceId,
-            storeId:storeId,
-            storeName:store ? store.name : "",
-            adminFeePercent:adminSnapshot,
-            skuColumn:currentSalesImport.skuColumn,
-            qtyColumn:currentSalesImport.qtyColumn,
-            packingColumn:packing.column,
-            uniquePackingCount:newPackingIds.size,
-            packingCostPerOrder:packingUnit,
-            totalPackingCost:newPackingIds.size*packingUnit,
-            rowCount:newTransactions.length,
-            totalSales:newTransactions.reduce(function(t,x){return t+(getReportTransactionSalesAmount(x)||0);},0),
-            totalQty:newTransactions.reduce(function(t,x){return t+(Number(x.qty)||0);},0),
-            reportDate:reportDate,
-            importedAt:importedAt,
-            transactions:newTransactions
+    const newTransactions = [];
+    const updatedTransactions = [];
+    const seenInCurrentImport = new Set();
+
+    transactions.forEach(function(transaction){
+
+        const key =
+            getImportTransactionKey(
+                transaction
+            );
+
+        /*
+           Jika key tidak tersedia, perlakukan sebagai
+           transaksi baru agar data tanpa Order/Packing ID
+           tetap dapat disimpan.
+        */
+        if(!key){
+            newTransactions.push(transaction);
+            return;
+        }
+
+        /*
+           Hindari duplikat baris di dalam file yang sama.
+           Jika baris kedua memiliki key sama, gunakan data
+           terakhir sebagai data terbaru.
+        */
+        if(seenInCurrentImport.has(key)){
+            const lastIndex =
+                newTransactions.findIndex(function(item){
+                    return getImportTransactionKey(item) === key;
+                });
+
+            if(lastIndex >= 0){
+                newTransactions[lastIndex] = transaction;
+            }
+
+            return;
+        }
+
+        seenInCurrentImport.add(key);
+
+        const existingLocation =
+            transactionIndex.get(key);
+
+        if(existingLocation){
+
+            const existingImport =
+                imports[existingLocation.importIndex];
+
+            const existingTransaction =
+                existingImport.transactions[
+                    existingLocation.transactionIndex
+                ];
+
+            /*
+               Update/merge transaksi lama.
+               ID import lama tetap dipertahankan sehingga
+               transaksi tidak berpindah ke import baru.
+            */
+            const oldQty =
+                Number(existingTransaction.qty) || 0;
+
+            Object.assign(
+                existingTransaction,
+                transaction,
+                {
+                    adminFeePercent:
+                        adminSnapshot
+                }
+            );
+
+            /*
+               Jika QTY berubah, sesuaikan stok hanya sebesar
+               selisihnya. Jika QTY sama, stok tidak dipotong lagi.
+            */
+            const newQty =
+                Number(existingTransaction.qty) || 0;
+
+            const qtyDelta =
+                newQty - oldQty;
+
+            if(qtyDelta !== 0){
+
+                const stockTransactions = [{
+                    sku:existingTransaction.sku,
+                    qty:qtyDelta
+                }];
+
+                const productData =
+                    JSON.parse(
+                        sellerBooksStorage.getItem(
+                            "sellerbooks_products"
+                        ) || "[]"
+                    );
+
+                if(Array.isArray(productData)){
+
+                    stockTransactions.forEach(function(stockItem){
+
+                        const sku =
+                            String(
+                                stockItem.sku || ""
+                            ).trim().toLowerCase();
+
+                        const product =
+                            productData.find(function(item){
+                                return String(
+                                    item.sku || ""
+                                ).trim().toLowerCase() === sku;
+                            });
+
+                        if(!product){
+                            return;
+                        }
+
+                        const currentStock =
+                            Math.max(
+                                0,
+                                Number(product.stock) || 0
+                            );
+
+                        if(qtyDelta > 0){
+
+                            product.stock =
+                                Math.max(
+                                    0,
+                                    currentStock - qtyDelta
+                                );
+
+                        }else{
+
+                            product.stock =
+                                currentStock +
+                                Math.abs(qtyDelta);
+
+                        }
+
+                        product.updatedAt =
+                            new Date().toISOString();
+
+                    });
+
+                    sellerBooksStorage.setItem(
+                        "sellerbooks_products",
+                        JSON.stringify(productData)
+                    );
+
+                    products = productData;
+                }
+
+            }
+
+            updatedTransactions.push(
+                existingTransaction
+            );
+
+            return;
+        }
+
+        newTransactions.push(transaction);
+
+    });
+
+
+    /*
+       Simpan transaksi baru sebagai import baru.
+       Transaksi lama yang berhasil di-update tetap berada
+       pada import asalnya.
+    */
+    transactions =
+        newTransactions;
+
+
+    /*
+       Jika file hanya berisi transaksi yang sudah ada,
+       tidak membuat import baru.
+    */
+    if(!transactions.length){
+
+        sellerBooksStorage.setItem(
+            "sellerbooks_sales_imports",
+            JSON.stringify(imports)
+        );
+
+        return {
+            merged:true,
+            updatedCount:updatedTransactions.length,
+            newCount:0
         };
 
-        const stockResult=reduceProductStockFromImport(record);
-        record.stockDeductedQty=stockResult.totalQty;
-        imports.push(record);
     }
 
-    if(!newTransactions.length && !updatedKeys.size){ return null; }
 
-    // Recalculate metadata for records touched by an update.
-    imports.forEach(function(record){
-        if(!Array.isArray(record.transactions)){ return; }
-        record.rowCount=record.transactions.length;
-        record.totalQty=record.transactions.reduce(function(t,x){return t+(Number(x.qty)||0);},0);
-        record.totalSales=record.transactions.reduce(function(t,x){return t+(getReportTransactionSalesAmount(x)||0);},0);
+    const totalSales =
+        transactions.reduce(
+            function(total,item){
+
+                return total +
+                    getReportTransactionSalesAmount(item);
+
+            },
+            0
+        );
+
+
+    const totalQty =
+        transactions.reduce(
+            function(total,item){
+
+                return total +
+                    Number(
+                        item.qty
+                    ) || 0;
+
+            },
+            0
+        );
+
+
+    /* =====================================================
+       PACKING HANYA UNTUK TRANSAKSI BARU
+       Satu order tetap dihitung satu kali.
+    ===================================================== */
+    const newPackingKeys =
+        new Set();
+
+    transactions.forEach(function(item){
+
+        const packingKey =
+            String(
+                item.packingId ||
+                item.orderId ||
+                ""
+            ).trim().toLowerCase();
+
+        if(packingKey){
+            newPackingKeys.add(
+                String(item.marketplaceId || item.marketplace || "")
+                    .trim().toLowerCase() + "|" +
+                String(item.storeId || "")
+                    .trim().toLowerCase() + "|" +
+                packingKey
+            );
+        }
+
     });
 
-    sellerBooksStorage.setItem("sellerbooks_sales_imports",JSON.stringify(imports));
-    sellerBooksStorage.setItem("sellerbooks_packing_unit_cost",String(packingUnit));
+    const newPackingCount =
+        newPackingKeys.size;
 
-    const addedCount=newTransactions.length;
-    const updatedCount=updatedKeys.size;
-    const result = addedCount ? imports[imports.length-1] : {
-        id:"sales_merge_"+Date.now(),
-        fileName:currentSalesImport.fileName,
-        marketplace:currentSalesImport.marketplace,
-        storeName:store ? store.name : "",
-        rowCount:0,
-        uniquePackingCount:0,
-        totalPackingCost:0,
-        addedCount:0,
-        updatedCount:updatedCount
+
+    const record = {
+
+        id:
+            "sales_import_" +
+            Date.now(),
+
+        fileName:
+            currentSalesImport.fileName,
+
+        fileType:
+            currentSalesImport.fileType,
+
+        marketplace:
+            currentSalesImport.marketplace,
+
+        marketplaceId:
+            currentSalesImport.marketplaceId,
+
+        storeId:
+            storeId,
+
+        storeName:
+            store
+                ? store.name
+                : "",
+
+        adminFeePercent:
+            adminSnapshot,
+
+        skuColumn:
+            currentSalesImport.skuColumn,
+
+        qtyColumn:
+            currentSalesImport.qtyColumn,
+
+        packingColumn:
+            packing.column,
+
+        uniquePackingCount:
+            newPackingCount,
+
+        packingCostPerOrder:
+            packingUnit,
+
+        totalPackingCost:
+            newPackingCount *
+            packingUnit,
+
+        rowCount:
+            transactions.length,
+
+        totalSales:
+            totalSales,
+
+        totalQty:
+            totalQty,
+
+        reportDate:
+            reportDate,
+
+        importedAt:
+            importedAt,
+
+        transactions:
+            transactions
     };
-    result.addedCount=addedCount;
-    result.updatedCount=updatedCount;
-    return result;
+
+
+    /* =====================================================
+       STOK OTOMATIS
+       Hanya transaksi BARU yang dikurangi dari stok.
+    ===================================================== */
+    const stockResult =
+        reduceProductStockFromImport(record);
+
+    record.stockDeductedQty =
+        stockResult.totalQty;
+
+
+    /*
+       Jika tidak ada transaksi baru, tidak perlu membuat
+       record import kosong yang dapat mengganggu laporan.
+    */
+    if(!transactions.length){
+        return null;
+    }
+
+
+    imports.push(record);
+
+
+    sellerBooksStorage.setItem(
+        "sellerbooks_sales_imports",
+        JSON.stringify(imports)
+    );
+
+
+    sellerBooksStorage.setItem(
+        "sellerbooks_packing_unit_cost",
+        String(packingUnit)
+    );
+
+
+    return record;
 }
 /*
 ========================================================
@@ -23554,7 +24963,6 @@ prepareDailyViewState();
 ========================================= */
 
 let currentDashboardPeriod = "today";
-let dashboardCustomDateConfirmed = false;
 
 
 async function sellerBooksManualRefreshDashboard(){
@@ -23651,234 +25059,7 @@ function refreshDashboard(){
 
 }
 
-function changeDashboardPeriod(){
-
-    const periodSelect =
-        document.getElementById(
-            "dashboardPeriod"
-        );
-
-
-    if(!periodSelect){
-        return;
-    }
-
-
-    currentDashboardPeriod =
-        periodSelect.value;
-
-    dashboardCustomDateConfirmed =
-        currentDashboardPeriod !== "custom";
-
-    updateDashboardCustomDateUI();
-
-
-    /* SIMPAN PILIHAN */
-
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_period",
-        currentDashboardPeriod
-    );
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_view_day",
-        getSellerBooksDayKey()
-    );
-
-
-    /* UPDATE DASHBOARD */
-
-    updateDashboardByPeriod();
-
-}
-/* =========================================
-   CEK APAKAH TANGGAL MASUK PERIODE
-========================================= */
-
-function isDateInPeriod(dateValue, period){
-
-    if(!dateValue){
-        return false;
-    }
-
-    /*
-       DASHBOARD CUSTOM MENGGUNAKAN RENTANG TANGGAL
-       MILIK DASHBOARD, bukan filter Laporan.
-    */
-    if(period === "custom"){
-
-        const date =
-            getReportDateOnly(dateValue);
-
-        if(!date){
-            return false;
-        }
-
-        const range =
-            getDashboardDateRange();
-
-        if(range.from && date < range.from){
-            return false;
-        }
-
-        if(range.to && date > range.to){
-            return false;
-        }
-
-        return true;
-    }
-
-    /*
-       Periode standar tetap memakai logika Laporan.
-       Semua perhitungan tanggal mengikuti WIB/Indonesia.
-    */
-    return isTransactionInReportPeriod(
-        { reportDate: dateValue },
-        period
-    );
-
-}
-/* =========================================
-   UPDATE DASHBOARD BERDASARKAN PERIODE
-========================================= */
-
-function sellerBooksDashboardFormatShortRupiah(value){
-    value = Number(value) || 0;
-    if(value >= 1000000000) return "Rp" + (value/1000000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " M";
-    if(value >= 1000000) return "Rp" + (value/1000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " jt";
-    if(value >= 1000) return "Rp" + (value/1000).toLocaleString("id-ID",{maximumFractionDigits:0}) + " rb";
-    return "Rp" + Math.round(value).toLocaleString("id-ID");
-}
-
-function sellerBooksDashboardDateKey(value){
-
-    if(!value){
-        return null;
-    }
-
-    const text = String(value).trim();
-
-    /* Tanggal murni tidak boleh dianggap UTC karena
-       bisa bergeser menjadi 07:00 WIB. */
-    if(/^\d{4}-\d{2}-\d{2}$/.test(text)){
-        return new Date(text + "T00:00:00");
-    }
-
-    const d = new Date(value);
-
-    if(isNaN(d.getTime())){
-        return null;
-    }
-
-    /* Seluruh jam grafik dipaksa mengikuti WIB/Asia Jakarta. */
-    const parts =
-        new Intl.DateTimeFormat("en-CA",{
-            timeZone:"Asia/Jakarta",
-            year:"numeric",
-            month:"2-digit",
-            day:"2-digit",
-            hour:"2-digit",
-            minute:"2-digit",
-            second:"2-digit",
-            hour12:false
-        }).formatToParts(d);
-
-    const map = {};
-
-    parts.forEach(function(part){
-        if(part.type !== "literal"){
-            map[part.type] = part.value;
-        }
-    });
-
-    if(
-        !map.year ||
-        !map.month ||
-        !map.day ||
-        !map.hour
-    ){
-        return d;
-    }
-
-    return new Date(
-        Number(map.year),
-        Number(map.month)-1,
-        Number(map.day),
-        Number(map.hour),
-        Number(map.minute || 0),
-        Number(map.second || 0)
-    );
-}
-
-function sellerBooksRenderDashboardCharts(transactions){
-    const salesChart = document.getElementById("dashboardSalesChart");
-    const marketplaceChart = document.getElementById("dashboardMarketplaceChart");
-    const info = document.getElementById("dashboardSalesChartInfo");
-    if(!salesChart || !marketplaceChart) return;
-
-    const periodNames = {today:"Hari Ini",yesterday:"Kemarin",week:"Minggu Ini",lastWeek:"Minggu Lalu",month:"Bulan Ini",lastMonth:"Bulan Lalu",last3Months:"3 Bulan Terakhir",year:"Tahun Ini",all:"Semua Periode"};
-    if(info) info.textContent = "Pergerakan penjualan • " + (periodNames[currentDashboardPeriod] || "Hari Ini");
-
-    const buckets = new Map();
-    const marketplaceTotals = new Map();
-
-    transactions.forEach(function(item){
-        const amount = Number(getReportTransactionSalesAmount(item)) || 0;
-        const date = sellerBooksDashboardDateKey(item.importedAt || item.reportDate);
-        if(!date) return;
-
-        let key = "";
-        let label = "";
-        if(currentDashboardPeriod === "today" || currentDashboardPeriod === "yesterday") {
-            key = String(date.getHours()).padStart(2,"0");
-            label = key + ":00";
-        } else if(currentDashboardPeriod === "year") {
-            key = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0");
-            label = date.toLocaleDateString("id-ID",{month:"short"});
-        } else if(currentDashboardPeriod === "last3Months" || currentDashboardPeriod === "all") {
-            key = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0");
-            label = date.toLocaleDateString("id-ID",{month:"short",year:"2-digit"});
-        } else {
-            key = date.getFullYear()+"-"+String(date.getMonth()+1).padStart(2,"0")+"-"+String(date.getDate()).padStart(2,"0");
-            label = date.toLocaleDateString("id-ID",{day:"2-digit",month:"short"});
-        }
-        if(!buckets.has(key)) buckets.set(key,{key:key,label:label,value:0,date:date});
-        buckets.get(key).value += amount;
-
-        const marketplace = String(item.marketplace || item.platform || item.marketplaceName || "Lainnya").trim() || "Lainnya";
-        marketplaceTotals.set(marketplace,(marketplaceTotals.get(marketplace)||0)+amount);
-    });
-
-    let bucketList = Array.from(buckets.values()).sort((a,b)=>a.key.localeCompare(b.key));
-    if(bucketList.length === 0){
-        salesChart.innerHTML = '<div class="dashboard-chart-empty">Belum ada data penjualan pada periode ini</div>';
-        marketplaceChart.innerHTML = '<div class="dashboard-chart-empty">Belum ada data penjualan pada periode ini</div>';
-        ["dashboardChartMax","dashboardChartMid"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="Rp0";});
-        return;
-    }
-
-    // Isi titik nol agar grafik hari/minggu tetap menunjukkan seluruh periode.
-    if(currentDashboardPeriod === "today" || currentDashboardPeriod === "yesterday") {
-        const full=[]; for(let h=0;h<24;h++){const k=String(h).padStart(2,"0"); full.push(buckets.get(k)||{key:k,label:k+":00",value:0});} bucketList=full;
-    }
-
-    const max = Math.max(...bucketList.map(x=>x.value),1);
-    const mid = max/2;
-    const maxEl=document.getElementById("dashboardChartMax"); const midEl=document.getElementById("dashboardChartMid");
-    if(maxEl) maxEl.textContent=sellerBooksDashboardFormatShortRupiah(max);
-    if(midEl) midEl.textContent=sellerBooksDashboardFormatShortRupiah(mid);
-
-    salesChart.innerHTML = bucketList.map(function(item){
-        const height = item.value > 0 ? Math.max(3,(item.value/max)*100) : 1;
-        return '<div class="dashboard-bar-item" title="'+item.label+' • '+formatRupiah(item.value)+'"><div class="dashboard-bar-value">'+(item.value? sellerBooksDashboardFormatShortRupiah(item.value):"")+'</div><div class="dashboard-bar" style="height:'+height+'%"></div><div class="dashboard-bar-label">'+item.label+'</div></div>';
-    }).join("");
-
-    const mpList=Array.from(marketplaceTotals.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8);
-    const mpMax=Math.max(...mpList.map(x=>x[1]),1);
-    marketplaceChart.innerHTML=mpList.map(function(pair){
-        const pct=(pair[1]/mpMax)*100;
-        return '<div class="dashboard-marketplace-row"><div class="dashboard-marketplace-name" title="'+pair[0]+'">'+pair[0]+'</div><div class="dashboard-marketplace-track"><div class="dashboard-marketplace-fill" style="width:'+pct+'%"></div></div><div class="dashboard-marketplace-value">'+sellerBooksDashboardFormatShortRupiah(pair[1])+'</div></div>';
-    }).join("");
-}
+let dashboardCustomDateConfirmed = false;
 
 function getDashboardDateRange(){
 
@@ -24061,6 +25242,96 @@ function loadDashboardCustomDates(){
     updateDashboardCustomDateUI();
 }
 
+function changeDashboardPeriod(){
+
+    const periodSelect =
+        document.getElementById(
+            "dashboardPeriod"
+        );
+
+
+    if(!periodSelect){
+        return;
+    }
+
+
+    currentDashboardPeriod =
+        periodSelect.value;
+
+    dashboardCustomDateConfirmed =
+        currentDashboardPeriod !== "custom";
+
+    updateDashboardCustomDateUI();
+
+
+    /* SIMPAN PILIHAN */
+
+    sellerBooksStorage.setItem(
+        "sellerbooks_dashboard_period",
+        currentDashboardPeriod
+    );
+    sellerBooksStorage.setItem(
+        "sellerbooks_dashboard_view_day",
+        getSellerBooksDayKey()
+    );
+
+
+    /* UPDATE DASHBOARD */
+
+    updateDashboardByPeriod();
+
+}
+/* =========================================
+   CEK APAKAH TANGGAL MASUK PERIODE
+========================================= */
+
+function isDateInPeriod(dateValue, period){
+
+    if(!dateValue){
+        return false;
+    }
+
+    /*
+       DASHBOARD CUSTOM MENGGUNAKAN RENTANG TANGGAL
+       MILIK DASHBOARD, bukan filter Laporan.
+    */
+    if(period === "custom"){
+
+        const date =
+            getReportDateOnly(dateValue);
+
+        if(!date){
+            return false;
+        }
+
+        const range =
+            getDashboardDateRange();
+
+        if(range.from && date < range.from){
+            return false;
+        }
+
+        if(range.to && date > range.to){
+            return false;
+        }
+
+        return true;
+    }
+
+    /*
+       Periode standar tetap memakai logika Laporan.
+       Semua perhitungan tanggal mengikuti WIB/Indonesia.
+    */
+    return isTransactionInReportPeriod(
+        { reportDate: dateValue },
+        period
+    );
+
+}
+/* =========================================
+   UPDATE DASHBOARD BERDASARKAN PERIODE
+========================================= */
+
 function updateDashboardByPeriod(){
 
     console.log(
@@ -24143,6 +25414,7 @@ document.addEventListener(
                 savedPeriod;
 
         }
+
 
         loadDashboardCustomDates();
         updateDashboardByPeriod();
@@ -26536,42 +27808,4 @@ document.addEventListener(
 </script>
 
 </body>
-</html><div class="dashboard-charts-grid">
-
-                    <div class="dashboard-chart-card">
-                        <div class="dashboard-chart-header">
-                            <div>
-                                <h3>Grafik Penjualan</h3>
-                                <p id="dashboardSalesChartInfo">Pergerakan penjualan berdasarkan periode</p>
-                            </div>
-                        </div>
-                        <div class="dashboard-chart-area">
-                            <div class="dashboard-y-axis">
-                                <span id="dashboardChartMax">Rp0</span>
-                                <span id="dashboardChartMid">Rp0</span>
-                                <span>Rp0</span>
-                            </div>
-                            <div id="dashboardSalesChart" class="dashboard-bar-chart">
-                                <div class="dashboard-chart-empty">Belum ada data penjualan</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="dashboard-chart-card">
-                        <div class="dashboard-chart-header">
-                            <div>
-                                <h3>Penjualan per Marketplace</h3>
-                                <p>Perbandingan omzet berdasarkan marketplace</p>
-                            </div>
-                        </div>
-                        <div id="dashboardMarketplaceChart" class="dashboard-marketplace-chart">
-                            <div class="dashboard-chart-empty">Belum ada data penjualan</div>
-                        </div>
-                    </div>
-
-                </div>
-
-
-                
-
-                
+</html>
