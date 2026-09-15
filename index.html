@@ -15900,31 +15900,43 @@ function sellerBooksRenderDashboardCharts(transactions){
         return '<div class="dashboard-bar-item" title="'+item.label+' • '+formatRupiah(item.value)+'"><div class="dashboard-bar-value">'+(item.value? sellerBooksDashboardFormatShortRupiah(item.value):"")+'</div><div class="dashboard-bar" style="height:'+height+'%"></div><div class="dashboard-bar-label">'+item.label+'</div></div>';
     }).join("");
 
-    // Saat dashboard dibuka, arahkan grafik Hari Ini ke jam upload terakhir.
-    if(currentDashboardPeriod === "today") {
-        let latestHour = -1;
-        transactions.forEach(function(item){
-            const d = sellerBooksDashboardDateKey(item.importedAt || item.reportDate);
-            if(d && d.getHours() > latestHour) latestHour = d.getHours();
-        });
-        if(latestHour >= 0) {
-            /*
-               Posisi grafik diatur langsung melalui scrollLeft agar
-               tidak kembali ke jam 00:00 ketika dashboard pertama kali dibuka.
-               Jam upload terakhir ditempatkan di tengah area yang terlihat.
-            */
-            const positionLatestUploadHour = function(){
-                const bars = salesChart.querySelectorAll(".dashboard-bar-item");
-                const target = bars[latestHour];
-                if(!target) return;
-                const targetCenter = target.offsetLeft + (target.offsetWidth / 2);
-                salesChart.scrollLeft = Math.max(0, targetCenter - (salesChart.clientWidth / 2));
-            };
-
-            requestAnimationFrame(function(){
-                requestAnimationFrame(positionLatestUploadHour);
-            });
+    // Default grafik selalu diarahkan ke batang biru/penjualan TERAKHIR
+    // pada periode yang sedang dipilih. Berlaku untuk Hari Ini, Kemarin,
+    // Minggu Ini, Minggu Lalu, Bulan, Tahun, Semua Periode, dan periode lain.
+    let latestBucketIndex = -1;
+    for(let i = bucketList.length - 1; i >= 0; i--){
+        if(Number(bucketList[i].value) > 0){
+            latestBucketIndex = i;
+            break;
         }
+    }
+
+    if(latestBucketIndex >= 0) {
+        /*
+           Posisi grafik diatur langsung melalui scrollLeft agar
+           batang biru terakhir langsung terlihat ketika dashboard
+           pertama kali dibuka maupun ketika periode diganti.
+           Batang terakhir ditempatkan di tengah area yang terlihat.
+        */
+        const positionLatestChartBar = function(){
+            const bars = salesChart.querySelectorAll(".dashboard-bar-item");
+            const target = bars[latestBucketIndex];
+            if(!target) return;
+
+            const targetCenter =
+                target.offsetLeft + (target.offsetWidth / 2);
+
+            salesChart.scrollLeft = Math.max(
+                0,
+                targetCenter - (salesChart.clientWidth / 2)
+            );
+        };
+
+        requestAnimationFrame(function(){
+            requestAnimationFrame(positionLatestChartBar);
+        });
+
+        setTimeout(positionLatestChartBar, 100);
     }
 
     const mpList=Array.from(marketplaceTotals.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8);
