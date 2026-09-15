@@ -9434,6 +9434,17 @@ document.addEventListener(
                     >
                         Maksimal rentang tanggal 3 bulan terakhir sampai hari ini.
                     </small>
+
+                    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+                        <button
+                            type="button"
+                            class="primary-button"
+                            onclick="confirmDashboardCustomDateRange()"
+                            style="padding:8px 16px;font-size:12px;"
+                        >
+                            OK
+                        </button>
+                    </div>
                 </div>
 
             </div>
@@ -24629,6 +24640,8 @@ function refreshDashboard(){
 
 }
 
+let dashboardCustomDateConfirmed = false;
+
 function getDashboardDateRange(){
 
     const fromValue =
@@ -24656,7 +24669,8 @@ function updateDashboardCustomDateUI(){
     }
 
     const show =
-        periodSelect.value === "custom";
+        periodSelect.value === "custom" &&
+        !dashboardCustomDateConfirmed;
 
     box.classList.toggle("show",show);
 
@@ -24710,6 +24724,8 @@ function updateDashboardCustomDateUI(){
 
 function changeDashboardCustomDateRange(){
 
+    dashboardCustomDateConfirmed = false;
+
     const fromValue =
         document.getElementById("dashboardDateFrom")?.value || "";
 
@@ -24735,6 +24751,49 @@ function changeDashboardCustomDateRange(){
         "sellerbooks_dashboard_date_to",
         toValue
     );
+
+    updateDashboardByPeriod();
+}
+
+function confirmDashboardCustomDateRange(){
+
+    const fromValue =
+        document.getElementById("dashboardDateFrom")?.value || "";
+
+    const toValue =
+        document.getElementById("dashboardDateTo")?.value || "";
+
+    if(!fromValue || !toValue){
+        alert("Silakan pilih Dari Tanggal dan Sampai Dengan terlebih dahulu.");
+        return;
+    }
+
+    const from = getReportDateOnly(fromValue);
+    const to = getReportDateOnly(toValue);
+
+    if(from && to && from > to){
+        alert("Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.");
+        return;
+    }
+
+    sellerBooksStorage.setItem(
+        "sellerbooks_dashboard_date_from",
+        fromValue
+    );
+
+    sellerBooksStorage.setItem(
+        "sellerbooks_dashboard_date_to",
+        toValue
+    );
+
+    dashboardCustomDateConfirmed = true;
+
+    const box =
+        document.getElementById("dashboardCustomDateRange");
+
+    if(box){
+        box.classList.remove("show");
+    }
 
     updateDashboardByPeriod();
 }
@@ -24779,6 +24838,9 @@ function changeDashboardPeriod(){
 
     currentDashboardPeriod =
         periodSelect.value;
+
+    dashboardCustomDateConfirmed =
+        currentDashboardPeriod !== "custom";
 
     updateDashboardCustomDateUI();
 
