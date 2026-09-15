@@ -16731,14 +16731,17 @@ function sellerBooksRenderDashboardCharts(transactions){
         const full=[]; for(let h=0;h<24;h++){const k=String(h).padStart(2,"0"); full.push(buckets.get(k)||{key:k,label:k+":00",value:0});} bucketList=full;
     }
 
-    const max = Math.max(...bucketList.map(x=>x.value),1);
-    const mid = max/2;
+    // Skala grafik dikunci maksimal 100 juta agar batang tidak menjulang terlalu tinggi.
+    // Nilai di bawah 100 juta tetap proporsional sedikit demi sedikit terhadap skala tersebut.
+    // Jika ada nilai di atas 100 juta, batang dibatasi pada tinggi maksimum grafik.
+    const chartScaleMax = 100000000;
+    const chartScaleMid = chartScaleMax / 2;
     const maxEl=document.getElementById("dashboardChartMax"); const midEl=document.getElementById("dashboardChartMid");
-    if(maxEl) maxEl.textContent=sellerBooksDashboardFormatShortRupiah(max);
-    if(midEl) midEl.textContent=sellerBooksDashboardFormatShortRupiah(mid);
+    if(maxEl) maxEl.textContent=sellerBooksDashboardFormatShortRupiah(chartScaleMax);
+    if(midEl) midEl.textContent=sellerBooksDashboardFormatShortRupiah(chartScaleMid);
 
     salesChart.innerHTML = bucketList.map(function(item){
-        const height = item.value > 0 ? Math.max(3,(item.value/max)*100) : 1;
+        const height = item.value > 0 ? Math.max(1,Math.min(100,(item.value/chartScaleMax)*100)) : 1;
         return '<div class="dashboard-bar-item" title="'+item.label+' • '+formatRupiah(item.value)+'"><div class="dashboard-bar-value">'+(item.value? sellerBooksDashboardFormatShortRupiah(item.value):"")+'</div><div class="dashboard-bar" style="height:'+height+'%"></div><div class="dashboard-bar-label">'+item.label+'</div></div>';
     }).join("");
 
