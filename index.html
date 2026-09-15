@@ -7600,8 +7600,9 @@ function sellerBooksPdfFormatNumber(value){
 }
 
 function sellerBooksPdfFormatRupiah(value){
-    return "Rp" + Number(value || 0).toLocaleString("id-ID");
+    return formatRupiah(value);
 }
+
 
 function sellerBooksPdfFormatDateNow(){
     try{
@@ -15712,11 +15713,69 @@ if(typeof renderStores === "function"){
 ===================================================== */
 function sellerBooksDashboardFormatShortRupiah(value){
     value = Number(value) || 0;
-    if(value >= 1000000000) return "Rp" + (value/1000000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " M";
-    if(value >= 1000000) return "Rp" + (value/1000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " jt";
-    if(value >= 1000) return "Rp" + (value/1000).toLocaleString("id-ID",{maximumFractionDigits:0}) + " rb";
-    return "Rp" + Math.round(value).toLocaleString("id-ID");
+
+    const settings =
+        typeof getSellerBooksSettings === "function"
+            ? getSellerBooksSettings()
+            : {currency:"IDR"};
+
+    const currency =
+        settings.currency || "IDR";
+
+    const rates =
+        typeof getSellerBooksExchangeRates === "function"
+            ? getSellerBooksExchangeRates()
+            : {IDR:1,USD:16500,SGD:12900,MYR:3900};
+
+    const rate =
+        Number(rates[currency]) || 1;
+
+    const numeric =
+        value / rate;
+
+    const configMap = {
+        IDR:{locale:"id-ID",currency:"IDR"},
+        USD:{locale:"en-US",currency:"USD"},
+        SGD:{locale:"en-SG",currency:"SGD"},
+        MYR:{locale:"ms-MY",currency:"MYR"}
+    };
+
+    const config =
+        configMap[currency] || configMap.IDR;
+
+    if(currency === "IDR"){
+        if(value >= 1000000000) return "Rp" + (value/1000000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " M";
+        if(value >= 1000000) return "Rp" + (value/1000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " jt";
+        if(value >= 1000) return "Rp" + (value/1000).toLocaleString("id-ID",{maximumFractionDigits:0}) + " rb";
+        return "Rp" + Math.round(value).toLocaleString("id-ID");
+    }
+
+    const formatter =
+        function(amount){
+            return new Intl.NumberFormat(
+                config.locale,
+                {
+                    style:"currency",
+                    currency:config.currency,
+                    minimumFractionDigits:2,
+                    maximumFractionDigits:2
+                }
+            ).format(amount);
+        };
+
+    if(numeric >= 1000000000){
+        return formatter(numeric / 1000000000) + " B";
+    }
+    if(numeric >= 1000000){
+        return formatter(numeric / 1000000) + " M";
+    }
+    if(numeric >= 1000){
+        return formatter(numeric / 1000) + " K";
+    }
+
+    return formatter(numeric);
 }
+
 
 function sellerBooksDashboardDateKey(value){
 
@@ -15821,7 +15880,7 @@ function sellerBooksRenderDashboardCharts(transactions){
     if(bucketList.length === 0){
         salesChart.innerHTML = '<div class="dashboard-chart-empty">Belum ada data penjualan pada periode ini</div>';
         marketplaceChart.innerHTML = '<div class="dashboard-chart-empty">Belum ada data penjualan pada periode ini</div>';
-        ["dashboardChartMax","dashboardChartMid"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="Rp0";});
+        ["dashboardChartMax","dashboardChartMid"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=sellerBooksDashboardFormatShortRupiah(0);});
         return;
     }
 
