@@ -855,8 +855,25 @@ body{
 
 @media(max-width:650px){
     .dashboard-custom-date-range{
-        width:290px;
-        right:-55px;
+        position:fixed;
+        top:70px;
+        left:12px;
+        right:12px;
+        width:auto;
+        max-width:none;
+        box-sizing:border-box;
+        z-index:1000;
+    }
+
+    .dashboard-custom-date-grid{
+        width:100%;
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    }
+
+    .dashboard-custom-date-grid input{
+        width:100%;
+        max-width:100%;
+        box-sizing:border-box;
     }
 }
 
@@ -16724,6 +16741,50 @@ function sellerBooksRenderDashboardCharts(transactions){
         const height = item.value > 0 ? Math.max(3,(item.value/max)*100) : 1;
         return '<div class="dashboard-bar-item" title="'+item.label+' • '+formatRupiah(item.value)+'"><div class="dashboard-bar-value">'+(item.value? sellerBooksDashboardFormatShortRupiah(item.value):"")+'</div><div class="dashboard-bar" style="height:'+height+'%"></div><div class="dashboard-bar-label">'+item.label+'</div></div>';
     }).join("");
+
+    /*
+       GRAFIK HARIAN: otomatis tampil/scroll ke jam upload terbaru.
+       Data memakai importedAt timestamp lengkap (UTC ISO), lalu
+       sellerBooksDashboardDateKey() mengubahnya ke Asia/Jakarta/WIB.
+       Jadi jika import terakhir masuk pukul 16:00 WIB, saat dashboard
+       dibuka grafik langsung diarahkan ke sekitar kolom 16:00.
+    */
+    if(
+        currentDashboardPeriod === "today" ||
+        currentDashboardPeriod === "yesterday"
+    ){
+        let latestTimestamp = null;
+
+        transactions.forEach(function(transaction){
+            const raw = transaction.importedAt;
+            if(!raw) return;
+
+            const parsed = sellerBooksDashboardDateKey(raw);
+            if(!parsed) return;
+
+            if(!latestTimestamp || parsed.getTime() > latestTimestamp.getTime()){
+                latestTimestamp = parsed;
+            }
+        });
+
+        if(latestTimestamp){
+            const targetHour = latestTimestamp.getHours();
+            const target = salesChart.querySelectorAll('.dashboard-bar-item')[targetHour];
+
+            if(target){
+                requestAnimationFrame(function(){
+                    const targetCenter =
+                        target.offsetLeft + (target.offsetWidth / 2);
+                    const viewportCenter = salesChart.clientWidth / 2;
+
+                    salesChart.scrollLeft = Math.max(
+                        0,
+                        targetCenter - viewportCenter
+                    );
+                });
+            }
+        }
+    }
 
     const mpList=Array.from(marketplaceTotals.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8);
     const mpMax=Math.max(...mpList.map(x=>x[1]),1);
