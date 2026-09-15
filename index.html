@@ -7600,9 +7600,8 @@ function sellerBooksPdfFormatNumber(value){
 }
 
 function sellerBooksPdfFormatRupiah(value){
-    return formatRupiah(value);
+    return "Rp" + Number(value || 0).toLocaleString("id-ID");
 }
-
 
 function sellerBooksPdfFormatDateNow(){
     try{
@@ -9665,7 +9664,7 @@ document.addEventListener(
                             <div class="dashboard-y-axis">
                                 <span id="dashboardChartMax">Rp0</span>
                                 <span id="dashboardChartMid">Rp0</span>
-                                <span>Rp0</span>
+                                <span id="dashboardChartZero">Rp0</span>
                             </div>
                             <div id="dashboardSalesChart" class="dashboard-bar-chart">
                                 <div class="dashboard-chart-empty">Belum ada data penjualan</div>
@@ -15713,69 +15712,11 @@ if(typeof renderStores === "function"){
 ===================================================== */
 function sellerBooksDashboardFormatShortRupiah(value){
     value = Number(value) || 0;
-
-    const settings =
-        typeof getSellerBooksSettings === "function"
-            ? getSellerBooksSettings()
-            : {currency:"IDR"};
-
-    const currency =
-        settings.currency || "IDR";
-
-    const rates =
-        typeof getSellerBooksExchangeRates === "function"
-            ? getSellerBooksExchangeRates()
-            : {IDR:1,USD:16500,SGD:12900,MYR:3900};
-
-    const rate =
-        Number(rates[currency]) || 1;
-
-    const numeric =
-        value / rate;
-
-    const configMap = {
-        IDR:{locale:"id-ID",currency:"IDR"},
-        USD:{locale:"en-US",currency:"USD"},
-        SGD:{locale:"en-SG",currency:"SGD"},
-        MYR:{locale:"ms-MY",currency:"MYR"}
-    };
-
-    const config =
-        configMap[currency] || configMap.IDR;
-
-    if(currency === "IDR"){
-        if(value >= 1000000000) return "Rp" + (value/1000000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " M";
-        if(value >= 1000000) return "Rp" + (value/1000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " jt";
-        if(value >= 1000) return "Rp" + (value/1000).toLocaleString("id-ID",{maximumFractionDigits:0}) + " rb";
-        return "Rp" + Math.round(value).toLocaleString("id-ID");
-    }
-
-    const formatter =
-        function(amount){
-            return new Intl.NumberFormat(
-                config.locale,
-                {
-                    style:"currency",
-                    currency:config.currency,
-                    minimumFractionDigits:2,
-                    maximumFractionDigits:2
-                }
-            ).format(amount);
-        };
-
-    if(numeric >= 1000000000){
-        return formatter(numeric / 1000000000) + " B";
-    }
-    if(numeric >= 1000000){
-        return formatter(numeric / 1000000) + " M";
-    }
-    if(numeric >= 1000){
-        return formatter(numeric / 1000) + " K";
-    }
-
-    return formatter(numeric);
+    if(value >= 1000000000) return "Rp" + (value/1000000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " M";
+    if(value >= 1000000) return "Rp" + (value/1000000).toLocaleString("id-ID",{maximumFractionDigits:1}) + " jt";
+    if(value >= 1000) return "Rp" + (value/1000).toLocaleString("id-ID",{maximumFractionDigits:0}) + " rb";
+    return "Rp" + Math.round(value).toLocaleString("id-ID");
 }
-
 
 function sellerBooksDashboardDateKey(value){
 
@@ -15880,7 +15821,7 @@ function sellerBooksRenderDashboardCharts(transactions){
     if(bucketList.length === 0){
         salesChart.innerHTML = '<div class="dashboard-chart-empty">Belum ada data penjualan pada periode ini</div>';
         marketplaceChart.innerHTML = '<div class="dashboard-chart-empty">Belum ada data penjualan pada periode ini</div>';
-        ["dashboardChartMax","dashboardChartMid"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=sellerBooksDashboardFormatShortRupiah(0);});
+        ["dashboardChartMax","dashboardChartMid"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent="Rp0";});
         return;
     }
 
@@ -15889,55 +15830,16 @@ function sellerBooksRenderDashboardCharts(transactions){
         const full=[]; for(let h=0;h<24;h++){const k=String(h).padStart(2,"0"); full.push(buckets.get(k)||{key:k,label:k+":00",value:0});} bucketList=full;
     }
 
-    const max = 100000000;
+    const max = Math.max(...bucketList.map(x=>x.value),1);
     const mid = max/2;
     const maxEl=document.getElementById("dashboardChartMax"); const midEl=document.getElementById("dashboardChartMid");
     if(maxEl) maxEl.textContent=sellerBooksDashboardFormatShortRupiah(max);
-    if(midEl) midEl.textContent=sellerBooksDashboardFormatShortRupiah(mid);
+    if(midEl) midEl.textContent=sellerBooksDashboardFormatShortRupiah(mid); const zeroEl=document.getElementById("dashboardChartZero"); if(zeroEl) zeroEl.textContent=formatRupiah(0);
 
     salesChart.innerHTML = bucketList.map(function(item){
-        const height = item.value > 0 ? Math.max(3,Math.min(100,(item.value/max)*100)) : 1;
+        const height = item.value > 0 ? Math.max(3,(item.value/max)*100) : 1;
         return '<div class="dashboard-bar-item" title="'+item.label+' • '+formatRupiah(item.value)+'"><div class="dashboard-bar-value">'+(item.value? sellerBooksDashboardFormatShortRupiah(item.value):"")+'</div><div class="dashboard-bar" style="height:'+height+'%"></div><div class="dashboard-bar-label">'+item.label+'</div></div>';
     }).join("");
-
-    // Default grafik selalu diarahkan ke batang biru/penjualan TERAKHIR
-    // pada periode yang sedang dipilih. Berlaku untuk Hari Ini, Kemarin,
-    // Minggu Ini, Minggu Lalu, Bulan, Tahun, Semua Periode, dan periode lain.
-    let latestBucketIndex = -1;
-    for(let i = bucketList.length - 1; i >= 0; i--){
-        if(Number(bucketList[i].value) > 0){
-            latestBucketIndex = i;
-            break;
-        }
-    }
-
-    if(latestBucketIndex >= 0) {
-        /*
-           Posisi grafik diatur langsung melalui scrollLeft agar
-           batang biru terakhir langsung terlihat ketika dashboard
-           pertama kali dibuka maupun ketika periode diganti.
-           Batang terakhir ditempatkan di tengah area yang terlihat.
-        */
-        const positionLatestChartBar = function(){
-            const bars = salesChart.querySelectorAll(".dashboard-bar-item");
-            const target = bars[latestBucketIndex];
-            if(!target) return;
-
-            const targetCenter =
-                target.offsetLeft + (target.offsetWidth / 2);
-
-            salesChart.scrollLeft = Math.max(
-                0,
-                targetCenter - (salesChart.clientWidth / 2)
-            );
-        };
-
-        requestAnimationFrame(function(){
-            requestAnimationFrame(positionLatestChartBar);
-        });
-
-        setTimeout(positionLatestChartBar, 100);
-    }
 
     const mpList=Array.from(marketplaceTotals.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8);
     const mpMax=Math.max(...mpList.map(x=>x[1]),1);
