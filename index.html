@@ -7243,7 +7243,7 @@ function renderReportTransactionTable(){
 
             const sku = String(item.sku || "").trim();
             const product = getMasterProductBySku(sku);
-            const status = product ? "✓ Cocok" : "⚠ SKU belum ada";
+            const status = product ? "✓ Valid" : "⚠ SKU belum ada";
 
             html += `
                 <tr>
