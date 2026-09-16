@@ -11150,32 +11150,6 @@ document.addEventListener(
                 </tbody>
             </table>
         </div>
-
-        <div
-            id="productAnalysisPagination"
-            class="report-transaction-pagination"
-        >
-            <div class="report-transaction-page-size">
-                <span>Tampilkan</span>
-                <select
-                    id="productAnalysisPageSize"
-                    onchange="changeProductAnalysisPageSize(this.value)"
-                    aria-label="Jumlah baris Rincian Penjualan per Produk"
-                >
-                    <option value="20" selected>20</option>
-                    <option value="40">40</option>
-                    <option value="50">50</option>
-                    <option value="80">80</option>
-                    <option value="100">100</option>
-                </select>
-                <span>baris</span>
-            </div>
-
-            <div
-                id="productAnalysisPaginationControls"
-                class="report-transaction-pagination-controls"
-            ></div>
-        </div>
     </div>
 </section>
 
@@ -14922,34 +14896,11 @@ function formatProductAnalysisCurrency(value){
     return formatRupiah(value);
 }
 
-/* =========================================================
-   RINCIAN PENJUALAN PER PRODUK - PAGINATION
-   Default 20 baris, pilihan 20/40/50/80/100
-========================================================= */
-let productAnalysisPage = 1;
-let productAnalysisPageSize = 20;
-let productAnalysisPaginationFilterKey = "";
-
 function renderProductAnalysis(){
 
     const body =
         document.getElementById(
             "productAnalysisTableBody"
-        );
-
-    const pagination =
-        document.getElementById(
-            "productAnalysisPagination"
-        );
-
-    const paginationControls =
-        document.getElementById(
-            "productAnalysisPaginationControls"
-        );
-
-    const pageSizeSelect =
-        document.getElementById(
-            "productAnalysisPageSize"
         );
 
     if(!body){
@@ -15014,52 +14965,7 @@ function renderProductAnalysis(){
             );
     }
 
-    /* Jika filter berubah, kembali ke halaman pertama. */
-    const period =
-        document.getElementById(
-            "productAnalysisPeriod"
-        )?.value || "";
-
-    const marketplace =
-        document.getElementById(
-            "productAnalysisMarketplace"
-        )?.value || "";
-
-    const store =
-        document.getElementById(
-            "productAnalysisStore"
-        )?.value || "";
-
-    const dateFrom =
-        document.getElementById(
-            "productAnalysisDateFrom"
-        )?.value || "";
-
-    const dateTo =
-        document.getElementById(
-            "productAnalysisDateTo"
-        )?.value || "";
-
-    const filterKey =
-        [
-            period,
-            marketplace,
-            store,
-            dateFrom,
-            dateTo
-        ].join("|");
-
-    if(
-        productAnalysisPaginationFilterKey !==
-        filterKey
-    ){
-        productAnalysisPage = 1;
-        productAnalysisPaginationFilterKey =
-            filterKey;
-    }
-
     if(!rows.length){
-
         body.innerHTML = `
             <tr class="analysis-empty-row">
                 <td colspan="11">
@@ -15067,64 +14973,11 @@ function renderProductAnalysis(){
                 </td>
             </tr>
         `;
-
-        if(pagination){
-            pagination.style.display = "none";
-        }
-
         return;
     }
 
-    if(
-        !Number.isFinite(
-            productAnalysisPageSize
-        ) ||
-        productAnalysisPageSize < 1
-    ){
-        productAnalysisPageSize = 20;
-    }
-
-    const totalPages =
-        Math.max(
-            1,
-            Math.ceil(
-                rows.length /
-                productAnalysisPageSize
-            )
-        );
-
-    if(productAnalysisPage > totalPages){
-        productAnalysisPage = totalPages;
-    }
-
-    if(productAnalysisPage < 1){
-        productAnalysisPage = 1;
-    }
-
-    if(pageSizeSelect){
-        pageSizeSelect.value =
-            String(productAnalysisPageSize);
-    }
-
-    const startIndex =
-        (productAnalysisPage - 1) *
-        productAnalysisPageSize;
-
-    const endIndex =
-        Math.min(
-            startIndex +
-            productAnalysisPageSize,
-            rows.length
-        );
-
-    const visibleRows =
-        rows.slice(
-            startIndex,
-            endIndex
-        );
-
     body.innerHTML =
-        visibleRows.map(function(row,index){
+        rows.map(function(row,index){
 
             const profitClass =
                 row.isLoss
@@ -15147,7 +15000,7 @@ function renderProductAnalysis(){
                         <button
                             type="button"
                             class="analysis-fix-button"
-                            onclick="fixProductFromAnalysis('${String(row.product.id).replace(/'/g,"\\'") }')"
+                            onclick="fixProductFromAnalysis('${String(row.product.id).replace(/'/g,"\\'")}')"
                         >
                             ✏️ Perbaiki
                         </button>
@@ -15160,7 +15013,7 @@ function renderProductAnalysis(){
 
             return `
                 <tr class="${row.isLoss ? "analysis-loss-row" : ""}">
-                    <td>${startIndex + index + 1}</td>
+                    <td>${index + 1}</td>
                     <td>
                         <strong>${escapeHtmlProductAnalysis(row.sku)}</strong>
                     </td>
@@ -15184,169 +15037,6 @@ function renderProductAnalysis(){
                 </tr>
             `;
         }).join("");
-
-    if(pagination){
-        pagination.style.display = "flex";
-    }
-
-    if(paginationControls){
-
-        let controlsHtml = "";
-
-        controlsHtml += `
-            <span class="report-transaction-page-info">
-                ${startIndex + 1}-${endIndex} dari ${rows.length}
-            </span>
-        `;
-
-        controlsHtml += `
-            <button
-                type="button"
-                class="report-transaction-page-button"
-                onclick="goToProductAnalysisPage(${productAnalysisPage - 1})"
-                ${productAnalysisPage <= 1 ? "disabled" : ""}
-                aria-label="Halaman sebelumnya"
-            >
-                ‹
-            </button>
-        `;
-
-        const maxButtons = 7;
-
-        let pageStart =
-            Math.max(
-                1,
-                productAnalysisPage - 3
-            );
-
-        let pageEnd =
-            Math.min(
-                totalPages,
-                pageStart + maxButtons - 1
-            );
-
-        pageStart =
-            Math.max(
-                1,
-                pageEnd - maxButtons + 1
-            );
-
-        if(pageStart > 1){
-
-            controlsHtml += `
-                <button
-                    type="button"
-                    class="report-transaction-page-button"
-                    onclick="goToProductAnalysisPage(1)"
-                >
-                    1
-                </button>
-            `;
-
-            if(pageStart > 2){
-                controlsHtml += `
-                    <span class="report-transaction-page-info">
-                        ...
-                    </span>
-                `;
-            }
-        }
-
-        for(
-            let page = pageStart;
-            page <= pageEnd;
-            page++
-        ){
-
-            controlsHtml += `
-                <button
-                    type="button"
-                    class="report-transaction-page-button ${page === productAnalysisPage ? "active" : ""}"
-                    onclick="goToProductAnalysisPage(${page})"
-                    aria-current="${page === productAnalysisPage ? "page" : "false"}"
-                >
-                    ${page}
-                </button>
-            `;
-        }
-
-        if(pageEnd < totalPages){
-
-            if(pageEnd < totalPages - 1){
-                controlsHtml += `
-                    <span class="report-transaction-page-info">
-                        ...
-                    </span>
-                `;
-            }
-
-            controlsHtml += `
-                <button
-                    type="button"
-                    class="report-transaction-page-button"
-                    onclick="goToProductAnalysisPage(${totalPages})"
-                >
-                    ${totalPages}
-                </button>
-            `;
-        }
-
-        controlsHtml += `
-            <button
-                type="button"
-                class="report-transaction-page-button"
-                onclick="goToProductAnalysisPage(${productAnalysisPage + 1})"
-                ${productAnalysisPage >= totalPages ? "disabled" : ""}
-                aria-label="Halaman berikutnya"
-            >
-                Next ›
-            </button>
-        `;
-
-        paginationControls.innerHTML =
-            controlsHtml;
-    }
-}
-
-function goToProductAnalysisPage(page){
-
-    const rows =
-        calculateProductAnalysisRows();
-
-    const totalPages =
-        Math.max(
-            1,
-            Math.ceil(
-                rows.length /
-                productAnalysisPageSize
-            )
-        );
-
-    productAnalysisPage =
-        Math.min(
-            Math.max(
-                1,
-                Number(page) || 1
-            ),
-            totalPages
-        );
-
-    renderProductAnalysis();
-}
-
-function changeProductAnalysisPageSize(value){
-
-    const parsed =
-        Number(value);
-
-    productAnalysisPageSize =
-        [20,40,50,80,100].includes(parsed)
-            ? parsed
-            : 20;
-
-    productAnalysisPage = 1;
-
-    renderProductAnalysis();
 }
 
 function escapeHtml(value){
@@ -15536,6 +15226,40 @@ function showView(viewId, button, saveHistory = true){
     }
 
     targetView.classList.add("active");
+
+    /*
+       Saat Dashboard baru dibuka, pastikan grafik penjualan
+       langsung bergeser ke jam upload/penjualan terakhir.
+       Ini dijalankan setelah Dashboard terlihat agar posisi
+       scroll tetap bekerja pada tampilan desktop maupun mobile.
+    */
+    if(viewId === "dashboard"){
+        setTimeout(function(){
+            const chart = document.getElementById("dashboardSalesChart");
+            if(!chart) return;
+
+            const bars = chart.querySelectorAll(".dashboard-bar-item");
+            let latest = null;
+
+            for(let i = bars.length - 1; i >= 0; i--){
+                const value = bars[i].querySelector(".dashboard-bar-value");
+                if(value && String(value.textContent || "").trim() !== ""){
+                    latest = bars[i];
+                    break;
+                }
+            }
+
+            if(!latest) return;
+
+            const targetCenter =
+                latest.offsetLeft + (latest.offsetWidth / 2);
+
+            chart.scrollLeft = Math.max(
+                0,
+                targetCenter - (chart.clientWidth / 2)
+            );
+        }, 150);
+    }
 
     if(viewId === "productAnalysis"){
         initializeProductAnalysis();
