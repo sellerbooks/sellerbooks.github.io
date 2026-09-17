@@ -14845,11 +14845,19 @@ function calculateProductAnalysisRows(){
                 sales:0,
                 hpp:0,
                 admin:0,
-                product:getMasterProductBySku(sku)
+                product:getMasterProductBySku(sku),
+                marketplaces:new Set()
             });
         }
 
         const row = rows.get(key);
+
+        const itemMarketplace =
+            String(item.marketplace || "").trim();
+
+        if(itemMarketplace){
+            row.marketplaces.add(itemMarketplace.toLowerCase());
+        }
 
         const qty =
             Number(item.qty) || 0;
@@ -15146,14 +15154,21 @@ function renderProductAnalysis(){
                gunakan Total Penjualan / QTY.
                Marketplace lain tetap memakai harga Master Produk.
             */
-            const selectedMarketplace =
-                document.getElementById(
-                    "productAnalysisMarketplace"
-                )?.value || "";
+            /*
+               Harga Jual khusus jika baris ini memang berasal
+               hanya dari Shopee atau TikTok.
+               Tidak bergantung pada nilai dropdown marketplace,
+               karena dropdown menyimpan marketplaceId, bukan nama.
+               Marketplace lain tetap memakai harga Master Produk.
+            */
+            const isShopeeTikTokOnly =
+                row.marketplaces &&
+                row.marketplaces.size === 1 &&
+                (row.marketplaces.has("shopee") ||
+                 row.marketplaces.has("tiktok"));
 
             const displayPrice =
-                (selectedMarketplace === "Shopee" ||
-                 selectedMarketplace === "TikTok") &&
+                isShopeeTikTokOnly &&
                 Number(row.qty) > 0
                     ? (Number(row.sales) / Number(row.qty))
                     : row.price;
