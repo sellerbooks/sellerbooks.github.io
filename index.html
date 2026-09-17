@@ -7841,14 +7841,15 @@ async function downloadReportPDF(){
 
         const productRows = Array.from(productRowsMap.values())
             .map(function(row){
-                const isShopeeTikTokOnly =
+                const isShopeeTikTokBlibliOnly =
                     row.marketplaces &&
                     row.marketplaces.size === 1 &&
                     (row.marketplaces.has("shopee") ||
-                     row.marketplaces.has("tiktok"));
+                     row.marketplaces.has("tiktok") ||
+                     row.marketplaces.has("blibli"));
 
                 row.price =
-                    isShopeeTikTokOnly && Number(row.qty) > 0
+                    isShopeeTikTokBlibliOnly && Number(row.qty) > 0
                         ? (Number(row.sales) / Number(row.qty))
                         : (row.product ? (Number(row.product.price) || 0) : 0);
 
@@ -15242,14 +15243,15 @@ function renderProductAnalysis(){
                karena dropdown menyimpan marketplaceId, bukan nama.
                Marketplace lain tetap memakai harga Master Produk.
             */
-            const isShopeeTikTokOnly =
+            const isShopeeTikTokBlibliOnly =
                 row.marketplaces &&
                 row.marketplaces.size === 1 &&
                 (row.marketplaces.has("shopee") ||
-                 row.marketplaces.has("tiktok"));
+                 row.marketplaces.has("tiktok") ||
+                 row.marketplaces.has("blibli"));
 
             const displayPrice =
-                isShopeeTikTokOnly &&
+                isShopeeTikTokBlibliOnly &&
                 Number(row.qty) > 0
                     ? (Number(row.sales) / Number(row.qty))
                     : row.price;
@@ -21750,6 +21752,11 @@ function getSalesAmount(row,data){
                 rule && rule.priceAliases ? rule.priceAliases : []
             );
         return parseSalesNumber(marketplacePrice);
+    }
+
+    // Blibli: Harga Produk berada di kolom I (index 8), per unit.
+    if(data.marketplace === "Blibli"){
+        return parseSalesNumber(row[8]) * qty;
     }
 
     const product =
