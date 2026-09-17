@@ -7808,11 +7808,20 @@ async function downloadReportPDF(){
                     sales:0,
                     hpp:0,
                     admin:0,
-                    product:product || null
+                    product:product || null,
+                    marketplaces:new Set()
                 });
             }
 
             const row = productRowsMap.get(key);
+
+            const itemMarketplace =
+                String(item.marketplace || "").trim().toLowerCase();
+
+            if(itemMarketplace){
+                row.marketplaces.add(itemMarketplace);
+            }
+
             const qty = Number(item.qty) || 0;
             const sales = getReportTransactionSalesAmount(item);
             const product = row.product || getMasterProductBySku(sku);
@@ -7832,7 +7841,17 @@ async function downloadReportPDF(){
 
         const productRows = Array.from(productRowsMap.values())
             .map(function(row){
-                row.price = row.product ? (Number(row.product.price) || 0) : 0;
+                const isShopeeTikTokOnly =
+                    row.marketplaces &&
+                    row.marketplaces.size === 1 &&
+                    (row.marketplaces.has("shopee") ||
+                     row.marketplaces.has("tiktok"));
+
+                row.price =
+                    isShopeeTikTokOnly && Number(row.qty) > 0
+                        ? (Number(row.sales) / Number(row.qty))
+                        : (row.product ? (Number(row.product.price) || 0) : 0);
+
                 row.name = row.product
                     ? (row.product.name || row.sku)
                     : "SKU belum ada di Master Produk";
