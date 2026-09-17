@@ -15234,31 +15234,18 @@ function showView(viewId, button, saveHistory = true){
        scroll tetap bekerja pada tampilan desktop maupun mobile.
     */
     if(viewId === "dashboard"){
-        setTimeout(function(){
-            const chart = document.getElementById("dashboardSalesChart");
-            if(!chart) return;
-
-            const bars = chart.querySelectorAll(".dashboard-bar-item");
-            let latest = null;
-
-            for(let i = bars.length - 1; i >= 0; i--){
-                const value = bars[i].querySelector(".dashboard-bar-value");
-                if(value && String(value.textContent || "").trim() !== ""){
-                    latest = bars[i];
-                    break;
-                }
+        const focusDashboardChart = function(){
+            if(typeof window.sellerBooksFocusLatestDashboardBar === "function"){
+                window.sellerBooksFocusLatestDashboardBar();
             }
+        };
 
-            if(!latest) return;
-
-            const targetCenter =
-                latest.offsetLeft + (latest.offsetWidth / 2);
-
-            chart.scrollLeft = Math.max(
-                0,
-                targetCenter - (chart.clientWidth / 2)
-            );
-        }, 150);
+        requestAnimationFrame(function(){
+            requestAnimationFrame(focusDashboardChart);
+        });
+        setTimeout(focusDashboardChart, 100);
+        setTimeout(focusDashboardChart, 300);
+        setTimeout(focusDashboardChart, 700);
     }
 
     if(viewId === "productAnalysis"){
@@ -15936,9 +15923,9 @@ function sellerBooksRenderDashboardCharts(transactions){
         return '<div class="dashboard-bar-item" title="'+item.label+' • '+formatRupiah(item.value)+'"><div class="dashboard-bar-value">'+(item.value? sellerBooksDashboardFormatShortRupiah(item.value):"")+'</div><div class="dashboard-bar" style="height:'+height+'%"></div><div class="dashboard-bar-label">'+item.label+'</div></div>';
     }).join("");
 
-    // Default grafik selalu diarahkan ke batang biru/penjualan TERAKHIR
-    // pada periode yang sedang dipilih. Berlaku untuk Hari Ini, Kemarin,
-    // Minggu Ini, Minggu Lalu, Bulan, Tahun, Semua Periode, dan periode lain.
+    // Cari batang TERAKHIR yang benar-benar memiliki penjualan.
+    // Untuk Hari Ini/Kemarin, ini adalah jam upload terakhir.
+    // Untuk periode lain, ini adalah tanggal/bulan terakhir yang memiliki penjualan.
     let latestBucketIndex = -1;
     for(let i = bucketList.length - 1; i >= 0; i--){
         if(Number(bucketList[i].value) > 0){
@@ -15947,32 +15934,54 @@ function sellerBooksRenderDashboardCharts(transactions){
         }
     }
 
+    // Paksa posisi grafik ke batang terakhir setelah elemen benar-benar
+    // selesai dirender. Ini penting saat Dashboard baru dibuka/refresh,
+    // karena sebelumnya grafik kadang dihitung ketika ukuran container masih 0.
     if(latestBucketIndex >= 0) {
-        /*
-           Posisi grafik diatur langsung melalui scrollLeft agar
-           batang biru terakhir langsung terlihat ketika dashboard
-           pertama kali dibuka maupun ketika periode diganti.
-           Batang terakhir ditempatkan di tengah area yang terlihat.
-        */
-        const positionLatestChartBar = function(){
-            const bars = salesChart.querySelectorAll(".dashboard-bar-item");
+        window.sellerBooksFocusLatestDashboardBar = function(){
+            const chart = document.getElementById("dashboardSalesChart");
+            if(!chart) return;
+
+            const bars = chart.querySelectorAll(".dashboard-bar-item");
             const target = bars[latestBucketIndex];
             if(!target) return;
+
+            const chartWidth = chart.clientWidth;
+            if(chartWidth <= 0) return;
 
             const targetCenter =
                 target.offsetLeft + (target.offsetWidth / 2);
 
-            salesChart.scrollLeft = Math.max(
+            const desiredLeft =
+                targetCenter - (chartWidth / 2);
+
+            const maxScroll =
+                Math.max(0, chart.scrollWidth - chart.clientWidth);
+
+            const finalLeft = Math.max(
                 0,
-                targetCenter - (salesChart.clientWidth / 2)
+                Math.min(maxScroll, desiredLeft)
             );
+
+            chart.scrollLeft = finalLeft;
+
+            if(typeof chart.scrollTo === "function"){
+                chart.scrollTo({
+                    left: finalLeft,
+                    behavior: "auto"
+                });
+            }
         };
 
+        const focusLatest = window.sellerBooksFocusLatestDashboardBar;
+
         requestAnimationFrame(function(){
-            requestAnimationFrame(positionLatestChartBar);
+            requestAnimationFrame(focusLatest);
         });
 
-        setTimeout(positionLatestChartBar, 100);
+        setTimeout(focusLatest, 100);
+        setTimeout(focusLatest, 300);
+        setTimeout(focusLatest, 700);
     }
 
     const mpList=Array.from(marketplaceTotals.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8);
@@ -25343,6 +25352,18 @@ document.addEventListener(
 
         loadDashboardCustomDates();
         updateDashboardByPeriod();
+
+        const focusDashboardChartAfterLoad = function(){
+            if(typeof window.sellerBooksFocusLatestDashboardBar === "function"){
+                window.sellerBooksFocusLatestDashboardBar();
+            }
+        };
+        requestAnimationFrame(function(){
+            requestAnimationFrame(focusDashboardChartAfterLoad);
+        });
+        setTimeout(focusDashboardChartAfterLoad, 150);
+        setTimeout(focusDashboardChartAfterLoad, 500);
+        setTimeout(focusDashboardChartAfterLoad, 1000);
 
     }
 );
