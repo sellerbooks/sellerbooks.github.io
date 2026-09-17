@@ -15141,6 +15141,23 @@ function renderProductAnalysis(){
                     ? "⚠️ MINUS"
                     : "✓ UNTUNG";
 
+            /*
+               Harga Jual khusus Shopee dan TikTok:
+               gunakan Total Penjualan / QTY.
+               Marketplace lain tetap memakai harga Master Produk.
+            */
+            const selectedMarketplace =
+                document.getElementById(
+                    "productAnalysisMarketplace"
+                )?.value || "";
+
+            const displayPrice =
+                (selectedMarketplace === "Shopee" ||
+                 selectedMarketplace === "TikTok") &&
+                Number(row.qty) > 0
+                    ? (Number(row.sales) / Number(row.qty))
+                    : row.price;
+
             const action =
                 row.product
                     ? `
@@ -15168,7 +15185,7 @@ function renderProductAnalysis(){
                         ${escapeHtmlProductAnalysis(row.name)}
                     </td>
                     <td>${row.qty}</td>
-                    <td>${formatProductAnalysisCurrency(row.price)}</td>
+                    <td>${formatProductAnalysisCurrency(displayPrice)}</td>
                     <td>${formatProductAnalysisCurrency(row.sales)}</td>
                     <td>${formatProductAnalysisCurrency(row.hpp)}</td>
                     <td>${formatProductAnalysisCurrency(row.admin)}</td>
