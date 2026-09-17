@@ -22289,8 +22289,6 @@ function saveSalesImportData(){
     const newTransactions =
         [];
 
-    let duplicateFound = false;
-
     const incomingTransactionKeys =
         new Set();
 
@@ -22336,27 +22334,33 @@ function saveSalesImportData(){
             skuKey;
 
         /*
-           Semua marketplace menggunakan aturan yang sama:
-           jika kode transaksi yang sama sudah pernah disimpan,
-           seluruh proses import ini DITOLAK.
+           Semua marketplace menggunakan aturan yang sama.
+           Jika transaksi dengan ID unik + SKU yang sama
+           sudah pernah disimpan, transaksi tersebut DILEWATI.
+           Tetapi transaksi baru dalam file yang sama tetap disimpan.
+
+           Jadi:
+           - Data lama yang sama tidak menumpuk.
+           - Data baru / order baru otomatis masuk.
+           - Produk/SKU baru pada order yang sama juga bisa masuk.
+           - Import campuran (sebagian lama + sebagian baru) tetap disimpan
+             hanya bagian yang benar-benar baru.
         */
         if(
             (orderKey || packingKey) &&
             existingTransactionKeys.has(identityKey)
         ){
-            duplicateFound = true;
             return;
         }
 
         /*
-           Cegah kode transaksi yang sama muncul lebih dari sekali
-           di dalam file yang sedang diimport.
+           Cegah baris dengan ID unik + SKU yang sama
+           muncul lebih dari sekali di file import yang sedang diproses.
         */
         if(
             (orderKey || packingKey) &&
             incomingTransactionKeys.has(identityKey)
         ){
-            duplicateFound = true;
             return;
         }
 
@@ -22372,19 +22376,11 @@ function saveSalesImportData(){
 
     });
 
-    /* =====================================================
-       JIKA ADA SATU SAJA TRANSAKSI DUPLIKAT,
-       JANGAN SIMPAN SEBAGIAN DATA.
-       Seluruh import dibatalkan agar tidak terjadi
-       penumpukan atau import setengah-setengah.
-    ===================================================== */
-    if(duplicateFound){
-        return null;
-    }
-
     /*
-       File yang seluruh isinya sudah pernah diimport
-       juga harus gagal, bukan membuat record kosong/Rp0.
+       Jika seluruh isi file sudah pernah disimpan,
+       jangan membuat record kosong/Rp0.
+       Kembalikan null agar muncul:
+       "Data penjualan gagal disimpan."
     */
     if(
         transactions.length > 0 &&
