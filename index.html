@@ -13751,6 +13751,65 @@ Object.defineProperty(sellerBooksStorage,"length",{
     }
 });
 
+/* =====================================================
+   FAST START CACHE
+   Cache lokal untuk mempercepat startup/refresh. Supabase
+   tetap menjadi sumber data utama dan diverifikasi di belakang.
+===================================================== */
+const sellerBooksFastCacheDBName="SellerBooksFastCache";
+const sellerBooksFastCacheStoreName="sessions";
+function sellerBooksOpenFastCacheDB(){
+    return new Promise(function(resolve){
+        try{
+            if(!window.indexedDB){resolve(null);return;}
+            const request=window.indexedDB.open(sellerBooksFastCacheDBName,1);
+            request.onupgradeneeded=function(event){
+                const db=event.target.result;
+                if(!db.objectStoreNames.contains(sellerBooksFastCacheStoreName))db.createObjectStore(sellerBooksFastCacheStoreName);
+            };
+            request.onsuccess=function(){resolve(request.result);};
+            request.onerror=function(){resolve(null);};
+        }catch(error){resolve(null);}
+    });
+}
+async function sellerBooksFastCacheGet(userId){
+    if(!userId)return null;
+    const db=await sellerBooksOpenFastCacheDB();
+    if(!db)return null;
+    return new Promise(function(resolve){
+        try{
+            const req=db.transaction(sellerBooksFastCacheStoreName,"readonly").objectStore(sellerBooksFastCacheStoreName).get(String(userId));
+            req.onsuccess=function(){resolve(req.result||null);};
+            req.onerror=function(){resolve(null);};
+        }catch(error){resolve(null);}
+    });
+}
+async function sellerBooksFastCacheSet(userId,value){
+    if(!userId||!value)return;
+    const db=await sellerBooksOpenFastCacheDB();
+    if(!db)return;
+    try{db.transaction(sellerBooksFastCacheStoreName,"readwrite").objectStore(sellerBooksFastCacheStoreName).put(value,String(userId));}catch(error){}
+}
+async function sellerBooksSaveFastCache(){
+    if(!sellerBooksAuthUser||!sellerBooksCloudReady)return;
+    try{await sellerBooksFastCacheSet(sellerBooksAuthUser.id,{savedAt:Date.now(),profile:{status:String(sellerBooksProfile?.status||""),owner_name:String(sellerBooksProfile?.owner_name||""),email:String(sellerBooksProfile?.email||sellerBooksAuthUser.email||"")},data:sellerBooksCloudState});}catch(error){}
+}
+async function sellerBooksWarmStartFromCache(user){
+    if(!user)return false;
+    try{
+        const cached=await sellerBooksFastCacheGet(user.id);
+        if(!cached||!cached.data||!cached.profile||String(cached.profile.status||"").toLowerCase()!=="approved")return false;
+        sellerBooksAuthUser=user;
+        sellerBooksProfile={...(cached.profile||{}),user_id:user.id,email:cached.profile.email||user.email||""};
+        sellerBooksCloudState={...cached.data};
+        sellerBooksCloudReady=true;
+        sellerBooksRefreshRuntimeFromCloud();
+        sellerBooksOpenApplication();
+        sellerBooksRefreshActiveView();
+        return true;
+    }catch(error){console.warn("Fast cache SellerBooks gagal digunakan:",error);return false;}
+}
+
 function sellerBooksGetLegacyLocalData(){
     const legacy = {};
     try{
@@ -13896,6 +13955,7 @@ async function sellerBooksLoadCloudData(){
 
     /* Setelah data berhasil berada di Supabase, hapus salinan data aplikasi lama. */
     sellerBooksClearLegacyLocalData();
+    sellerBooksSaveFastCache();
 }
 
 function sellerBooksRefreshRuntimeFromCloud(){
@@ -13992,16 +14052,9 @@ async function sellerBooksCheckApproval(showAlert){
             await sellerBooksLoadCloudData();
             sellerBooksRefreshRuntimeFromCloud();
             if(typeof initializeReports==="function")initializeReports();
-            if(typeof loadSellerBooksSettings==="function")loadSellerBooksSettings();
-            if(typeof renderMarketplaces==="function")renderMarketplaces();
-            if(typeof renderStores==="function")renderStores();
-            if(typeof renderProducts==="function")renderProducts();
-            if(typeof renderCosts==="function")renderCosts();
-            if(typeof updateDashboardByPeriod==="function")updateDashboardByPeriod();
-            if(typeof updateReports==="function")updateReports();
-            if(typeof renderProductAnalysis==="function")renderProductAnalysis();
-
-            sellerBooksOpenApplication(); return;
+            sellerBooksOpenApplication();
+            sellerBooksRefreshActiveView();
+            return;
         }
         if(status==="rejected"){sellerBooksShowApproval("Permintaan akses SellerBooks Anda ditolak oleh Core Adiimasa. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.");return;}
         if(status==="suspended"){sellerBooksShowApproval("Akun SellerBooks Anda sedang ditangguhkan oleh Core Adiimasa. Silakan hubungi Core Adiimasa.");return;}
@@ -14109,9 +14162,18 @@ async function sellerBooksHandleAuthSession(){
         sellerBooksAuthUser =
             data.session.user;
 
-        await sellerBooksCheckApproval(
-            false
-        );
+        const warmedFromCache =
+            await sellerBooksWarmStartFromCache(
+                data.session.user
+            );
+
+        if(warmedFromCache){
+            sellerBooksCheckApproval(false).catch(function(error){
+                console.error("Verifikasi sesi SellerBooks gagal:",error);
+            });
+        }else{
+            await sellerBooksCheckApproval(false);
+        }
 
         /*
            TIMER APPROVAL
@@ -14174,25 +14236,24 @@ let sellerBooksAccountRealtimeHandling=false;
 let sellerBooksDataRealtimeChannel=null;
 let sellerBooksDataRealtimeApplying=false;
 
+function sellerBooksRefreshActiveView(){
+    const activeView=document.querySelector(".view.active");
+    const viewId=activeView ? activeView.id : "dashboard";
+    try{
+        if(viewId==="dashboard" && typeof updateDashboardByPeriod==="function")updateDashboardByPeriod();
+        else if(viewId==="marketplace" && typeof renderMarketplaces==="function")renderMarketplaces();
+        else if(viewId==="stores" && typeof renderStores==="function")renderStores();
+        else if(viewId==="products" && typeof renderProducts==="function")renderProducts();
+        else if(viewId==="costs" && typeof renderCosts==="function")renderCosts();
+        else if(viewId==="productAnalysis" && typeof renderProductAnalysis==="function")renderProductAnalysis();
+        else if(viewId==="reports" && typeof updateReports==="function")updateReports();
+        else if(viewId==="settings" && typeof loadSellerBooksSettings==="function")loadSellerBooksSettings();
+        if(typeof renderNotifications==="function")renderNotifications();
+    }catch(error){console.error("Refresh view SellerBooks gagal:",error);}
+}
 function sellerBooksRefreshAllViewsFromCloud(){
     if(typeof sellerBooksRefreshRuntimeFromCloud==="function")sellerBooksRefreshRuntimeFromCloud();
-    if(typeof loadSellerBooksSettings==="function")loadSellerBooksSettings();
-    if(typeof renderMarketplaces==="function")renderMarketplaces();
-    if(typeof renderStores==="function")renderStores();
-    if(typeof renderProducts==="function")renderProducts();
-    if(typeof renderCosts==="function")renderCosts();
-    if(typeof updateDashboardByPeriod==="function")updateDashboardByPeriod();
-    if(typeof updateReports==="function")updateReports();
-
-    /* Data marketplace dan akun toko baru saja masuk dari Supabase.
-       Isi ulang filter Laporan agar tidak tetap kosong dari inisialisasi
-       sebelum data cloud selesai dimuat. */
-    if(typeof loadReportMarketplaceFilter==="function")loadReportMarketplaceFilter();
-    if(typeof loadReportStoreFilter==="function")loadReportStoreFilter();
-    if(typeof loadDeleteReportMarketplaceFilter==="function")loadDeleteReportMarketplaceFilter();
-    if(typeof loadDeleteReportStoreFilter==="function")loadDeleteReportStoreFilter();
-    if(typeof renderProductAnalysis==="function")renderProductAnalysis();
-    if(typeof renderNotifications==="function")renderNotifications();
+    sellerBooksRefreshActiveView();
 }
 
 function sellerBooksStopDataRealtime(){
@@ -14252,6 +14313,7 @@ function sellerBooksApplyRealtimeCloudData(data){
     try{
         sellerBooksCloudState={...data};
         sellerBooksCloudReady=true;
+        sellerBooksSaveFastCache();
         sellerBooksRefreshAllViewsFromCloud();
     }catch(error){
         console.error("Refresh realtime data SellerBooks gagal:",error);
@@ -15591,6 +15653,19 @@ function showView(viewId, button, saveHistory = true){
     if(viewId === "productAnalysis"){
         initializeProductAnalysis();
     }
+
+
+    /* Render hanya halaman aktif agar perpindahan kartu tidak merender seluruh aplikasi. */
+    try{
+        if(viewId === "dashboard" && typeof updateDashboardByPeriod === "function") updateDashboardByPeriod();
+        else if(viewId === "marketplace" && typeof renderMarketplaces === "function") renderMarketplaces();
+        else if(viewId === "stores" && typeof renderStores === "function") renderStores();
+        else if(viewId === "products" && typeof renderProducts === "function") renderProducts();
+        else if(viewId === "costs" && typeof renderCosts === "function") renderCosts();
+        else if(viewId === "reports" && typeof updateReports === "function") updateReports();
+        else if(viewId === "productAnalysis" && typeof renderProductAnalysis === "function") renderProductAnalysis();
+        else if(viewId === "settings" && typeof loadSellerBooksSettings === "function") loadSellerBooksSettings();
+    }catch(error){ console.error("Render halaman SellerBooks gagal:",error); }
 
 
     /* =========================================
@@ -25282,6 +25357,7 @@ async function sellerBooksManualRefreshDashboard(){
                 : {};
 
         sellerBooksCloudReady = true;
+        sellerBooksSaveFastCache();
 
         if(
             typeof sellerBooksRefreshRuntimeFromCloud ===
