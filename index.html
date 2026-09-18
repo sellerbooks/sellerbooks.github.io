@@ -6535,6 +6535,23 @@ function getReportStoreFeePercent(storeId){
 
 function getReportTransactionFeePercent(transaction){
 
+    /* PRIORITAS: ADMIN % SKU DI MASTER PRODUK */
+    if(transaction){
+        const transactionSku = String(transaction.sku || "").trim().toLowerCase();
+        if(transactionSku && Array.isArray(products)){
+            const masterProduct = products.find(function(product){
+                return String(product.sku || "").trim().toLowerCase() === transactionSku;
+            });
+            if(masterProduct && masterProduct.adminFeePercent !== undefined && masterProduct.adminFeePercent !== null && masterProduct.adminFeePercent !== ""){
+                const skuFee = Number(masterProduct.adminFeePercent);
+                if(Number.isFinite(skuFee)){
+                    return skuFee;
+                }
+            }
+        }
+    }
+
+    /* FALLBACK: ADMIN % AKUN TOKO / SNAPSHOT TRANSAKSI */
     if(
         transaction &&
         transaction.adminFeePercent !== undefined &&
@@ -6542,7 +6559,6 @@ function getReportTransactionFeePercent(transaction){
         transaction.adminFeePercent !== ""
     ){
         const fee = Number(transaction.adminFeePercent);
-
         if(Number.isFinite(fee)){
             return fee;
         }
@@ -12927,6 +12943,14 @@ document.addEventListener(
     >
 
 </div>
+            </div>
+
+
+            <!-- ADMIN % SKU -->
+
+            <div class="form-group">
+                <label>Admin % SKU <span style="color:#94a3b8;">(Opsional)</span></label>
+                <input type="number" id="productAdminFeePercent" class="form-control" placeholder="Contoh: 15" min="0" max="100" step="0.01">
             </div>
 
 
@@ -19529,6 +19553,10 @@ function openProductModal(){
         "productCost"
     ).value = "";
 
+    document.getElementById(
+        "productAdminFeePercent"
+    ).value = "";
+
     
     document.getElementById(
     "productStock"
@@ -19622,6 +19650,11 @@ function saveProduct(){
         ) || 0;
 
 
+    const adminFeePercentInput = document.getElementById("productAdminFeePercent");
+    const adminFeePercentRaw = adminFeePercentInput ? adminFeePercentInput.value.trim() : "";
+    const adminFeePercent = adminFeePercentRaw === "" ? "" : Number(adminFeePercentRaw);
+
+
     const stock =
         Math.max(
             0,
@@ -19639,6 +19672,12 @@ function saveProduct(){
             "productStatus"
         ).value;
 
+
+
+    if(adminFeePercent !== "" && (!Number.isFinite(adminFeePercent) || adminFeePercent < 0 || adminFeePercent > 100)){
+        alert("Admin % SKU harus antara 0 sampai 100.");
+        return;
+    }
 
 
     /* VALIDASI SKU */
@@ -19752,6 +19791,8 @@ function saveProduct(){
 
             product.cost = cost;
 
+            product.adminFeePercent = adminFeePercent;
+
             product.status = status;
 
             product.updatedAt =
@@ -19813,6 +19854,8 @@ function saveProduct(){
             price:price,
 
             cost:cost,
+
+            adminFeePercent:adminFeePercent,
 
             stock:stock,
 
@@ -19899,6 +19942,12 @@ function editProduct(id){
     document.getElementById(
         "productCost"
     ).value = product.cost || "";
+
+document.getElementById("productAdminFeePercent").value =
+    product.adminFeePercent !== undefined && product.adminFeePercent !== null
+        ? product.adminFeePercent
+        : "";
+
 
 document.getElementById(
     "productStock"
@@ -20416,6 +20465,14 @@ const cost = parseExcelPrice(
 );
 
 
+const adminFeePercentRaw =
+    row["Admin % SKU"] !== undefined ? row["Admin % SKU"] :
+    (row["ADMIN % SKU"] !== undefined ? row["ADMIN % SKU"] :
+    (row["Admin SKU %"] !== undefined ? row["Admin SKU %"] : ""));
+const adminFeePercentText = String(adminFeePercentRaw).trim();
+const adminFeePercent = adminFeePercentText === "" ? "" : Number(adminFeePercentText.replace("%", "").trim());
+
+
 const stock = Math.max(
     0,
     Number(
@@ -20483,6 +20540,11 @@ const stock = Math.max(
 
                 }
 
+                if(adminFeePercent !== "" && (!Number.isFinite(adminFeePercent) || adminFeePercent < 0 || adminFeePercent > 100)){
+                    errorCount++;
+                    return;
+                }
+
 
 
                 /*
@@ -20546,6 +20608,8 @@ const stock = Math.max(
                     price:price,
 
                     cost:cost,
+
+                    adminFeePercent:adminFeePercent,
            
                     stock:stock,
 
@@ -20664,6 +20728,7 @@ async function exportProducts(){
         "Kategori",
         "Harga Jual",
         "HPP / Modal",
+        "Admin % SKU",
         "Stok",
         "Status Produk"
     ]);
@@ -20686,6 +20751,7 @@ async function exportProducts(){
                 product.category || "",
                 Number(product.price) || 0,
                 Number(product.cost) || 0,
+                product.adminFeePercent === "" || product.adminFeePercent === undefined || product.adminFeePercent === null ? "" : Number(product.adminFeePercent),
                 Number(product.stock) || 0,
 
                 product.status === "active"
@@ -20707,6 +20773,7 @@ async function exportProducts(){
             "Contoh Kategori",
             10000,
             5000,
+            "",
             0,
             "Aktif"
         ]);
@@ -20735,8 +20802,9 @@ async function exportProducts(){
     worksheet.getColumn(3).width = 22;
     worksheet.getColumn(4).width = 18;
     worksheet.getColumn(5).width = 18;
-    worksheet.getColumn(6).width = 15;
-    worksheet.getColumn(7).width = 20;
+    worksheet.getColumn(6).width = 16;
+    worksheet.getColumn(7).width = 15;
+    worksheet.getColumn(8).width = 20;
 
 
     /* =================================================
@@ -20755,6 +20823,10 @@ async function exportProducts(){
         .getColumn(6)
         .numFmt = '#,##0';
 
+    worksheet
+        .getColumn(7)
+        .numFmt = '0.##';
+
 
     /* =================================================
        DROPDOWN STATUS PRODUK
@@ -20768,7 +20840,7 @@ async function exportProducts(){
     ){
 
         worksheet
-            .getCell(row, 7)
+            .getCell(row, 8)
             .dataValidation = {
 
                 type:"list",
