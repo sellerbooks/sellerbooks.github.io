@@ -10163,6 +10163,8 @@ document.addEventListener(
                     <th>Harga Jual</th>
 
                     <th>HPP / Modal</th>
+
+                    <th>Admin % SKU</th>
                     
                     <th>Stok</th>
 
@@ -19345,6 +19347,25 @@ function renderProducts(){
                     <span class="product-price">
 
                         ${formatRupiah(product.cost)}
+
+                    </span>
+
+                </td>
+
+                <td>
+
+                    <span class="product-price">
+
+                        ${
+                            product.adminFeePercent !== undefined &&
+                            product.adminFeePercent !== null &&
+                            product.adminFeePercent !== ""
+                                ? Number(product.adminFeePercent).toLocaleString("id-ID", {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 2
+                                }) + "%"
+                                : "-"
+                        }
 
                     </span>
 
