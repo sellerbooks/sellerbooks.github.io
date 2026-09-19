@@ -12,6 +12,7 @@ DefaultDirName={autopf}\SellerBooks Admin
 DefaultGroupName=SellerBooks Admin
 OutputDir=..\artifacts
 OutputBaseFilename=SellerBooks Admin Setup
+SetupIconFile=SellerBooks Admin.ico
 Compression=lzma2
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible

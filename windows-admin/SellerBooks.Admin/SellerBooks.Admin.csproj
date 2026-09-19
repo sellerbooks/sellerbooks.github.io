@@ -10,6 +10,7 @@
     <AssemblyName>SellerBooks Admin</AssemblyName>
     <RootNamespace>SellerBooks.Admin</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\installer\SellerBooks Admin.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
