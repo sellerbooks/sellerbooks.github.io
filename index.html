@@ -14472,6 +14472,12 @@ function sellerBooksRefreshRuntimeFromCloud(){
             costs=JSON.parse(sellerBooksStorageGetItem("sellerbooks_costs")||"[]") || costs;
         }
     }catch(error){}
+    /* Pastikan logo tersimpan langsung diterapkan saat pertama masuk/refresh. */
+    try{
+        if(typeof renderSettingsLogo==="function"){
+            renderSettingsLogo();
+        }
+    }catch(error){}
 }
 
 let sellerBooksAuthUser=null;
