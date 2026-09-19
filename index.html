@@ -13745,23 +13745,134 @@ let sellerBooksCloudLoading = false;
 let sellerBooksCloudGeneration = 0;
 let sellerBooksCloudUpdatedAt = null;
 
+/* CLOUD SYNC SAFETY: track last trusted cloud snapshot and local changes. */
+let sellerBooksCloudBaseState = {};
+let sellerBooksCloudDirtyKeys = new Set();
+let sellerBooksCloudClearRequested = false;
+let sellerBooksCloudConflictHandling = false;
+
+function sellerBooksCloneCloudState(data){
+    return {...((data && typeof data==="object") ? data : {})};
+}
+
+function sellerBooksGetSalesImportIdentity(transaction){
+    const marketplaceKey=String(transaction?.marketplaceId||transaction?.marketplace||"").trim().toLowerCase();
+    const storeKey=String(transaction?.storeId||"").trim().toLowerCase();
+    const orderKey=String(transaction?.orderId||"").trim().toLowerCase();
+    const packingKey=String(transaction?.packingId||"").trim().toLowerCase();
+    const skuKey=String(transaction?.sku||"").trim().toLowerCase();
+    if(!orderKey && !packingKey)return "";
+    return marketplaceKey+"|"+storeKey+"|"+(orderKey?"ORDER:"+orderKey:"PACKING:"+packingKey)+"|"+skuKey;
+}
+
+function sellerBooksGetSalesImportKeys(value){
+    try{
+        const imports=Array.isArray(value)?value:JSON.parse(value||"[]");
+        const keys=new Set();
+        (imports||[]).forEach(function(record){
+            (record?.transactions||[]).forEach(function(transaction){
+                const key=sellerBooksGetSalesImportIdentity(transaction);
+                if(key)keys.add(key);
+            });
+        });
+        return keys;
+    }catch(error){ return new Set(); }
+}
+
+function sellerBooksMergeSalesImportsForConflict(baseValue,localValue,remoteValue){
+    let base=[],local=[],remote=[];
+    try{base=Array.isArray(baseValue)?baseValue:JSON.parse(baseValue||"[]");}catch(error){}
+    try{local=Array.isArray(localValue)?localValue:JSON.parse(localValue||"[]");}catch(error){}
+    try{remote=Array.isArray(remoteValue)?remoteValue:JSON.parse(remoteValue||"[]");}catch(error){}
+
+    const baseKeys=sellerBooksGetSalesImportKeys(base);
+    const localKeys=sellerBooksGetSalesImportKeys(local);
+    let removed=0;
+    baseKeys.forEach(function(key){if(!localKeys.has(key))removed++;});
+
+    if(removed>0){
+        return {conflict:true,reason:"Data penjualan berubah di perangkat lain saat operasi penghapusan/edit berlangsung."};
+    }
+
+    const result=[],recordById=new Map();
+    function addRecord(record){
+        if(!record||typeof record!=="object")return;
+        const id=String(record.id||"");
+        if(id&&recordById.has(id)){
+            const existing=recordById.get(id);
+            existing.transactions=(existing.transactions||[]).concat(Array.isArray(record.transactions)?record.transactions:[]);
+            return;
+        }
+        const cloned={...record,transactions:Array.isArray(record.transactions)?record.transactions.map(function(item){return {...item};}):[]};
+        result.push(cloned);
+        if(id)recordById.set(id,cloned);
+    }
+    remote.forEach(addRecord);
+    local.forEach(addRecord);
+
+    const seen=new Set();
+    result.forEach(function(record){
+        const unique=[];
+        (record.transactions||[]).forEach(function(transaction){
+            const key=sellerBooksGetSalesImportIdentity(transaction);
+            if(key&&seen.has(key))return;
+            if(key)seen.add(key);
+            unique.push(transaction);
+        });
+        record.transactions=unique;
+    });
+
+    return {conflict:false,value:JSON.stringify(result)};
+}
+
+function sellerBooksBuildConcurrentSnapshot(baseState,localState,remoteState){
+    if(sellerBooksCloudClearRequested){
+        throw new Error("Data cloud berubah di perangkat lain. Operasi hapus seluruh data dibatalkan demi keamanan.");
+    }
+
+    const merged=sellerBooksCloneCloudState(remoteState);
+    sellerBooksCloudDirtyKeys.forEach(function(key){
+        if(key==="sellerbooks_sales_imports"){
+            const sales=sellerBooksMergeSalesImportsForConflict(
+                baseState[key],localState[key],remoteState[key]
+            );
+            if(sales.conflict)throw new Error(sales.reason);
+            merged[key]=sales.value;
+        }else if(localState[key]===undefined){
+            delete merged[key];
+        }else{
+            merged[key]=localState[key];
+        }
+    });
+    return merged;
+}
+
+function sellerBooksMarkCloudDirty(key){
+    if(!sellerBooksDataRealtimeApplying)sellerBooksCloudDirtyKeys.add(String(key));
+}
+
 function sellerBooksStorageGetItem(key){
-    const value = sellerBooksCloudState[key];
-    return value === undefined || value === null ? null : String(value);
+    const value=sellerBooksCloudState[key];
+    return value===undefined||value===null?null:String(value);
 }
 
 function sellerBooksStorageSetItem(key,value){
-    sellerBooksCloudState[key] = String(value);
+    sellerBooksCloudState[key]=String(value);
+    sellerBooksMarkCloudDirty(key);
     sellerBooksQueueCloudSave();
 }
 
 function sellerBooksStorageRemoveItem(key){
     delete sellerBooksCloudState[key];
+    sellerBooksMarkCloudDirty(key);
     sellerBooksQueueCloudSave();
 }
 
 function sellerBooksStorageClear(){
-    sellerBooksCloudState = {};
+    sellerBooksCloudClearRequested=true;
+    Object.keys(sellerBooksCloudBaseState).forEach(function(key){sellerBooksCloudDirtyKeys.add(key);});
+    Object.keys(sellerBooksCloudState).forEach(function(key){sellerBooksCloudDirtyKeys.add(key);});
+    sellerBooksCloudState={};
     sellerBooksQueueCloudSave();
 }
 
@@ -13878,93 +13989,164 @@ function sellerBooksClearLegacyLocalData(){
     }
 }
 
+async function sellerBooksReadCloudRow(){
+    const {data,error}=await sellerBooksSupabase
+        .from("sellerbooks_user_data")
+        .select("data,updated_at")
+        .eq("user_id",sellerBooksAuthUser.id)
+        .maybeSingle();
+    if(error)throw error;
+    return {
+        exists:!!data,
+        data:(data&&data.data&&typeof data.data==="object")?data.data:{},
+        updatedAt:data?.updated_at||null
+    };
+}
+
+async function sellerBooksWriteCloudSnapshot(snapshot,expectedUpdatedAt,allowInsert){
+    const userId=sellerBooksAuthUser.id;
+    const nextUpdatedAt=new Date().toISOString();
+
+    if(expectedUpdatedAt){
+        const {data,error}=await sellerBooksSupabase
+            .from("sellerbooks_user_data")
+            .update({data:snapshot,updated_at:nextUpdatedAt})
+            .eq("user_id",userId)
+            .eq("updated_at",expectedUpdatedAt)
+            .select("data,updated_at");
+        if(error)throw error;
+        if(!data||data.length===0)return {conflict:true};
+        return {conflict:false,updatedAt:data[0].updated_at||nextUpdatedAt,data:data[0].data||{}};
+    }
+
+    if(!allowInsert)return {conflict:true};
+
+    const {data,error}=await sellerBooksSupabase
+        .from("sellerbooks_user_data")
+        .insert({user_id:userId,data:snapshot,updated_at:nextUpdatedAt})
+        .select("data,updated_at");
+    if(error){
+        if(String(error.code||"")==="23505")return {conflict:true};
+        throw error;
+    }
+    return {conflict:false,updatedAt:data?.[0]?.updated_at||nextUpdatedAt,data:data?.[0]?.data||snapshot};
+}
+
+async function sellerBooksReloadCloudAfterConflict(){
+    const row=await sellerBooksReadCloudRow();
+    sellerBooksCloudUpdatedAt=row.updatedAt;
+    sellerBooksCloudBaseState=sellerBooksCloneCloudState(row.data);
+    sellerBooksCloudState=sellerBooksCloneCloudState(row.data);
+    sellerBooksCloudDirtyKeys.clear();
+    sellerBooksCloudClearRequested=false;
+    sellerBooksCloudReady=true;
+    sellerBooksCloudLoading=false;
+    await sellerBooksSaveFastCache();
+    sellerBooksRefreshRuntimeFromCloud();
+    sellerBooksRefreshAllViewsFromCloud();
+    return row;
+}
+
 async function sellerBooksPersistCloudDataNow(){
-    if(!sellerBooksAuthUser || !sellerBooksCloudReady || sellerBooksCloudLoading)return;
-    const snapshot = {...sellerBooksCloudState};
-    const saveGeneration = sellerBooksCloudGeneration;
-    const saveUserId = sellerBooksAuthUser.id;
-    sellerBooksCloudSavePromise = sellerBooksCloudSavePromise.then(async function(){
-        /*
-           SAFETY GUARD:
-           Jika proses load cloud sudah dimulai setelah snapshot ini dibuat,
-           snapshot lama TIDAK BOLEH ditulis kembali ke Supabase.
-        */
-        if(
-            !sellerBooksCloudReady ||
-            sellerBooksCloudLoading ||
-            sellerBooksCloudGeneration !== saveGeneration ||
-            !sellerBooksAuthUser ||
-            sellerBooksAuthUser.id !== saveUserId
-        ){
-            return;
+    if(!sellerBooksAuthUser||!sellerBooksCloudReady||sellerBooksCloudLoading)return;
+
+    const saveGeneration=sellerBooksCloudGeneration;
+    const saveUserId=sellerBooksAuthUser.id;
+
+    sellerBooksCloudSavePromise=sellerBooksCloudSavePromise.then(async function(){
+        if(!sellerBooksCloudReady||sellerBooksCloudLoading||
+           sellerBooksCloudGeneration!==saveGeneration||
+           !sellerBooksAuthUser||sellerBooksAuthUser.id!==saveUserId)return;
+
+        let snapshot=sellerBooksCloneCloudState(sellerBooksCloudState);
+        let expectedUpdatedAt=sellerBooksCloudUpdatedAt;
+
+        for(let attempt=0;attempt<2;attempt++){
+            const result=await sellerBooksWriteCloudSnapshot(
+                snapshot,expectedUpdatedAt,!expectedUpdatedAt
+            );
+
+            if(!result.conflict){
+                sellerBooksCloudUpdatedAt=result.updatedAt;
+                sellerBooksCloudBaseState=sellerBooksCloneCloudState(snapshot);
+                sellerBooksCloudState=sellerBooksCloneCloudState(snapshot);
+                sellerBooksCloudDirtyKeys.clear();
+                sellerBooksCloudClearRequested=false;
+                await sellerBooksSaveFastCache();
+                return;
+            }
+
+            if(sellerBooksCloudConflictHandling){
+                throw new Error("Konflik sinkronisasi SellerBooks sedang diproses.");
+            }
+
+            sellerBooksCloudConflictHandling=true;
+            try{
+                const remote=await sellerBooksReadCloudRow();
+                if(!remote.exists&&expectedUpdatedAt){
+                    throw new Error("Data cloud tidak ditemukan saat sinkronisasi. Penulisan dibatalkan demi keamanan.");
+                }
+                snapshot=sellerBooksBuildConcurrentSnapshot(
+                    sellerBooksCloudBaseState,
+                    sellerBooksCloudState,
+                    sellerBooksCloneCloudState(remote.data)
+                );
+                expectedUpdatedAt=remote.updatedAt;
+                sellerBooksCloudUpdatedAt=remote.updatedAt;
+                sellerBooksCloudState=sellerBooksCloneCloudState(snapshot);
+            }finally{
+                sellerBooksCloudConflictHandling=false;
+            }
         }
 
-        const nextUpdatedAt = new Date().toISOString();
-        const {error}=await sellerBooksSupabase
-            .from("sellerbooks_user_data")
-            .upsert({
-                user_id:saveUserId,
-                data:snapshot,
-                updated_at:nextUpdatedAt
-            },{onConflict:"user_id"});
-        if(error)throw error;
-
-        sellerBooksCloudUpdatedAt = nextUpdatedAt;
+        throw new Error("Sinkronisasi gagal karena data berubah bersamaan.");
     }).catch(function(error){
         console.error("Sinkronisasi data SellerBooks ke Supabase gagal:",error);
+        if(/Data penjualan berubah|data cloud berubah|tidak ditemukan|Konflik sinkronisasi/i.test(String(error?.message||""))){
+            sellerBooksReloadCloudAfterConflict().catch(function(reloadError){
+                console.error("Reload cloud setelah konflik gagal:",reloadError);
+            });
+        }
     });
+
     return sellerBooksCloudSavePromise;
 }
 
-/*
-   PERSIST KHUSUS OPERASI KRITIS
-   Berbeda dari fungsi save biasa, fungsi ini TIDAK menelan error.
-   Setelah upsert berhasil, data dibaca kembali dari Supabase untuk
-   memastikan perubahan benar-benar sudah tersimpan di database.
-*/
-async function sellerBooksPersistCloudDataStrict(expectedSnapshot, verification){
-    if(!sellerBooksAuthUser || !sellerBooksCloudReady){
-        throw new Error("Sinkronisasi Supabase belum siap.");
-    }
+async function sellerBooksPersistCloudDataStrict(expectedSnapshot,verification){
+    if(!sellerBooksAuthUser||!sellerBooksCloudReady)throw new Error("Sinkronisasi Supabase belum siap.");
 
-    const snapshot = expectedSnapshot || {...sellerBooksCloudState};
+    const snapshot=expectedSnapshot||sellerBooksCloneCloudState(sellerBooksCloudState);
+    const expectedUpdatedAt=sellerBooksCloudUpdatedAt;
 
-    sellerBooksCloudSavePromise = sellerBooksCloudSavePromise.then(async function(){
-        const {error}=await sellerBooksSupabase
-            .from("sellerbooks_user_data")
-            .upsert({
-                user_id:sellerBooksAuthUser.id,
-                data:snapshot,
-                updated_at:new Date().toISOString()
-            },{onConflict:"user_id"});
+    sellerBooksCloudSavePromise=sellerBooksCloudSavePromise.then(async function(){
+        const result=await sellerBooksWriteCloudSnapshot(
+            snapshot,expectedUpdatedAt,!expectedUpdatedAt
+        );
 
-        if(error)throw error;
-
-        const {data:verifyRow,error:verifyError}=await sellerBooksSupabase
-            .from("sellerbooks_user_data")
-            .select("data")
-            .eq("user_id",sellerBooksAuthUser.id)
-            .maybeSingle();
-
-        if(verifyError)throw verifyError;
-        if(!verifyRow || !verifyRow.data){
-            throw new Error("Verifikasi gagal: data SellerBooks tidak ditemukan setelah disimpan.");
+        if(result.conflict){
+            await sellerBooksReloadCloudAfterConflict();
+            throw new Error("Data berubah di perangkat lain. Operasi kritis dibatalkan agar data tidak tertimpa.");
         }
 
-        if(typeof verification === "function" && !verification(verifyRow.data)){
+        if(typeof verification==="function"&&!verification(result.data)){
             throw new Error("Verifikasi gagal: perubahan belum tersimpan sesuai permintaan.");
         }
+
+        sellerBooksCloudUpdatedAt=result.updatedAt;
+        sellerBooksCloudBaseState=sellerBooksCloneCloudState(snapshot);
+        sellerBooksCloudState=sellerBooksCloneCloudState(snapshot);
+        sellerBooksCloudDirtyKeys.clear();
+        sellerBooksCloudClearRequested=false;
+        await sellerBooksSaveFastCache();
     });
 
     return sellerBooksCloudSavePromise;
 }
 
 function sellerBooksQueueCloudSave(){
-    if(!sellerBooksAuthUser || !sellerBooksCloudReady)return;
+    if(!sellerBooksAuthUser||!sellerBooksCloudReady)return;
     clearTimeout(sellerBooksCloudSaveTimer);
-    sellerBooksCloudSaveTimer=setTimeout(function(){
-        sellerBooksPersistCloudDataNow();
-    },250);
+    sellerBooksCloudSaveTimer=setTimeout(function(){sellerBooksPersistCloudDataNow();},250);
 }
 
 async function sellerBooksMigrateLogoDataUrl(settings){
@@ -14008,6 +14190,9 @@ async function sellerBooksLoadCloudData(){
     let cloudData=shouldMigrateLegacy ? {...legacy} : {...existingCloudData};
 
     sellerBooksCloudState=cloudData;
+    sellerBooksCloudBaseState=sellerBooksCloneCloudState(existingCloudData);
+    sellerBooksCloudDirtyKeys.clear();
+    sellerBooksCloudClearRequested=false;
     sellerBooksCloudReady=true;
     sellerBooksCloudLoading=false;
 
@@ -14391,11 +14576,31 @@ function sellerBooksStartDataRealtime(){
 
 function sellerBooksApplyRealtimeCloudData(data){
     if(sellerBooksDataRealtimeApplying)return;
-    if(!data || typeof data!=="object")return;
+    if(!data||typeof data!=="object")return;
 
     sellerBooksDataRealtimeApplying=true;
     try{
-        sellerBooksCloudState={...data};
+        const incoming=sellerBooksCloneCloudState(data);
+        const current=sellerBooksCloneCloudState(sellerBooksCloudState);
+
+        sellerBooksCloudDirtyKeys.forEach(function(key){
+            if(key==="sellerbooks_sales_imports"){
+                try{
+                    const merged=sellerBooksMergeSalesImportsForConflict(
+                        sellerBooksCloudBaseState[key],current[key],incoming[key]
+                    );
+                    incoming[key]=merged.conflict?current[key]:merged.value;
+                }catch(error){
+                    incoming[key]=current[key];
+                }
+            }else if(current[key]!==undefined){
+                incoming[key]=current[key];
+            }else{
+                delete incoming[key];
+            }
+        });
+
+        sellerBooksCloudState=incoming;
         sellerBooksCloudReady=true;
         sellerBooksSaveFastCache();
         sellerBooksRefreshAllViewsFromCloud();
