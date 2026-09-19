@@ -14723,7 +14723,15 @@ async function sellerBooksHandleAuthSession(){
     }
 }
 sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
-    if(session?.user){sellerBooksAuthUser=session.user;setTimeout(function(){sellerBooksCheckApproval(false);},0);}else{sellerBooksAuthUser=null;sellerBooksProfile=null;sellerBooksShowOnly("loginPage");}
+    if(session?.user){
+        sellerBooksAuthUser=session.user;
+        setTimeout(function(){sellerBooksCheckApproval(false);},0);
+    }else{
+        sellerBooksAuthUser=null;
+        sellerBooksProfile=null;
+        applyBusinessLogoToInterface("");
+        sellerBooksShowOnly("loginPage");
+    }
 });
 /* =====================================================
    SELLERBOOKS REALTIME ACCOUNT GUARD
@@ -15009,7 +15017,9 @@ function sellerBooksStopAccountPolling(){
 async function sellerBooksLogout(){
     try{await sellerBooksSupabase.auth.signOut();}catch(error){console.error("Logout gagal:",error);}
     if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
-    sellerBooksStorage.removeItem("sellerbooks_owner_name"); sellerBooksShowOnly("loginPage");
+    sellerBooksStorage.removeItem("sellerbooks_owner_name");
+    applyBusinessLogoToInterface("");
+    sellerBooksShowOnly("loginPage");
 }
 
 /* =====================================================
@@ -28088,16 +28098,26 @@ function renderSettingsLogo(){
     const settings =
         getSellerBooksSettings();
 
+    /*
+       Logo bisnis hanya boleh tampil saat ada sesi user.
+       Setelah logout, halaman login harus kembali ke huruf S
+       tanpa menunggu refresh. Data logo di cloud tetap aman.
+    */
+    const visibleLogo =
+        sellerBooksAuthUser
+            ? settings.logo
+            : "";
+
     const preview =
         document.getElementById(
             "settingsLogoPreview"
         );
 
     if(preview){
-        if(settings.logo){
+        if(visibleLogo){
             preview.innerHTML =
                 '<img src="' +
-                settings.logo +
+                visibleLogo +
                 '" alt="Logo Bisnis">';
         }else{
             preview.textContent = "S";
@@ -28105,7 +28125,7 @@ function renderSettingsLogo(){
     }
 
     applyBusinessLogoToInterface(
-        settings.logo
+        visibleLogo
     );
 }
 
