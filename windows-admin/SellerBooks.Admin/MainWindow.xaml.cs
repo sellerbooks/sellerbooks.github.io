@@ -22,7 +22,7 @@ public partial class MainWindow : Window
 
         _userDataFolder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "SellerBooks", "Admin", "WebView2");
+            "SellerBooks", "Admin", "WebView2-v2");
 
         _networkTimer = new DispatcherTimer
         {
@@ -61,10 +61,7 @@ public partial class MainWindow : Window
             var environment = await CoreWebView2Environment.CreateAsync(
                 browserExecutableFolder: null,
                 userDataFolder: _userDataFolder,
-                options: new CoreWebView2EnvironmentOptions
-                {
-                    AdditionalBrowserArguments = "--disable-gpu"
-                });
+                options: null);
 
             await Browser.EnsureCoreWebView2Async(environment);
             ConfigureBrowser(Browser.CoreWebView2);
