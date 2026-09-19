@@ -14009,6 +14009,7 @@ async function sellerBooksLoadCloudData(){
 
     sellerBooksCloudState=cloudData;
     sellerBooksCloudReady=true;
+    sellerBooksCloudLoading=false;
 
     /* Migrasikan logo data-url lama ke Supabase Storage bila masih ada. */
     try{
@@ -14032,8 +14033,8 @@ async function sellerBooksLoadCloudData(){
     /* Setelah data berhasil berada di Supabase, hapus salinan data aplikasi lama. */
     sellerBooksClearLegacyLocalData();
     sellerBooksSaveFastCache();
-    sellerBooksCloudLoading=false;
     sellerBooksCloudReady=true;
+    sellerBooksCloudLoading=false;
     }catch(error){
         sellerBooksCloudLoading=false;
         sellerBooksCloudReady=false;
