@@ -1,0 +1,51 @@
+name: Build SellerBooks Admin Windows Installer
+
+on:
+  push:
+    branches:
+      - windows-admin-build
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-admin:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore windows-admin/SellerBooks.Admin/SellerBooks.Admin.csproj
+
+      - name: Publish self-contained x64
+        run: dotnet publish windows-admin/SellerBooks.Admin/SellerBooks.Admin.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:PublishReadyToRun=false -o windows-admin/publish-admin
+
+      - name: Download WebView2 Evergreen Bootstrapper
+        shell: pwsh
+        run: Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "windows-admin/MicrosoftEdgeWebView2Setup.exe"
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force windows-admin/artifacts | Out-Null
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "windows-admin/installer/SellerBooks-Admin.iss"
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: SellerBooks-Admin-Setup
+          path: windows-admin/artifacts/SellerBooks Admin Setup.exe
+          if-no-files-found: error
+          retention-days: 30
