@@ -20768,8 +20768,26 @@ const adminFeePercentRaw =
     row["Admin % SKU"] !== undefined ? row["Admin % SKU"] :
     (row["ADMIN % SKU"] !== undefined ? row["ADMIN % SKU"] :
     (row["Admin SKU %"] !== undefined ? row["Admin SKU %"] : ""));
-const adminFeePercentText = String(adminFeePercentRaw).trim();
-const adminFeePercent = adminFeePercentText === "" ? "" : Number(adminFeePercentText.replace("%", "").trim());
+
+const adminFeePercentText =
+    String(adminFeePercentRaw)
+        .trim()
+        .replace("%", "")
+        .trim();
+
+/*
+   Terima desimal Excel Indonesia maupun internasional:
+   23,8
+   23.8
+   23,8%
+   23.8%
+*/
+const adminFeePercent =
+    adminFeePercentText === ""
+        ? ""
+        : Number(
+            adminFeePercentText.replace(",", ".")
+        );
 
 
 const stock = Math.max(
@@ -21120,7 +21138,7 @@ async function exportProducts(){
 
     worksheet
         .getColumn(6)
-        .numFmt = '#,##0';
+        .numFmt = '0.0#';
 
     worksheet
         .getColumn(7)
