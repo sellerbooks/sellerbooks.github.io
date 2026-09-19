@@ -13741,6 +13741,9 @@ let sellerBooksCloudState = {};
 let sellerBooksCloudReady = false;
 let sellerBooksCloudSaveTimer = null;
 let sellerBooksCloudSavePromise = Promise.resolve();
+let sellerBooksCloudLoading = false;
+let sellerBooksCloudGeneration = 0;
+let sellerBooksCloudUpdatedAt = null;
 
 function sellerBooksStorageGetItem(key){
     const value = sellerBooksCloudState[key];
@@ -13829,7 +13832,18 @@ async function sellerBooksWarmStartFromCache(user){
         sellerBooksAuthUser=user;
         sellerBooksProfile={...(cached.profile||{}),user_id:user.id,email:cached.profile.email||user.email||""};
         sellerBooksCloudState={...cached.data};
-        sellerBooksCloudReady=true;
+
+        /*
+           CACHE HANYA UNTUK TAMPILAN CEPAT.
+           Cache tidak boleh dianggap sebagai sumber cloud yang siap ditulis.
+           sellerBooksLoadCloudData() akan mengambil data Supabase terlebih dahulu.
+        */
+        clearTimeout(sellerBooksCloudSaveTimer);
+        sellerBooksCloudSaveTimer=null;
+        sellerBooksCloudGeneration++;
+        sellerBooksCloudLoading=true;
+        sellerBooksCloudReady=false;
+
         sellerBooksRefreshRuntimeFromCloud();
         sellerBooksOpenApplication();
         sellerBooksRefreshActiveView();
@@ -13865,17 +13879,37 @@ function sellerBooksClearLegacyLocalData(){
 }
 
 async function sellerBooksPersistCloudDataNow(){
-    if(!sellerBooksAuthUser || !sellerBooksCloudReady)return;
+    if(!sellerBooksAuthUser || !sellerBooksCloudReady || sellerBooksCloudLoading)return;
     const snapshot = {...sellerBooksCloudState};
+    const saveGeneration = sellerBooksCloudGeneration;
+    const saveUserId = sellerBooksAuthUser.id;
     sellerBooksCloudSavePromise = sellerBooksCloudSavePromise.then(async function(){
+        /*
+           SAFETY GUARD:
+           Jika proses load cloud sudah dimulai setelah snapshot ini dibuat,
+           snapshot lama TIDAK BOLEH ditulis kembali ke Supabase.
+        */
+        if(
+            !sellerBooksCloudReady ||
+            sellerBooksCloudLoading ||
+            sellerBooksCloudGeneration !== saveGeneration ||
+            !sellerBooksAuthUser ||
+            sellerBooksAuthUser.id !== saveUserId
+        ){
+            return;
+        }
+
+        const nextUpdatedAt = new Date().toISOString();
         const {error}=await sellerBooksSupabase
             .from("sellerbooks_user_data")
             .upsert({
-                user_id:sellerBooksAuthUser.id,
+                user_id:saveUserId,
                 data:snapshot,
-                updated_at:new Date().toISOString()
+                updated_at:nextUpdatedAt
             },{onConflict:"user_id"});
         if(error)throw error;
+
+        sellerBooksCloudUpdatedAt = nextUpdatedAt;
     }).catch(function(error){
         console.error("Sinkronisasi data SellerBooks ke Supabase gagal:",error);
     });
@@ -13945,14 +13979,29 @@ async function sellerBooksMigrateLogoDataUrl(settings){
 async function sellerBooksLoadCloudData(){
     if(!sellerBooksAuthUser)return;
 
-    const {data,error}=await sellerBooksSupabase
-        .from("sellerbooks_user_data")
-        .select("data")
-        .eq("user_id",sellerBooksAuthUser.id)
-        .maybeSingle();
-    if(error)throw error;
+    /*
+       SAFETY GUARD:
+       Saat mengambil sumber data utama dari Supabase, semua pending save
+       dari cache/local state dibatalkan. Ini mencegah snapshot lama
+       menimpa data cloud yang baru saja berhasil dibaca.
+    */
+    clearTimeout(sellerBooksCloudSaveTimer);
+    sellerBooksCloudSaveTimer=null;
+    sellerBooksCloudGeneration++;
+    sellerBooksCloudLoading=true;
+    sellerBooksCloudReady=false;
 
-    const legacy=sellerBooksGetLegacyLocalData();
+    try{
+        const {data,error}=await sellerBooksSupabase
+            .from("sellerbooks_user_data")
+            .select("data,updated_at")
+            .eq("user_id",sellerBooksAuthUser.id)
+            .maybeSingle();
+        if(error)throw error;
+
+        sellerBooksCloudUpdatedAt = data?.updated_at || null;
+
+        const legacy=sellerBooksGetLegacyLocalData();
     const hasLegacy=Object.keys(legacy).length>0;
     const existingCloudData=(data && data.data && typeof data.data === "object") ? data.data : {};
     const shouldMigrateLegacy=Object.keys(existingCloudData).length===0 && hasLegacy;
@@ -13983,6 +14032,13 @@ async function sellerBooksLoadCloudData(){
     /* Setelah data berhasil berada di Supabase, hapus salinan data aplikasi lama. */
     sellerBooksClearLegacyLocalData();
     sellerBooksSaveFastCache();
+    sellerBooksCloudLoading=false;
+    sellerBooksCloudReady=true;
+    }catch(error){
+        sellerBooksCloudLoading=false;
+        sellerBooksCloudReady=false;
+        throw error;
+    }
 }
 
 function sellerBooksRefreshRuntimeFromCloud(){
