@@ -14546,7 +14546,7 @@ function sellerBooksStartDataRealtime(){
             table:"sellerbooks_user_data",
             filter:"user_id=eq."+userId
         },function(payload){
-            sellerBooksApplyRealtimeCloudData(payload?.new?.data);
+            sellerBooksApplyRealtimeCloudData(payload?.new?.data,payload?.new?.updated_at);
         })
         .on("postgres_changes",{
             event:"UPDATE",
@@ -14574,7 +14574,7 @@ function sellerBooksStartDataRealtime(){
         });
 }
 
-function sellerBooksApplyRealtimeCloudData(data){
+function sellerBooksApplyRealtimeCloudData(data,updatedAt){
     if(sellerBooksDataRealtimeApplying)return;
     if(!data||typeof data!=="object")return;
 
@@ -14601,6 +14601,9 @@ function sellerBooksApplyRealtimeCloudData(data){
         });
 
         sellerBooksCloudState=incoming;
+        if(updatedAt){
+            sellerBooksCloudUpdatedAt=updatedAt;
+        }
         sellerBooksCloudReady=true;
         sellerBooksSaveFastCache();
         sellerBooksRefreshAllViewsFromCloud();
