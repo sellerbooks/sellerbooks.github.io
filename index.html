@@ -9,6 +9,100 @@
 <style>
 
 /* =====================================================
+   SELLERBOOKS CUSTOM DIALOG
+   Menghilangkan native browser "sellerbooks.github.io says"
+===================================================== */
+#sellerBooksDialogOverlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:999999;
+    background:rgba(15,23,42,.55);
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
+#sellerBooksDialogOverlay.show{
+    display:flex;
+}
+.sellerbooks-dialog{
+    width:min(460px,calc(100vw - 40px));
+    background:#fff;
+    border-radius:16px;
+    box-shadow:0 25px 80px rgba(0,0,0,.25);
+    overflow:hidden;
+    animation:sellerBooksDialogShow .18s ease;
+}
+@keyframes sellerBooksDialogShow{
+    from{opacity:0;transform:translateY(10px) scale(.98)}
+    to{opacity:1;transform:translateY(0) scale(1)}
+}
+.sellerbooks-dialog-header{
+    padding:18px 20px;
+    border-bottom:1px solid #e2e8f0;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.sellerbooks-dialog-icon{
+    width:34px;
+    height:34px;
+    border-radius:9px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#eff6ff;
+    color:#2563eb;
+    font-size:17px;
+    flex:0 0 34px;
+}
+.sellerbooks-dialog-title{
+    font-size:16px;
+    font-weight:700;
+    color:#0f172a;
+}
+.sellerbooks-dialog-body{
+    padding:20px;
+    color:#334155;
+    font-size:13px;
+    line-height:1.65;
+    white-space:pre-wrap;
+    word-break:break-word;
+    max-height:55vh;
+    overflow:auto;
+}
+.sellerbooks-dialog-footer{
+    padding:15px 20px;
+    border-top:1px solid #e2e8f0;
+    display:flex;
+    justify-content:flex-end;
+    gap:9px;
+}
+.sellerbooks-dialog-button{
+    border:none;
+    border-radius:9px;
+    padding:10px 16px;
+    cursor:pointer;
+    font-size:12px;
+    font-weight:700;
+}
+.sellerbooks-dialog-cancel{
+    background:#f1f5f9;
+    color:#334155;
+}
+.sellerbooks-dialog-ok{
+    background:#2563eb;
+    color:#fff;
+}
+.sellerbooks-dialog-ok:hover{
+    background:#1d4ed8;
+}
+.sellerbooks-dialog-cancel:hover{
+    background:#e2e8f0;
+}
+
+
+/* =====================================================
    SELLERBOOKS V1  SB NORMAL
    SINGLE PAGE APPLICATION FOUNDATION
 ===================================================== */
@@ -4209,6 +4303,120 @@ td{
 
 <script>
 
+/* =====================================================
+   SELLERBOOKS CUSTOM ALERT / CONFIRM
+   Tidak menggunakan window.alert/window.confirm
+===================================================== */
+(function(){
+    let sellerBooksDialogQueue = [];
+    let sellerBooksDialogBusy = false;
+
+    function sellerBooksShowDialog(message, options){
+        options = options || {};
+        const overlay = document.getElementById("sellerBooksDialogOverlay");
+        const title = document.getElementById("sellerBooksDialogTitle");
+        const body = document.getElementById("sellerBooksDialogMessage");
+        const ok = document.getElementById("sellerBooksDialogOk");
+        const cancel = document.getElementById("sellerBooksDialogCancel");
+        const icon = document.getElementById("sellerBooksDialogIcon");
+
+        if(!overlay || !title || !body || !ok || !cancel){
+            // Fallback hanya jika elemen custom belum tersedia.
+            return Promise.resolve(false);
+        }
+
+        return new Promise(function(resolve){
+            sellerBooksDialogQueue.push({
+                message:String(message ?? ""),
+                title:options.title || "SellerBooks",
+                confirm:!!options.confirm,
+                resolve:resolve
+            });
+            sellerBooksProcessDialogQueue();
+        });
+    }
+
+    function sellerBooksProcessDialogQueue(){
+        if(sellerBooksDialogBusy || !sellerBooksDialogQueue.length) return;
+
+        sellerBooksDialogBusy = true;
+
+        const item = sellerBooksDialogQueue.shift();
+        const overlay = document.getElementById("sellerBooksDialogOverlay");
+        const title = document.getElementById("sellerBooksDialogTitle");
+        const body = document.getElementById("sellerBooksDialogMessage");
+        const ok = document.getElementById("sellerBooksDialogOk");
+        const cancel = document.getElementById("sellerBooksDialogCancel");
+        const icon = document.getElementById("sellerBooksDialogIcon");
+
+        title.textContent = item.title;
+        body.textContent = item.message;
+        icon.textContent = item.confirm ? "?" : "✓";
+        cancel.style.display = item.confirm ? "" : "none";
+        ok.textContent = item.confirm ? "Lanjutkan" : "OK";
+
+        overlay.classList.add("show");
+        overlay.setAttribute("aria-hidden","false");
+
+        let finished = false;
+
+        function finish(value){
+            if(finished) return;
+            finished = true;
+
+            overlay.classList.remove("show");
+            overlay.setAttribute("aria-hidden","true");
+
+            ok.removeEventListener("click", onOk);
+            cancel.removeEventListener("click", onCancel);
+            document.removeEventListener("keydown", onKey);
+
+            item.resolve(value);
+            sellerBooksDialogBusy = false;
+            setTimeout(sellerBooksProcessDialogQueue, 0);
+        }
+
+        function onOk(){
+            finish(true);
+        }
+
+        function onCancel(){
+            finish(false);
+        }
+
+        function onKey(event){
+            if(event.key === "Escape"){
+                finish(false);
+            }else if(event.key === "Enter"){
+                finish(true);
+            }
+        }
+
+        ok.addEventListener("click", onOk);
+        cancel.addEventListener("click", onCancel);
+        document.addEventListener("keydown", onKey);
+
+        setTimeout(function(){
+            (item.confirm ? cancel : ok).focus();
+        }, 0);
+    }
+
+    window.sellerBooksAlert = function(message, title){
+        sellerBooksShowDialog(message, {
+            title:title || "SellerBooks",
+            confirm:false
+        });
+    };
+
+    window.sellerBooksConfirm = function(message, title){
+        return sellerBooksShowDialog(message, {
+            title:title || "Konfirmasi",
+            confirm:true
+        });
+    };
+})();
+
+
 function loadReportMarketplaceFilter(){
 
     const select =
@@ -5266,7 +5474,7 @@ function loadDeleteReportStoreFilter(){
     }
 }
 
-function deleteReportsByDateRange(){
+async function deleteReportsByDateRange(){
     const fromValue = getReportInputDate("deleteReportDateFrom");
     const toValue = getReportInputDate("deleteReportDateTo");
 
@@ -5283,7 +5491,7 @@ function deleteReportsByDateRange(){
         storeElement ? storeElement.value || "all" : "all";
 
     if(!fromValue || !toValue){
-        alert("Silakan pilih Dari Tanggal dan Sampai Dengan terlebih dahulu.");
+        sellerBooksAlert("Silakan pilih Dari Tanggal dan Sampai Dengan terlebih dahulu.");
         return;
     }
 
@@ -5291,12 +5499,12 @@ function deleteReportsByDateRange(){
     const to = getReportDateOnly(toValue);
 
     if(!from || !to){
-        alert("Rentang tanggal tidak valid.");
+        sellerBooksAlert("Rentang tanggal tidak valid.");
         return;
     }
 
     if(from > to){
-        alert("Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.");
+        sellerBooksAlert("Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.");
         return;
     }
 
@@ -5310,7 +5518,7 @@ function deleteReportsByDateRange(){
         );
 
     if(from < minDate || to > today){
-        alert(
+        sellerBooksAlert(
             "Penghapusan hanya dapat dilakukan untuk rentang maksimal 3 bulan terakhir sampai hari ini."
         );
         return;
@@ -5362,7 +5570,7 @@ function deleteReportsByDateRange(){
     const deleted = deletedImports.length;
 
     if(deleted === 0){
-        alert(
+        sellerBooksAlert(
             "Tidak ada laporan yang cocok dengan tanggal, marketplace, dan akun toko yang dipilih."
         );
         return;
@@ -5391,7 +5599,7 @@ function deleteReportsByDateRange(){
             : "Semua Akun Toko";
 
     const confirmed =
-        confirm(
+        await sellerBooksConfirm(
             "HAPUS LAPORAN PERMANEN?\n\n" +
             "Rentang: " + fromText + " s/d " + toText + "\n" +
             "Marketplace: " + marketplaceSelectText + "\n" +
@@ -5423,7 +5631,7 @@ function deleteReportsByDateRange(){
 
     updateReports();
 
-    alert(
+    sellerBooksAlert(
         "Laporan berhasil dihapus.\n" +
         deleted + " data import telah dihapus." +
         (
@@ -8232,7 +8440,7 @@ async function downloadReportPDF(){
             }catch(error){}
         },15000);
 
-        alert(
+        sellerBooksAlert(
             "✅ PDF laporan berhasil dibuat.\n\n" +
             "Periode: " + periodLabel + "\n" +
             "Marketplace: " + marketplaceLabel + "\n" +
@@ -8246,7 +8454,7 @@ async function downloadReportPDF(){
             error
         );
 
-        alert(
+        sellerBooksAlert(
             "❌ PDF gagal dibuat.\n\n" +
             (
                 error && error.message
@@ -8907,6 +9115,22 @@ document.addEventListener(
 
 
 <body>
+
+<!-- SELLERBOOKS CUSTOM DIALOG -->
+<div id="sellerBooksDialogOverlay" aria-hidden="true">
+    <div class="sellerbooks-dialog" role="dialog" aria-modal="true" aria-labelledby="sellerBooksDialogTitle">
+        <div class="sellerbooks-dialog-header">
+            <div class="sellerbooks-dialog-icon" id="sellerBooksDialogIcon">!</div>
+            <div class="sellerbooks-dialog-title" id="sellerBooksDialogTitle">SellerBooks</div>
+        </div>
+        <div class="sellerbooks-dialog-body" id="sellerBooksDialogMessage"></div>
+        <div class="sellerbooks-dialog-footer">
+            <button type="button" class="sellerbooks-dialog-button sellerbooks-dialog-cancel" id="sellerBooksDialogCancel">Batal</button>
+            <button type="button" class="sellerbooks-dialog-button sellerbooks-dialog-ok" id="sellerBooksDialogOk">OK</button>
+        </div>
+    </div>
+</div>
+
 
 
 <!-- =====================================================
@@ -13315,7 +13539,7 @@ function savePackingSettings(){
 
     closePackingModal();
 
-    alert(
+    sellerBooksAlert(
         "Pengaturan biaya packing berhasil disimpan."
     );
 
@@ -13456,13 +13680,13 @@ document.addEventListener(
     window.sellerBooksEnsureXLSX=async function(){
         if(typeof XLSX!=="undefined")return true;
         try{await loadScript("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js");}
-        catch(e){try{await loadScript("https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js");}catch(e2){alert("Library Excel tidak dapat dimuat. Periksa koneksi internet HP lalu coba lagi.");return false;}}
+        catch(e){try{await loadScript("https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js");}catch(e2){sellerBooksAlert("Library Excel tidak dapat dimuat. Periksa koneksi internet HP lalu coba lagi.");return false;}}
         return typeof XLSX!=="undefined";
     };
     window.sellerBooksEnsureExcelJS=async function(){
         if(typeof ExcelJS!=="undefined")return true;
         try{await loadScript("https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js");}
-        catch(e){try{await loadScript("https://unpkg.com/exceljs@4.4.0/dist/exceljs.min.js");}catch(e2){alert("Library Excel Export tidak dapat dimuat. Periksa koneksi internet HP lalu coba lagi.");return false;}}
+        catch(e){try{await loadScript("https://unpkg.com/exceljs@4.4.0/dist/exceljs.min.js");}catch(e2){sellerBooksAlert("Library Excel Export tidak dapat dimuat. Periksa koneksi internet HP lalu coba lagi.");return false;}}
         return typeof ExcelJS!=="undefined";
     };
 })();
@@ -14328,7 +14552,7 @@ async function sellerBooksCheckApproval(showAlert){
         if(status==="rejected"){sellerBooksShowApproval("Permintaan akses SellerBooks Anda ditolak oleh Core Adiimasa. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.");return;}
         if(status==="suspended"){sellerBooksShowApproval("Akun SellerBooks Anda sedang ditangguhkan oleh Core Adiimasa. Silakan hubungi Core Adiimasa.");return;}
         sellerBooksShowApproval("Akun Anda sudah berhasil login. Silakan menunggu persetujuan dari Core Adiimasa sebelum menggunakan SellerBooks.");
-        if(showAlert)alert("Status akun masih menunggu persetujuan Core Adiimasa.");
+        if(showAlert)sellerBooksAlert("Status akun masih menunggu persetujuan Core Adiimasa.");
     }catch(error){console.error(error);sellerBooksShowApproval("Tidak dapat membaca status akun saat ini. Periksa koneksi internet lalu coba lagi.");}
 }
 function sellerBooksOpenApplication(){
@@ -14371,14 +14595,14 @@ async function loginGoogle(){
 
         if(error){
             console.error("Google Login gagal:",error);
-            alert("❌ Login Google gagal.\n\n"+error.message);
+            sellerBooksAlert("❌ Login Google gagal.\n\n"+error.message);
         }
 
     }catch(error){
 
         console.error(error);
 
-        alert(
+        sellerBooksAlert(
             "❌ Terjadi kesalahan saat menghubungkan Login Google."
         );
 
@@ -14663,7 +14887,7 @@ function sellerBooksHandleRealtimeAccountAction(status){
         sellerBooksProfile=null;
         sellerBooksStorage.removeItem("sellerbooks_owner_name");
         sellerBooksShowOnly("loginPage");
-        alert("⚠️ Akses Akun Berubah\n\n"+message);
+        sellerBooksAlert("⚠️ Akses Akun Berubah\n\n"+message);
         sellerBooksAccountRealtimeHandling=false;
     });
 }
@@ -14789,8 +15013,8 @@ async function sellerBooksLogout(){
 async function saveOwnerName(){
     const input=document.getElementById("ownerNameInput");
     const ownerName=input.value.trim();
-    if(!ownerName){alert("Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu.");input.focus();return;}
-    if(!sellerBooksAuthUser){alert("Sesi login tidak ditemukan. Silakan login kembali.");sellerBooksShowOnly("loginPage");return;}
+    if(!ownerName){sellerBooksAlert("Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu.");input.focus();return;}
+    if(!sellerBooksAuthUser){sellerBooksAlert("Sesi login tidak ditemukan. Silakan login kembali.");sellerBooksShowOnly("loginPage");return;}
     try{
         const {error}=await sellerBooksSupabase.from("sellerbooks_profiles").update({owner_name:ownerName,contact_name:ownerName,updated_at:new Date().toISOString()}).eq("user_id",sellerBooksAuthUser.id);
         if(error)throw error;
@@ -14800,8 +15024,8 @@ async function saveOwnerName(){
         document.getElementById("ownerSetupPage").style.display="none";
         document.getElementById("loginPage").style.display="none";
         document.getElementById("app").style.display="block";
-        alert("✅ Data berhasil disimpan!\n\nSelamat datang, "+ownerName);
-    }catch(error){console.error("Gagal menyimpan Nama Pemilik:",error);alert("❌ Nama Pemilik gagal disimpan ke server.\n\n"+error.message);}
+        sellerBooksAlert("✅ Data berhasil disimpan!\n\nSelamat datang, "+ownerName);
+    }catch(error){console.error("Gagal menyimpan Nama Pemilik:",error);sellerBooksAlert("❌ Nama Pemilik gagal disimpan ke server.\n\n"+error.message);}
 }
 
 /* =====================================================
@@ -17541,7 +17765,7 @@ function saveMarketplace(){
 
     if(name === ""){
 
-        alert("Nama marketplace wajib diisi.");
+        sellerBooksAlert("Nama marketplace wajib diisi.");
 
         return;
 
@@ -17648,7 +17872,7 @@ async function deleteMarketplace(id){
 
     if(!marketplace) return;
 
-    if(!confirm(
+    if(!await sellerBooksConfirm(
         "Hapus marketplace \"" +
         (marketplace.name || "Marketplace") +
         "\"?\n\nData akun toko yang terhubung dengan marketplace ini juga akan dihapus."
@@ -17725,7 +17949,7 @@ async function deleteMarketplace(id){
             }
         );
 
-        alert(
+        sellerBooksAlert(
             "Marketplace \"" +
             (marketplace.name || "Marketplace") +
             "\" berhasil dihapus dan perubahan sudah terverifikasi tersimpan di database."
@@ -17743,7 +17967,7 @@ async function deleteMarketplace(id){
         renderMarketplaces();
         if(typeof renderStores === "function")renderStores();
 
-        alert(
+        sellerBooksAlert(
             "Marketplace belum jadi dihapus dari database.\n\n" +
             "Perubahan dibatalkan karena verifikasi Supabase gagal.\n\n" +
             "Detail: " + (error && error.message ? error.message : error)
@@ -18557,7 +18781,7 @@ function openStoreModal(){
 
     if(activeMarketplaces.length === 0){
 
-        alert(
+        sellerBooksAlert(
 
             "Belum ada marketplace aktif. " +
             "Silakan aktifkan marketplace terlebih dahulu."
@@ -18710,7 +18934,7 @@ const feePercent =
 
     if(!marketplaceId){
 
-        alert(
+        sellerBooksAlert(
             "Silakan pilih marketplace."
         );
 
@@ -18721,7 +18945,7 @@ const feePercent =
 
     if(!name){
 
-        alert(
+        sellerBooksAlert(
             "Nama akun toko wajib diisi."
         );
 
@@ -18731,7 +18955,7 @@ const feePercent =
 
 if(feePercent < 0 || feePercent > 100){
 
-    alert(
+    sellerBooksAlert(
         "Biaya admin harus antara 0% sampai 100%."
     );
 
@@ -18756,7 +18980,7 @@ if(feePercent < 0 || feePercent > 100){
         marketplace.status !== "active"
     ){
 
-        alert(
+        sellerBooksAlert(
 
             "Marketplace ini sudah tidak aktif. " +
             "Silakan pilih marketplace aktif."
@@ -18834,7 +19058,7 @@ if(feePercent < 0 || feePercent > 100){
 
         if(duplicate){
 
-            alert(
+            sellerBooksAlert(
 
                 "Nama toko ini sudah terdaftar " +
                 "di marketplace yang dipilih."
@@ -19004,7 +19228,7 @@ function toggleStore(id){
    HAPUS TOKO
 ===================================================== */
 
-function deleteStore(id){
+async function deleteStore(id){
 
     const store =
 
@@ -19018,7 +19242,7 @@ function deleteStore(id){
     if(!store) return;
 
 
-    const confirmation = confirm(
+    const confirmation = await sellerBooksConfirm(
 
         'Hapus akun toko "' +
 
@@ -19974,7 +20198,7 @@ function saveProduct(){
 
 
     if(adminFeePercent !== "" && (!Number.isFinite(adminFeePercent) || adminFeePercent < 0 || adminFeePercent > 100)){
-        alert("Admin % SKU harus antara 0 sampai 100.");
+        sellerBooksAlert("Admin % SKU harus antara 0 sampai 100.");
         return;
     }
 
@@ -19983,7 +20207,7 @@ function saveProduct(){
 
     if(!sku){
 
-        alert(
+        sellerBooksAlert(
             "SKU produk wajib diisi."
         );
 
@@ -19997,7 +20221,7 @@ function saveProduct(){
 
     if(!name){
 
-        alert(
+        sellerBooksAlert(
             "Nama produk wajib diisi."
         );
 
@@ -20017,7 +20241,7 @@ function saveProduct(){
 
     ){
 
-        alert(
+        sellerBooksAlert(
             "HPP / Modal produk wajib diisi."
         );
 
@@ -20057,7 +20281,7 @@ function saveProduct(){
 
         if(duplicateSKU){
 
-            alert(
+            sellerBooksAlert(
                 "SKU sudah digunakan oleh produk lain."
             );
 
@@ -20127,7 +20351,7 @@ function saveProduct(){
 
         if(duplicateSKU){
 
-            alert(
+            sellerBooksAlert(
                 "SKU sudah terdaftar."
             );
 
@@ -20400,7 +20624,7 @@ function toggleSelectAllProducts(checkbox){
 }
 
 
-function deleteSelectedProducts(){
+async function deleteSelectedProducts(){
 
     const selectedIds = getSelectedProductIds();
 
@@ -20410,7 +20634,7 @@ function deleteSelectedProducts(){
 
     }
 
-    const confirmation = confirm(
+    const confirmation = await sellerBooksConfirm(
         "Hapus " +
         selectedIds.length +
         " produk yang dipilih?\n\n" +
@@ -20442,7 +20666,7 @@ function deleteSelectedProducts(){
    HAPUS PRODUK
 ===================================================== */
 
-function deleteProduct(id){
+async function deleteProduct(id){
 
     const product =
 
@@ -20460,7 +20684,7 @@ function deleteProduct(id){
     }
 
 
-    const confirmation = confirm(
+    const confirmation = await sellerBooksConfirm(
 
         'Hapus produk "' +
 
@@ -20565,7 +20789,7 @@ async function importProducts(input){
 
             if(excelData.length === 0){
 
-                alert(
+                sellerBooksAlert(
                     "File Excel tidak memiliki data."
                 );
 
@@ -20955,7 +21179,7 @@ const stock = Math.max(
 
             renderNotifications();
 
-            alert(
+            sellerBooksAlert(
 
                 "Import selesai.\n\n" +
 
@@ -20979,7 +21203,7 @@ const stock = Math.max(
             console.error(error);
 
 
-            alert(
+            sellerBooksAlert(
 
                 "Terjadi kesalahan saat membaca file Excel."
 
@@ -23149,7 +23373,7 @@ async function analyzeSalesFile(input){
     if(!validFormat){
 
 
-        alert(
+        sellerBooksAlert(
 
             "Format file tidak didukung.\n\n" +
 
@@ -23282,7 +23506,7 @@ async function analyzeSalesFile(input){
             if(rawData.length < 2){
 
 
-                alert(
+                sellerBooksAlert(
 
                     "File tidak memiliki data yang cukup."
 
@@ -23598,7 +23822,7 @@ async function analyzeSalesFile(input){
             console.error(error);
 
 
-            alert(
+            sellerBooksAlert(
 
                 "SellerBooks tidak dapat membaca file ini.\n\n" +
 
@@ -24198,7 +24422,7 @@ function continueSalesImport(){
 
     if(!currentSalesImport){
 
-        alert(
+        sellerBooksAlert(
             "Belum ada file yang dianalisis."
         );
 
@@ -24920,7 +25144,7 @@ function confirmSalesColumns(){
 
     if(!currentSalesImport){
 
-        alert(
+        sellerBooksAlert(
             "Data import tidak ditemukan. Silakan upload file kembali."
         );
 
@@ -24942,7 +25166,7 @@ function confirmSalesColumns(){
 
     if(!skuColumn){
 
-        alert(
+        sellerBooksAlert(
             "Silakan pilih kolom SKU terlebih dahulu."
         );
 
@@ -24952,7 +25176,7 @@ function confirmSalesColumns(){
 
     if(!qtyColumn){
 
-        alert(
+        sellerBooksAlert(
             "Silakan pilih kolom QTY terlebih dahulu."
         );
 
@@ -24962,7 +25186,7 @@ function confirmSalesColumns(){
 
     if(skuColumn === qtyColumn){
 
-        alert(
+        sellerBooksAlert(
             "Kolom SKU dan QTY tidak boleh sama."
         );
 
@@ -24995,7 +25219,7 @@ function confirmSalesColumns(){
 
     if(!currentSalesImport.marketplace){
 
-        alert(
+        sellerBooksAlert(
             "Marketplace file belum dapat dikenali otomatis."
         );
 
@@ -25011,7 +25235,7 @@ function confirmSalesColumns(){
 
     if(!storeId){
 
-        alert(
+        sellerBooksAlert(
             "Silakan pilih akun toko terlebih dahulu sebelum menyimpan."
         );
 
@@ -25030,7 +25254,7 @@ function confirmSalesColumns(){
         packingInput.value === ""
     ){
 
-        alert(
+        sellerBooksAlert(
             "Silakan isi biaya packing per 1 order terlebih dahulu."
         );
 
@@ -25045,7 +25269,7 @@ function confirmSalesColumns(){
 
     if(!record){
 
-        alert(
+        sellerBooksAlert(
             "Data penjualan gagal disimpan."
         );
 
@@ -25065,7 +25289,7 @@ function confirmSalesColumns(){
        USER MENEKAN OKE.
     */
 
-    alert(
+    sellerBooksAlert(
         "Import berhasil disimpan ✓\n\n" +
 
         "Marketplace: " +
@@ -25140,7 +25364,7 @@ function checkSalesImportDuplicate(){
     );
 
 
-    alert(
+    sellerBooksAlert(
         "Kolom SKU dan QTY berhasil dikonfirmasi."
     );
 
@@ -25358,7 +25582,7 @@ async function logoutSellerBooks(){
             "loginPage"
         );
 
-        alert(
+        sellerBooksAlert(
             "❌ Logout gagal.\n\n" +
             error.message
         );
@@ -25380,13 +25604,13 @@ async function resetIdentity(){
 
     if(mobileDevice){
 
-        alert(
+        sellerBooksAlert(
             "⚠️ Reset Identitas hanya dapat dilakukan melalui komputer/laptop."
         );
 
         return;
     }
-    const confirmReset = confirm(
+    const confirmReset = await sellerBooksConfirm(
         "Reset Nama Pemilik?\n\n" +
         "Nama Pemilik akan dikosongkan dan Anda " +
         "akan kembali ke halaman pengisian Nama Pemilik.\n\n" +
@@ -25403,7 +25627,7 @@ async function resetIdentity(){
     */
     if(!sellerBooksAuthUser){
 
-        alert(
+        sellerBooksAlert(
             "Sesi login tidak ditemukan. " +
             "Silakan login kembali."
         );
@@ -25498,7 +25722,7 @@ async function resetIdentity(){
             updateSidebarOwner();
         }
 
-        alert(
+        sellerBooksAlert(
             "✅ Nama Pemilik berhasil direset.\n\n" +
             "Akun Gmail dan persetujuan Core Adiimasa " +
             "tetap tersimpan.\n\n" +
@@ -25512,7 +25736,7 @@ async function resetIdentity(){
             error
         );
 
-        alert(
+        sellerBooksAlert(
             "❌ Nama Pemilik gagal direset.\n\n" +
             error.message
         );
@@ -25902,7 +26126,7 @@ function changeDashboardCustomDateRange(){
         const to = getReportDateOnly(toValue);
 
         if(from && to && from > to){
-            alert("Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.");
+            sellerBooksAlert("Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.");
             return;
         }
     }
@@ -25929,7 +26153,7 @@ function confirmDashboardCustomDateRange(){
         document.getElementById("dashboardDateTo")?.value || "";
 
     if(!fromValue || !toValue){
-        alert("Silakan pilih Dari Tanggal dan Sampai Dengan terlebih dahulu.");
+        sellerBooksAlert("Silakan pilih Dari Tanggal dan Sampai Dengan terlebih dahulu.");
         return;
     }
 
@@ -25937,7 +26161,7 @@ function confirmDashboardCustomDateRange(){
     const to = getReportDateOnly(toValue);
 
     if(from && to && from > to){
-        alert("Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.");
+        sellerBooksAlert("Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.");
         return;
     }
 
@@ -27148,7 +27372,7 @@ function saveCost(){
 
     if(!date){
 
-        alert(
+        sellerBooksAlert(
             "Tanggal biaya wajib diisi."
         );
 
@@ -27159,7 +27383,7 @@ function saveCost(){
 
     if(!marketplaceId){
 
-        alert(
+        sellerBooksAlert(
             "Marketplace wajib dipilih."
         );
 
@@ -27170,7 +27394,7 @@ function saveCost(){
 
     if(!storeId){
 
-        alert(
+        sellerBooksAlert(
             "Akun toko wajib dipilih."
         );
 
@@ -27181,7 +27405,7 @@ function saveCost(){
 
     if(!category){
 
-        alert(
+        sellerBooksAlert(
             "Kategori biaya wajib dipilih."
         );
 
@@ -27192,7 +27416,7 @@ function saveCost(){
 
     if(!description){
 
-        alert(
+        sellerBooksAlert(
             "Keterangan biaya wajib diisi."
         );
 
@@ -27206,7 +27430,7 @@ function saveCost(){
         amount <= 0
     ){
 
-        alert(
+        sellerBooksAlert(
             "Nominal biaya harus lebih dari 0."
         );
 
@@ -27410,7 +27634,7 @@ function editCost(id){
    HAPUS BIAYA
 ===================================================== */
 
-function deleteCost(id){
+async function deleteCost(id){
 
     const cost =
         costs.find(
@@ -27431,7 +27655,7 @@ function deleteCost(id){
 
 
     const confirmed =
-        confirm(
+        await sellerBooksConfirm(
             "Hapus biaya \"" +
             cost.description +
             "\" sebesar " +
@@ -27906,7 +28130,7 @@ function handleSettingsLogoUpload(input){
     }
 
     if(file.size > 1024 * 1024){
-        alert(
+        sellerBooksAlert(
             "Ukuran logo maksimal 1 MB."
         );
         input.value = "";
@@ -27920,7 +28144,7 @@ function handleSettingsLogoUpload(input){
             "image/webp"
         ].includes(file.type)
     ){
-        alert(
+        sellerBooksAlert(
             "Format logo harus PNG, JPG, atau WEBP."
         );
         input.value = "";
@@ -27928,7 +28152,7 @@ function handleSettingsLogoUpload(input){
     }
 
     if(!sellerBooksAuthUser || !sellerBooksCloudReady){
-        alert("❌ Sesi SellerBooks belum siap. Silakan login kembali.");
+        sellerBooksAlert("❌ Sesi SellerBooks belum siap. Silakan login kembali.");
         input.value = "";
         return;
     }
@@ -27954,7 +28178,7 @@ function handleSettingsLogoUpload(input){
             renderSettingsLogo();
             input.value = "";
 
-            alert(
+            sellerBooksAlert(
                 "✅ Logo bisnis berhasil disimpan ke Supabase."
             );
         }catch(error){
@@ -27963,7 +28187,7 @@ function handleSettingsLogoUpload(input){
                 error
             );
             input.value = "";
-            alert(
+            sellerBooksAlert(
                 "❌ Logo gagal disimpan ke Supabase.\n\n" +
                 error.message
             );
@@ -27972,14 +28196,14 @@ function handleSettingsLogoUpload(input){
 
     reader.onerror = function(){
         input.value = "";
-        alert("❌ Logo gagal dibaca.");
+        sellerBooksAlert("❌ Logo gagal dibaca.");
     };
 
     reader.readAsDataURL(file);
 }
-function removeSettingsLogo(){
+async function removeSettingsLogo(){
     const confirmed =
-        confirm(
+        await sellerBooksConfirm(
             "Hapus logo bisnis yang tersimpan?"
         );
 
@@ -28014,7 +28238,7 @@ function removeSettingsLogo(){
             "Gagal menghapus logo bisnis:",
             error
         );
-        alert(
+        sellerBooksAlert(
             "❌ Logo gagal dihapus dari Supabase.\n\n"+
             error.message
         );
@@ -28084,7 +28308,7 @@ function backupSellerBooksData(){
     },1000);
 }
 
-function restoreSellerBooksData(input){
+async function restoreSellerBooksData(input){
     const file =
         input?.files?.[0];
 
@@ -28093,7 +28317,7 @@ function restoreSellerBooksData(input){
     }
 
     const confirmed =
-        confirm(
+        await sellerBooksConfirm(
             "Restore akan mengganti seluruh data SellerBooks saat ini dengan data dari file backup. Lanjutkan?"
         );
 
@@ -28151,7 +28375,7 @@ function restoreSellerBooksData(input){
                 }
             });
 
-            alert(
+            sellerBooksAlert(
                 "✅ Restore berhasil. SellerBooks akan dimuat ulang."
             );
 
@@ -28163,7 +28387,7 @@ function restoreSellerBooksData(input){
                 error
             );
 
-            alert(
+            sellerBooksAlert(
                 "❌ File backup tidak valid atau rusak."
             );
         }finally{
@@ -28173,7 +28397,7 @@ function restoreSellerBooksData(input){
 
     reader.onerror = function(){
         input.value = "";
-        alert(
+        sellerBooksAlert(
             "File backup gagal dibaca."
         );
     };
