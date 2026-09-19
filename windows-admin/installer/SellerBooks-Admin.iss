@@ -25,11 +25,13 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 [Files]
 Source: "..\publish-admin\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 Source: "..\MicrosoftEdgeWebView2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
+Source: "..\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
 [Icons]
 Name: "{autodesktop}\SellerBooks Admin"; Filename: "{app}\{#MyAppExeName}"
 Name: "{group}\SellerBooks Admin"; Filename: "{app}\{#MyAppExeName}"
 
 [Run]
+Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Memeriksa Microsoft Visual C++ Runtime..."; Flags: waituntilterminated
 Filename: "{tmp}\MicrosoftEdgeWebView2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "Memeriksa Microsoft Edge WebView2 Runtime..."; Flags: waituntilterminated
 Filename: "{app}\{#MyAppExeName}"; Description: "Jalankan SellerBooks Admin"; Flags: nowait postinstall skipifsilent
