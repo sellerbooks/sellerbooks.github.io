@@ -14554,7 +14554,7 @@ function sellerBooksStartDataRealtime(){
             table:"sellerbooks_user_data",
             filter:"user_id=eq."+userId
         },function(payload){
-            sellerBooksApplyRealtimeCloudData(payload?.new?.data);
+            sellerBooksApplyRealtimeCloudData(payload?.new?.data,payload?.new?.updated_at);
         })
         .on("postgres_changes",{
             event:"DELETE",
@@ -14604,6 +14604,19 @@ function sellerBooksApplyRealtimeCloudData(data,updatedAt){
         if(updatedAt){
             sellerBooksCloudUpdatedAt=updatedAt;
         }
+
+        const incomingKeys=new Set(Object.keys(incoming));
+        Object.keys(sellerBooksCloudBaseState).forEach(function(key){
+            if(!sellerBooksCloudDirtyKeys.has(key) && !incomingKeys.has(key)){
+                delete sellerBooksCloudBaseState[key];
+            }
+        });
+        Object.keys(incoming).forEach(function(key){
+            if(!sellerBooksCloudDirtyKeys.has(key)){
+                sellerBooksCloudBaseState[key]=incoming[key];
+            }
+        });
+
         sellerBooksCloudReady=true;
         sellerBooksSaveFastCache();
         sellerBooksRefreshAllViewsFromCloud();
