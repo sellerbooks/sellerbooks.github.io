@@ -3,7 +3,7 @@ name: Build SellerBooks Admin Windows Installer
 on:
   push:
     branches:
-      - windows-admin-build
+      - main
   workflow_dispatch:
 
 permissions:
