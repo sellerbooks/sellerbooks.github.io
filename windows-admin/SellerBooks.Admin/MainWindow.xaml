@@ -8,6 +8,10 @@
         MinWidth="900"
         MinHeight="600"
         WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        WindowStyle="SingleBorderWindow"
+        ResizeMode="CanResize"
+        ShowInTaskbar="True"
         Background="#F1F5F9">
     <Grid>
         <wv2:WebView2 x:Name="Browser"
@@ -50,6 +54,6 @@
                             Click="RetryButton_Click"/>
                 </StackPanel>
             </Border>
-        </Grid>
+        </StackPanel>
     </Grid>
 </Window>
