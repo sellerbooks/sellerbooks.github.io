@@ -40,18 +40,55 @@ public partial class MainWindow : Window
         {
             Directory.CreateDirectory(_userDataFolder);
 
+            string? version = null;
+            try
+            {
+                version = CoreWebView2Environment.GetAvailableBrowserVersionString();
+            }
+            catch
+            {
+                // Handled by the user-facing diagnostic below.
+            }
+
+            if (string.IsNullOrWhiteSpace(version))
+            {
+                ShowStartupError(
+                    "Microsoft Edge WebView2 Runtime belum tersedia di komputer ini.\n\n" +
+                    "Silakan jalankan Windows Update atau instal Microsoft Edge WebView2 Runtime, lalu buka SellerBooks Admin kembali.");
+                return;
+            }
+
             var environment = await CoreWebView2Environment.CreateAsync(
                 browserExecutableFolder: null,
-                userDataFolder: _userDataFolder);
+                userDataFolder: _userDataFolder,
+                options: new CoreWebView2EnvironmentOptions
+                {
+                    AdditionalBrowserArguments = "--disable-gpu"
+                });
 
             await Browser.EnsureCoreWebView2Async(environment);
             ConfigureBrowser(Browser.CoreWebView2);
             Browser.CoreWebView2.Navigate(AppUrl);
         }
-        catch
+        catch (Exception ex)
         {
-            ShowOffline();
+            ShowStartupError(
+                "SellerBooks Admin tidak dapat dijalankan.\n\n" +
+                "Detail: " + ex.Message);
         }
+    }
+
+    private void ShowStartupError(string message)
+    {
+        Browser.Visibility = Visibility.Collapsed;
+        OfflinePanel.Visibility = Visibility.Visible;
+
+        MessageBox.Show(
+            this,
+            message,
+            "SellerBooks Admin",
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
     }
 
     private void ConfigureBrowser(CoreWebView2 web)
@@ -76,8 +113,6 @@ public partial class MainWindow : Window
         object? sender,
         CoreWebView2WebResourceRequestedEventArgs e)
     {
-        // Revalidate GitHub Pages resources so HTML/CSS/JS changes
-        // are picked up without reinstalling the Windows app.
         e.Request.Headers.SetHeader("Cache-Control", "no-cache");
     }
 
@@ -104,7 +139,8 @@ public partial class MainWindow : Window
         object? sender,
         CoreWebView2ProcessFailedEventArgs e)
     {
-        Dispatcher.Invoke(ShowOffline);
+        Dispatcher.Invoke(() =>
+            ShowStartupError("WebView2 mengalami kegagalan proses. Silakan tutup SellerBooks Admin dan buka kembali."));
     }
 
     private void Web_DownloadStarting(
