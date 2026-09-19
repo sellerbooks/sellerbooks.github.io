@@ -54,6 +54,6 @@
                             Click="RetryButton_Click"/>
                 </StackPanel>
             </Border>
-        </StackPanel>
+        </Grid>
     </Grid>
 </Window>
