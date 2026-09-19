@@ -38,6 +38,10 @@ jobs:
         shell: pwsh
         run: Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile "windows-admin/MicrosoftEdgeWebView2Setup.exe"
 
+      - name: Download Visual C++ x64 Runtime
+        shell: pwsh
+        run: Invoke-WebRequest -Uri "https://aka.ms/vc14/vc_redist.x64.exe" -OutFile "windows-admin/vc_redist.x64.exe"
+
       - name: Install Inno Setup
         shell: pwsh
         run: choco install innosetup --no-progress -y
