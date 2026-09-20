@@ -6743,7 +6743,11 @@ function getReportStoreFeePercent(storeId){
 
 function getReportTransactionFeePercent(transaction){
 
-    /* PRIORITAS: ADMIN % SKU DI MASTER PRODUK */
+    /*
+       PRIORITAS SEMUA MARKETPLACE, TERMASUK LAZADA:
+       1. Admin % SKU jika terisi
+       2. Jika kosong / "-", fallback ke Admin % Akun Toko
+    */
     if(transaction){
         const transactionSku = String(transaction.sku || "").trim().toLowerCase();
         if(transactionSku && Array.isArray(products)){
@@ -10740,10 +10744,51 @@ document.addEventListener(
 
                 </div>
 
+            </div
+
+            <!-- HARGA JUAL KHUSUS LAZADA -->
+
+            <div
+                class="recognition-card"
+                id="lazadaPriceRecognitionCard"
+                style="display:none;"
+            >
+
+                <div class="recognition-title">
+
+                    <span class="recognition-icon">
+
+                        💰
+
+                    </span>
+
+                    Harga Jual Recognition
+
+                </div>
+
+
+                <div
+                    class="recognition-result"
+                    id="lazadaPriceRecognitionResult"
+                >
+
+                    Belum ditemukan
+
+                </div>
+
+
+                <div
+                    class="recognition-confidence"
+                    id="lazadaPriceRecognitionConfidence"
+                >
+
+                    Menunggu analisis
+
+                </div>
+
             </div>
 
-
-        </div>
+            </div>
 
 
         <!-- SEMUA HEADER -->
@@ -22385,7 +22430,7 @@ function getSalesAmount(row,data){
 
     if(data.marketplace === "Lazada"){
 
-        /* Lazada: unitPrice berada di kolom AV (index 47). */
+        /* Lazada: Harga Jual wajib dari kolom AV (unitPrice). */
         return parseSalesNumber(row[47]) * qty;
 
     }
@@ -23935,7 +23980,18 @@ async function analyzeSalesFile(input){
                             qtyResult.column
                                 ? cleanHeaders.indexOf(qtyResult.column)
                                 : -1
-                        )
+                        ),
+
+                /* Lazada: Harga Jual wajib dari kolom AV (index 47). */
+                priceColumn:
+                    detectedLazada
+                        ? (cleanHeaders[47] || "unitPrice")
+                        : null,
+
+                priceIndex:
+                    detectedLazada
+                        ? 47
+                        : -1
 
             };
 
@@ -24178,6 +24234,45 @@ function renderSalesAnalysis(){
         qtyConfidenceElement.innerText =
 
             "Kolom QTY belum dikenali";
+
+    }
+
+
+    /* =====================================================
+       HARGA JUAL RECOGNITION - KHUSUS LAZADA
+       Sumber wajib: kolom AV = unitPrice
+    ===================================================== */
+
+    const lazadaPriceCard =
+        document.getElementById("lazadaPriceRecognitionCard");
+
+    const lazadaPriceResult =
+        document.getElementById("lazadaPriceRecognitionResult");
+
+    const lazadaPriceConfidence =
+        document.getElementById("lazadaPriceRecognitionConfidence");
+
+    if(data.marketplace === "Lazada"){
+
+        if(lazadaPriceCard){
+            lazadaPriceCard.style.display = "";
+        }
+
+        if(lazadaPriceResult){
+            lazadaPriceResult.innerText =
+                "unitPrice • Kolom AV";
+        }
+
+        if(lazadaPriceConfidence){
+            lazadaPriceConfidence.innerText =
+                "Khusus Lazada • Harga Jual = unitPrice kolom AV";
+        }
+
+    }else{
+
+        if(lazadaPriceCard){
+            lazadaPriceCard.style.display = "none";
+        }
 
     }
 
