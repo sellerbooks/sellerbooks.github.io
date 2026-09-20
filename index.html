@@ -21722,6 +21722,8 @@ const SKU_KEYWORDS = [
 
     "seller sku",
 
+    "sellersku",
+
     "product sku",
 
     "merchant sku",
@@ -21815,7 +21817,14 @@ const SALES_MARKETPLACE_RULES={
     },
 
     Lazada:{
-        required:["seller sku","ordernumber"],
+        /* Lazada khusus:
+           SKU = sellerSku
+           QTY = jumlah kemunculan sellerSku
+           Packing = trackingCode saja
+           orderItemId tidak digunakan
+           Harga = unitPrice
+        */
+        required:["sellersku","ordernumber"],
         packingAliases:["trackingcode"],
         orderAliases:["ordernumber"],
         priceAliases:["unitprice"],
@@ -22362,11 +22371,24 @@ function getSalesAmount(row,data){
             : "";
 
     const qty =
-        qtyIndex >= 0
-            ? parseSalesNumber(
-                row[qtyIndex]
-            )
-            : 0;
+        data.marketplace === "Lazada"
+
+            ? 1
+
+            : (
+                qtyIndex >= 0
+                    ? parseSalesNumber(
+                        row[qtyIndex]
+                    )
+                    : 0
+            );
+
+    if(data.marketplace === "Lazada"){
+
+        /* Lazada: unitPrice berada di kolom AV (index 47). */
+        return parseSalesNumber(row[47]) * qty;
+
+    }
 
     if(data.marketplace === "TikTok"){
         return parseSalesNumber(row[15]);
@@ -22387,16 +22409,6 @@ function getSalesAmount(row,data){
     if(data.marketplace === "Blibli"){
         // Blibli: Harga Produk berada di kolom I (index 8), per unit.
         return parseSalesNumber(row[8]) * qty;
-    }
-
-    if(data.marketplace === "Lazada"){
-        const unitPrice = getFirstValue(
-            row,
-            data.headers,
-            ["unitprice"]
-        );
-        const lazadaQty = getLazadaSkuQtyForRow(data,row);
-        return parseSalesNumber(unitPrice) * lazadaQty;
     }
 
     const product =
@@ -22442,46 +22454,7 @@ function getSalesTransactionDate(row,data){
 
     return parseSalesDate(value);
 }
-function getCleanSalesRows(data){if(!data)return [];const si=data.skuIndex!=null?data.skuIndex:data.headers.indexOf(data.skuColumn),qi=data.qtyIndex!=null?data.qtyIndex:data.headers.indexOf(data.qtyColumn);return data.dataRows.filter(function(row){const sku=String(row[si]||"").trim().toLowerCase(),qty=String(qi>=0?row[qi]:"").trim().toLowerCase();return sku!=="seller sku input by the seller in the product system."&&qty!=="sku sold quantity in the order."&&(sku||qty);});}
-
-/* =====================================================
-   LAZADA KHUSUS
-   SKU  : sellerSku
-   QTY  : jumlah kemunculan sellerSku dalam order yang sama
-   Harga: unitPrice
-   Packing: trackingCode saja
-   orderItemId tidak digunakan.
-===================================================== */
-function getLazadaSkuQtyGroups(data){
-    const groups=new Map();
-    if(!data)return groups;
-    const skuIndex=data.headers.indexOf(data.skuColumn);
-    const orderColumn=findAliasColumn(data.headers,["ordernumber"]);
-    const orderIndex=orderColumn?data.headers.indexOf(orderColumn):-1;
-    getCleanSalesRows(data).forEach(function(row){
-        const sku=skuIndex>=0?String(row[skuIndex]||"").trim():"";
-        if(!sku)return;
-        const order=orderIndex>=0?String(row[orderIndex]||"").trim():"";
-        const key=order.toLowerCase()+"|"+sku.toLowerCase();
-        if(!groups.has(key)){
-            groups.set(key,{row:row,qty:0,sku:sku,order:order});
-        }
-        groups.get(key).qty+=1;
-    });
-    return groups;
-}
-function getLazadaSkuQtyForRow(data,row){
-    if(!data)return 0;
-    const skuIndex=data.headers.indexOf(data.skuColumn);
-    const orderColumn=findAliasColumn(data.headers,["ordernumber"]);
-    const orderIndex=orderColumn?data.headers.indexOf(orderColumn):-1;
-    const sku=skuIndex>=0?String(row[skuIndex]||"").trim():"";
-    if(!sku)return 0;
-    const order=orderIndex>=0?String(row[orderIndex]||"").trim():"";
-    const key=order.toLowerCase()+"|"+sku.toLowerCase();
-    const groups=getLazadaSkuQtyGroups(data);
-    return groups.has(key)?groups.get(key).qty:0;
-}
+function getCleanSalesRows(data){if(!data)return [];const si=data.skuIndex!=null?data.skuIndex:data.headers.indexOf(data.skuColumn),qi=data.qtyIndex!=null?data.qtyIndex:data.headers.indexOf(data.qtyColumn);return data.dataRows.filter(function(row){const sku=String(row[si]||"").trim().toLowerCase(),qty=String(row[qi]||"").trim().toLowerCase();return sku!=="seller sku input by the seller in the product system."&&qty!=="sku sold quantity in the order."&&(sku||qty);});}
 function calculateUniquePacking(data){const c=getPackingColumn(data),i=c?data.headers.indexOf(c):-1,u=new Set();getCleanSalesRows(data).forEach(function(row){if(i>=0){const v=String(row[i]||"").trim();if(v)u.add(v);}});return {column:c,count:u.size,identifiers:Array.from(u)};}
 function populateSalesStoreAccounts(){
 
@@ -22778,18 +22751,6 @@ function saveSalesImportData(){
             currentSalesImport
         );
 
-    /* Lazada: satu transaksi per Order Number + sellerSku.
-       QTY = jumlah kemunculan sellerSku dalam order tersebut. */
-    const transactionRows =
-        currentSalesImport.marketplace === "Lazada"
-            ? Array.from(getLazadaSkuQtyGroups(currentSalesImport).values())
-                .map(function(group){
-                    return {row:group.row, qty:group.qty};
-                })
-            : rows.map(function(row){
-                return {row:row, qty:null};
-            });
-
     const skuIndex =
         currentSalesImport.headers.indexOf(
             currentSalesImport.skuColumn
@@ -22822,30 +22783,26 @@ function saveSalesImportData(){
         getIndonesiaDateString(importedAt);
 
     let transactions =
-        transactionRows.map(function(entry){
+        rows.map(function(row,rowIndex){
 
-            const row = entry.row;
             const qty =
                 currentSalesImport.marketplace === "Lazada"
-                    ? Number(entry.qty) || 0
-                    : (qtyIndex >= 0
-                        ? parseSalesNumber(row[qtyIndex])
-                        : 0);
+
+                    ? 1
+
+                    : (
+                        qtyIndex >= 0
+                            ? parseSalesNumber(
+                                row[qtyIndex]
+                            )
+                            : 0
+                    );
 
             const salesAmount =
-                currentSalesImport.marketplace === "Lazada"
-                    ? (function(){
-                        const unitPrice = getFirstValue(
-                            row,
-                            currentSalesImport.headers,
-                            ["unitprice"]
-                        );
-                        return parseSalesNumber(unitPrice) * qty;
-                    })()
-                    : getSalesAmount(
-                        row,
-                        currentSalesImport
-                    );
+                getSalesAmount(
+                    row,
+                    currentSalesImport
+                );
 
             const transactionDate =
                 getSalesTransactionDate(
@@ -22908,6 +22865,14 @@ function saveSalesImportData(){
 
                 reportDate:
                     reportDate,
+
+                /* Penanda baris khusus Lazada agar
+                   SKU yang sama dalam order yang sama
+                   tidak digabung menjadi 1 transaksi. */
+                sourceRowIndex:
+                    currentSalesImport.marketplace === "Lazada"
+                        ? rowIndex
+                        : null,
 
                 importedAt:
                     importedAt
@@ -22975,9 +22940,17 @@ function saveSalesImportData(){
                 const identityKey =
                     marketplaceKey + "|" +
                     storeKey + "|" +
-                    (orderKey
-                        ? "ORDER:" + orderKey
-                        : "PACKING:" + packingKey) + "|" +
+                    (
+                        String(existingTransaction.marketplace || "").trim().toLowerCase() === "lazada" &&
+                        existingTransaction.sourceRowIndex !== null &&
+                        existingTransaction.sourceRowIndex !== undefined
+                            ? "LAZADA_ROW:" + String(existingTransaction.sourceRowIndex)
+                            : (
+                                orderKey
+                                    ? "ORDER:" + orderKey
+                                    : "PACKING:" + packingKey
+                            )
+                    ) + "|" +
                     skuKey;
 
                 if(
@@ -23036,9 +23009,17 @@ function saveSalesImportData(){
         const identityKey =
             marketplaceKey + "|" +
             storeKey + "|" +
-            (orderKey
-                ? "ORDER:" + orderKey
-                : "PACKING:" + packingKey) + "|" +
+            (
+                String(transaction.marketplace || "").trim().toLowerCase() === "lazada" &&
+                transaction.sourceRowIndex !== null &&
+                transaction.sourceRowIndex !== undefined
+                    ? "LAZADA_ROW:" + String(transaction.sourceRowIndex)
+                    : (
+                        orderKey
+                            ? "ORDER:" + orderKey
+                            : "PACKING:" + packingKey
+                    )
+            ) + "|" +
             skuKey;
 
         /*
@@ -23771,7 +23752,7 @@ async function analyzeSalesFile(input){
             CARI SKU
             */
 
-            const skuResult =
+            let skuResult =
 
                 findBestColumn(
 
@@ -23787,7 +23768,7 @@ async function analyzeSalesFile(input){
             CARI QTY
             */
 
-            const qtyResult =
+            let qtyResult =
 
                 findBestColumn(
 
@@ -23796,6 +23777,58 @@ async function analyzeSalesFile(input){
                     QTY_KEYWORDS
 
                 );
+
+
+            /* =================================================
+               KHUSUS LAZADA
+               Tidak ada kolom QTY di file Lazada.
+               SKU wajib sellerSku.
+               QTY dihitung dari jumlah kemunculan sellerSku.
+            ================================================= */
+            const detectedLazada =
+
+                detectSalesMarketplace(
+
+                    cleanHeaders,
+
+                    file.name
+
+                ).marketplace === "Lazada";
+
+
+            if(detectedLazada){
+
+                const lazadaSkuResult =
+
+                    findBestColumn(
+
+                        cleanHeaders,
+
+                        [
+
+                            "sellersku",
+
+                            "seller sku"
+
+                        ]
+
+                    );
+
+                if(lazadaSkuResult.column){
+
+                    skuResult = lazadaSkuResult;
+
+                }
+
+                qtyResult = {
+
+                    column:"__LAZADA_QTY_BY_SELLERSKU__",
+
+                    score:100
+
+                };
+
+            }
 
 
 
@@ -23888,7 +23921,21 @@ async function analyzeSalesFile(input){
                     detectSalesMarketplace(cleanHeaders,file.name).marketplace,
 
                 marketplaceScore:
-                    detectSalesMarketplace(cleanHeaders,file.name).score
+                    detectSalesMarketplace(cleanHeaders,file.name).score,
+
+                skuIndex:
+                    skuResult.column
+                        ? cleanHeaders.indexOf(skuResult.column)
+                        : -1,
+
+                qtyIndex:
+                    detectedLazada
+                        ? -1
+                        : (
+                            qtyResult.column
+                                ? cleanHeaders.indexOf(qtyResult.column)
+                                : -1
+                        )
 
             };
 
@@ -24087,7 +24134,21 @@ function renderSalesAnalysis(){
         );
 
 
-    if(data.qtyColumn){
+    if(
+        data.marketplace === "Lazada"
+    ){
+
+        qtyResultElement.innerText =
+
+            "sellerSku • hitung kemunculan";
+
+        qtyConfidenceElement.innerText =
+
+            "Khusus Lazada • QTY = jumlah kemunculan sellerSku";
+
+    }
+
+    else if(data.qtyColumn){
 
 
         qtyResultElement.innerText =
@@ -24609,6 +24670,31 @@ function openSalesPreview(){
         '<option value="">-- Pilih Kolom QTY --</option>';
 
 
+    /* =========================================
+       KHUSUS LAZADA:
+       QTY bukan kolom fisik.
+       SellerBooks menghitung jumlah kemunculan sellerSku.
+    ========================================= */
+
+    if(data.marketplace === "Lazada"){
+
+        const lazadaQtyOption =
+
+            document.createElement("option");
+
+        lazadaQtyOption.value =
+            "__LAZADA_QTY_BY_SELLERSKU__";
+
+        lazadaQtyOption.textContent =
+            "sellerSku • hitung jumlah kemunculan";
+
+        qtySelect.appendChild(
+            lazadaQtyOption
+        );
+
+    }
+
+
 
     /* =========================================
        MASUKKAN SEMUA HEADER FILE
@@ -24659,13 +24745,6 @@ function openSalesPreview(){
 
     });
 
-    /* Lazada tidak memiliki kolom QTY. QTY dihitung dari sellerSku. */
-    if(data.marketplace === "Lazada"){
-        const lazadaQtyOption=document.createElement("option");
-        lazadaQtyOption.value="__LAZADA_SKU_COUNT__";
-        lazadaQtyOption.textContent="Jumlah sellerSku (otomatis)";
-        qtySelect.appendChild(lazadaQtyOption);
-    }
 
 
     /* =========================================
@@ -24687,9 +24766,7 @@ function openSalesPreview(){
        JIKA SUDAH DITEMUKAN ENGINE
     ========================================= */
 
-    if(data.marketplace === "Lazada"){
-        qtySelect.value="__LAZADA_SKU_COUNT__";
-    }else if(data.qtyColumn){
+    if(data.qtyColumn){
 
         qtySelect.value =
             data.qtyColumn;
@@ -24800,21 +24877,29 @@ function updatePreviewColumns(){
     /* =========================================
        KONDISI 1:
        SKU ATAU QTY BELUM DIPILIH
-       Lazada memakai QTY otomatis dari sellerSku.
     ========================================= */
+
+    const isLazadaImport =
+
+        currentSalesImport.marketplace === "Lazada";
+
 
     if(
 
     !skuColumn ||
 
-    (!qtyColumn && currentSalesImport.marketplace !== "Lazada")
+    (!qtyColumn && !isLazadaImport)
 
 ){
 
 
     statusElement.innerText =
 
-        "Pilih kolom SKU dan QTY untuk melanjutkan.";
+        isLazadaImport
+
+            ? "sellerSku sudah dikenali. QTY akan dihitung dari jumlah kemunculan sellerSku."
+
+            : "Pilih kolom SKU dan QTY untuk melanjutkan.";
 
 
     /*
@@ -24839,8 +24924,9 @@ function updatePreviewColumns(){
 
     if(
 
-    skuColumn === qtyColumn &&
-    currentSalesImport.marketplace !== "Lazada"
+    !isLazadaImport &&
+
+    skuColumn === qtyColumn
 
 ){
 
@@ -24887,7 +24973,11 @@ function updatePreviewColumns(){
 
     statusElement.innerText =
 
-        "✓ Kolom SKU dan QTY sudah dipilih. Data siap dikonfirmasi.";
+        isLazadaImport
+
+            ? "✓ Lazada: sellerSku dikenali dan QTY akan dihitung dari jumlah kemunculan sellerSku. Data siap dikonfirmasi."
+
+            : "✓ Kolom SKU dan QTY sudah dipilih. Data siap dikonfirmasi.";
 
 
     /*
@@ -24986,7 +25076,12 @@ function renderPreviewTable(
 
     qtyHeader.innerText =
 
-        qtyColumn || "QTY";
+        (
+            currentSalesImport &&
+            currentSalesImport.marketplace === "Lazada"
+        )
+            ? "QTY • sellerSku"
+            : (qtyColumn || "QTY");
 
 
 
@@ -25188,9 +25283,17 @@ const previewRows = cleanRows;
 
             qtyCell.innerText =
 
-                currentSalesImport.marketplace === "Lazada"
-                ? getLazadaSkuQtyForRow(currentSalesImport,row)
-                : (qtyIndex >= 0 ? row[qtyIndex] || "" : "");
+                (
+                    data.marketplace === "Lazada"
+                )
+
+                ? "1"
+
+                : (
+                    qtyIndex >= 0
+                        ? row[qtyIndex] || ""
+                        : ""
+                );
 
 
 
@@ -25270,7 +25373,15 @@ function confirmSalesColumns(){
     }
 
 
-    if(!qtyColumn && currentSalesImport.marketplace !== "Lazada"){
+    const isLazadaImport =
+
+        currentSalesImport.marketplace === "Lazada";
+
+
+    if(
+        !qtyColumn &&
+        !isLazadaImport
+    ){
 
         sellerBooksAlert(
             "Silakan pilih kolom QTY terlebih dahulu."
@@ -25280,7 +25391,10 @@ function confirmSalesColumns(){
     }
 
 
-    if(skuColumn === qtyColumn && currentSalesImport.marketplace !== "Lazada"){
+    if(
+        !isLazadaImport &&
+        skuColumn === qtyColumn
+    ){
 
         sellerBooksAlert(
             "Kolom SKU dan QTY tidak boleh sama."
@@ -25294,7 +25408,9 @@ function confirmSalesColumns(){
         skuColumn;
 
     currentSalesImport.qtyColumn =
-        qtyColumn;
+        isLazadaImport
+            ? "__LAZADA_QTY_BY_SELLERSKU__"
+            : qtyColumn;
 
     currentSalesImport.skuIndex =
         currentSalesImport.headers.indexOf(
@@ -25302,9 +25418,11 @@ function confirmSalesColumns(){
         );
 
     currentSalesImport.qtyIndex =
-        currentSalesImport.headers.indexOf(
-            qtyColumn
-        );
+        isLazadaImport
+            ? -1
+            : currentSalesImport.headers.indexOf(
+                qtyColumn
+            );
 
     currentSalesImport.columnsConfirmed =
         true;
