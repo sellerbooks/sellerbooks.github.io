@@ -8074,7 +8074,8 @@ async function downloadReportPDF(){
                     row.marketplaces.size === 1 &&
                     (row.marketplaces.has("shopee") ||
                      row.marketplaces.has("tiktok") ||
-                     row.marketplaces.has("blibli"));
+                     row.marketplaces.has("blibli") ||
+                     row.marketplaces.has("lazada"));
 
                 row.price =
                     isShopeeTikTokOnly && Number(row.qty) > 0
@@ -15837,7 +15838,8 @@ function renderProductAnalysis(){
                 row.marketplaces.size === 1 &&
                 (row.marketplaces.has("shopee") ||
                  row.marketplaces.has("tiktok") ||
-                 row.marketplaces.has("blibli"));
+                 row.marketplaces.has("blibli") ||
+                     row.marketplaces.has("lazada"));
 
             const displayPrice =
                 isShopeeTikTokOnly &&
