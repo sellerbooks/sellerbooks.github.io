@@ -22363,7 +22363,8 @@ function getReportTransactionSalesAmount(item){
         item &&
         (item.marketplace === "TikTok" ||
          item.marketplace === "Shopee" ||
-         item.marketplace === "Blibli")
+         item.marketplace === "Blibli" ||
+         item.marketplace === "Lazada")
     ){
         return Number(item.salesAmount) || 0;
     }
