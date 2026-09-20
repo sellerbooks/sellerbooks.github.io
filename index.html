@@ -21941,6 +21941,37 @@ function parseSalesNumber(value){
 }
 
 
+/* Lazada ONLY: unitPrice kolom AV memakai desimal Excel, mis. 60000.00 = Rp60.000. */
+function parseLazadaUnitPrice(value){
+    if(value === null || value === undefined){
+        return 0;
+    }
+
+    if(typeof value === "number"){
+        return Number.isFinite(value) ? value : 0;
+    }
+
+    let text = String(value)
+        .trim()
+        .replace(/Rp/gi,"")
+        .replace(/\s/g,"");
+
+    if(!text){
+        return 0;
+    }
+
+    /* Lazada: 60000.00 = 60000, bukan 6000000. */
+    if(text.includes(",") && text.includes(".")){
+        text = text.replace(/,/g,"");
+    }else if(text.includes(",")){
+        text = text.replace(/,/g,".");
+    }
+
+    const number = Number(text);
+    return Number.isFinite(number) ? number : 0;
+}
+
+
 function parseSalesDate(value){
 
     if(!value){
@@ -22432,7 +22463,7 @@ function getSalesAmount(row,data){
     if(data.marketplace === "Lazada"){
 
         /* Lazada: Harga Jual wajib dari kolom AV (unitPrice). */
-        return parseSalesNumber(row[47]) * qty;
+        return parseLazadaUnitPrice(row[47]) * qty;
 
     }
 
