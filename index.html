@@ -6803,17 +6803,18 @@ function calculateReportPacking(transactions){
 
 
         /*
-           JIKA TIDAK ADA ID PACKING
-           GUNAKAN ORDER ID
+           SHOPEE: biaya packing WAJIB hanya berdasarkan
+           No. Resi. Tidak boleh fallback ke No. Pesanan.
+           Marketplace lain mempertahankan logika lama.
         */
-
-        if(!packingId){
-
+        if(
+            String(item.marketplace || "").trim().toLowerCase() !== "shopee" &&
+            !packingId
+        ){
             packingId =
                 String(
                     item.orderId || ""
                 ).trim();
-
         }
 
 
@@ -21832,8 +21833,11 @@ const QTY_KEYWORDS = [
 ===================================================== */
 const SALES_MARKETPLACE_RULES={
     Shopee:{
-        required:["no. pesanan","nomor referensi sku","jumlah"],
-        packingAliases:["no. pesanan","no. resi"],
+        /* Shopee: file REGULER dan KILAT dapat berbeda posisi kolom.
+           Semua kolom dicari berdasarkan nama header, bukan posisi.
+           Packing WAJIB hanya No. Resi. */
+        required:["nomor referensi sku","no. resi"],
+        packingAliases:["no. resi"],
         orderAliases:["no. pesanan"],
         priceAliases:["subtotal pesanan"],
         dateAliases:["waktu pesanan dibuat"]
@@ -22482,7 +22486,25 @@ function getSalesAmount(row,data){
                 data.headers,
                 rule && rule.priceAliases ? rule.priceAliases : []
             );
-        return parseSalesNumber(marketplacePrice);
+
+        /*
+           SHOPEE ONLY:
+           Jika Subtotal Pesanan (kolom U pada file reguler)
+           memiliki nilai > 0, gunakan subtotal tersebut.
+           Jika 0 / "-" / kosong, fallback ke Harga Jual
+           Master Produk x QTY.
+        */
+        const subtotal = parseSalesNumber(marketplacePrice);
+        if(subtotal > 0){
+            return subtotal;
+        }
+
+        const product = getMasterProductBySku(sku);
+        const masterPrice = product
+            ? (Number(product.price) || 0)
+            : 0;
+
+        return masterPrice * qty;
     }
 
     if(data.marketplace === "Blibli"){
@@ -22870,11 +22892,16 @@ function saveSalesImportData(){
                     ? 1
 
                     : (
-                        qtyIndex >= 0
-                            ? parseSalesNumber(
-                                row[qtyIndex]
+                        currentSalesImport.marketplace === "Shopee" &&
+                        currentSalesImport.qtyColumn === "__SHOPEE_QTY_PER_ROW__"
+                            ? 1
+                            : (
+                                qtyIndex >= 0
+                                    ? parseSalesNumber(
+                                        row[qtyIndex]
+                                    )
+                                    : 0
                             )
-                            : 0
                     );
 
             const salesAmount =
@@ -23196,11 +23223,14 @@ function saveSalesImportData(){
 
     transactions.forEach(function(item){
 
+        const isShopeePacking =
+            String(item.marketplace || "").trim().toLowerCase() === "shopee";
+
         const packingKey =
             String(
-                item.packingId ||
-                item.orderId ||
-                ""
+                isShopeePacking
+                    ? (item.packingId || "")
+                    : (item.packingId || item.orderId || "")
             ).trim().toLowerCase();
 
         if(packingKey){
@@ -23909,6 +23939,50 @@ async function analyzeSalesFile(input){
 
             }
 
+            /* =================================================
+               KHUSUS SHOPEE
+               File REGULER memiliki kolom Jumlah.
+               File KILAT/Advance Fulfilment dapat tidak memiliki
+               kolom Jumlah dan No. Pesanan. Dalam kondisi itu
+               setiap baris SKU dihitung 1 pcs.
+               SKU tetap dicari dari Nomor Referensi SKU.
+            ================================================= */
+            const detectedShopee =
+                detectSalesMarketplace(
+                    cleanHeaders,
+                    file.name
+                ).marketplace === "Shopee";
+
+            if(detectedShopee){
+
+                const shopeeSkuResult =
+                    findBestColumn(
+                        cleanHeaders,
+                        [
+                            "nomor referensi sku"
+                        ]
+                    );
+
+                if(shopeeSkuResult.column){
+                    skuResult = shopeeSkuResult;
+                }
+
+                const shopeeQtyResult =
+                    findBestColumn(
+                        cleanHeaders,
+                        [
+                            "jumlah"
+                        ]
+                    );
+
+                qtyResult = shopeeQtyResult.column
+                    ? shopeeQtyResult
+                    : {
+                        column:"__SHOPEE_QTY_PER_ROW__",
+                        score:100
+                    };
+            }
+
 
 
             /*
@@ -24008,7 +24082,8 @@ async function analyzeSalesFile(input){
                         : -1,
 
                 qtyIndex:
-                    detectedLazada
+                    detectedLazada ||
+                    (detectedShopee && qtyResult.column === "__SHOPEE_QTY_PER_ROW__")
                         ? -1
                         : (
                             qtyResult.column
