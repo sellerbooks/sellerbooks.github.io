@@ -6788,67 +6788,59 @@ function getReportTransactionFeePercent(transaction){
    HITUNG PACKING DARI TRANSAKSI
 ========================================================= */
 
-function getReportPackingIdentity(item){
-
-    if(!item){
-        return "";
-    }
-
-    const marketplace =
-        String(item.marketplace || "").trim().toLowerCase();
-
-    /*
-       SHOPEE: WAJIB hanya No. Resi / packingId.
-       Tidak boleh fallback ke No. Pesanan.
-    */
-    if(marketplace === "shopee"){
-        return String(item.packingId || "").trim();
-    }
-
-    /* Marketplace lain mempertahankan fallback lama. */
-    let packingId = String(item.packingId || "").trim();
-
-    if(!packingId){
-        packingId = String(item.orderId || "").trim();
-    }
-
-    /* Fallback lama jika keduanya kosong. */
-    if(!packingId){
-        packingId =
-            String(item.importId || "") +
-            "_" +
-            String(item.sku || "");
-    }
-
-    return packingId;
-}
-
 function calculateReportPacking(transactions){
 
-    const packingSet = new Set();
+    const packingSet =
+        new Set();
+
 
     transactions.forEach(function(item){
 
-        const packingId = getReportPackingIdentity(item);
+        let packingId =
+            String(
+                item.packingId || ""
+            ).trim();
+
 
         /*
-           Shopee tanpa No. Resi tidak dihitung sebagai packing.
-           Marketplace lain tetap mengikuti fallback lama.
+           TOTAL PACKING HARUS MENGIKUTI LOGIKA
+           YANG SAMA DENGAN TABEL PERFORMA MARKETPLACE.
+           Jangan gunakan fallback importId + SKU karena
+           itu membuat total packing berbeda dari tabel.
         */
         if(!packingId){
-            return;
+            packingId =
+                String(
+                    item.orderId || ""
+                ).trim();
         }
 
+
+        /*
+           PREFIX MARKETPLACE + TOKO
+           AGAR ID DARI TOKO BERBEDA
+           TIDAK BENTROK
+        */
+
         packingSet.add(
-            String(item.marketplaceId || item.marketplace || "") +
+
+            String(
+                item.marketplaceId || ""
+            ) +
             "|" +
-            String(item.storeId || "") +
+            String(
+                item.storeId || ""
+            ) +
             "|" +
             packingId
+
         );
+
     });
 
+
     return packingSet.size;
+
 }
 
 
@@ -7338,7 +7330,8 @@ function renderReportMarketplaceTable(){
                 group.hpp += (Number(product.cost) || 0) * qty;
             }
 
-            const packing = getReportPackingIdentity(item);
+            let packing = String(item.packingId || "").trim();
+            if(!packing) packing = String(item.orderId || "").trim();
             if(packing){
                 group.packingIds.add(
                     String(item.storeId || "") + "|" + packing
