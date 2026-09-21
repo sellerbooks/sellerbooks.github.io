@@ -21817,7 +21817,7 @@ const SALES_MARKETPLACE_RULES={
            Packing WAJIB hanya No. Resi. */
         required:["nomor referensi sku","no. resi"],
         packingAliases:["no. resi"],
-        orderAliases:["no. pesanan"],
+        orderAliases:["no. pesanan","booking sn"],
         priceAliases:["subtotal pesanan"],
         dateAliases:["waktu pesanan dibuat"]
     },
@@ -22969,13 +22969,33 @@ function saveSalesImportData(){
                     salesAmount,
 
                 orderId:
-                    rule
-                        ? getFirstValue(
-                            row,
-                            currentSalesImport.headers,
-                            rule.orderAliases
+                    currentSalesImport.marketplace === "Shopee"
+                        ? (
+                            String(
+                                getFirstValue(
+                                    row,
+                                    currentSalesImport.headers,
+                                    ["no. pesanan"]
+                                ) || ""
+                            ).trim()
+                            ||
+                            String(
+                                getFirstValue(
+                                    row,
+                                    currentSalesImport.headers,
+                                    ["booking sn"]
+                                ) || ""
+                            ).trim()
                         )
-                        : "",
+                        : (
+                            rule
+                                ? getFirstValue(
+                                    row,
+                                    currentSalesImport.headers,
+                                    rule.orderAliases
+                                )
+                                : ""
+                        ),
 
                 packingId:
                     packingIndex >= 0
