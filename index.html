@@ -22454,7 +22454,8 @@ function getSalesAmount(row,data){
             : "";
 
     const qty =
-        data.marketplace === "Lazada"
+        data.marketplace === "Lazada" ||
+        (data.marketplace === "Shopee" && data.qtyColumn === "__SHOPEE_QTY_PER_ROW__")
 
             ? 1
 
@@ -24313,12 +24314,20 @@ function renderSalesAnalysis(){
 
     }
 
-    else if(data.qtyColumn){
-
+    else if(
+        data.marketplace === "Shopee" &&
+        data.qtyColumn === "__SHOPEE_QTY_PER_ROW__"
+    ){
 
         qtyResultElement.innerText =
+            "1 pcs / baris";
 
-            data.qtyColumn;
+        qtyConfidenceElement.innerText =
+            "Khusus Shopee • file tidak memiliki kolom Jumlah, setiap baris SKU = 1 pcs";
+
+    }
+
+    else if(data.qtyColumn){
 
 
         qtyConfidenceElement.innerText =
@@ -24896,6 +24905,19 @@ function openSalesPreview(){
             lazadaQtyOption
         );
 
+        qtySelect.value = "__LAZADA_QTY_BY_SELLERSKU__";
+
+    }
+
+    if(
+        data.marketplace === "Shopee" &&
+        data.qtyColumn === "__SHOPEE_QTY_PER_ROW__"
+    ){
+        const shopeeQtyOption = document.createElement("option");
+        shopeeQtyOption.value = "__SHOPEE_QTY_PER_ROW__";
+        shopeeQtyOption.textContent = "Shopee • 1 pcs per baris (otomatis)";
+        qtySelect.appendChild(shopeeQtyOption);
+        qtySelect.value = "__SHOPEE_QTY_PER_ROW__";
     }
 
 
@@ -25087,6 +25109,10 @@ function updatePreviewColumns(){
 
         currentSalesImport.marketplace === "Lazada";
 
+    const isShopeePerRow =
+        currentSalesImport.marketplace === "Shopee" &&
+        qtyColumn === "__SHOPEE_QTY_PER_ROW__";
+
 
     if(
 
@@ -25129,6 +25155,7 @@ function updatePreviewColumns(){
     if(
 
     !isLazadaImport &&
+    !isShopeePerRow &&
 
     skuColumn === qtyColumn
 
@@ -25181,7 +25208,9 @@ function updatePreviewColumns(){
 
             ? "✓ Lazada: sellerSku dikenali dan QTY akan dihitung dari jumlah kemunculan sellerSku. Data siap dikonfirmasi."
 
-            : "✓ Kolom SKU dan QTY sudah dipilih. Data siap dikonfirmasi.";
+            : isShopeePerRow
+                ? "✓ Shopee: setiap baris SKU dihitung 1 pcs. Tidak perlu memilih kolom QTY. Data siap dikonfirmasi."
+                : "✓ Kolom SKU dan QTY sudah dipilih. Data siap dikonfirmasi.";
 
 
     /*
@@ -25285,7 +25314,13 @@ function renderPreviewTable(
             currentSalesImport.marketplace === "Lazada"
         )
             ? "QTY • sellerSku"
-            : (qtyColumn || "QTY");
+            : (
+                currentSalesImport &&
+                currentSalesImport.marketplace === "Shopee" &&
+                qtyColumn === "__SHOPEE_QTY_PER_ROW__"
+            )
+                ? "QTY • 1 pcs/baris"
+                : (qtyColumn || "QTY");
 
 
 
@@ -25488,7 +25523,11 @@ const previewRows = cleanRows;
             qtyCell.innerText =
 
                 (
-                    data.marketplace === "Lazada"
+                    data.marketplace === "Lazada" ||
+                    (
+                        data.marketplace === "Shopee" &&
+                        qtyColumn === "__SHOPEE_QTY_PER_ROW__"
+                    )
                 )
 
                 ? "1"
@@ -25581,6 +25620,10 @@ function confirmSalesColumns(){
 
         currentSalesImport.marketplace === "Lazada";
 
+    const isShopeePerRow =
+        currentSalesImport.marketplace === "Shopee" &&
+        qtyColumn === "__SHOPEE_QTY_PER_ROW__";
+
 
     if(
         !qtyColumn &&
@@ -25597,6 +25640,7 @@ function confirmSalesColumns(){
 
     if(
         !isLazadaImport &&
+        !isShopeePerRow &&
         skuColumn === qtyColumn
     ){
 
@@ -25622,7 +25666,7 @@ function confirmSalesColumns(){
         );
 
     currentSalesImport.qtyIndex =
-        isLazadaImport
+        (isLazadaImport || isShopeePerRow)
             ? -1
             : currentSalesImport.headers.indexOf(
                 qtyColumn
