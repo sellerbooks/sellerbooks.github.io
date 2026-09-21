@@ -22789,6 +22789,44 @@ function populateSalesStoreAccounts(){
 
 }
 function updatePackingCalculation(){if(!currentSalesImport)return;const r=calculateUniquePacking(currentSalesImport),unit=Math.max(0,Number(document.getElementById("packingCostPerOrder")?.value)||0);const c=document.getElementById("uniquePackingCount"),t=document.getElementById("totalPackingImportCost"),i=document.getElementById("packingIdentifierInfo");if(c)c.innerText=r.count.toLocaleString("id-ID");if(t)t.innerText=formatRupiah(r.count*unit);if(i)i.innerText=r.column?"Identitas packing: "+r.column+" • 1 packing dihitung 1 ID unik.":"Identitas packing belum ditemukan pada file.";}
+function buildSalesImportFingerprint(currentImport, storeId, transactions){
+    /*
+       IDENTITAS FILE/ISI IMPORT.
+       Tidak bergantung pada nomor baris Excel atau waktu upload.
+       Jika isi transaksi yang sama pernah tersimpan pada akun toko
+       dan marketplace yang sama, import dianggap sudah pernah masuk.
+    */
+    const marketplace = String(
+        currentImport?.marketplace || ""
+    ).trim().toLowerCase();
+
+    const store = String(storeId || "").trim().toLowerCase();
+
+    const list = (Array.isArray(transactions) ? transactions : [])
+        .map(function(item){
+            return [
+                String(item.sku || "").trim().toLowerCase(),
+                String(item.orderId || "").trim().toLowerCase(),
+                String(item.packingId || "").trim().toLowerCase(),
+                Number(item.qty) || 0,
+                Number(item.salesAmount) || 0
+            ].join("~");
+        })
+        .sort();
+
+    const source = marketplace + "|" + store + "|" + list.join("||");
+
+    /* Hash sederhana dan stabil, cukup untuk identitas import lokal. */
+    let hash = 2166136261;
+    for(let i = 0; i < source.length; i++){
+        hash ^= source.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+    }
+
+    return "SBIMP-" + (hash >>> 0).toString(16) + "-" + list.length;
+}
+
+
 function saveSalesImportData(){
 
     if(!currentSalesImport){
@@ -22973,6 +23011,69 @@ function saveSalesImportData(){
                 "sellerbooks_sales_imports"
             ) || "[]"
         );
+
+    /* =====================================================
+       CEK FILE/ISI IMPORT SUDAH PERNAH DISIMPAN
+       Jika file yang sama sudah pernah masuk untuk marketplace
+       + akun toko yang sama, IMPORT DITOLAK TOTAL.
+       Tidak boleh ada nilai penjualan/QTY baru yang masuk.
+    ===================================================== */
+    const importFingerprint =
+        buildSalesImportFingerprint(
+            currentSalesImport,
+            storeId,
+            transactions
+        );
+
+    const duplicateImport =
+        imports.some(function(existingImport){
+            if(
+                String(existingImport.marketplace || "").trim().toLowerCase() !==
+                String(currentSalesImport.marketplace || "").trim().toLowerCase()
+            ){
+                return false;
+            }
+
+            if(
+                String(existingImport.storeId || "").trim() !==
+                String(storeId || "").trim()
+            ){
+                return false;
+            }
+
+            if(
+                existingImport.importFingerprint &&
+                String(existingImport.importFingerprint) === importFingerprint
+            ){
+                return true;
+            }
+
+            /*
+               BACKWARD COMPATIBILITY:
+               record lama belum memiliki fingerprint.
+               Buat fingerprint dari transaksi lama agar file
+               yang sama tetap ditolak setelah update ini.
+            */
+            const oldFingerprint =
+                buildSalesImportFingerprint(
+                    {
+                        marketplace: existingImport.marketplace
+                    },
+                    existingImport.storeId,
+                    existingImport.transactions || []
+                );
+
+            return oldFingerprint === importFingerprint;
+        });
+
+    if(duplicateImport){
+        console.warn(
+            "Import ditolak: file/data penjualan yang sama sudah pernah disimpan.",
+            importFingerprint
+        );
+        return null;
+    }
+
 
 
     /* =====================================================
@@ -23281,6 +23382,9 @@ function saveSalesImportData(){
 
         importedAt:
             importedAt,
+
+        importFingerprint:
+            importFingerprint,
 
         transactions:
             transactions
