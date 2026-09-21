@@ -22939,6 +22939,19 @@ function saveSalesImportData(){
                         )
                         : "",
 
+                /* Lazada ONLY: identitas deduplikasi transaksi.
+                   Tidak digunakan untuk QTY atau packing. */
+                lazadaOrderItemId:
+                    currentSalesImport.marketplace === "Lazada"
+                        ? String(
+                            getFirstValue(
+                                row,
+                                currentSalesImport.headers,
+                                ["orderitemid"]
+                            ) || ""
+                        ).trim()
+                        : "",
+
                 packingId:
                     packingIndex >= 0
                         ? String(
@@ -23027,10 +23040,21 @@ function saveSalesImportData(){
                     marketplaceKey + "|" +
                     storeKey + "|" +
                     (
-                        String(existingTransaction.marketplace || "").trim().toLowerCase() === "lazada" &&
-                        existingTransaction.sourceRowIndex !== null &&
-                        existingTransaction.sourceRowIndex !== undefined
-                            ? "LAZADA_ROW:" + String(existingTransaction.sourceRowIndex)
+                        String(existingTransaction.marketplace || "").trim().toLowerCase() === "lazada"
+                            ? (
+                                String(existingTransaction.lazadaOrderItemId || "").trim()
+                                    ? "LAZADA_ITEM:" + String(existingTransaction.lazadaOrderItemId).trim().toLowerCase()
+                                    : (
+                                        existingTransaction.sourceRowIndex !== null &&
+                                        existingTransaction.sourceRowIndex !== undefined
+                                            ? "LAZADA_ROW:" + String(existingTransaction.sourceRowIndex)
+                                            : (
+                                                orderKey
+                                                    ? "ORDER:" + orderKey
+                                                    : "PACKING:" + packingKey
+                                            )
+                                    )
+                            )
                             : (
                                 orderKey
                                     ? "ORDER:" + orderKey
@@ -23041,7 +23065,11 @@ function saveSalesImportData(){
 
                 if(
                     orderKey ||
-                    packingKey
+                    packingKey ||
+                    (
+                        String(existingTransaction.marketplace || "").trim().toLowerCase() === "lazada" &&
+                        String(existingTransaction.lazadaOrderItemId || "").trim()
+                    )
                 ){
                     existingTransactionKeys.add(
                         identityKey
@@ -23096,10 +23124,21 @@ function saveSalesImportData(){
             marketplaceKey + "|" +
             storeKey + "|" +
             (
-                String(transaction.marketplace || "").trim().toLowerCase() === "lazada" &&
-                transaction.sourceRowIndex !== null &&
-                transaction.sourceRowIndex !== undefined
-                    ? "LAZADA_ROW:" + String(transaction.sourceRowIndex)
+                String(transaction.marketplace || "").trim().toLowerCase() === "lazada"
+                    ? (
+                        String(transaction.lazadaOrderItemId || "").trim()
+                            ? "LAZADA_ITEM:" + String(transaction.lazadaOrderItemId).trim().toLowerCase()
+                            : (
+                                transaction.sourceRowIndex !== null &&
+                                transaction.sourceRowIndex !== undefined
+                                    ? "LAZADA_ROW:" + String(transaction.sourceRowIndex)
+                                    : (
+                                        orderKey
+                                            ? "ORDER:" + orderKey
+                                            : "PACKING:" + packingKey
+                                    )
+                            )
+                    )
                     : (
                         orderKey
                             ? "ORDER:" + orderKey
@@ -23122,7 +23161,10 @@ function saveSalesImportData(){
              hanya bagian yang benar-benar baru.
         */
         if(
-            (orderKey || packingKey) &&
+            (orderKey || packingKey || (
+                String(transaction.marketplace || "").trim().toLowerCase() === "lazada" &&
+                String(transaction.lazadaOrderItemId || "").trim()
+            )) &&
             existingTransactionKeys.has(identityKey)
         ){
             return;
@@ -23133,13 +23175,23 @@ function saveSalesImportData(){
            muncul lebih dari sekali di file import yang sedang diproses.
         */
         if(
-            (orderKey || packingKey) &&
+            (orderKey || packingKey || (
+                String(transaction.marketplace || "").trim().toLowerCase() === "lazada" &&
+                String(transaction.lazadaOrderItemId || "").trim()
+            )) &&
             incomingTransactionKeys.has(identityKey)
         ){
             return;
         }
 
-        if(orderKey || packingKey){
+        if(
+            orderKey ||
+            packingKey ||
+            (
+                String(transaction.marketplace || "").trim().toLowerCase() === "lazada" &&
+                String(transaction.lazadaOrderItemId || "").trim()
+            )
+        ){
             incomingTransactionKeys.add(
                 identityKey
             );
