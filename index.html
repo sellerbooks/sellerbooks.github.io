@@ -8097,8 +8097,6 @@ async function downloadReportPDF(){
                     sales:0,
                     hpp:0,
                     admin:0,
-                    priceTotal:0,
-                    priceQty:0,
                     product:product || null,
                     marketplaces:new Set()
                 });
@@ -8118,15 +8116,12 @@ async function downloadReportPDF(){
             const product = row.product || getMasterProductBySku(sku);
             const cost = getReportTransactionCost(item);
             const feePercent = getReportTransactionFeePercent(item);
-            const unitPrice = getReportTransactionPrice(item);
             const admin = sales * (feePercent / 100);
 
             row.qty += qty;
             row.sales += sales;
             row.hpp += cost * qty;
             row.admin += admin;
-            row.priceTotal += unitPrice * qty;
-            row.priceQty += qty;
 
             if(!row.product && product){
                 row.product = product;
@@ -8144,8 +8139,8 @@ async function downloadReportPDF(){
                      row.marketplaces.has("lazada"));
 
                 row.price =
-                    Number(row.priceQty) > 0
-                        ? (Number(row.priceTotal) / Number(row.priceQty))
+                    isShopeeTikTokOnly && Number(row.qty) > 0
+                        ? (Number(row.sales) / Number(row.qty))
                         : (row.product ? (Number(row.product.price) || 0) : 0);
 
                 row.name = row.product
@@ -15583,8 +15578,6 @@ function calculateProductAnalysisRows(){
                 sales:0,
                 hpp:0,
                 admin:0,
-                priceTotal:0,
-                priceQty:0,
                 product:getMasterProductBySku(sku),
                 marketplaces:new Set()
             });
@@ -15617,9 +15610,6 @@ function calculateProductAnalysisRows(){
         const feePercent =
             getReportTransactionFeePercent(item);
 
-        const unitPrice =
-            getReportTransactionPrice(item);
-
         const admin =
             sales *
             (feePercent / 100);
@@ -15628,17 +15618,15 @@ function calculateProductAnalysisRows(){
         row.sales += sales;
         row.hpp += cost * qty;
         row.admin += admin;
-        row.priceTotal += unitPrice * qty;
-        row.priceQty += qty;
     });
 
     return Array.from(rows.values())
         .map(function(row){
 
             row.price =
-                Number(row.priceQty) > 0
-                    ? (Number(row.priceTotal) / Number(row.priceQty))
-                    : (row.product ? (Number(row.product.price) || 0) : 0);
+                row.product
+                    ? Number(row.product.price) || 0
+                    : 0;
 
             row.name =
                 row.product
@@ -27541,6 +27529,62 @@ function saveCostData(){
 
 }
 
+/* =====================================================
+   SNAPSHOT BIAYA LAIN PER HARI
+   Setelah berganti hari (00:00 WIB), biaya hari sebelumnya
+   menjadi snapshot dan tidak boleh diedit lagi.
+   Fungsi hapus tetap dipertahankan.
+===================================================== */
+
+function isCostSnapshotLocked(cost){
+
+    if(!cost) return false;
+
+    const costDate = String(cost.date || "").trim();
+
+    if(!costDate) return false;
+
+    const todayWIB = getIndonesiaDateString(new Date());
+
+    return costDate < todayWIB;
+
+}
+
+function markPastCostsAsSnapshots(){
+
+    let changed = false;
+
+    const todayWIB = getIndonesiaDateString(new Date());
+
+    costs = costs.map(function(cost){
+
+        if(
+            cost &&
+            String(cost.date || "").trim() &&
+            String(cost.date).trim() < todayWIB &&
+            !cost.snapshotLockedAt
+        ){
+
+            changed = true;
+
+            return {
+                ...cost,
+                snapshotLockedAt: new Date().toISOString(),
+                snapshotDate: cost.date
+            };
+
+        }
+
+        return cost;
+
+    });
+
+    if(changed){
+        saveCostData();
+    }
+
+}
+
 
 function getCostMarketplaceName(id){
     if(!id) return "-";
@@ -27746,13 +27790,29 @@ function renderCosts(){
                                     "
                                 >
 
-                                    <button
-                                        type="button"
-                                        class="secondary-button"
-                                        onclick="editCost('${cost.id}')"
-                                    >
-                                        Edit
-                                    </button>
+                                    ${
+                                        isCostSnapshotLocked(cost)
+                                        ? `
+                                            <button
+                                                type="button"
+                                                class="secondary-button"
+                                                disabled
+                                                title="Biaya sudah menjadi snapshot dan tidak dapat diedit lagi."
+                                                style="opacity:.5;cursor:not-allowed;"
+                                            >
+                                                🔒 Snapshot
+                                            </button>
+                                        `
+                                        : `
+                                            <button
+                                                type="button"
+                                                class="secondary-button"
+                                                onclick="editCost('${cost.id}')"
+                                            >
+                                                Edit
+                                            </button>
+                                        `
+                                    }
 
                                     <button
                                         type="button"
@@ -28003,6 +28063,24 @@ function closeCostModal(){
 
 function saveCost(){
 
+    /* Biaya yang sudah melewati 00:00 WIB terkunci sebagai snapshot. */
+    if(editingCostId){
+
+        const existingCost = costs.find(function(item){
+            return String(item.id) === String(editingCostId);
+        });
+
+        if(isCostSnapshotLocked(existingCost)){
+            sellerBooksAlert(
+                "Biaya tanggal " +
+                formatCostDate(existingCost.date) +
+                " sudah menjadi snapshot dan tidak dapat diedit lagi."
+            );
+            return;
+        }
+
+    }
+
     const date =
         document.getElementById(
             "costDate"
@@ -28251,6 +28329,18 @@ function editCost(id){
 
     }
 
+    if(isCostSnapshotLocked(cost)){
+
+        sellerBooksAlert(
+            "Biaya tanggal " +
+            formatCostDate(cost.date) +
+            " sudah menjadi snapshot dan tidak dapat diedit lagi."
+        );
+
+        return;
+
+    }
+
 
     editingCostId =
         cost.id;
@@ -28379,6 +28469,7 @@ document.addEventListener(
     "DOMContentLoaded",
     function(){
 
+        markPastCostsAsSnapshots();
         renderCosts();
 
     }
