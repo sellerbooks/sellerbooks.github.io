@@ -20242,7 +20242,7 @@ function closeProductModal(){
    SIMPAN PRODUK
 ===================================================== */
 
-async function saveProduct(){
+function saveProduct(){
 
     const sku =
 
@@ -20519,43 +20519,6 @@ async function saveProduct(){
 
 
     saveProductData();
-
-    /*
-       PERUBAHAN MASTER PRODUK WAJIB DIPASTIKAN TERSIMPAN KE CLOUD
-       SEBELUM MODAL DITUTUP. Sebelumnya penyimpanan hanya memakai
-       antrean 250ms, sehingga refresh terlalu cepat dapat mengambil
-       snapshot cloud lama dan membuat perubahan Admin % SKU terlihat
-       hilang. Fitur lain tetap memakai mekanisme antrean normal.
-    */
-    try{
-        if(typeof sellerBooksCloudSaveTimer!=="undefined" && sellerBooksCloudSaveTimer){
-            clearTimeout(sellerBooksCloudSaveTimer);
-            sellerBooksCloudSaveTimer=null;
-        }
-
-        if(typeof sellerBooksPersistCloudDataStrict==="function" &&
-           sellerBooksAuthUser &&
-           sellerBooksCloudReady){
-            await sellerBooksPersistCloudDataStrict(
-                sellerBooksCloneCloudState(sellerBooksCloudState),
-                function(savedData){
-                    try{
-                        const savedProducts=
-                            savedData && savedData["sellerbooks_products"]
-                                ? JSON.parse(savedData["sellerbooks_products"])
-                                : [];
-                        return JSON.stringify(savedProducts)===JSON.stringify(products);
-                    }catch(error){
-                        return false;
-                    }
-                }
-            );
-        }
-    }catch(error){
-        console.error("Penyimpanan Master Produk gagal diverifikasi:",error);
-        sellerBooksAlert("Perubahan Master Produk belum berhasil dipastikan tersimpan ke server. Silakan coba Simpan Produk lagi.");
-        return;
-    }
 
     renderProducts();
 
@@ -27566,6 +27529,62 @@ function saveCostData(){
 
 }
 
+/* =====================================================
+   SNAPSHOT BIAYA LAIN PER HARI
+   Setelah berganti hari (00:00 WIB), biaya hari sebelumnya
+   menjadi snapshot dan tidak boleh diedit lagi.
+   Fungsi hapus tetap dipertahankan.
+===================================================== */
+
+function isCostSnapshotLocked(cost){
+
+    if(!cost) return false;
+
+    const costDate = String(cost.date || "").trim();
+
+    if(!costDate) return false;
+
+    const todayWIB = getIndonesiaDateString(new Date());
+
+    return costDate < todayWIB;
+
+}
+
+function markPastCostsAsSnapshots(){
+
+    let changed = false;
+
+    const todayWIB = getIndonesiaDateString(new Date());
+
+    costs = costs.map(function(cost){
+
+        if(
+            cost &&
+            String(cost.date || "").trim() &&
+            String(cost.date).trim() < todayWIB &&
+            !cost.snapshotLockedAt
+        ){
+
+            changed = true;
+
+            return {
+                ...cost,
+                snapshotLockedAt: new Date().toISOString(),
+                snapshotDate: cost.date
+            };
+
+        }
+
+        return cost;
+
+    });
+
+    if(changed){
+        saveCostData();
+    }
+
+}
+
 
 function getCostMarketplaceName(id){
     if(!id) return "-";
@@ -27771,13 +27790,29 @@ function renderCosts(){
                                     "
                                 >
 
-                                    <button
-                                        type="button"
-                                        class="secondary-button"
-                                        onclick="editCost('${cost.id}')"
-                                    >
-                                        Edit
-                                    </button>
+                                    ${
+                                        isCostSnapshotLocked(cost)
+                                        ? `
+                                            <button
+                                                type="button"
+                                                class="secondary-button"
+                                                disabled
+                                                title="Biaya sudah menjadi snapshot dan tidak dapat diedit lagi."
+                                                style="opacity:.5;cursor:not-allowed;"
+                                            >
+                                                🔒 Snapshot
+                                            </button>
+                                        `
+                                        : `
+                                            <button
+                                                type="button"
+                                                class="secondary-button"
+                                                onclick="editCost('${cost.id}')"
+                                            >
+                                                Edit
+                                            </button>
+                                        `
+                                    }
 
                                     <button
                                         type="button"
@@ -28028,6 +28063,24 @@ function closeCostModal(){
 
 function saveCost(){
 
+    /* Biaya yang sudah melewati 00:00 WIB terkunci sebagai snapshot. */
+    if(editingCostId){
+
+        const existingCost = costs.find(function(item){
+            return String(item.id) === String(editingCostId);
+        });
+
+        if(isCostSnapshotLocked(existingCost)){
+            sellerBooksAlert(
+                "Biaya tanggal " +
+                formatCostDate(existingCost.date) +
+                " sudah menjadi snapshot dan tidak dapat diedit lagi."
+            );
+            return;
+        }
+
+    }
+
     const date =
         document.getElementById(
             "costDate"
@@ -28276,6 +28329,18 @@ function editCost(id){
 
     }
 
+    if(isCostSnapshotLocked(cost)){
+
+        sellerBooksAlert(
+            "Biaya tanggal " +
+            formatCostDate(cost.date) +
+            " sudah menjadi snapshot dan tidak dapat diedit lagi."
+        );
+
+        return;
+
+    }
+
 
     editingCostId =
         cost.id;
@@ -28404,6 +28469,7 @@ document.addEventListener(
     "DOMContentLoaded",
     function(){
 
+        markPastCostsAsSnapshots();
         renderCosts();
 
     }
