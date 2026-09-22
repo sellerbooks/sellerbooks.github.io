@@ -14447,9 +14447,16 @@ async function sellerBooksPersistCloudDataStrict(expectedSnapshot,verification){
     if(!sellerBooksAuthUser||!sellerBooksCloudReady)throw new Error("Sinkronisasi Supabase belum siap.");
 
     const snapshot=expectedSnapshot||sellerBooksCloneCloudState(sellerBooksCloudState);
-    const expectedUpdatedAt=sellerBooksCloudUpdatedAt;
 
+    /*
+       PENTING:
+       expectedUpdatedAt harus dibaca DI DALAM antrean penyimpanan.
+       Sebelumnya nilainya diambil sebelum antrean berjalan. Jika ada
+       penyimpanan sebelumnya yang masih menunggu, timestamp menjadi lama
+       dan verifikasi bisa dianggap konflik padahal data sebenarnya valid.
+    */
     sellerBooksCloudSavePromise=sellerBooksCloudSavePromise.then(async function(){
+        const expectedUpdatedAt=sellerBooksCloudUpdatedAt;
         const result=await sellerBooksWriteCloudSnapshot(
             snapshot,expectedUpdatedAt,!expectedUpdatedAt
         );
@@ -20242,7 +20249,7 @@ function closeProductModal(){
    SIMPAN PRODUK
 ===================================================== */
 
-function saveProduct(){
+async function saveProduct(){
 
     const sku =
 
@@ -20519,6 +20526,43 @@ function saveProduct(){
 
 
     saveProductData();
+
+    /*
+       PERUBAHAN MASTER PRODUK WAJIB DIPASTIKAN TERSIMPAN KE CLOUD
+       SEBELUM MODAL DITUTUP. Sebelumnya penyimpanan hanya memakai
+       antrean 250ms, sehingga refresh terlalu cepat dapat mengambil
+       snapshot cloud lama dan membuat perubahan Admin % SKU terlihat
+       hilang. Fitur lain tetap memakai mekanisme antrean normal.
+    */
+    try{
+        if(typeof sellerBooksCloudSaveTimer!=="undefined" && sellerBooksCloudSaveTimer){
+            clearTimeout(sellerBooksCloudSaveTimer);
+            sellerBooksCloudSaveTimer=null;
+        }
+
+        if(typeof sellerBooksPersistCloudDataStrict==="function" &&
+           sellerBooksAuthUser &&
+           sellerBooksCloudReady){
+            await sellerBooksPersistCloudDataStrict(
+                sellerBooksCloneCloudState(sellerBooksCloudState),
+                function(savedData){
+                    try{
+                        const savedProducts=
+                            savedData && savedData["sellerbooks_products"]
+                                ? JSON.parse(savedData["sellerbooks_products"])
+                                : [];
+                        return JSON.stringify(savedProducts)===JSON.stringify(products);
+                    }catch(error){
+                        return false;
+                    }
+                }
+            );
+        }
+    }catch(error){
+        console.error("Penyimpanan Master Produk gagal diverifikasi:",error);
+        sellerBooksAlert("Perubahan Master Produk belum berhasil dipastikan tersimpan ke server. Silakan coba Simpan Produk lagi.");
+        return;
+    }
 
     renderProducts();
 
@@ -27529,62 +27573,6 @@ function saveCostData(){
 
 }
 
-/* =====================================================
-   SNAPSHOT BIAYA LAIN PER HARI
-   Setelah berganti hari (00:00 WIB), biaya hari sebelumnya
-   menjadi snapshot dan tidak boleh diedit lagi.
-   Fungsi hapus tetap dipertahankan.
-===================================================== */
-
-function isCostSnapshotLocked(cost){
-
-    if(!cost) return false;
-
-    const costDate = String(cost.date || "").trim();
-
-    if(!costDate) return false;
-
-    const todayWIB = getIndonesiaDateString(new Date());
-
-    return costDate < todayWIB;
-
-}
-
-function markPastCostsAsSnapshots(){
-
-    let changed = false;
-
-    const todayWIB = getIndonesiaDateString(new Date());
-
-    costs = costs.map(function(cost){
-
-        if(
-            cost &&
-            String(cost.date || "").trim() &&
-            String(cost.date).trim() < todayWIB &&
-            !cost.snapshotLockedAt
-        ){
-
-            changed = true;
-
-            return {
-                ...cost,
-                snapshotLockedAt: new Date().toISOString(),
-                snapshotDate: cost.date
-            };
-
-        }
-
-        return cost;
-
-    });
-
-    if(changed){
-        saveCostData();
-    }
-
-}
-
 
 function getCostMarketplaceName(id){
     if(!id) return "-";
@@ -27601,6 +27589,19 @@ function getCostStoreName(id){
         return String(store.id) === String(id);
     });
     return item ? (item.name || "Akun Toko") : "Akun tidak ditemukan";
+}
+
+
+/* =====================================================
+   SNAPSHOT HARIAN BIAYA LAIN
+   Biaya dengan tanggal sebelum hari ini (WIB) terkunci.
+   Biaya hari ini tetap dapat diedit.
+===================================================== */
+
+function isCostSnapshotLocked(cost){
+    if(!cost || !cost.date)return false;
+    const today=getIndonesiaDateString(new Date());
+    return String(cost.date) < String(today);
 }
 
 
@@ -27790,19 +27791,23 @@ function renderCosts(){
                                     "
                                 >
 
-                                    ${
-                                        isCostSnapshotLocked(cost)
+                                    ${isCostSnapshotLocked(cost)
                                         ? `
                                             <button
                                                 type="button"
                                                 class="secondary-button"
                                                 disabled
-                                                title="Biaya sudah menjadi snapshot dan tidak dapat diedit lagi."
-                                                style="opacity:.5;cursor:not-allowed;"
+                                                title="Biaya sudah menjadi snapshot karena tanggalnya telah melewati 00:00 WIB."
+                                                style="
+                                                    color:#64748b;
+                                                    border-color:#cbd5e1;
+                                                    background:#f8fafc;
+                                                    cursor:not-allowed;
+                                                "
                                             >
                                                 🔒 Snapshot
                                             </button>
-                                        `
+                                          `
                                         : `
                                             <button
                                                 type="button"
@@ -27811,8 +27816,7 @@ function renderCosts(){
                                             >
                                                 Edit
                                             </button>
-                                        `
-                                    }
+                                          `}
 
                                     <button
                                         type="button"
@@ -27839,6 +27843,17 @@ function renderCosts(){
             .join("");
 
 }
+
+
+/*
+   Jika halaman dibiarkan terbuka melewati 00:00 WIB,
+   ubah tombol Edit menjadi Snapshot tanpa perlu refresh manual.
+*/
+setInterval(function(){
+    try{
+        if(document.getElementById("costTableBody")) renderCosts();
+    }catch(error){}
+},60000);
 
 
 /* =====================================================
@@ -28063,24 +28078,6 @@ function closeCostModal(){
 
 function saveCost(){
 
-    /* Biaya yang sudah melewati 00:00 WIB terkunci sebagai snapshot. */
-    if(editingCostId){
-
-        const existingCost = costs.find(function(item){
-            return String(item.id) === String(editingCostId);
-        });
-
-        if(isCostSnapshotLocked(existingCost)){
-            sellerBooksAlert(
-                "Biaya tanggal " +
-                formatCostDate(existingCost.date) +
-                " sudah menjadi snapshot dan tidak dapat diedit lagi."
-            );
-            return;
-        }
-
-    }
-
     const date =
         document.getElementById(
             "costDate"
@@ -28201,6 +28198,16 @@ function saveCost(){
     ========================================= */
 
     if(editingCostId){
+
+        const lockedOriginalCost =
+            costs.find(function(cost){
+                return String(cost.id) === String(editingCostId);
+            });
+
+        if(lockedOriginalCost && isCostSnapshotLocked(lockedOriginalCost)){
+            sellerBooksAlert("Biaya tanggal " + formatCostDate(lockedOriginalCost.date) + " sudah menjadi snapshot dan tidak dapat diedit lagi.");
+            return;
+        }
 
         const index =
             costs.findIndex(
@@ -28329,16 +28336,10 @@ function editCost(id){
 
     }
 
+
     if(isCostSnapshotLocked(cost)){
-
-        sellerBooksAlert(
-            "Biaya tanggal " +
-            formatCostDate(cost.date) +
-            " sudah menjadi snapshot dan tidak dapat diedit lagi."
-        );
-
+        sellerBooksAlert("Biaya tanggal " + formatCostDate(cost.date) + " sudah menjadi snapshot dan tidak dapat diedit lagi.");
         return;
-
     }
 
 
@@ -28469,7 +28470,6 @@ document.addEventListener(
     "DOMContentLoaded",
     function(){
 
-        markPastCostsAsSnapshots();
         renderCosts();
 
     }
