@@ -20518,14 +20518,32 @@ async function saveProduct(){
 
 
 
+    /*
+       SIMPAN LOKAL TERLEBIH DAHULU.
+       Ini tetap memakai mekanisme penyimpanan yang sudah ada.
+    */
     saveProductData();
 
     /*
-       PERUBAHAN MASTER PRODUK WAJIB DIPASTIKAN TERSIMPAN KE CLOUD
-       SEBELUM MODAL DITUTUP. Sebelumnya penyimpanan hanya memakai
-       antrean 250ms, sehingga refresh terlalu cepat dapat mengambil
-       snapshot cloud lama dan membuat perubahan Admin % SKU terlihat
-       hilang. Fitur lain tetap memakai mekanisme antrean normal.
+       TUTUP MODAL SEGERA.
+       Jangan menunggu proses Supabase selesai karena proses jaringan
+       sebelumnya membuat tombol Simpan terasa lambat/lemot.
+    */
+    closeProductModal();
+
+    /*
+       RENDER SETELAH BROWSER SELESAI MENGGAMBAR MODAL YANG SUDAH DITUTUP.
+       Dengan begitu klik Simpan langsung terasa responsif.
+    */
+    requestAnimationFrame(function(){
+        renderProducts();
+        renderNotifications();
+    });
+
+    /*
+       SINKRONISASI CLOUD TETAP DILAKUKAN, tetapi berjalan di belakang
+       tanpa menahan modal/UI. Timer lama dibatalkan agar penyimpanan
+       dimulai sekarang, bukan menunggu antrean 250ms.
     */
     try{
         if(typeof sellerBooksCloudSaveTimer!=="undefined" && sellerBooksCloudSaveTimer){
@@ -20533,35 +20551,14 @@ async function saveProduct(){
             sellerBooksCloudSaveTimer=null;
         }
 
-        if(typeof sellerBooksPersistCloudDataStrict==="function" &&
+        if(typeof sellerBooksPersistCloudDataNow==="function" &&
            sellerBooksAuthUser &&
            sellerBooksCloudReady){
-            await sellerBooksPersistCloudDataStrict(
-                sellerBooksCloneCloudState(sellerBooksCloudState),
-                function(savedData){
-                    try{
-                        const savedProducts=
-                            savedData && savedData["sellerbooks_products"]
-                                ? JSON.parse(savedData["sellerbooks_products"])
-                                : [];
-                        return JSON.stringify(savedProducts)===JSON.stringify(products);
-                    }catch(error){
-                        return false;
-                    }
-                }
-            );
+            sellerBooksPersistCloudDataNow();
         }
     }catch(error){
-        console.error("Penyimpanan Master Produk gagal diverifikasi:",error);
-        sellerBooksAlert("Perubahan Master Produk belum berhasil dipastikan tersimpan ke server. Silakan coba Simpan Produk lagi.");
-        return;
+        console.error("Penyimpanan Master Produk ke cloud gagal dimulai:",error);
     }
-
-    renderProducts();
-
-    renderNotifications();
-
-    closeProductModal();
 
 }
 
