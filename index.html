@@ -20533,16 +20533,6 @@ async function saveProduct(){
             sellerBooksCloudSaveTimer=null;
         }
 
-        /*
-           Tunggu antrean cloud yang mungkin masih berjalan sampai selesai.
-           Setelah itu sellerBooksCloudUpdatedAt sudah menjadi versi terbaru,
-           sehingga penyimpanan Master Produk tidak memakai timestamp lama
-           yang dapat menyebabkan konflik dan memunculkan pesan gagal simpan.
-        */
-        if(typeof sellerBooksCloudSavePromise!=="undefined" && sellerBooksCloudSavePromise){
-            await sellerBooksCloudSavePromise;
-        }
-
         if(typeof sellerBooksPersistCloudDataStrict==="function" &&
            sellerBooksAuthUser &&
            sellerBooksCloudReady){
@@ -27596,6 +27586,25 @@ function getCostStoreName(id){
 
 
 /* =====================================================
+   SNAPSHOT HARIAN BIAYA LAIN
+   Hanya biaya bertanggal hari ini yang boleh diedit.
+   Begitu tanggal berganti 00:00 WIB, biaya tanggal sebelumnya
+   menjadi snapshot dan tidak dapat diubah lagi.
+===================================================== */
+function isCostEditableToday(cost){
+    if(!cost || !cost.date){
+        return false;
+    }
+    const today = getIndonesiaDateString(new Date());
+    return String(cost.date) === String(today);
+}
+
+function isCostSnapshotLocked(cost){
+    return !isCostEditableToday(cost);
+}
+
+
+/* =====================================================
    RENDER BIAYA
 ===================================================== */
 
@@ -27781,13 +27790,29 @@ function renderCosts(){
                                     "
                                 >
 
-                                    <button
-                                        type="button"
-                                        class="secondary-button"
-                                        onclick="editCost('${cost.id}')"
-                                    >
-                                        Edit
-                                    </button>
+                                    ${
+                                        isCostSnapshotLocked(cost)
+                                        ? `
+                                            <button
+                                                type="button"
+                                                class="secondary-button"
+                                                disabled
+                                                title="Biaya sudah menjadi snapshot setelah 00:00 WIB"
+                                                style="color:#64748b;opacity:.75;cursor:not-allowed;"
+                                            >
+                                                🔒 Snapshot
+                                            </button>
+                                        `
+                                        : `
+                                            <button
+                                                type="button"
+                                                class="secondary-button"
+                                                onclick="editCost('${cost.id}')"
+                                            >
+                                                Edit
+                                            </button>
+                                        `
+                                    }
 
                                     <button
                                         type="button"
@@ -28159,6 +28184,21 @@ function saveCost(){
 
     if(editingCostId){
 
+        const existingCost =
+            costs.find(function(cost){
+                return String(cost.id) === String(editingCostId);
+            });
+
+        if(!existingCost){
+            sellerBooksAlert("Data biaya tidak ditemukan.");
+            return;
+        }
+
+        if(isCostSnapshotLocked(existingCost)){
+            sellerBooksAlert("Biaya tanggal " + formatCostDate(existingCost.date) + " sudah menjadi snapshot dan tidak dapat diedit lagi.");
+            return;
+        }
+
         const index =
             costs.findIndex(
                 function(cost){
@@ -28284,6 +28324,11 @@ function editCost(id){
 
         return;
 
+    }
+
+    if(isCostSnapshotLocked(cost)){
+        sellerBooksAlert("Biaya tanggal " + formatCostDate(cost.date) + " sudah menjadi snapshot dan tidak dapat diedit lagi.");
+        return;
     }
 
 
