@@ -20521,11 +20521,12 @@ async function saveProduct(){
     saveProductData();
 
     /*
-       PERUBAHAN MASTER PRODUK WAJIB DIPASTIKAN TERSIMPAN KE CLOUD
-       SEBELUM MODAL DITUTUP. Sebelumnya penyimpanan hanya memakai
-       antrean 250ms, sehingga refresh terlalu cepat dapat mengambil
-       snapshot cloud lama dan membuat perubahan Admin % SKU terlihat
-       hilang. Fitur lain tetap memakai mekanisme antrean normal.
+       SIMPAN CEPAT:
+       Perubahan Master Produk sudah langsung masuk ke state cloud lokal.
+       Sinkronisasi Supabase dijalankan di background tanpa menahan UI.
+       Jadi modal dapat langsung ditutup dan halaman tidak terasa berat.
+       Mekanisme sinkronisasi/conflict protection tetap memakai fungsi
+       sellerBooksPersistCloudDataNow() yang sudah ada.
     */
     try{
         if(typeof sellerBooksCloudSaveTimer!=="undefined" && sellerBooksCloudSaveTimer){
@@ -20533,28 +20534,13 @@ async function saveProduct(){
             sellerBooksCloudSaveTimer=null;
         }
 
-        if(typeof sellerBooksPersistCloudDataStrict==="function" &&
+        if(typeof sellerBooksPersistCloudDataNow==="function" &&
            sellerBooksAuthUser &&
            sellerBooksCloudReady){
-            await sellerBooksPersistCloudDataStrict(
-                sellerBooksCloneCloudState(sellerBooksCloudState),
-                function(savedData){
-                    try{
-                        const savedProducts=
-                            savedData && savedData["sellerbooks_products"]
-                                ? JSON.parse(savedData["sellerbooks_products"])
-                                : [];
-                        return JSON.stringify(savedProducts)===JSON.stringify(products);
-                    }catch(error){
-                        return false;
-                    }
-                }
-            );
+            sellerBooksPersistCloudDataNow();
         }
     }catch(error){
-        console.error("Penyimpanan Master Produk gagal diverifikasi:",error);
-        sellerBooksAlert("Perubahan Master Produk belum berhasil dipastikan tersimpan ke server. Silakan coba Simpan Produk lagi.");
-        return;
+        console.error("Sinkronisasi Master Produk ke cloud gagal dijalankan:",error);
     }
 
     renderProducts();
@@ -27586,25 +27572,6 @@ function getCostStoreName(id){
 
 
 /* =====================================================
-   SNAPSHOT HARIAN BIAYA LAIN
-   Hanya biaya bertanggal hari ini yang boleh diedit.
-   Begitu tanggal berganti 00:00 WIB, biaya tanggal sebelumnya
-   menjadi snapshot dan tidak dapat diubah lagi.
-===================================================== */
-function isCostEditableToday(cost){
-    if(!cost || !cost.date){
-        return false;
-    }
-    const today = getIndonesiaDateString(new Date());
-    return String(cost.date) === String(today);
-}
-
-function isCostSnapshotLocked(cost){
-    return !isCostEditableToday(cost);
-}
-
-
-/* =====================================================
    RENDER BIAYA
 ===================================================== */
 
@@ -27790,29 +27757,13 @@ function renderCosts(){
                                     "
                                 >
 
-                                    ${
-                                        isCostSnapshotLocked(cost)
-                                        ? `
-                                            <button
-                                                type="button"
-                                                class="secondary-button"
-                                                disabled
-                                                title="Biaya sudah menjadi snapshot setelah 00:00 WIB"
-                                                style="color:#64748b;opacity:.75;cursor:not-allowed;"
-                                            >
-                                                🔒 Snapshot
-                                            </button>
-                                        `
-                                        : `
-                                            <button
-                                                type="button"
-                                                class="secondary-button"
-                                                onclick="editCost('${cost.id}')"
-                                            >
-                                                Edit
-                                            </button>
-                                        `
-                                    }
+                                    <button
+                                        type="button"
+                                        class="secondary-button"
+                                        onclick="editCost('${cost.id}')"
+                                    >
+                                        Edit
+                                    </button>
 
                                     <button
                                         type="button"
@@ -28184,21 +28135,6 @@ function saveCost(){
 
     if(editingCostId){
 
-        const existingCost =
-            costs.find(function(cost){
-                return String(cost.id) === String(editingCostId);
-            });
-
-        if(!existingCost){
-            sellerBooksAlert("Data biaya tidak ditemukan.");
-            return;
-        }
-
-        if(isCostSnapshotLocked(existingCost)){
-            sellerBooksAlert("Biaya tanggal " + formatCostDate(existingCost.date) + " sudah menjadi snapshot dan tidak dapat diedit lagi.");
-            return;
-        }
-
         const index =
             costs.findIndex(
                 function(cost){
@@ -28324,11 +28260,6 @@ function editCost(id){
 
         return;
 
-    }
-
-    if(isCostSnapshotLocked(cost)){
-        sellerBooksAlert("Biaya tanggal " + formatCostDate(cost.date) + " sudah menjadi snapshot dan tidak dapat diedit lagi.");
-        return;
     }
 
 
