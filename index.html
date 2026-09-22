@@ -6741,14 +6741,84 @@ function getReportStoreFeePercent(storeId){
    Data lama tetap fallback ke pengaturan akun toko.
 ========================================================= */
 
+function isReportTransactionToday(transaction){
+
+    if(!transaction){
+        return true;
+    }
+
+    const transactionDate =
+        transaction.reportDate ||
+        transaction.importedAt ||
+        transaction.transactionDate ||
+        "";
+
+    const reportDate =
+        getIndonesiaDateString(transactionDate);
+
+    const today =
+        getIndonesiaDateString(new Date());
+
+    return !reportDate || reportDate === today;
+}
+
+/*
+   SNAPSHOT HARIAN:
+   - Transaksi hari ini masih mengikuti Master Produk terbaru.
+   - Begitu tanggal berganti 00:00 WIB, transaksi kemarin memakai
+     nilai snapshot yang disimpan saat import dan tidak lagi ikut
+     perubahan Master Produk.
+*/
+function getReportTransactionCost(transaction){
+
+    if(!transaction){
+        return 0;
+    }
+
+    if(!isReportTransactionToday(transaction) &&
+       transaction.costSnapshot !== undefined &&
+       transaction.costSnapshot !== null &&
+       transaction.costSnapshot !== ""){
+        const snapshotCost = Number(transaction.costSnapshot);
+        if(Number.isFinite(snapshotCost)){
+            return snapshotCost;
+        }
+    }
+
+    const product = getMasterProductBySku(transaction.sku);
+    return product ? (Number(product.cost) || 0) : 0;
+}
+
+function getReportTransactionPrice(transaction){
+
+    if(!transaction){
+        return 0;
+    }
+
+    if(!isReportTransactionToday(transaction) &&
+       transaction.priceSnapshot !== undefined &&
+       transaction.priceSnapshot !== null &&
+       transaction.priceSnapshot !== ""){
+        const snapshotPrice = Number(transaction.priceSnapshot);
+        if(Number.isFinite(snapshotPrice)){
+            return snapshotPrice;
+        }
+    }
+
+    const product = getMasterProductBySku(transaction.sku);
+    return product ? (Number(product.price) || 0) : 0;
+}
+
 function getReportTransactionFeePercent(transaction){
 
     /*
-       PRIORITAS SEMUA MARKETPLACE, TERMASUK LAZADA:
-       1. Admin % SKU jika terisi
-       2. Jika kosong / "-", fallback ke Admin % Akun Toko
+       HARI INI: perubahan Admin % SKU / Admin % Akun Toko langsung
+       berlaku untuk transaksi hari ini.
+
+       SETELAH 00:00 WIB: transaksi hari sebelumnya terkunci pada
+       snapshot Admin % SKU dan Admin % Akun Toko saat import.
     */
-    if(transaction){
+    if(transaction && isReportTransactionToday(transaction)){
         const transactionSku = String(transaction.sku || "").trim().toLowerCase();
         if(transactionSku && Array.isArray(products)){
             const masterProduct = products.find(function(product){
@@ -6761,15 +6831,26 @@ function getReportTransactionFeePercent(transaction){
                 }
             }
         }
+
+        return getReportStoreFeePercent(
+            transaction.storeId
+        );
     }
 
-    /* FALLBACK: ADMIN % AKUN TOKO / SNAPSHOT TRANSAKSI */
-    if(
-        transaction &&
-        transaction.adminFeePercent !== undefined &&
-        transaction.adminFeePercent !== null &&
-        transaction.adminFeePercent !== ""
-    ){
+    if(transaction &&
+       transaction.adminFeeSkuSnapshot !== undefined &&
+       transaction.adminFeeSkuSnapshot !== null &&
+       transaction.adminFeeSkuSnapshot !== ""){
+        const skuFee = Number(transaction.adminFeeSkuSnapshot);
+        if(Number.isFinite(skuFee)){
+            return skuFee;
+        }
+    }
+
+    if(transaction &&
+       transaction.adminFeePercent !== undefined &&
+       transaction.adminFeePercent !== null &&
+       transaction.adminFeePercent !== ""){
         const fee = Number(transaction.adminFeePercent);
         if(Number.isFinite(fee)){
             return fee;
@@ -7327,7 +7408,7 @@ function renderReportMarketplaceTable(){
 
             const product = getMasterProductBySku(item.sku);
             if(product){
-                group.hpp += (Number(product.cost) || 0) * qty;
+                group.hpp += getReportTransactionCost(item) * qty;
             }
 
             let packing = String(item.packingId || "").trim();
@@ -7421,7 +7502,7 @@ function renderReportStoreTable(){
 
             const product = getMasterProductBySku(item.sku);
             if(product){
-                group.hpp += (Number(product.cost) || 0) * qty;
+                group.hpp += getReportTransactionCost(item) * qty;
             }
 
             let packing = String(item.packingId || "").trim();
@@ -8016,6 +8097,8 @@ async function downloadReportPDF(){
                     sales:0,
                     hpp:0,
                     admin:0,
+                    priceTotal:0,
+                    priceQty:0,
                     product:product || null,
                     marketplaces:new Set()
                 });
@@ -8033,14 +8116,17 @@ async function downloadReportPDF(){
             const qty = Number(item.qty) || 0;
             const sales = getReportTransactionSalesAmount(item);
             const product = row.product || getMasterProductBySku(sku);
-            const cost = product ? (Number(product.cost) || 0) : 0;
+            const cost = getReportTransactionCost(item);
             const feePercent = getReportTransactionFeePercent(item);
+            const unitPrice = getReportTransactionPrice(item);
             const admin = sales * (feePercent / 100);
 
             row.qty += qty;
             row.sales += sales;
             row.hpp += cost * qty;
             row.admin += admin;
+            row.priceTotal += unitPrice * qty;
+            row.priceQty += qty;
 
             if(!row.product && product){
                 row.product = product;
@@ -8058,8 +8144,8 @@ async function downloadReportPDF(){
                      row.marketplaces.has("lazada"));
 
                 row.price =
-                    isShopeeTikTokOnly && Number(row.qty) > 0
-                        ? (Number(row.sales) / Number(row.qty))
+                    Number(row.priceQty) > 0
+                        ? (Number(row.priceTotal) / Number(row.priceQty))
                         : (row.product ? (Number(row.product.price) || 0) : 0);
 
                 row.name = row.product
@@ -8288,7 +8374,7 @@ async function downloadReportPDF(){
 
             const hpp =
                 product
-                    ? (Number(product.cost) || 0) * qty
+                    ? getReportTransactionCost(item) * qty
                     : 0;
 
             const admin =
@@ -15497,6 +15583,8 @@ function calculateProductAnalysisRows(){
                 sales:0,
                 hpp:0,
                 admin:0,
+                priceTotal:0,
+                priceQty:0,
                 product:getMasterProductBySku(sku),
                 marketplaces:new Set()
             });
@@ -15529,6 +15617,9 @@ function calculateProductAnalysisRows(){
         const feePercent =
             getReportTransactionFeePercent(item);
 
+        const unitPrice =
+            getReportTransactionPrice(item);
+
         const admin =
             sales *
             (feePercent / 100);
@@ -15537,15 +15628,17 @@ function calculateProductAnalysisRows(){
         row.sales += sales;
         row.hpp += cost * qty;
         row.admin += admin;
+        row.priceTotal += unitPrice * qty;
+        row.priceQty += qty;
     });
 
     return Array.from(rows.values())
         .map(function(row){
 
             row.price =
-                row.product
-                    ? Number(row.product.price) || 0
-                    : 0;
+                Number(row.priceQty) > 0
+                    ? (Number(row.priceTotal) / Number(row.priceQty))
+                    : (row.product ? (Number(row.product.price) || 0) : 0);
 
             row.name =
                 row.product
@@ -17087,7 +17180,7 @@ function renderMarketplacePerformance(){
 
         if(product){
             totalHpp +=
-                (Number(product.cost) || 0) *
+                getReportTransactionCost(item) *
                 qty;
         }
 
@@ -17549,11 +17642,7 @@ function renderMarketplacePerformance(){
                         if(product){
 
                             hpp +=
-                                (
-                                    Number(
-                                        product.cost
-                                    ) || 0
-                                ) *
+                                getReportTransactionCost(item) *
                                 itemQty;
 
                         }
@@ -22934,6 +23023,32 @@ function saveSalesImportData(){
                     currentSalesImport
                 );
 
+            const transactionSku =
+                skuIndex >= 0
+                    ? String(row[skuIndex] || "").trim()
+                    : "";
+
+            const masterProductAtImport =
+                getMasterProductBySku(transactionSku);
+
+            const adminFeeSkuSnapshot =
+                masterProductAtImport &&
+                masterProductAtImport.adminFeePercent !== undefined &&
+                masterProductAtImport.adminFeePercent !== null &&
+                masterProductAtImport.adminFeePercent !== ""
+                    ? Number(masterProductAtImport.adminFeePercent)
+                    : "";
+
+            const priceSnapshot =
+                qty > 0
+                    ? (Number(salesAmount) || 0) / qty
+                    : (masterProductAtImport ? (Number(masterProductAtImport.price) || 0) : 0);
+
+            const costSnapshot =
+                masterProductAtImport
+                    ? (Number(masterProductAtImport.cost) || 0)
+                    : 0;
+
             return {
 
                 marketplace:
@@ -22954,6 +23069,17 @@ function saveSalesImportData(){
                     store
                         ? (Number(store.feePercent) || 0)
                         : 0,
+
+                /* Snapshot nilai saat import. Nilai ini menjadi
+                   sumber report setelah tanggal berganti. */
+                adminFeeSkuSnapshot:
+                    adminFeeSkuSnapshot,
+
+                priceSnapshot:
+                    priceSnapshot,
+
+                costSnapshot:
+                    costSnapshot,
 
                 sku:
                     skuIndex >= 0
