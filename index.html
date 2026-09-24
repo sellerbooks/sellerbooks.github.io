@@ -6812,55 +6812,152 @@ function getReportTransactionPrice(transaction){
 function getReportTransactionFeePercent(transaction){
 
     /*
-       HARI INI: perubahan Admin % SKU / Admin % Akun Toko langsung
-       berlaku untuk transaksi hari ini.
+       URUTAN SUMBER ADMIN FEE — WAJIB KONSISTEN:
+       1. Admin % SKU transaksi
+       2. Snapshot Admin % SKU saat import
+       3. Admin % SKU Master Produk
+       4. Snapshot Admin % Akun saat import
+       5. Admin % Akun Toko
 
-       SETELAH 00:00 WIB: transaksi hari sebelumnya terkunci pada
-       snapshot Admin % SKU dan Admin % Akun Toko saat import.
+       CATATAN PENTING:
+       - Jangan mendahulukan Admin % Akun Toko hanya karena transaksi
+         sudah masuk hari sebelumnya.
+       - Transaksi lama yang snapshot SKU-nya kosong tetap harus
+         mencari Admin % SKU dari Master Produk.
+       - adminFeePercent adalah field lama yang berisi snapshot Admin
+         % Akun saat import; dipakai sebagai fallback setelah Master Produk.
     */
-    if(transaction && isReportTransactionToday(transaction)){
-        const transactionSku = String(transaction.sku || "").trim().toLowerCase();
-        if(transactionSku && Array.isArray(products)){
-            const masterProduct = products.find(function(product){
-                return String(product.sku || "").trim().toLowerCase() === transactionSku;
-            });
-            if(masterProduct && masterProduct.adminFeePercent !== undefined && masterProduct.adminFeePercent !== null && masterProduct.adminFeePercent !== ""){
-                const skuFee = Number(masterProduct.adminFeePercent);
-                if(Number.isFinite(skuFee)){
-                    return skuFee;
-                }
+
+    if(!transaction){
+        return 0;
+    }
+
+    /*
+       1. Admin % SKU transaksi
+       Field ini menjadi nilai SKU langsung yang tersimpan pada transaksi.
+    */
+    const transactionSkuFee =
+        transaction.adminFeeSku !== undefined &&
+        transaction.adminFeeSku !== null &&
+        transaction.adminFeeSku !== ""
+            ? Number(transaction.adminFeeSku)
+            : NaN;
+
+    if(Number.isFinite(transactionSkuFee)){
+        return transactionSkuFee;
+    }
+
+    /*
+       2. Snapshot Admin % SKU saat import
+    */
+    const snapshotSkuFee =
+        transaction.adminFeeSkuSnapshot !== undefined &&
+        transaction.adminFeeSkuSnapshot !== null &&
+        transaction.adminFeeSkuSnapshot !== ""
+            ? Number(transaction.adminFeeSkuSnapshot)
+            : NaN;
+
+    if(Number.isFinite(snapshotSkuFee)){
+        return snapshotSkuFee;
+    }
+
+    /*
+       3. Admin % SKU dari Master Produk
+       Ini sengaja ditempatkan SEBELUM snapshot Admin % Akun.
+       Dengan demikian transaksi lama yang snapshot SKU-nya kosong
+       tidak akan jatuh ke persentase akun toko selama SKU Master
+       masih memiliki Admin % SKU.
+    */
+    const transactionSku =
+        String(transaction.sku || "")
+            .trim()
+            .toLowerCase();
+
+    if(transactionSku){
+
+        let masterProduct = null;
+
+        /*
+           Ambil Master Produk terbaru agar perubahan data Master
+           langsung terbaca juga untuk transaksi lama.
+        */
+        try{
+            const latestProducts =
+                JSON.parse(
+                    sellerBooksStorage.getItem(
+                        "sellerbooks_products"
+                    ) || "[]"
+                );
+
+            if(Array.isArray(latestProducts)){
+                masterProduct =
+                    latestProducts.find(function(product){
+                        return String(product.sku || "")
+                            .trim()
+                            .toLowerCase() === transactionSku;
+                    }) || null;
+            }
+        }catch(error){
+            masterProduct = null;
+        }
+
+        /*
+           Fallback ke array products yang sedang aktif bila
+           localStorage belum tersedia.
+        */
+        if(!masterProduct && Array.isArray(products)){
+            masterProduct =
+                products.find(function(product){
+                    return String(product.sku || "")
+                        .trim()
+                        .toLowerCase() === transactionSku;
+                }) || null;
+        }
+
+        if(masterProduct){
+
+            const masterSkuFee =
+                masterProduct.adminFeePercent !== undefined &&
+                masterProduct.adminFeePercent !== null &&
+                masterProduct.adminFeePercent !== ""
+                    ? Number(masterProduct.adminFeePercent)
+                    : NaN;
+
+            if(Number.isFinite(masterSkuFee)){
+                return masterSkuFee;
             }
         }
-
-        return getReportStoreFeePercent(
-            transaction.storeId
-        );
     }
 
-    if(transaction &&
-       transaction.adminFeeSkuSnapshot !== undefined &&
-       transaction.adminFeeSkuSnapshot !== null &&
-       transaction.adminFeeSkuSnapshot !== ""){
-        const skuFee = Number(transaction.adminFeeSkuSnapshot);
-        if(Number.isFinite(skuFee)){
-            return skuFee;
-        }
+    /*
+       4. Snapshot Admin % Akun saat import
+       Nama baru: adminFeeAccountSnapshot.
+       Field lama adminFeePercent tetap didukung agar transaksi lama
+       tidak rusak.
+    */
+    const accountSnapshotValue =
+        transaction.adminFeeAccountSnapshot !== undefined &&
+        transaction.adminFeeAccountSnapshot !== null &&
+        transaction.adminFeeAccountSnapshot !== ""
+            ? transaction.adminFeeAccountSnapshot
+            : transaction.adminFeePercent;
+
+    const accountSnapshotFee =
+        accountSnapshotValue !== undefined &&
+        accountSnapshotValue !== null &&
+        accountSnapshotValue !== ""
+            ? Number(accountSnapshotValue)
+            : NaN;
+
+    if(Number.isFinite(accountSnapshotFee)){
+        return accountSnapshotFee;
     }
 
-    if(transaction &&
-       transaction.adminFeePercent !== undefined &&
-       transaction.adminFeePercent !== null &&
-       transaction.adminFeePercent !== ""){
-        const fee = Number(transaction.adminFeePercent);
-        if(Number.isFinite(fee)){
-            return fee;
-        }
-    }
-
+    /*
+       5. Admin % Akun Toko sebagai fallback terakhir.
+    */
     return getReportStoreFeePercent(
-        transaction
-            ? transaction.storeId
-            : ""
+        transaction.storeId
     );
 }
 
@@ -23360,13 +23457,30 @@ function saveSalesImportData(){
                         ? store.name
                         : "",
 
+                /*
+                   Admin % SKU transaksi.
+                   Disimpan langsung agar urutan sumber pertama
+                   selalu memiliki nilai bila tersedia saat import.
+                */
+                adminFeeSku:
+                    adminFeeSkuSnapshot,
+
+                /*
+                   Snapshot Admin % Akun saat import.
+                   Field adminFeePercent tetap dipertahankan untuk
+                   kompatibilitas data lama.
+                */
+                adminFeeAccountSnapshot:
+                    store
+                        ? (Number(store.feePercent) || 0)
+                        : 0,
+
                 adminFeePercent:
                     store
                         ? (Number(store.feePercent) || 0)
                         : 0,
 
-                /* Snapshot nilai saat import. Nilai ini menjadi
-                   sumber report setelah tanggal berganti. */
+                /* Snapshot Admin % SKU saat import. */
                 adminFeeSkuSnapshot:
                     adminFeeSkuSnapshot,
 
