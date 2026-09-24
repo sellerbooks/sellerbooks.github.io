@@ -10134,7 +10134,7 @@ document.addEventListener(
 
 <!-- =====================================================
      PIUTANG VIEW - MODUL TAMBAHAN TERISOLASI
-     Hanya: Nama, Jumlah, Keterangan
+     Hanya: Tanggal, Nama, Jumlah, Keterangan
 ===================================================== -->
 <section id="sbPiutangView" class="view sb-piutang-view">
     <div class="page-header">
@@ -10152,6 +10152,11 @@ document.addEventListener(
             </div>
 
             <form id="sbPiutangForm" onsubmit="return sbPiutangSave(event)">
+                <div class="sb-piutang-form-group">
+                    <label for="sbPiutangTanggal">Tanggal</label>
+                    <input id="sbPiutangTanggal" class="form-control" type="date" required>
+                </div>
+
                 <div class="sb-piutang-form-group">
                     <label for="sbPiutangNama">Nama</label>
                     <input id="sbPiutangNama" class="form-control" type="text" placeholder="Nama pelanggan / pihak" autocomplete="off" required>
@@ -10180,16 +10185,23 @@ document.addEventListener(
     </div>
 
     <div class="content-section sb-piutang-list-card">
-        <div class="section-header">
+        <div class="section-header sb-piutang-list-header">
             <div>
                 <h3>Daftar Piutang</h3>
                 <p>Seluruh piutang yang sudah dicatat.</p>
+            </div>
+            <div class="sb-piutang-filter-wrap">
+                <label for="sbPiutangNamaFilter">Pilih Nama</label>
+                <select id="sbPiutangNamaFilter" class="form-control sb-piutang-name-filter" onchange="sbPiutangApplyFilter()">
+                    <option value="">Semua Nama</option>
+                </select>
             </div>
         </div>
         <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
+                        <th>Tanggal</th>
                         <th>Nama</th>
                         <th>Jumlah</th>
                         <th>Keterangan</th>
@@ -29615,7 +29627,17 @@ document.addEventListener(
 .sb-piutang-summary-total{font-size:28px;font-weight:700;color:var(--text);word-break:break-word;}
 .sb-piutang-summary-note{font-size:11px;color:var(--muted);line-height:1.5;margin-top:8px;}
 .sb-piutang-list-card{margin-bottom:25px;}
-.sb-piutang-list-card td:nth-child(2){font-weight:700;white-space:nowrap;}
+.sb-piutang-list-header{gap:16px;}
+.sb-piutang-filter-wrap{display:flex;align-items:center;gap:8px;min-width:230px;}
+.sb-piutang-filter-wrap label{font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap;}
+.sb-piutang-name-filter{min-width:180px;padding:9px 12px;}
+.sb-piutang-list-card td:nth-child(3){font-weight:700;white-space:nowrap;}
+@media(max-width:650px){
+    .sb-piutang-list-header{flex-direction:column;align-items:stretch;}
+    .sb-piutang-filter-wrap{width:100%;display:block;}
+    .sb-piutang-filter-wrap label{display:block;margin-bottom:6px;}
+    .sb-piutang-name-filter{width:100%;} 
+}
 @media(max-width:900px){
     .sb-piutang-layout{grid-template-columns:1fr;}
 }
@@ -29676,31 +29698,63 @@ document.addEventListener(
         },0);
     }
 
+    function sbPiutangFormatTanggal(value){
+        if(!value) return "-";
+        const parts=String(value).split("-");
+        if(parts.length!==3) return sbPiutangEscape(value);
+        return sbPiutangEscape(parts[2]+"-"+parts[1]+"-"+parts[0]);
+    }
+
+    function sbPiutangUpdateNameFilter(data){
+        const select=document.getElementById("sbPiutangNamaFilter");
+        if(!select) return;
+        const current=select.value;
+        const names=[];
+        const seen=new Set();
+        data.forEach(function(item){
+            const name=String(item.nama||"").trim();
+            const key=name.toLowerCase();
+            if(name && !seen.has(key)){ seen.add(key); names.push(name); }
+        });
+        names.sort(function(a,b){return a.localeCompare(b,"id",{sensitivity:"base"});});
+        select.innerHTML='<option value="">Semua Nama</option>'+names.map(function(name){
+            return '<option value="'+sbPiutangEscape(name)+'">'+sbPiutangEscape(name)+'</option>';
+        }).join("");
+        if(names.some(function(n){return n.toLowerCase()===current.toLowerCase();})) select.value=current;
+    }
+
     function sbPiutangRender(){
-        const data = sbPiutangRead();
-        const total = sbPiutangTotal(data);
-        const totalText = sbPiutangFormat(total);
+        const data=sbPiutangRead();
+        const total=sbPiutangTotal(data);
+        const totalText=sbPiutangFormat(total);
+        const dashboardTotal=document.getElementById("sbPiutangDashboardTotal");
+        const pageTotal=document.getElementById("sbPiutangPageTotal");
+        if(dashboardTotal) dashboardTotal.textContent=totalText;
+        if(pageTotal) pageTotal.textContent=totalText;
 
-        const dashboardTotal = document.getElementById("sbPiutangDashboardTotal");
-        const pageTotal = document.getElementById("sbPiutangPageTotal");
-        if(dashboardTotal) dashboardTotal.textContent = totalText;
-        if(pageTotal) pageTotal.textContent = totalText;
+        sbPiutangUpdateNameFilter(data);
+        const filter=document.getElementById("sbPiutangNamaFilter");
+        const selected=filter ? String(filter.value||"").trim().toLowerCase() : "";
+        const filtered=selected ? data.filter(function(item){return String(item.nama||"").trim().toLowerCase()===selected;}) : data;
 
-        const tbody = document.getElementById("sbPiutangTableBody");
+        const tbody=document.getElementById("sbPiutangTableBody");
         if(!tbody) return;
-
-        if(!data.length){
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--muted);">Belum ada piutang.</td></tr>';
+        if(!filtered.length){
+            tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--muted);">'+(data.length?'Tidak ada piutang untuk nama tersebut.':'Belum ada piutang.')+'</td></tr>';
             return;
         }
-
-        tbody.innerHTML = data.map(function(item){
-            const nama = sbPiutangEscape(item.nama);
-            const jumlah = sbPiutangFormat(item.jumlah);
-            const keterangan = sbPiutangEscape(item.keterangan || "-");
-            return '<tr><td>'+nama+'</td><td>'+jumlah+'</td><td>'+keterangan+'</td></tr>';
+        tbody.innerHTML=filtered.map(function(item){
+            const tanggal=sbPiutangFormatTanggal(item.tanggal||"");
+            const nama=sbPiutangEscape(item.nama);
+            const jumlah=sbPiutangFormat(item.jumlah);
+            const keterangan=sbPiutangEscape(item.keterangan||"-");
+            return '<tr><td>'+tanggal+'</td><td>'+nama+'</td><td>'+jumlah+'</td><td>'+keterangan+'</td></tr>';
         }).join("");
     }
+
+    window.sbPiutangApplyFilter=function(){
+        sbPiutangRender();
+    };
 
     function sbPiutangEscape(value){
         return String(value == null ? "" : value)
@@ -29714,14 +29768,20 @@ document.addEventListener(
     window.sbPiutangSave = function(event){
         if(event) event.preventDefault();
 
+        const tanggalEl = document.getElementById("sbPiutangTanggal");
         const namaEl = document.getElementById("sbPiutangNama");
         const jumlahEl = document.getElementById("sbPiutangJumlah");
         const ketEl = document.getElementById("sbPiutangKeterangan");
 
+        const tanggal = String(tanggalEl ? tanggalEl.value : "").trim();
         const nama = String(namaEl ? namaEl.value : "").trim();
         const jumlah = Number(jumlahEl ? jumlahEl.value : 0);
         const keterangan = String(ketEl ? ketEl.value : "").trim();
 
+        if(!tanggal){
+            alert("Tanggal piutang wajib diisi.");
+            return false;
+        }
         if(!nama){
             alert("Nama piutang wajib diisi.");
             return false;
@@ -29733,6 +29793,7 @@ document.addEventListener(
 
         const data = sbPiutangRead();
         data.push({
+            tanggal:tanggal,
             nama:nama,
             jumlah:jumlah,
             keterangan:keterangan,
@@ -29744,12 +29805,20 @@ document.addEventListener(
             return false;
         }
 
+        if(tanggalEl) tanggalEl.value = "";
         if(namaEl) namaEl.value = "";
         if(jumlahEl) jumlahEl.value = "";
         if(ketEl) ketEl.value = "";
         sbPiutangRender();
         return false;
     };
+
+    function sbPiutangSetDefaultDate(){
+        const el=document.getElementById("sbPiutangTanggal");
+        if(!el || el.value) return;
+        const now=new Date();
+        el.value=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
+    }
 
     window.sbPiutangOpen = function(button){
         /* Memakai mekanisme view lama hanya untuk perpindahan halaman.
@@ -29768,10 +29837,12 @@ document.addEventListener(
         if(subtitle) subtitle.textContent="Catat dan pantau piutang bisnis Anda";
 
         sbPiutangRender();
+        sbPiutangSetDefaultDate();
     };
 
     function sbPiutangRefreshDashboard(){
         sbPiutangRender();
+        sbPiutangSetDefaultDate();
     }
 
     document.addEventListener("DOMContentLoaded",function(){
