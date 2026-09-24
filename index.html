@@ -29741,6 +29741,17 @@ document.addEventListener(
     border:1px solid #fecaca;
     text-transform:uppercase;
 }
+.sb-piutang-edit-button{
+    display:inline-block;
+    margin-right:6px;
+    padding:6px 12px;
+    border-radius:7px;
+    border:1px solid #93c5fd;
+    background:#eff6ff;
+    color:#2563eb;
+    font-weight:700;
+    cursor:pointer;
+}
 .sb-piutang-delete-button{border:1px solid #ef4444;background:#fff;color:#dc2626;border-radius:7px;padding:7px 11px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s ease;}
 .sb-piutang-delete-button:hover{background:#fee2e2;color:#b91c1c;}
 .sb-piutang-payment-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:20px;margin:0 0 22px;}
@@ -30316,7 +30327,7 @@ document.addEventListener(
         if(p)p.textContent=piutangMoney(displayedPiutangTotal);
         const tbody=document.getElementById("sbPiutangTableBody");
         if(tbody){
-            tbody.innerHTML=e.length?e.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangEsc(x.keterangan||"-")+'</td><td><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangDeleteCloud(\''+piutangEsc(x.id)+'\')">Hapus</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudEntries.length?'Tidak ada piutang untuk nama tersebut.':'Belum ada piutang.')+'</td></tr>');
+            tbody.innerHTML=e.length?e.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangEsc(x.keterangan||"-")+'</td><td><button type="button" class="sb-piutang-edit-button" onclick="sbPiutangEditCloud(\''+piutangEsc(x.id)+'\')">Edit</button><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangDeleteCloud(\''+piutangEsc(x.id)+'\')">Hapus</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudEntries.length?'Tidak ada piutang untuk nama tersebut.':'Belum ada piutang.')+'</td></tr>');
         }
 
         const f2=(document.getElementById("sbPiutangBayarNamaFilter")?.value||"").toLowerCase();
@@ -30326,7 +30337,7 @@ document.addEventListener(
         if(bt)bt.textContent=piutangMoney(displayedBayarTotal);
         const pt=document.getElementById("sbPiutangBayarTableBody");
         if(pt){
-            pt.innerHTML=pay.length?pay.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangKeterangan(x.keterangan)+'</td><td><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangBayarDeleteCloud(\''+piutangEsc(x.id)+'\')">Hapus</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudPayments.length?'Tidak ada pembayaran untuk nama tersebut.':'Belum ada pembayaran.')+'</td></tr>');
+            pt.innerHTML=pay.length?pay.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangKeterangan(x.keterangan)+'</td><td><button type="button" class="sb-piutang-edit-button" onclick="sbPiutangBayarEditCloud(\''+piutangEsc(x.id)+'\')">Edit</button><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangBayarDeleteCloud(\''+piutangEsc(x.id)+'\')">Hapus</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudPayments.length?'Tidak ada pembayaran untuk nama tersebut.':'Belum ada pembayaran.')+'</td></tr>');
         }
     }
 
@@ -30343,6 +30354,30 @@ document.addEventListener(
         await piutangCloudList(); piutangRenderCloud();
         ["sbPiutangTanggal","sbPiutangNama","sbPiutangJumlah","sbPiutangKeterangan"].forEach(id=>{const x=document.getElementById(id);if(x)x.value="";});
         return false;
+    };
+
+    window.sbPiutangEditCloud=async function(id){
+        const item=cloudEntries.find(x=>String(x.id)===String(id)); if(!item)return false;
+        const t=prompt("Tanggal (YYYY-MM-DD):",String(item.tanggal||"")); if(t===null)return false;
+        const n=prompt("Nama:",String(item.nama||"")); if(n===null)return false;
+        const j=prompt("Jumlah:",String(item.jumlah||"")); if(j===null)return false;
+        const k=prompt("Keterangan:",String(item.keterangan||"")); if(k===null)return false;
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(t)||!n.trim()||!(Number(j)>0)){alert("Tanggal, Nama, dan Jumlah wajib diisi dengan benar.");return false;}
+        const r=await sellerBooksSupabase.rpc("piutang_update_entry",{p_id:id,p_tanggal:t,p_nama:n.trim(),p_jumlah:Number(j),p_keterangan:k.trim()||null});
+        if(r.error){console.error(r.error);alert("Piutang gagal diedit.");return false;}
+        await piutangCloudList(); piutangRenderCloud(); return false;
+    };
+
+    window.sbPiutangBayarEditCloud=async function(id){
+        const item=cloudPayments.find(x=>String(x.id)===String(id)); if(!item)return false;
+        const t=prompt("Tanggal (YYYY-MM-DD):",String(item.tanggal||"")); if(t===null)return false;
+        const n=prompt("Nama:",String(item.nama||"")); if(n===null)return false;
+        const j=prompt("Jumlah:",String(item.jumlah||"")); if(j===null)return false;
+        const k=prompt("Keterangan:",String(item.keterangan||"")); if(k===null)return false;
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(t)||!n.trim()||!(Number(j)>0)){alert("Tanggal, Nama, dan Jumlah wajib diisi dengan benar.");return false;}
+        const r=await sellerBooksSupabase.rpc("piutang_update_payment",{p_id:id,p_tanggal:t,p_nama:n.trim(),p_jumlah:Number(j),p_keterangan:k.trim()||null});
+        if(r.error){console.error(r.error);alert("Pembayaran gagal diedit.");return false;}
+        await piutangCloudList(); piutangRenderCloud(); return false;
     };
 
     window.sbPiutangDeleteCloud=async function(id){
