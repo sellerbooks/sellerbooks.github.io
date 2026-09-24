@@ -22133,7 +22133,12 @@ const SALES_MARKETPLACE_RULES={
            beserta kolom transaksi Blibli lainnya.
         */
         required:["nomor pesanan","sku seller","total produk"],
-        packingAliases:["nomor pesanan","nomor resi/awb","nomor resi"],
+        /* Blibli memiliki 2 template:
+           Template 1 -> kolom I: Nomor resi/AWB
+           Template 2 -> kolom L: No. Awb
+           Packing TIDAK memakai Nomor Pesanan/No. Order.
+        */
+        packingAliases:["nomor resi/awb","no. awb"],
         orderAliases:["nomor pesanan"],
         priceAliases:["harga produk","total harga produk"],
         dateAliases:["tanggal pesanan","tanggal order"]
