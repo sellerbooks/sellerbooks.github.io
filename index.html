@@ -29691,7 +29691,7 @@ document.addEventListener(
 .sb-piutang-form-group label{display:block;font-size:12px;font-weight:700;margin-bottom:8px;}
 .sb-piutang-textarea{resize:vertical;min-height:95px;}
 .sb-piutang-save-button{width:100%;}
-.sb-piutang-summary-card{display:flex;flex-direction:column;justify-content:center;}
+.sb-piutang-summary-card{display:flex;flex-direction:column;justify-content:center;align-self:start;height:180px;min-height:180px;}
 .sb-piutang-summary-icon{width:48px;height:48px;border-radius:13px;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px;}
 .sb-piutang-summary-label{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px;}
 .sb-piutang-summary-total{font-size:28px;font-weight:700;color:var(--text);word-break:break-word;}
@@ -30107,6 +30107,226 @@ document.addEventListener(
             sbPiutangRefreshDashboard();
         }
     });
+})();
+</script>
+
+
+<!-- =========================================================
+     PIUTANG CLOUD BRIDGE — TERPISAH DARI SISTEM SELLERBOOKS
+     Penyimpanan utama: Supabase schema "piutang".
+     localStorage hanya dipakai sebagai fallback/migrasi awal.
+========================================================= -->
+<script>
+(function(){
+    "use strict";
+
+    let cloudReady=false;
+    let cloudUser=null;
+    let cloudEntries=[];
+    let cloudPayments=[];
+    let cloudBusy=false;
+
+    function piutangCloudUser(){
+        return cloudUser;
+    }
+
+    async function piutangCloudGetUser(){
+        try{
+            const result=await sellerBooksSupabase.auth.getUser();
+            if(result && result.data && result.data.user) cloudUser=result.data.user;
+            return cloudUser;
+        }catch(error){
+            console.warn("Piutang cloud: user tidak tersedia",error);
+            return null;
+        }
+    }
+
+    function piutangLocalEntries(){
+        try{
+            const email=(cloudUser?.email||document.getElementById("userEmail")?.textContent||"default").trim().toLowerCase();
+            const safe=email.replace(/[^a-z0-9._@-]/g,"_")||"default";
+            const raw=localStorage.getItem("sellerbooks_piutang_isolated_v1_"+safe);
+            const data=raw?JSON.parse(raw):[];
+            return Array.isArray(data)?data:[];
+        }catch(e){return [];}
+    }
+
+    function piutangLocalPayments(){
+        try{
+            const email=(cloudUser?.email||document.getElementById("userEmail")?.textContent||"default").trim().toLowerCase();
+            const safe=email.replace(/[^a-z0-9._@-]/g,"_")||"default";
+            const raw=localStorage.getItem("sellerbooks_piutang_payment_isolated_v1_"+safe);
+            const data=raw?JSON.parse(raw):[];
+            return Array.isArray(data)?data:[];
+        }catch(e){return [];}
+    }
+
+    async function piutangCloudList(){
+        const [a,b]=await Promise.all([
+            sellerBooksSupabase.rpc("piutang_list_entries"),
+            sellerBooksSupabase.rpc("piutang_list_payments")
+        ]);
+        if(a.error) throw a.error;
+        if(b.error) throw b.error;
+        cloudEntries=Array.isArray(a.data)?a.data:[];
+        cloudPayments=Array.isArray(b.data)?b.data:[];
+    }
+
+    async function piutangCloudMigrateLocalIfEmpty(){
+        if(cloudEntries.length===0){
+            const local=piutangLocalEntries();
+            for(const item of local){
+                if(!item?.tanggal || !item?.nama || !(Number(item.jumlah)>0)) continue;
+                const r=await sellerBooksSupabase.rpc("piutang_add_entry",{
+                    p_tanggal:item.tanggal,
+                    p_nama:String(item.nama).trim(),
+                    p_jumlah:Number(item.jumlah),
+                    p_keterangan:item.keterangan||null
+                });
+                if(r.error) throw r.error;
+            }
+        }
+        if(cloudPayments.length===0){
+            const local=piutangLocalPayments();
+            for(const item of local){
+                if(!item?.tanggal || !item?.nama || !(Number(item.jumlah)>0)) continue;
+                const r=await sellerBooksSupabase.rpc("piutang_add_payment",{
+                    p_tanggal:item.tanggal,
+                    p_nama:String(item.nama).trim(),
+                    p_jumlah:Number(item.jumlah),
+                    p_keterangan:item.keterangan||null
+                });
+                if(r.error) throw r.error;
+            }
+        }
+        await piutangCloudList();
+    }
+
+    function piutangMoney(v){
+        return "Rp"+new Intl.NumberFormat("id-ID",{maximumFractionDigits:0}).format(Number(v)||0);
+    }
+    function piutangDate(v){
+        if(!v)return "-";
+        const x=String(v).split("-");
+        return x.length===3 ? x[2]+"-"+x[1]+"-"+x[0] : String(v);
+    }
+    function piutangEsc(v){
+        return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+    }
+    function piutangUniqueNames(data){
+        const seen=new Set(), out=[];
+        (data||[]).forEach(x=>{
+            const n=String(x.nama||"").trim(), k=n.toLowerCase();
+            if(n&&!seen.has(k)){seen.add(k);out.push(n);}
+        });
+        return out.sort((a,b)=>a.localeCompare(b,"id",{sensitivity:"base"}));
+    }
+    function piutangSetSelect(id,data){
+        const el=document.getElementById(id); if(!el)return;
+        const old=el.value;
+        el.innerHTML='<option value="">Semua Nama</option>'+piutangUniqueNames(data).map(n=>'<option value="'+piutangEsc(n)+'">'+piutangEsc(n)+'</option>').join("");
+        if(piutangUniqueNames(data).some(n=>n.toLowerCase()===old.toLowerCase())) el.value=old;
+    }
+
+    function piutangRenderCloud(){
+        const totalPiutang=cloudEntries.reduce((a,x)=>a+(Number(x.jumlah)||0),0);
+        const totalBayar=cloudPayments.reduce((a,x)=>a+(Number(x.jumlah)||0),0);
+        const sisa=Math.max(0,totalPiutang-totalBayar);
+        const d=document.getElementById("sbPiutangDashboardTotal"), p=document.getElementById("sbPiutangPageTotal"), bt=document.getElementById("sbPiutangBayarTotal");
+        if(d)d.textContent=piutangMoney(sisa);
+        if(p)p.textContent=piutangMoney(sisa);
+        if(bt)bt.textContent=piutangMoney(totalBayar);
+
+        piutangSetSelect("sbPiutangNamaFilter",cloudEntries);
+        piutangSetSelect("sbPiutangBayarNamaFilter",cloudPayments);
+
+        const f1=(document.getElementById("sbPiutangNamaFilter")?.value||"").toLowerCase();
+        const e=cloudEntries.filter(x=>!f1||String(x.nama||"").toLowerCase()===f1);
+        const tbody=document.getElementById("sbPiutangTableBody");
+        if(tbody){
+            tbody.innerHTML=e.length?e.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangEsc(x.keterangan||"-")+'</td><td><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangDeleteCloud(\''+piutangEsc(x.id)+'\')">Hapus</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudEntries.length?'Tidak ada piutang untuk nama tersebut.':'Belum ada piutang.')+'</td></tr>');
+        }
+
+        const f2=(document.getElementById("sbPiutangBayarNamaFilter")?.value||"").toLowerCase();
+        const pay=cloudPayments.filter(x=>!f2||String(x.nama||"").toLowerCase()===f2);
+        const pt=document.getElementById("sbPiutangBayarTableBody");
+        if(pt){
+            pt.innerHTML=pay.length?pay.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangEsc(x.keterangan||"-")+'</td><td><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangBayarDeleteCloud(\''+piutangEsc(x.id)+'\')">Hapus</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudPayments.length?'Tidak ada pembayaran untuk nama tersebut.':'Belum ada pembayaran.')+'</td></tr>');
+        }
+    }
+
+    window.sbPiutangApplyFilter=function(){ piutangRenderCloud(); };
+    window.sbPiutangBayarApplyFilter=function(){ piutangRenderCloud(); };
+
+    window.sbPiutangSave=async function(event){
+        if(event)event.preventDefault();
+        if(!cloudReady){alert("Piutang belum tersambung ke Supabase. Coba lagi sebentar.");return false;}
+        const t=document.getElementById("sbPiutangTanggal")?.value||"", n=document.getElementById("sbPiutangNama")?.value.trim()||"", j=Number(document.getElementById("sbPiutangJumlah")?.value||0), k=document.getElementById("sbPiutangKeterangan")?.value.trim()||"";
+        if(!t||!n||!(j>0)){alert("Tanggal, Nama, dan Jumlah wajib diisi dengan benar.");return false;}
+        const r=await sellerBooksSupabase.rpc("piutang_add_entry",{p_tanggal:t,p_nama:n,p_jumlah:j,p_keterangan:k||null});
+        if(r.error){console.error(r.error);alert("Piutang gagal disimpan ke Supabase.");return false;}
+        await piutangCloudList(); piutangRenderCloud();
+        ["sbPiutangTanggal","sbPiutangNama","sbPiutangJumlah","sbPiutangKeterangan"].forEach(id=>{const x=document.getElementById(id);if(x)x.value="";});
+        return false;
+    };
+
+    window.sbPiutangDeleteCloud=async function(id){
+        const item=cloudEntries.find(x=>x.id===id); if(!item)return false;
+        if(!confirm("Hapus piutang ini?\n\nTanggal: "+piutangDate(item.tanggal)+"\nNama: "+item.nama+"\nJumlah: "+piutangMoney(item.jumlah)))return false;
+        const r=await sellerBooksSupabase.rpc("piutang_delete_entry",{p_id:id});
+        if(r.error){alert("Piutang gagal dihapus.");return false;}
+        await piutangCloudList(); piutangRenderCloud(); return false;
+    };
+
+    window.sbPiutangBayarSave=async function(event){
+        if(event)event.preventDefault();
+        if(!cloudReady){alert("Pembayaran belum tersambung ke Supabase. Coba lagi sebentar.");return false;}
+        const t=document.getElementById("sbPiutangBayarTanggal")?.value||"", n=document.getElementById("sbPiutangBayarNama")?.value.trim()||"", j=Number(document.getElementById("sbPiutangBayarJumlah")?.value||0), k=document.getElementById("sbPiutangBayarKeterangan")?.value.trim()||"";
+        if(!t||!n||!(j>0)){alert("Tanggal, Nama, dan Jumlah pembayaran wajib diisi dengan benar.");return false;}
+        const r=await sellerBooksSupabase.rpc("piutang_add_payment",{p_tanggal:t,p_nama:n,p_jumlah:j,p_keterangan:k||null});
+        if(r.error){console.error(r.error);alert("Pembayaran gagal disimpan ke Supabase.");return false;}
+        await piutangCloudList(); piutangRenderCloud();
+        ["sbPiutangBayarTanggal","sbPiutangBayarNama","sbPiutangBayarJumlah","sbPiutangBayarKeterangan"].forEach(id=>{const x=document.getElementById(id);if(x)x.value="";});
+        return false;
+    };
+
+    window.sbPiutangBayarDeleteCloud=async function(id){
+        const item=cloudPayments.find(x=>x.id===id); if(!item)return false;
+        if(!confirm("Hapus catatan pembayaran ini?\n\nTanggal: "+piutangDate(item.tanggal)+"\nNama: "+item.nama+"\nJumlah: "+piutangMoney(item.jumlah)+"\n\nNominal akan kembali menjadi sisa piutang."))return false;
+        const r=await sellerBooksSupabase.rpc("piutang_delete_payment",{p_id:id});
+        if(r.error){alert("Pembayaran gagal dihapus.");return false;}
+        await piutangCloudList(); piutangRenderCloud(); return false;
+    };
+
+    async function piutangCloudInit(){
+        try{
+            if(typeof sellerBooksSupabase==="undefined")return;
+            const user=await piutangCloudGetUser();
+            if(!user)return;
+            await piutangCloudList();
+            await piutangCloudMigrateLocalIfEmpty();
+            cloudReady=true;
+            piutangRenderCloud();
+        }catch(error){
+            console.error("Piutang Supabase init gagal:",error);
+            cloudReady=false;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded",function(){
+        setTimeout(piutangCloudInit,1200);
+    });
+
+    if(typeof sellerBooksSupabase!=="undefined" && sellerBooksSupabase.auth){
+        sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
+            if(session?.user){
+                cloudUser=session.user;
+                setTimeout(piutangCloudInit,300);
+            }else{
+                cloudReady=false; cloudUser=null; cloudEntries=[]; cloudPayments=[];
+            }
+        });
+    }
 })();
 </script>
 
