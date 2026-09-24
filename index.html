@@ -13291,6 +13291,48 @@ document.addEventListener(
 
 </div>
 <!-- =====================================================
+     PIUTANG EDIT MODAL
+===================================================== -->
+<div class="modal-overlay" id="sbPiutangEditModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="sbPiutangEditTitle">Edit Piutang</h3>
+            <button type="button" class="modal-close" onclick="sbPiutangCloseEditModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+            <input type="hidden" id="sbPiutangEditId">
+            <input type="hidden" id="sbPiutangEditType">
+
+            <div class="form-group">
+                <label>Tanggal</label>
+                <input type="date" id="sbPiutangEditTanggal" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label>Nama</label>
+                <input type="text" id="sbPiutangEditNama" class="form-control" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label>Jumlah</label>
+                <input type="number" id="sbPiutangEditJumlah" class="form-control" min="0" step="1">
+            </div>
+
+            <div class="form-group">
+                <label>Keterangan</label>
+                <textarea id="sbPiutangEditKeterangan" class="form-control" rows="4"></textarea>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="cancel-button" onclick="sbPiutangCloseEditModal()">Batal</button>
+            <button type="button" class="primary-button" onclick="sbPiutangSaveEditModal()">Simpan Perubahan</button>
+        </div>
+    </div>
+</div>
+
+<!-- =====================================================
      PRODUCT MODAL
 ===================================================== -->
 
@@ -30356,28 +30398,72 @@ document.addEventListener(
         return false;
     };
 
-    window.sbPiutangEditCloud=async function(id){
-        const item=cloudEntries.find(x=>String(x.id)===String(id)); if(!item)return false;
-        const t=prompt("Tanggal (YYYY-MM-DD):",String(item.tanggal||"")); if(t===null)return false;
-        const n=prompt("Nama:",String(item.nama||"")); if(n===null)return false;
-        const j=prompt("Jumlah:",String(item.jumlah||"")); if(j===null)return false;
-        const k=prompt("Keterangan:",String(item.keterangan||"")); if(k===null)return false;
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(t)||!n.trim()||!(Number(j)>0)){alert("Tanggal, Nama, dan Jumlah wajib diisi dengan benar.");return false;}
-        const r=await sellerBooksSupabase.rpc("piutang_update_entry",{p_id:id,p_tanggal:t,p_nama:n.trim(),p_jumlah:Number(j),p_keterangan:k.trim()||null});
-        if(r.error){console.error(r.error);alert("Piutang gagal diedit.");return false;}
-        await piutangCloudList(); piutangRenderCloud(); return false;
+    window.sbPiutangOpenEditModal=function(type,id){
+        const item=(type==="payment"?cloudPayments:cloudEntries).find(x=>String(x.id)===String(id));
+        if(!item)return false;
+
+        const modal=document.getElementById("sbPiutangEditModal");
+        document.getElementById("sbPiutangEditId").value=String(id);
+        document.getElementById("sbPiutangEditType").value=type;
+        document.getElementById("sbPiutangEditTitle").textContent=type==="payment"?"Edit Pembayaran Piutang":"Edit Piutang";
+        document.getElementById("sbPiutangEditTanggal").value=String(item.tanggal||"");
+        document.getElementById("sbPiutangEditNama").value=String(item.nama||"");
+        document.getElementById("sbPiutangEditJumlah").value=String(item.jumlah||"");
+        document.getElementById("sbPiutangEditKeterangan").value=String(item.keterangan||"");
+
+        if(modal)modal.classList.add("show");
+        setTimeout(function(){
+            const field=document.getElementById("sbPiutangEditNama");
+            if(field)field.focus();
+        },50);
+        return false;
     };
 
-    window.sbPiutangBayarEditCloud=async function(id){
-        const item=cloudPayments.find(x=>String(x.id)===String(id)); if(!item)return false;
-        const t=prompt("Tanggal (YYYY-MM-DD):",String(item.tanggal||"")); if(t===null)return false;
-        const n=prompt("Nama:",String(item.nama||"")); if(n===null)return false;
-        const j=prompt("Jumlah:",String(item.jumlah||"")); if(j===null)return false;
-        const k=prompt("Keterangan:",String(item.keterangan||"")); if(k===null)return false;
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(t)||!n.trim()||!(Number(j)>0)){alert("Tanggal, Nama, dan Jumlah wajib diisi dengan benar.");return false;}
-        const r=await sellerBooksSupabase.rpc("piutang_update_payment",{p_id:id,p_tanggal:t,p_nama:n.trim(),p_jumlah:Number(j),p_keterangan:k.trim()||null});
-        if(r.error){console.error(r.error);alert("Pembayaran gagal diedit.");return false;}
-        await piutangCloudList(); piutangRenderCloud(); return false;
+    window.sbPiutangCloseEditModal=function(){
+        const modal=document.getElementById("sbPiutangEditModal");
+        if(modal)modal.classList.remove("show");
+    };
+
+    window.sbPiutangSaveEditModal=async function(){
+        const id=document.getElementById("sbPiutangEditId")?.value||"";
+        const type=document.getElementById("sbPiutangEditType")?.value||"";
+        const t=document.getElementById("sbPiutangEditTanggal")?.value||"";
+        const n=document.getElementById("sbPiutangEditNama")?.value.trim()||"";
+        const j=Number(document.getElementById("sbPiutangEditJumlah")?.value||0);
+        const k=document.getElementById("sbPiutangEditKeterangan")?.value.trim()||"";
+
+        if(!id||!type||!t||!n||!(j>0)){
+            alert("Tanggal, Nama, dan Jumlah wajib diisi dengan benar.");
+            return false;
+        }
+
+        const fn=type==="payment"?"piutang_update_payment":"piutang_update_entry";
+        const r=await sellerBooksSupabase.rpc(fn,{
+            p_id:id,
+            p_tanggal:t,
+            p_nama:n,
+            p_jumlah:j,
+            p_keterangan:k||null
+        });
+
+        if(r.error){
+            console.error(r.error);
+            alert(type==="payment"?"Pembayaran gagal diedit.":"Piutang gagal diedit.");
+            return false;
+        }
+
+        sbPiutangCloseEditModal();
+        await piutangCloudList();
+        piutangRenderCloud();
+        return false;
+    };
+
+    window.sbPiutangEditCloud=function(id){
+        return sbPiutangOpenEditModal("entry",id);
+    };
+
+    window.sbPiutangBayarEditCloud=function(id){
+        return sbPiutangOpenEditModal("payment",id);
     };
 
     window.sbPiutangDeleteCloud=async function(id){
