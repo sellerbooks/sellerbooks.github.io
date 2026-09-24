@@ -9992,9 +9992,9 @@ document.addEventListener(
                     <div class="sb-piutang-dashboard-left">
                         <div class="sb-piutang-dashboard-icon">💳</div>
                         <div>
-                            <div class="sb-piutang-dashboard-label">TOTAL PIUTANG</div>
+                            <div class="sb-piutang-dashboard-label">SISA TOTAL PIUTANG</div>
                             <div class="sb-piutang-dashboard-value" id="sbPiutangDashboardTotal">Rp0</div>
-                            <div class="sb-piutang-dashboard-info">Total seluruh piutang yang dicatat</div>
+                            <div class="sb-piutang-dashboard-info">Total piutang dikurangi pembayaran yang sudah masuk</div>
                         </div>
                     </div>
                     <button type="button" class="sb-piutang-dashboard-button" onclick="sbPiutangOpen()">Lihat Piutang →</button>
@@ -10178,9 +10178,9 @@ document.addEventListener(
 
         <div class="sb-piutang-summary-card">
             <div class="sb-piutang-summary-icon">💳</div>
-            <div class="sb-piutang-summary-label">TOTAL PIUTANG</div>
+            <div class="sb-piutang-summary-label">SISA PIUTANG</div>
             <div class="sb-piutang-summary-total" id="sbPiutangPageTotal">Rp0</div>
-            <div class="sb-piutang-summary-note">Nilai tetap tersimpan dan akan bertambah ketika piutang baru ditambahkan.</div>
+            <div class="sb-piutang-summary-note">Sisa piutang setelah dikurangi seluruh pembayaran yang sudah dicatat.</div>
         </div>
     </div>
 
@@ -10205,10 +10205,80 @@ document.addEventListener(
                         <th>Nama</th>
                         <th>Jumlah</th>
                         <th>Keterangan</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="sbPiutangTableBody">
-                    <tr><td colspan="3" style="text-align:center;color:var(--muted);">Belum ada piutang.</td></tr>
+                    <tr><td colspan="5" style="text-align:center;color:var(--muted);">Belum ada piutang.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="sb-piutang-payment-layout">
+        <div class="sb-piutang-form-card">
+            <div class="sb-piutang-card-header">
+                <div>
+                    <h3>Bayar Piutang</h3>
+                    <p>Catat pembayaran piutang. Pembayaran akan mengurangi sisa piutang.</p>
+                </div>
+            </div>
+
+            <form id="sbPiutangBayarForm" onsubmit="return sbPiutangBayarSave(event)">
+                <div class="sb-piutang-form-group">
+                    <label for="sbPiutangBayarTanggal">Tanggal</label>
+                    <input id="sbPiutangBayarTanggal" class="form-control" type="date" required>
+                </div>
+                <div class="sb-piutang-form-group">
+                    <label for="sbPiutangBayarNama">Nama</label>
+                    <input id="sbPiutangBayarNama" class="form-control" type="text" placeholder="Nama pelanggan / pihak" autocomplete="off" required>
+                </div>
+                <div class="sb-piutang-form-group">
+                    <label for="sbPiutangBayarJumlah">Jumlah</label>
+                    <input id="sbPiutangBayarJumlah" class="form-control" type="number" min="0" step="1" placeholder="Contoh: 500000" required>
+                </div>
+                <div class="sb-piutang-form-group">
+                    <label for="sbPiutangBayarKeterangan">Keterangan</label>
+                    <textarea id="sbPiutangBayarKeterangan" class="form-control sb-piutang-textarea" rows="4" placeholder="Keterangan pembayaran"></textarea>
+                </div>
+                <button type="submit" class="primary-button sb-piutang-save-button">+ Simpan Pembayaran</button>
+            </form>
+        </div>
+
+        <div class="sb-piutang-summary-card">
+            <div class="sb-piutang-summary-icon">💰</div>
+            <div class="sb-piutang-summary-label">TOTAL SUDAH DIBAYAR</div>
+            <div class="sb-piutang-summary-total" id="sbPiutangBayarTotal">Rp0</div>
+            <div class="sb-piutang-summary-note">Total pembayaran yang sudah dicatat dari seluruh nama.</div>
+        </div>
+    </div>
+
+    <div class="content-section sb-piutang-payment-list-card">
+        <div class="section-header sb-piutang-list-header">
+            <div>
+                <h3>Raport Pembayaran Piutang</h3>
+                <p>Riwayat pembayaran yang sudah diterima.</p>
+            </div>
+            <div class="sb-piutang-filter-wrap">
+                <label for="sbPiutangBayarNamaFilter">Pilih Nama</label>
+                <select id="sbPiutangBayarNamaFilter" class="form-control sb-piutang-name-filter" onchange="sbPiutangBayarApplyFilter()">
+                    <option value="">Semua Nama</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Nama</th>
+                        <th>Jumlah</th>
+                        <th>Keterangan</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="sbPiutangBayarTableBody">
+                    <tr><td colspan="5" style="text-align:center;color:var(--muted);">Belum ada pembayaran.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -29632,6 +29702,13 @@ document.addEventListener(
 .sb-piutang-filter-wrap label{font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap;}
 .sb-piutang-name-filter{min-width:180px;padding:9px 12px;}
 .sb-piutang-list-card td:nth-child(3){font-weight:700;white-space:nowrap;}
+.sb-piutang-list-card th:last-child,.sb-piutang-list-card td:last-child{text-align:center;white-space:nowrap;}
+.sb-piutang-delete-button{border:1px solid #ef4444;background:#fff;color:#dc2626;border-radius:7px;padding:7px 11px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s ease;}
+.sb-piutang-delete-button:hover{background:#fee2e2;color:#b91c1c;}
+.sb-piutang-payment-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:20px;margin:0 0 22px;}
+.sb-piutang-payment-list-card{margin-bottom:25px;}
+.sb-piutang-payment-list-card .sb-piutang-delete-button{border-color:#f59e0b;color:#b45309;}
+.sb-piutang-payment-list-card .sb-piutang-delete-button:hover{background:#fef3c7;color:#92400e;}
 @media(max-width:650px){
     .sb-piutang-list-header{flex-direction:column;align-items:stretch;}
     .sb-piutang-filter-wrap{width:100%;display:block;}
@@ -29657,6 +29734,7 @@ document.addEventListener(
        Data tetap ada melewati pergantian hari.
     ===================================================== */
     const STORAGE_PREFIX = "sellerbooks_piutang_isolated_v1_";
+    const PAYMENT_STORAGE_PREFIX = "sellerbooks_piutang_payment_isolated_v1_";
 
     function sbPiutangStorageKey(){
         const emailEl = document.getElementById("userEmail");
@@ -29684,6 +29762,46 @@ document.addEventListener(
             console.warn("Piutang: gagal menyimpan storage",error);
             return false;
         }
+    }
+
+    function sbPiutangPaymentStorageKey(){
+        const emailEl=document.getElementById("userEmail");
+        const email=emailEl ? String(emailEl.textContent||"").trim().toLowerCase() : "default";
+        const safe=email.replace(/[^a-z0-9._@-]/g,"_") || "default";
+        return PAYMENT_STORAGE_PREFIX + safe;
+    }
+
+    function sbPiutangBayarRead(){
+        try{
+            const raw=localStorage.getItem(sbPiutangPaymentStorageKey());
+            const data=raw ? JSON.parse(raw) : [];
+            return Array.isArray(data) ? data : [];
+        }catch(error){
+            console.warn("Pembayaran piutang: gagal membaca storage",error);
+            return [];
+        }
+    }
+
+    function sbPiutangBayarWrite(data){
+        try{
+            localStorage.setItem(sbPiutangPaymentStorageKey(),JSON.stringify(data));
+            return true;
+        }catch(error){
+            console.warn("Pembayaran piutang: gagal menyimpan storage",error);
+            return false;
+        }
+    }
+
+    function sbPiutangBayarTotal(data){
+        return data.reduce(function(total,item){
+            return total+(Number(item.jumlah)||0);
+        },0);
+    }
+
+    function sbPiutangSisaTotal(){
+        const totalPiutang=sbPiutangTotal(sbPiutangRead());
+        const totalBayar=sbPiutangBayarTotal(sbPiutangBayarRead());
+        return Math.max(0,totalPiutang-totalBayar);
     }
 
     function sbPiutangFormat(value){
@@ -29725,7 +29843,7 @@ document.addEventListener(
 
     function sbPiutangRender(){
         const data=sbPiutangRead();
-        const total=sbPiutangTotal(data);
+        const total=sbPiutangSisaTotal();
         const totalText=sbPiutangFormat(total);
         const dashboardTotal=document.getElementById("sbPiutangDashboardTotal");
         const pageTotal=document.getElementById("sbPiutangPageTotal");
@@ -29740,17 +29858,61 @@ document.addEventListener(
         const tbody=document.getElementById("sbPiutangTableBody");
         if(!tbody) return;
         if(!filtered.length){
-            tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--muted);">'+(data.length?'Tidak ada piutang untuk nama tersebut.':'Belum ada piutang.')+'</td></tr>';
+            tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(data.length?'Tidak ada piutang untuk nama tersebut.':'Belum ada piutang.')+'</td></tr>';
             return;
         }
         tbody.innerHTML=filtered.map(function(item){
+            const originalIndex=data.indexOf(item);
             const tanggal=sbPiutangFormatTanggal(item.tanggal||"");
             const nama=sbPiutangEscape(item.nama);
             const jumlah=sbPiutangFormat(item.jumlah);
             const keterangan=sbPiutangEscape(item.keterangan||"-");
-            return '<tr><td>'+tanggal+'</td><td>'+nama+'</td><td>'+jumlah+'</td><td>'+keterangan+'</td></tr>';
+            return '<tr><td>'+tanggal+'</td><td>'+nama+'</td><td>'+jumlah+'</td><td>'+keterangan+'</td><td><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangDelete('+originalIndex+')">Hapus</button></td></tr>';
         }).join("");
     }
+
+    function sbPiutangUpdatePaymentNameFilter(data){
+        const select=document.getElementById("sbPiutangBayarNamaFilter");
+        if(!select) return;
+        const current=select.value;
+        const names=[];
+        const seen=new Set();
+        data.forEach(function(item){
+            const name=String(item.nama||"").trim();
+            const key=name.toLowerCase();
+            if(name && !seen.has(key)){seen.add(key);names.push(name);}
+        });
+        names.sort(function(a,b){return a.localeCompare(b,"id",{sensitivity:"base"});});
+        select.innerHTML='<option value="">Semua Nama</option>'+names.map(function(name){
+            return '<option value="'+sbPiutangEscape(name)+'">'+sbPiutangEscape(name)+'</option>';
+        }).join("");
+        if(names.some(function(n){return n.toLowerCase()===current.toLowerCase();})) select.value=current;
+    }
+
+    function sbPiutangBayarRender(){
+        const data=sbPiutangBayarRead();
+        const totalBayar=sbPiutangBayarTotal(data);
+        const bayarTotalEl=document.getElementById("sbPiutangBayarTotal");
+        if(bayarTotalEl) bayarTotalEl.textContent=sbPiutangFormat(totalBayar);
+        sbPiutangUpdatePaymentNameFilter(data);
+        const filter=document.getElementById("sbPiutangBayarNamaFilter");
+        const selected=filter ? String(filter.value||"").trim().toLowerCase() : "";
+        const filtered=selected ? data.filter(function(item){return String(item.nama||"").trim().toLowerCase()===selected;}) : data;
+        const tbody=document.getElementById("sbPiutangBayarTableBody");
+        if(!tbody) return;
+        if(!filtered.length){
+            tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(data.length?'Tidak ada pembayaran untuk nama tersebut.':'Belum ada pembayaran.')+'</td></tr>';
+            return;
+        }
+        tbody.innerHTML=filtered.map(function(item){
+            const originalIndex=data.indexOf(item);
+            return '<tr><td>'+sbPiutangFormatTanggal(item.tanggal||"")+'</td><td>'+sbPiutangEscape(item.nama)+'</td><td>'+sbPiutangFormat(item.jumlah)+'</td><td>'+sbPiutangEscape(item.keterangan||"-")+'</td><td><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangBayarDelete('+originalIndex+')">Hapus</button></td></tr>';
+        }).join("");
+    }
+
+    window.sbPiutangBayarApplyFilter=function(){
+        sbPiutangBayarRender();
+    };
 
     window.sbPiutangApplyFilter=function(){
         sbPiutangRender();
@@ -29764,6 +29926,33 @@ document.addEventListener(
             .replace(/"/g,"&quot;")
             .replace(/'/g,"&#039;");
     }
+
+    window.sbPiutangDelete = function(index){
+        const data=sbPiutangRead();
+        if(index<0 || index>=data.length) return false;
+
+        const item=data[index];
+        const tanggal=sbPiutangFormatTanggal(item.tanggal||"");
+        const nama=String(item.nama||"").trim() || "-";
+        const jumlah=sbPiutangFormat(item.jumlah);
+
+        const yakin=window.confirm(
+            "Hapus piutang ini?\n\n" +
+            "Tanggal: " + tanggal + "\n" +
+            "Nama: " + nama + "\n" +
+            "Jumlah: " + jumlah + "\n\n" +
+            "Data yang dihapus tidak akan dihitung lagi dalam Total Piutang."
+        );
+        if(!yakin) return false;
+
+        data.splice(index,1);
+        if(!sbPiutangWrite(data)){
+            alert("Piutang tidak dapat dihapus di browser ini.");
+            return false;
+        }
+        sbPiutangRender();
+        return false;
+    };
 
     window.sbPiutangSave = function(event){
         if(event) event.preventDefault();
@@ -29813,6 +30002,67 @@ document.addEventListener(
         return false;
     };
 
+    window.sbPiutangBayarDelete=function(index){
+        const data=sbPiutangBayarRead();
+        if(index<0 || index>=data.length) return false;
+        const item=data[index];
+        const yakin=window.confirm(
+            "Hapus catatan pembayaran ini?\n\n"+
+            "Tanggal: "+sbPiutangFormatTanggal(item.tanggal||"")+"\n"+
+            "Nama: "+(String(item.nama||"").trim()||"-")+"\n"+
+            "Jumlah: "+sbPiutangFormat(item.jumlah)+"\n\n"+
+            "Jika dihapus, jumlah pembayaran ini akan kembali menjadi piutang."
+        );
+        if(!yakin) return false;
+        data.splice(index,1);
+        if(!sbPiutangBayarWrite(data)){
+            alert("Pembayaran tidak dapat dihapus di browser ini.");
+            return false;
+        }
+        sbPiutangRefreshDashboard();
+        return false;
+    };
+
+    window.sbPiutangBayarSave=function(event){
+        if(event) event.preventDefault();
+        const tanggalEl=document.getElementById("sbPiutangBayarTanggal");
+        const namaEl=document.getElementById("sbPiutangBayarNama");
+        const jumlahEl=document.getElementById("sbPiutangBayarJumlah");
+        const ketEl=document.getElementById("sbPiutangBayarKeterangan");
+        const tanggal=String(tanggalEl? tanggalEl.value:"").trim();
+        const nama=String(namaEl? namaEl.value:"").trim();
+        const jumlah=Number(jumlahEl? jumlahEl.value:0);
+        const keterangan=String(ketEl? ketEl.value:"").trim();
+        if(!tanggal){alert("Tanggal pembayaran wajib diisi.");return false;}
+        if(!nama){alert("Nama pembayaran wajib diisi.");return false;}
+        if(!Number.isFinite(jumlah)||jumlah<=0){alert("Jumlah pembayaran harus lebih dari 0.");return false;}
+
+        const outstanding=sbPiutangSisaTotal();
+        if(jumlah>outstanding){
+            const lanjut=window.confirm(
+                "Jumlah pembayaran ("+sbPiutangFormat(jumlah)+") lebih besar dari sisa piutang ("+sbPiutangFormat(outstanding)+").\n\nTetap simpan pembayaran ini?"
+            );
+            if(!lanjut) return false;
+        }
+
+        const data=sbPiutangBayarRead();
+        data.push({tanggal:tanggal,nama:nama,jumlah:jumlah,keterangan:keterangan,createdAt:new Date().toISOString()});
+        if(!sbPiutangBayarWrite(data)){alert("Pembayaran tidak dapat disimpan di browser ini.");return false;}
+        if(tanggalEl) tanggalEl.value="";
+        if(namaEl) namaEl.value="";
+        if(jumlahEl) jumlahEl.value="";
+        if(ketEl) ketEl.value="";
+        sbPiutangRefreshDashboard();
+        return false;
+    };
+
+    function sbPiutangSetPaymentDefaultDate(){
+        const el=document.getElementById("sbPiutangBayarTanggal");
+        if(!el||el.value) return;
+        const now=new Date();
+        el.value=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
+    }
+
     function sbPiutangSetDefaultDate(){
         const el=document.getElementById("sbPiutangTanggal");
         if(!el || el.value) return;
@@ -29842,7 +30092,9 @@ document.addEventListener(
 
     function sbPiutangRefreshDashboard(){
         sbPiutangRender();
+        sbPiutangBayarRender();
         sbPiutangSetDefaultDate();
+        sbPiutangSetPaymentDefaultDate();
     }
 
     document.addEventListener("DOMContentLoaded",function(){
