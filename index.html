@@ -9543,6 +9543,17 @@ document.addEventListener(
             </button>
 
 
+            <!-- PIUTANG - MODUL TERPISAH, TIDAK MENYENTUH SISTEM LAMA -->
+            <button
+                type="button"
+                class="menu-item sb-piutang-menu-item"
+                onclick="sbPiutangOpen(this)"
+            >
+                <span class="menu-icon">💳</span>
+                Piutang
+            </button>
+
+
 
             <div class="menu-title">
                 Analisis
@@ -9973,6 +9984,23 @@ document.addEventListener(
                 </div>
 
 
+                <!-- =====================================================
+                     PIUTANG DASHBOARD - MODUL TERPISAH
+                     Tidak ikut rumus laba/penjualan/margin.
+                ====================================================== -->
+                <div class="sb-piutang-dashboard-card">
+                    <div class="sb-piutang-dashboard-left">
+                        <div class="sb-piutang-dashboard-icon">💳</div>
+                        <div>
+                            <div class="sb-piutang-dashboard-label">TOTAL PIUTANG</div>
+                            <div class="sb-piutang-dashboard-value" id="sbPiutangDashboardTotal">Rp0</div>
+                            <div class="sb-piutang-dashboard-info">Total seluruh piutang yang dicatat</div>
+                        </div>
+                    </div>
+                    <button type="button" class="sb-piutang-dashboard-button" onclick="sbPiutangOpen()">Lihat Piutang →</button>
+                </div>
+
+
 
                 <!-- =====================================================
                      DIAGRAM STATISTIK DASHBOARD
@@ -10101,6 +10129,79 @@ document.addEventListener(
 
 
             </section>
+
+
+
+<!-- =====================================================
+     PIUTANG VIEW - MODUL TAMBAHAN TERISOLASI
+     Hanya: Nama, Jumlah, Keterangan
+===================================================== -->
+<section id="sbPiutangView" class="view sb-piutang-view">
+    <div class="page-header">
+        <h2>Piutang</h2>
+        <p>Catat dan pantau total piutang secara terpisah dari laba bisnis.</p>
+    </div>
+
+    <div class="sb-piutang-layout">
+        <div class="sb-piutang-form-card">
+            <div class="sb-piutang-card-header">
+                <div>
+                    <h3>Tambah Piutang</h3>
+                    <p>Setiap data baru akan menambah total piutang.</p>
+                </div>
+            </div>
+
+            <form id="sbPiutangForm" onsubmit="return sbPiutangSave(event)">
+                <div class="sb-piutang-form-group">
+                    <label for="sbPiutangNama">Nama</label>
+                    <input id="sbPiutangNama" class="form-control" type="text" placeholder="Nama pelanggan / pihak" autocomplete="off" required>
+                </div>
+
+                <div class="sb-piutang-form-group">
+                    <label for="sbPiutangJumlah">Jumlah</label>
+                    <input id="sbPiutangJumlah" class="form-control" type="number" min="0" step="1" placeholder="Contoh: 500000" required>
+                </div>
+
+                <div class="sb-piutang-form-group">
+                    <label for="sbPiutangKeterangan">Keterangan</label>
+                    <textarea id="sbPiutangKeterangan" class="form-control sb-piutang-textarea" rows="4" placeholder="Keterangan piutang"></textarea>
+                </div>
+
+                <button type="submit" class="primary-button sb-piutang-save-button">+ Simpan Piutang</button>
+            </form>
+        </div>
+
+        <div class="sb-piutang-summary-card">
+            <div class="sb-piutang-summary-icon">💳</div>
+            <div class="sb-piutang-summary-label">TOTAL PIUTANG</div>
+            <div class="sb-piutang-summary-total" id="sbPiutangPageTotal">Rp0</div>
+            <div class="sb-piutang-summary-note">Nilai tetap tersimpan dan akan bertambah ketika piutang baru ditambahkan.</div>
+        </div>
+    </div>
+
+    <div class="content-section sb-piutang-list-card">
+        <div class="section-header">
+            <div>
+                <h3>Daftar Piutang</h3>
+                <p>Seluruh piutang yang sudah dicatat.</p>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Jumlah</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody id="sbPiutangTableBody">
+                    <tr><td colspan="3" style="text-align:center;color:var(--muted);">Belum ada piutang.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
 
 
@@ -29465,6 +29566,224 @@ document.addEventListener(
         }
     );
 
+})();
+</script>
+
+<!-- =====================================================
+     SELLERBOOKS PIUTANG - MODUL TERISOLASI
+     Semua kode di bawah ini sengaja ditempatkan di BODY.
+     Tidak mengubah CSS/JS sistem SellerBooks yang sudah ada.
+===================================================== -->
+<style>
+.sb-piutang-dashboard-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:18px 20px;
+    margin:0 0 28px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:18px;
+}
+.sb-piutang-dashboard-left{display:flex;align-items:center;gap:14px;min-width:0;}
+.sb-piutang-dashboard-icon{
+    width:46px;height:46px;border-radius:12px;background:#eff6ff;
+    display:flex;align-items:center;justify-content:center;font-size:21px;flex:0 0 46px;
+}
+.sb-piutang-dashboard-label{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px;}
+.sb-piutang-dashboard-value{font-size:24px;font-weight:700;color:var(--text);}
+.sb-piutang-dashboard-info{font-size:11px;color:var(--muted);margin-top:3px;}
+.sb-piutang-dashboard-button{
+    border:none;background:#eff6ff;color:var(--primary);padding:10px 14px;
+    border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;
+}
+.sb-piutang-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:20px;margin-bottom:22px;}
+.sb-piutang-form-card,.sb-piutang-summary-card{
+    background:#fff;border:1px solid var(--border);border-radius:16px;padding:22px;
+}
+.sb-piutang-card-header{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.sb-piutang-card-header h3{font-size:17px;margin-bottom:5px;}
+.sb-piutang-card-header p{font-size:12px;color:var(--muted);}
+.sb-piutang-form-group{margin-bottom:16px;}
+.sb-piutang-form-group label{display:block;font-size:12px;font-weight:700;margin-bottom:8px;}
+.sb-piutang-textarea{resize:vertical;min-height:95px;}
+.sb-piutang-save-button{width:100%;}
+.sb-piutang-summary-card{display:flex;flex-direction:column;justify-content:center;}
+.sb-piutang-summary-icon{width:48px;height:48px;border-radius:13px;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px;}
+.sb-piutang-summary-label{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px;}
+.sb-piutang-summary-total{font-size:28px;font-weight:700;color:var(--text);word-break:break-word;}
+.sb-piutang-summary-note{font-size:11px;color:var(--muted);line-height:1.5;margin-top:8px;}
+.sb-piutang-list-card{margin-bottom:25px;}
+.sb-piutang-list-card td:nth-child(2){font-weight:700;white-space:nowrap;}
+@media(max-width:900px){
+    .sb-piutang-layout{grid-template-columns:1fr;}
+}
+@media(max-width:650px){
+    .sb-piutang-dashboard-card{align-items:flex-start;flex-direction:column;}
+    .sb-piutang-dashboard-button{width:100%;}
+}
+</style>
+
+<script>
+(function(){
+    "use strict";
+
+    /* =====================================================
+       STORAGE PIUTANG TERPISAH
+       Tidak memakai database / rumus SellerBooks lama.
+       Data tetap ada melewati pergantian hari.
+    ===================================================== */
+    const STORAGE_PREFIX = "sellerbooks_piutang_isolated_v1_";
+
+    function sbPiutangStorageKey(){
+        const emailEl = document.getElementById("userEmail");
+        const email = emailEl ? String(emailEl.textContent || "").trim().toLowerCase() : "default";
+        const safe = email.replace(/[^a-z0-9._@-]/g,"_") || "default";
+        return STORAGE_PREFIX + safe;
+    }
+
+    function sbPiutangRead(){
+        try{
+            const raw = localStorage.getItem(sbPiutangStorageKey());
+            const data = raw ? JSON.parse(raw) : [];
+            return Array.isArray(data) ? data : [];
+        }catch(error){
+            console.warn("Piutang: gagal membaca storage",error);
+            return [];
+        }
+    }
+
+    function sbPiutangWrite(data){
+        try{
+            localStorage.setItem(sbPiutangStorageKey(),JSON.stringify(data));
+            return true;
+        }catch(error){
+            console.warn("Piutang: gagal menyimpan storage",error);
+            return false;
+        }
+    }
+
+    function sbPiutangFormat(value){
+        return "Rp" + new Intl.NumberFormat("id-ID",{
+            maximumFractionDigits:0
+        }).format(Number(value)||0);
+    }
+
+    function sbPiutangTotal(data){
+        return data.reduce(function(total,item){
+            return total + (Number(item.jumlah)||0);
+        },0);
+    }
+
+    function sbPiutangRender(){
+        const data = sbPiutangRead();
+        const total = sbPiutangTotal(data);
+        const totalText = sbPiutangFormat(total);
+
+        const dashboardTotal = document.getElementById("sbPiutangDashboardTotal");
+        const pageTotal = document.getElementById("sbPiutangPageTotal");
+        if(dashboardTotal) dashboardTotal.textContent = totalText;
+        if(pageTotal) pageTotal.textContent = totalText;
+
+        const tbody = document.getElementById("sbPiutangTableBody");
+        if(!tbody) return;
+
+        if(!data.length){
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--muted);">Belum ada piutang.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.map(function(item){
+            const nama = sbPiutangEscape(item.nama);
+            const jumlah = sbPiutangFormat(item.jumlah);
+            const keterangan = sbPiutangEscape(item.keterangan || "-");
+            return '<tr><td>'+nama+'</td><td>'+jumlah+'</td><td>'+keterangan+'</td></tr>';
+        }).join("");
+    }
+
+    function sbPiutangEscape(value){
+        return String(value == null ? "" : value)
+            .replace(/&/g,"&amp;")
+            .replace(/</g,"&lt;")
+            .replace(/>/g,"&gt;")
+            .replace(/"/g,"&quot;")
+            .replace(/'/g,"&#039;");
+    }
+
+    window.sbPiutangSave = function(event){
+        if(event) event.preventDefault();
+
+        const namaEl = document.getElementById("sbPiutangNama");
+        const jumlahEl = document.getElementById("sbPiutangJumlah");
+        const ketEl = document.getElementById("sbPiutangKeterangan");
+
+        const nama = String(namaEl ? namaEl.value : "").trim();
+        const jumlah = Number(jumlahEl ? jumlahEl.value : 0);
+        const keterangan = String(ketEl ? ketEl.value : "").trim();
+
+        if(!nama){
+            alert("Nama piutang wajib diisi.");
+            return false;
+        }
+        if(!Number.isFinite(jumlah) || jumlah <= 0){
+            alert("Jumlah piutang harus lebih dari 0.");
+            return false;
+        }
+
+        const data = sbPiutangRead();
+        data.push({
+            nama:nama,
+            jumlah:jumlah,
+            keterangan:keterangan,
+            createdAt:new Date().toISOString()
+        });
+
+        if(!sbPiutangWrite(data)){
+            alert("Piutang tidak dapat disimpan di browser ini.");
+            return false;
+        }
+
+        if(namaEl) namaEl.value = "";
+        if(jumlahEl) jumlahEl.value = "";
+        if(ketEl) ketEl.value = "";
+        sbPiutangRender();
+        return false;
+    };
+
+    window.sbPiutangOpen = function(button){
+        /* Memakai mekanisme view lama hanya untuk perpindahan halaman.
+           Tidak menambahkan logika piutang ke sistem lama. */
+        if(typeof showView === "function"){
+            showView("sbPiutangView",button || null,false);
+        }else{
+            document.querySelectorAll(".view").forEach(function(v){v.classList.remove("active");});
+            const v=document.getElementById("sbPiutangView");
+            if(v) v.classList.add("active");
+        }
+
+        const title=document.getElementById("topTitle");
+        const subtitle=document.getElementById("topSubtitle");
+        if(title) title.textContent="Piutang";
+        if(subtitle) subtitle.textContent="Catat dan pantau piutang bisnis Anda";
+
+        sbPiutangRender();
+    };
+
+    function sbPiutangRefreshDashboard(){
+        sbPiutangRender();
+    }
+
+    document.addEventListener("DOMContentLoaded",function(){
+        sbPiutangRefreshDashboard();
+    });
+
+    /* Saat SellerBooks mengganti identitas/login, refresh nilai yang tampil. */
+    window.addEventListener("storage",function(event){
+        if(event.key && event.key.indexOf(STORAGE_PREFIX) === 0){
+            sbPiutangRefreshDashboard();
+        }
+    });
 })();
 </script>
 
