@@ -10178,9 +10178,9 @@ document.addEventListener(
 
         <div class="sb-piutang-summary-card">
             <div class="sb-piutang-summary-icon">💳</div>
-            <div class="sb-piutang-summary-label">SISA PIUTANG</div>
+            <div class="sb-piutang-summary-label">TOTAL PIUTANG</div>
             <div class="sb-piutang-summary-total" id="sbPiutangPageTotal">Rp0</div>
-            <div class="sb-piutang-summary-note">Sisa piutang setelah dikurangi seluruh pembayaran yang sudah dicatat.</div>
+            <div class="sb-piutang-summary-note">Total seluruh piutang sesuai daftar piutang. Pembayaran ditampilkan terpisah.</div>
         </div>
     </div>
 
@@ -30248,8 +30248,10 @@ document.addEventListener(
         // Dashboard dan kartu halaman memakai satu sumber nilai:
         // Sisa Piutang = seluruh piutang - seluruh pembayaran.
         const d=document.getElementById("sbPiutangDashboardTotal"), p=document.getElementById("sbPiutangPageTotal"), bt=document.getElementById("sbPiutangBayarTotal");
+        // Dashboard = sisa setelah pembayaran.
+        // Rincian halaman Piutang = total seluruh daftar piutang, tanpa dikurangi pembayaran.
         if(d)d.textContent=piutangMoney(sisa);
-        if(p)p.textContent=piutangMoney(sisa);
+        if(p)p.textContent=piutangMoney(totalPiutang);
         if(bt)bt.textContent=piutangMoney(totalBayar);
 
         piutangSetSelect("sbPiutangNamaFilter",cloudEntries);
