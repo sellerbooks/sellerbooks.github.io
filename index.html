@@ -29680,7 +29680,7 @@ document.addEventListener(
     border:none;background:#eff6ff;color:var(--primary);padding:10px 14px;
     border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;
 }
-.sb-piutang-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:20px;margin-bottom:22px;}
+.sb-piutang-layout,.sb-piutang-payment-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:20px;margin-bottom:22px;}
 .sb-piutang-form-card,.sb-piutang-summary-card{
     background:#fff;border:1px solid var(--border);border-radius:16px;padding:22px;
 }
@@ -29691,7 +29691,7 @@ document.addEventListener(
 .sb-piutang-form-group label{display:block;font-size:12px;font-weight:700;margin-bottom:8px;}
 .sb-piutang-textarea{resize:vertical;min-height:95px;}
 .sb-piutang-save-button{width:100%;}
-.sb-piutang-summary-card{display:flex;flex-direction:column;justify-content:center;align-self:start;height:180px;min-height:180px;}
+.sb-piutang-summary-card{display:flex;flex-direction:column;justify-content:center;align-self:stretch;min-height:180px;height:100%;}
 .sb-piutang-summary-icon{width:48px;height:48px;border-radius:13px;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px;}
 .sb-piutang-summary-label{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px;}
 .sb-piutang-summary-total{font-size:28px;font-weight:700;color:var(--text);word-break:break-word;}
@@ -29716,21 +29716,8 @@ document.addEventListener(
     .sb-piutang-name-filter{width:100%;} 
 }
 @media(max-width:900px){
-    .sb-piutang-layout{grid-template-columns:1fr;}
-    .sb-piutang-payment-layout{grid-template-columns:1fr;}
-}
-
-@media(max-width:650px){
-    .sb-piutang-summary-card{
-        width:100%;
-        height:180px;
-        min-height:180px;
-        padding:22px;
-        box-sizing:border-box;
-    }
-    .sb-piutang-payment-layout .sb-piutang-summary-card{
-        width:100%;
-    }
+    .sb-piutang-layout,.sb-piutang-payment-layout{grid-template-columns:1fr;}
+    .sb-piutang-summary-card{width:100%;height:auto;min-height:180px;padding:22px;box-sizing:border-box;}
 }
 @media(max-width:650px){
     .sb-piutang-dashboard-card{align-items:flex-start;flex-direction:column;}
@@ -30138,7 +30125,6 @@ document.addEventListener(
     let cloudUser=null;
     let cloudEntries=[];
     let cloudPayments=[];
-    let cloudBusy=false;
 
     function piutangCloudUser(){
         return cloudUser;
@@ -30246,6 +30232,8 @@ document.addEventListener(
         const totalPiutang=cloudEntries.reduce((a,x)=>a+(Number(x.jumlah)||0),0);
         const totalBayar=cloudPayments.reduce((a,x)=>a+(Number(x.jumlah)||0),0);
         const sisa=Math.max(0,totalPiutang-totalBayar);
+        // Dashboard dan kartu halaman memakai satu sumber nilai:
+        // Sisa Piutang = seluruh piutang - seluruh pembayaran.
         const d=document.getElementById("sbPiutangDashboardTotal"), p=document.getElementById("sbPiutangPageTotal"), bt=document.getElementById("sbPiutangBayarTotal");
         if(d)d.textContent=piutangMoney(sisa);
         if(p)p.textContent=piutangMoney(sisa);
