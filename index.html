@@ -30262,10 +30262,16 @@ document.addEventListener(
     }
     function piutangKeterangan(value){
         const text=String(value==null?"":value).trim();
-        if(text.toLowerCase()==="lunas"){
-            return '<span class="sb-piutang-lunas-badge">LUNAS</span>';
-        }
-        return piutangEsc(text||"-");
+        if(!text)return "-";
+        /*
+           Tandai kata "LUNAS" walaupun ada keterangan lain,
+           contoh: "LUNAS - potong gaji", "potong gaji - LUNAS",
+           atau "lunas potong gaji".
+        */
+        const escaped=piutangEsc(text);
+        return escaped.replace(/\blunas\b/gi,function(match){
+            return '<span class="sb-piutang-lunas-badge">'+match.toUpperCase()+"</span>";
+        });
     }
 
     function piutangUniqueNames(data){
