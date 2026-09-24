@@ -22128,11 +22128,15 @@ const SALES_MARKETPLACE_RULES={
     },
 
     Blibli:{
-        required:["no. order","merchant sku","total barang"],
-        packingAliases:["no. order","no. awb"],
-        orderAliases:["no. order"],
+        /* Format Blibli saat ini:
+           Nomor pesanan | SKU Seller | Total produk
+           beserta kolom transaksi Blibli lainnya.
+        */
+        required:["nomor pesanan","sku seller","total produk"],
+        packingAliases:["nomor pesanan","nomor resi/awb","nomor resi"],
+        orderAliases:["nomor pesanan"],
         priceAliases:["harga produk","total harga produk"],
-        dateAliases:["tanggal order"]
+        dateAliases:["tanggal pesanan","tanggal order"]
     },
 
     Toco:{
@@ -22167,7 +22171,7 @@ const SALES_MARKETPLACE_RULES={
     }
 };
 function findAliasColumn(headers,aliases){const r=findBestColumn(headers,aliases||[]);return r&&r.column?r.column:null;}
-function detectSalesMarketplace(headers,fileName){const h=headers.map(normalizeHeader);let best=null,scoreBest=0;Object.keys(SALES_MARKETPLACE_RULES).forEach(function(name){const rule=SALES_MARKETPLACE_RULES[name];let score=0;rule.required.forEach(function(k){if(h.indexOf(normalizeHeader(k))>=0)score+=3;});if(name==="Lazada"&&h.indexOf("lazadaid")>=0)score+=4;if(name==="TikTok"&&h.indexOf("tracking id")>=0)score+=2;if(name==="Shopee"&&h.indexOf("no. pesanan")>=0)score+=4;if(name==="Tokopedia"&&h.indexOf("nomor invoice")>=0)score+=4;if(name==="Blibli"&&h.indexOf("no. order")>=0)score+=4;if(name==="Toco"&&h.indexOf("invoice number")>=0)score+=4;if(score>scoreBest){scoreBest=score;best=name;}});if(!best){const n=String(fileName||"").toLowerCase();["Shopee","TikTok","Blibli","Toco","Lazada","Tokopedia"].some(function(x){if(n.includes(x.toLowerCase())){best=x;return true;}return false;});}return {marketplace:best,score:scoreBest};}
+function detectSalesMarketplace(headers,fileName){const h=headers.map(normalizeHeader);let best=null,scoreBest=0;Object.keys(SALES_MARKETPLACE_RULES).forEach(function(name){const rule=SALES_MARKETPLACE_RULES[name];let score=0;rule.required.forEach(function(k){if(h.indexOf(normalizeHeader(k))>=0)score+=3;});if(name==="Lazada"&&h.indexOf("lazadaid")>=0)score+=4;if(name==="TikTok"&&h.indexOf("tracking id")>=0)score+=2;if(name==="Shopee"&&h.indexOf("no. pesanan")>=0)score+=4;if(name==="Tokopedia"&&h.indexOf("nomor invoice")>=0)score+=4;if(name==="Blibli"&&(h.indexOf("no. order")>=0||h.indexOf("nomor pesanan")>=0))score+=4;if(name==="Toco"&&h.indexOf("invoice number")>=0)score+=4;if(score>scoreBest){scoreBest=score;best=name;}});if(!best){const n=String(fileName||"").toLowerCase();["Shopee","TikTok","Blibli","Toco","Lazada","Tokopedia"].some(function(x){if(n.includes(x.toLowerCase())){best=x;return true;}return false;});}return {marketplace:best,score:scoreBest};}
 function getPackingColumn(data){const rule=SALES_MARKETPLACE_RULES[data.marketplace];if(!rule)return null;for(let i=0;i<rule.packingAliases.length;i++){const c=findAliasColumn(data.headers,[rule.packingAliases[i]]);if(c)return c;}return null;}
 function getFirstValue(row,headers,aliases){const c=findAliasColumn(headers,aliases);if(!c)return "";const i=headers.indexOf(c);return i>=0?row[i]:"";}
 /* =====================================================
