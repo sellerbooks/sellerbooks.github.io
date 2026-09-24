@@ -10282,6 +10282,26 @@ document.addEventListener(
                 </tbody>
             </table>
         </div>
+    <div class="content-section sb-piutang-sisa-card">
+        <div class="section-header sb-piutang-list-header">
+            <div>
+                <h3>Sisa Hutang</h3>
+                <p>Total piutang dikurangi total pembayaran berdasarkan nama yang dipilih.</p>
+            </div>
+            <div class="sb-piutang-filter-wrap">
+                <label for="sbPiutangSisaNamaFilter">Pilih Nama</label>
+                <select id="sbPiutangSisaNamaFilter" class="form-control sb-piutang-name-filter" onchange="sbPiutangSisaApplyFilter()">
+                    <option value="">Semua Nama</option>
+                </select>
+            </div>
+        </div>
+        <div class="sb-piutang-sisa-body">
+            <div class="sb-piutang-sisa-label">SISA HUTANG</div>
+            <div class="sb-piutang-sisa-total" id="sbPiutangSisaTotal">Rp0</div>
+            <div class="sb-piutang-sisa-breakdown" id="sbPiutangSisaBreakdown">Total piutang Rp0 − Total sudah dibayar Rp0</div>
+        </div>
+    </div>
+
     </div>
 </section>
 
@@ -29783,6 +29803,11 @@ document.addEventListener(
     border:1px solid #fecaca;
     text-transform:uppercase;
 }
+.sb-piutang-sisa-card{margin-top:20px;overflow:hidden}
+.sb-piutang-sisa-body{padding:24px}
+.sb-piutang-sisa-label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.3px}
+.sb-piutang-sisa-total{font-size:32px;font-weight:800;margin-top:6px;color:var(--text)}
+.sb-piutang-sisa-breakdown{margin-top:7px;font-size:12px;color:var(--muted)}
 .sb-piutang-edit-button{
     display:inline-block;
     margin-right:6px;
@@ -30361,6 +30386,7 @@ document.addEventListener(
 
         piutangSetSelect("sbPiutangNamaFilter",cloudEntries);
         piutangSetSelect("sbPiutangBayarNamaFilter",cloudPayments);
+        piutangSetSelect("sbPiutangSisaNamaFilter",cloudEntries.concat(cloudPayments));
 
         const f1=(document.getElementById("sbPiutangNamaFilter")?.value||"").toLowerCase();
         const e=cloudEntries.filter(x=>!f1||String(x.nama||"").toLowerCase()===f1);
@@ -30374,6 +30400,19 @@ document.addEventListener(
 
         const f2=(document.getElementById("sbPiutangBayarNamaFilter")?.value||"").toLowerCase();
         const pay=cloudPayments.filter(x=>!f2||String(x.nama||"").toLowerCase()===f2);
+
+        // Kartu Sisa Hutang: total piutang nama terpilih dikurangi total pembayaran nama yang sama.
+        const sisaFilter=(document.getElementById("sbPiutangSisaNamaFilter")?.value||"").toLowerCase();
+        const sisaPiutangData=cloudEntries.filter(x=>!sisaFilter||String(x.nama||"").toLowerCase()===sisaFilter);
+        const sisaBayarData=cloudPayments.filter(x=>!sisaFilter||String(x.nama||"").toLowerCase()===sisaFilter);
+        const sisaPiutangTotal=sisaPiutangData.reduce((a,x)=>a+(Number(x.jumlah)||0),0);
+        const sisaBayarTotal=sisaBayarData.reduce((a,x)=>a+(Number(x.jumlah)||0),0);
+        const sisaHutang=Math.max(0,sisaPiutangTotal-sisaBayarTotal);
+        const sisaTotalEl=document.getElementById("sbPiutangSisaTotal");
+        const sisaBreakdownEl=document.getElementById("sbPiutangSisaBreakdown");
+        if(sisaTotalEl)sisaTotalEl.textContent=piutangMoney(sisaHutang);
+        if(sisaBreakdownEl)sisaBreakdownEl.textContent="Total piutang "+piutangMoney(sisaPiutangTotal)+" − Total sudah dibayar "+piutangMoney(sisaBayarTotal);
+
         // Kartu TOTAL SUDAH DIBAYAR mengikuti filter nama pada Raport Pembayaran Piutang.
         const displayedBayarTotal=pay.reduce((a,x)=>a+(Number(x.jumlah)||0),0);
         if(bt)bt.textContent=piutangMoney(displayedBayarTotal);
@@ -30385,6 +30424,7 @@ document.addEventListener(
 
     window.sbPiutangApplyFilter=function(){ piutangRenderCloud(); };
     window.sbPiutangBayarApplyFilter=function(){ piutangRenderCloud(); };
+    window.sbPiutangSisaApplyFilter=function(){ piutangRenderCloud(); };
 
     window.sbPiutangSave=async function(event){
         if(event)event.preventDefault();
