@@ -22794,8 +22794,24 @@ function getSalesAmount(row,data){
     }
 
     if(data.marketplace === "Blibli"){
-        // Blibli: Harga Produk berada di kolom I (index 8), per unit.
-        return parseSalesNumber(row[8]) * qty;
+        /*
+           Blibli memiliki 2 format file:
+           - Format 1: Harga produk di kolom I
+           - Format 2: Harga produk di kolom W
+           Kunci berdasarkan HEADER "Harga produk", sehingga kedua
+           format terbaca tanpa memakai Master Produk dan tanpa
+           mengambil "Total" order.
+        */
+        const blibliPriceIndex = data.headers.findIndex(function(header){
+            return normalizeHeader(header) === "harga produk";
+        });
+        const fallbackPriceIndex = blibliPriceIndex >= 0
+            ? blibliPriceIndex
+            : (
+                row.length > 22 && row[22] !== "" ? 22 :
+                8
+            );
+        return parseSalesNumber(row[fallbackPriceIndex]) * qty;
     }
 
     const product =
