@@ -30087,13 +30087,22 @@ document.addEventListener(
         if(title) title.textContent="Piutang";
         if(subtitle) subtitle.textContent="Catat dan pantau piutang bisnis Anda";
 
-        sbPiutangRender();
+        if(typeof window.sbPiutangCloudRender === "function"){
+            window.sbPiutangCloudRender();
+        }else{
+            sbPiutangRender();
+            sbPiutangBayarRender();
+        }
         sbPiutangSetDefaultDate();
     };
 
     function sbPiutangRefreshDashboard(){
-        sbPiutangRender();
-        sbPiutangBayarRender();
+        if(typeof window.sbPiutangCloudRender === "function"){
+            window.sbPiutangCloudRender();
+        }else{
+            sbPiutangRender();
+            sbPiutangBayarRender();
+        }
         sbPiutangSetDefaultDate();
         sbPiutangSetPaymentDefaultDate();
     }
@@ -30227,6 +30236,10 @@ document.addEventListener(
         el.innerHTML='<option value="">Semua Nama</option>'+piutangUniqueNames(data).map(n=>'<option value="'+piutangEsc(n)+'">'+piutangEsc(n)+'</option>').join("");
         if(piutangUniqueNames(data).some(n=>n.toLowerCase()===old.toLowerCase())) el.value=old;
     }
+
+    window.sbPiutangCloudRender=function(){
+        piutangRenderCloud();
+    };
 
     function piutangRenderCloud(){
         const totalPiutang=cloudEntries.reduce((a,x)=>a+(Number(x.jumlah)||0),0);
