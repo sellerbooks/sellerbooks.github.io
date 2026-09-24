@@ -30250,6 +30250,8 @@ document.addEventListener(
     let cloudUser=null;
     let cloudEntries=[];
     let cloudPayments=[];
+    let piutangRealtimeChannel=null;
+    let piutangRealtimeRefreshing=false;
 
     function piutangCloudUser(){
         return cloudUser;
@@ -30534,6 +30536,60 @@ document.addEventListener(
         await piutangCloudList(); piutangRenderCloud(); return false;
     };
 
+    function piutangStopRealtime(){
+        if(piutangRealtimeChannel){
+            try{ sellerBooksSupabase.removeChannel(piutangRealtimeChannel); }catch(e){}
+            piutangRealtimeChannel=null;
+        }
+    }
+
+    function piutangStartRealtime(){
+        if(!cloudUser)return;
+        piutangStopRealtime();
+        const userId=String(cloudUser.id||"");
+        if(!userId)return;
+
+        piutangRealtimeChannel=sellerBooksSupabase
+            .channel("piutang-realtime-"+userId)
+            .on("postgres_changes",{
+                event:"*",
+                schema:"piutang",
+                table:"entries",
+                filter:"user_id=eq."+userId
+            },function(){
+                piutangRealtimeRefresh();
+            })
+            .on("postgres_changes",{
+                event:"*",
+                schema:"piutang",
+                table:"payments",
+                filter:"user_id=eq."+userId
+            },function(){
+                piutangRealtimeRefresh();
+            })
+            .subscribe(function(status){
+                if(status!=="SUBSCRIBED" && status!=="CHANNEL_ERROR" && status!=="TIMED_OUT"){
+                    return;
+                }
+                if(status!=="SUBSCRIBED"){
+                    console.warn("Realtime Piutang:",status);
+                }
+            });
+    }
+
+    async function piutangRealtimeRefresh(){
+        if(piutangRealtimeRefreshing || !cloudReady)return;
+        piutangRealtimeRefreshing=true;
+        try{
+            await piutangCloudList();
+            piutangRenderCloud();
+        }catch(error){
+            console.warn("Realtime Piutang gagal memuat ulang:",error);
+        }finally{
+            piutangRealtimeRefreshing=false;
+        }
+    }
+
     async function piutangCloudInit(){
         try{
             if(typeof sellerBooksSupabase==="undefined")return;
@@ -30543,6 +30599,7 @@ document.addEventListener(
             await piutangCloudMigrateLocalIfEmpty();
             cloudReady=true;
             piutangRenderCloud();
+            piutangStartRealtime();
         }catch(error){
             console.error("Piutang Supabase init gagal:",error);
             cloudReady=false;
@@ -30559,6 +30616,7 @@ document.addEventListener(
                 cloudUser=session.user;
                 setTimeout(piutangCloudInit,300);
             }else{
+                piutangStopRealtime();
                 cloudReady=false; cloudUser=null; cloudEntries=[]; cloudPayments=[];
             }
         });
