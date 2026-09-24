@@ -30277,6 +30277,9 @@ document.addEventListener(
 
         const f1=(document.getElementById("sbPiutangNamaFilter")?.value||"").toLowerCase();
         const e=cloudEntries.filter(x=>!f1||String(x.nama||"").toLowerCase()===f1);
+        // Kartu TOTAL PIUTANG mengikuti filter nama pada Daftar Piutang.
+        const displayedPiutangTotal=e.reduce((a,x)=>a+(Number(x.jumlah)||0),0);
+        if(p)p.textContent=piutangMoney(displayedPiutangTotal);
         const tbody=document.getElementById("sbPiutangTableBody");
         if(tbody){
             tbody.innerHTML=e.length?e.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangEsc(x.keterangan||"-")+'</td><td><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangDeleteCloud(\''+piutangEsc(x.id)+'\')">Hapus</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudEntries.length?'Tidak ada piutang untuk nama tersebut.':'Belum ada piutang.')+'</td></tr>');
@@ -30284,6 +30287,9 @@ document.addEventListener(
 
         const f2=(document.getElementById("sbPiutangBayarNamaFilter")?.value||"").toLowerCase();
         const pay=cloudPayments.filter(x=>!f2||String(x.nama||"").toLowerCase()===f2);
+        // Kartu TOTAL SUDAH DIBAYAR mengikuti filter nama pada Raport Pembayaran Piutang.
+        const displayedBayarTotal=pay.reduce((a,x)=>a+(Number(x.jumlah)||0),0);
+        if(bt)bt.textContent=piutangMoney(displayedBayarTotal);
         const pt=document.getElementById("sbPiutangBayarTableBody");
         if(pt){
             pt.innerHTML=pay.length?pay.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangKeterangan(x.keterangan)+'</td><td><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangBayarDeleteCloud(\''+piutangEsc(x.id)+'\')">Hapus</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudPayments.length?'Tidak ada pembayaran untuk nama tersebut.':'Belum ada pembayaran.')+'</td></tr>');
