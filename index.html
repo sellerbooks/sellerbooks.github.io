@@ -29703,6 +29703,16 @@ document.addEventListener(
 .sb-piutang-name-filter{min-width:180px;padding:9px 12px;}
 .sb-piutang-list-card td:nth-child(3){font-weight:700;white-space:nowrap;}
 .sb-piutang-list-card th:last-child,.sb-piutang-list-card td:last-child{text-align:center;white-space:nowrap;}
+.sb-piutang-lunas-badge{
+    display:inline-block;
+    padding:5px 10px;
+    border-radius:7px;
+    background:#fee2e2;
+    color:#dc2626;
+    font-weight:800;
+    border:1px solid #fecaca;
+    text-transform:uppercase;
+}
 .sb-piutang-delete-button{border:1px solid #ef4444;background:#fff;color:#dc2626;border-radius:7px;padding:7px 11px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s ease;}
 .sb-piutang-delete-button:hover{background:#fee2e2;color:#b91c1c;}
 .sb-piutang-payment-layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:20px;margin:0 0 22px;}
@@ -30222,6 +30232,14 @@ document.addEventListener(
     function piutangEsc(v){
         return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
     }
+    function piutangKeterangan(value){
+        const text=String(value==null?"":value).trim();
+        if(text.toLowerCase()==="lunas"){
+            return '<span class="sb-piutang-lunas-badge">LUNAS</span>';
+        }
+        return piutangEsc(text||"-");
+    }
+
     function piutangUniqueNames(data){
         const seen=new Set(), out=[];
         (data||[]).forEach(x=>{
@@ -30268,7 +30286,7 @@ document.addEventListener(
         const pay=cloudPayments.filter(x=>!f2||String(x.nama||"").toLowerCase()===f2);
         const pt=document.getElementById("sbPiutangBayarTableBody");
         if(pt){
-            pt.innerHTML=pay.length?pay.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangEsc(x.keterangan||"-")+'</td><td><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangBayarDeleteCloud(\''+piutangEsc(x.id)+'\')">Hapus</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudPayments.length?'Tidak ada pembayaran untuk nama tersebut.':'Belum ada pembayaran.')+'</td></tr>');
+            pt.innerHTML=pay.length?pay.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangKeterangan(x.keterangan)+'</td><td><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangBayarDeleteCloud(\''+piutangEsc(x.id)+'\')">Hapus</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudPayments.length?'Tidak ada pembayaran untuk nama tersebut.':'Belum ada pembayaran.')+'</td></tr>');
         }
     }
 
