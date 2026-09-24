@@ -30252,6 +30252,8 @@ document.addEventListener(
     let cloudPayments=[];
     let piutangRealtimeChannel=null;
     let piutangRealtimeRefreshing=false;
+    let piutangRealtimePollTimer=null;
+    let piutangRealtimeLastSignature="";
 
     function piutangCloudUser(){
         return cloudUser;
@@ -30536,7 +30538,38 @@ document.addEventListener(
         await piutangCloudList(); piutangRenderCloud(); return false;
     };
 
+    function piutangStartRealtimePolling(){
+        if(piutangRealtimePollTimer)clearInterval(piutangRealtimePollTimer);
+        if(!cloudUser)return;
+        /*
+           Fallback realtime: WebSocket Realtime tidak selalu tersedia
+           di browser/WebView tertentu. Polling ringan ini memastikan
+           perubahan HP <-> komputer tetap masuk tanpa refresh.
+        */
+        piutangRealtimePollTimer=setInterval(async function(){
+            if(!cloudReady||!cloudUser||piutangRealtimeRefreshing)return;
+            try{
+                const before=JSON.stringify([cloudEntries,cloudPayments]);
+                await piutangCloudList();
+                const after=JSON.stringify([cloudEntries,cloudPayments]);
+                if(before!==after){
+                    piutangRenderCloud();
+                }
+            }catch(error){
+                console.warn("Sinkronisasi otomatis Piutang:",error);
+            }
+        },2000);
+    }
+
+    function piutangStopRealtimePolling(){
+        if(piutangRealtimePollTimer){
+            clearInterval(piutangRealtimePollTimer);
+            piutangRealtimePollTimer=null;
+        }
+    }
+
     function piutangStopRealtime(){
+        piutangStopRealtimePolling();
         if(piutangRealtimeChannel){
             try{ sellerBooksSupabase.removeChannel(piutangRealtimeChannel); }catch(e){}
             piutangRealtimeChannel=null;
@@ -30600,6 +30633,7 @@ document.addEventListener(
             cloudReady=true;
             piutangRenderCloud();
             piutangStartRealtime();
+            piutangStartRealtimePolling();
         }catch(error){
             console.error("Piutang Supabase init gagal:",error);
             cloudReady=false;
