@@ -19355,6 +19355,7 @@ function renderStores(){
                     <button
                         type="button"
                         class="store-action-button store-toggle-button"
+                        data-store-api-button="undefined"
                         onclick="openStoreApiConnectionModal('undefined')"
                     >
                         Hubungkan API
@@ -19469,13 +19470,13 @@ function sellerBooksFormatApiStatus(connection){
 
 function sellerBooksApplyStoreApiStatus(storeId,connection){
 
-    const nodes=document.querySelectorAll(
-        '[data-store-api-status="'+String(storeId).replace(/"/g,'&quot;')+'"]'
-    );
+    const nodes=document.querySelectorAll("[data-store-api-status]");
 
     const label=sellerBooksFormatApiStatus(connection);
 
     nodes.forEach(function(node){
+
+        if(String(node.getAttribute("data-store-api-status")||"")!==String(storeId))return;
 
         node.textContent=label;
 
@@ -19489,16 +19490,18 @@ function sellerBooksApplyStoreApiStatus(storeId,connection){
 
     });
 
-    const button=document.querySelector(
-        '[onclick="openStoreApiConnectionModal(\''+String(storeId).replace(/'/g,"\\'")+'\')"]'
-    );
+    const buttons=document.querySelectorAll("[data-store-api-button]");
 
-    if(button){
+    buttons.forEach(function(button){
+
+        if(String(button.getAttribute("data-store-api-button")||"")!==String(storeId))return;
+
         button.textContent =
             connection && String(connection.connection_status||"").toUpperCase()==="CONNECTED"
             ? "Kelola API"
             : "Hubungkan API";
-    }
+
+    });
 }
 
 async function sellerBooksRefreshStoreConnectionStatuses(){
