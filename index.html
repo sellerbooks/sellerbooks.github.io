@@ -33040,7 +33040,7 @@ window.sellerBooksStartMarketplaceOAuth = async function sellerBooksStartMarketp
     const storeId=String(document.getElementById("storeApiConnectionStoreId")?.value||"").trim();
     const marketplaceId=String(document.getElementById("storeApiConnectionMarketplace")?.value||"").trim();
     const marketplaceName=String(document.getElementById("storeApiConnectionMarketplace")?.selectedOptions?.[0]?.textContent||"").trim();
-    const marketplaceCode=marketplaceName.toLowerCase().replace(/\\s+/g,"");
+    const marketplaceCode=marketplaceName.toLowerCase().replace(/\s+/g,"");
 
     if(!storeId || !marketplaceId){
         sellerBooksAlert("Akun toko marketplace belum siap.");
