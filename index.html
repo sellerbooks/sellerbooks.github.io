@@ -4299,120 +4299,6 @@ td{
     }
 
 }
-
-/* =====================================================
-   SELLERBOOKS DESKTOP / CHROME RESPONSIVE V2
-   Fokus: Akun Toko tidak melebar horizontal.
-   Tombol aksi tetap satu baris dan mudah dibaca.
-===================================================== */
-
-html,
-body{
-    width:100%;
-    max-width:100%;
-    overflow-x:hidden;
-}
-
-#app{
-    width:100%;
-    max-width:100%;
-    overflow-x:hidden;
-}
-
-.main-app{
-    min-width:0;
-    max-width:100%;
-}
-
-.app-content{
-    width:100%;
-    min-width:0;
-    overflow-x:hidden;
-}
-
-/* AKUN TOKO */
-.stores-grid{
-    width:100%;
-    min-width:0;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-}
-
-.store-card{
-    min-width:0;
-    width:100%;
-    overflow:hidden;
-}
-
-.store-card-top,
-.store-marketplace,
-.store-info{
-    min-width:0;
-}
-
-.store-marketplace-name,
-.store-name,
-.store-description{
-    min-width:0;
-    overflow-wrap:anywhere;
-}
-
-.store-actions{
-    width:100%;
-    min-width:0;
-    display:grid;
-    grid-template-columns:minmax(105px,1.35fr) minmax(65px,.8fr) minmax(105px,1.2fr) 44px;
-    gap:8px;
-    align-items:stretch;
-}
-
-.store-actions button,
-.store-action-button{
-    width:100%;
-    min-width:0;
-    max-width:none;
-    flex:none;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:clip;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    line-height:1.2;
-}
-
-.store-delete-button{
-    padding-left:8px;
-    padding-right:8px;
-}
-
-@media(max-width:1200px) and (min-width:901px){
-    .stores-grid{
-        grid-template-columns:repeat(2,minmax(0,1fr));
-    }
-
-    .app-content{
-        padding-left:24px;
-        padding-right:24px;
-    }
-}
-
-@media(max-width:900px){
-    .stores-grid{
-        grid-template-columns:1fr;
-    }
-
-    .store-actions{
-        grid-template-columns:minmax(115px,1.4fr) minmax(70px,.8fr) minmax(115px,1.2fr) 46px;
-    }
-}
-
-@media(max-width:650px){
-    .store-actions{
-        grid-template-columns:minmax(105px,1.35fr) minmax(65px,.8fr) minmax(105px,1.2fr) 44px;
-    }
-}
-
 </style>
 
 <script>
@@ -6957,7 +6843,7 @@ function getReportTransactionFeePercent(transaction){
             ? Number(transaction.adminFeeSku)
             : NaN;
 
-    if(Number.isFinite(transactionSkuFee) && transactionSkuFee > 0){
+    if(Number.isFinite(transactionSkuFee)){
         return transactionSkuFee;
     }
 
@@ -6971,7 +6857,7 @@ function getReportTransactionFeePercent(transaction){
             ? Number(transaction.adminFeeSkuSnapshot)
             : NaN;
 
-    if(Number.isFinite(snapshotSkuFee) && snapshotSkuFee > 0){
+    if(Number.isFinite(snapshotSkuFee)){
         return snapshotSkuFee;
     }
 
@@ -7037,7 +6923,7 @@ function getReportTransactionFeePercent(transaction){
                     ? Number(masterProduct.adminFeePercent)
                     : NaN;
 
-            if(Number.isFinite(masterSkuFee) && masterSkuFee > 0){
+            if(Number.isFinite(masterSkuFee)){
                 return masterSkuFee;
             }
         }
@@ -7063,7 +6949,7 @@ function getReportTransactionFeePercent(transaction){
             ? Number(accountSnapshotValue)
             : NaN;
 
-    if(Number.isFinite(accountSnapshotFee) && accountSnapshotFee > 0){
+    if(Number.isFinite(accountSnapshotFee)){
         return accountSnapshotFee;
     }
 
@@ -9428,7 +9314,7 @@ document.addEventListener(
                 <div class="login-logo">
 
                     <div class="login-logo-icon">
-                        SB
+                        S
                     </div>
 
                     <div>
@@ -9620,7 +9506,7 @@ document.addEventListener(
             class="owner-save-button"
             onclick="saveOwnerName()"
         >
-            <span class="sb-svg-inline"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V5"/><path d="m7 10 5-5 5 5"/><path d="M4 19h16"/></svg></span> Simpan & Masuk SellerBooks
+            💾 Simpan & Masuk SellerBooks
         </button>
 
 
@@ -9681,7 +9567,7 @@ document.addEventListener(
                 onclick="showView('dashboard',this)"
             >
 
-                <span class="menu-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/></svg></span>
+                <span class="menu-icon">🏠</span>
 
                 Dashboard
 
@@ -9693,7 +9579,7 @@ document.addEventListener(
                 onclick="showView('marketplace',this)"
             >
 
-                <span class="menu-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-1-5H5L4 9Z"/><path d="M5 9v11h14V9"/><path d="M9 20v-6h6v6"/><path d="M3 9h18"/></svg></span>
+                <span class="menu-icon">🏪</span>
 
                 Marketplace
 
@@ -9705,7 +9591,7 @@ document.addEventListener(
                 onclick="showView('stores',this)"
             >
 
-                <span class="menu-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h16v10H4z"/><path d="M3 10 5 4h14l2 6"/><path d="M8 10v2a4 4 0 0 0 8 0v-2"/><path d="M8 20v-5h8v5"/></svg></span>
+                <span class="menu-icon">🏬</span>
 
                 Akun Toko
 
@@ -9723,7 +9609,7 @@ document.addEventListener(
                 onclick="showView('products',this)"
             >
 
-                <span class="menu-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg></span>
+                <span class="menu-icon">📦</span>
 
                 Master Produk
 
@@ -9735,7 +9621,7 @@ document.addEventListener(
                 onclick="showView('import',this)"
             >
 
-                <span class="menu-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 20h16"/></svg></span>
+                <span class="menu-icon">📥</span>
 
                 Import Penjualan
 
@@ -9747,7 +9633,7 @@ document.addEventListener(
                 onclick="showView('costs',this)"
             >
 
-                <span class="menu-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6V4h13"/><path d="M15 13h5"/><circle cx="15" cy="13" r="1"/></svg></span>
+                <span class="menu-icon">💸</span>
 
                 Biaya Lain
 
@@ -9760,7 +9646,7 @@ document.addEventListener(
                 class="menu-item sb-piutang-menu-item"
                 onclick="sbPiutangOpen(this)"
             >
-                <span class="menu-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></span>
+                <span class="menu-icon">💳</span>
                 Piutang
             </button>
 
@@ -9774,7 +9660,7 @@ document.addEventListener(
                 class="menu-item"
                 onclick="showView('productAnalysis',this)"
             >
-                <span class="menu-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg></span>
+                <span class="menu-icon">🔎</span>
                 Rincian
             </button>
 
@@ -9784,7 +9670,7 @@ document.addEventListener(
                 onclick="showView('reports',this)"
             >
 
-                <span class="menu-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 3-4 3 2 5-7"/></svg></span>
+                <span class="menu-icon">📊</span>
 
                 Laporan
 
@@ -9802,7 +9688,7 @@ document.addEventListener(
                 onclick="showView('settings',this)"
             >
 
-                <span class="menu-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg></span>
+                <span class="menu-icon">⚙️</span>
 
                 Pengaturan
 
@@ -9846,7 +9732,7 @@ document.addEventListener(
     class="reset-identity-button"
     onclick="resetIdentity()"
 >
-    <span class="menu-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14-5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14 5l2-2"/><path d="M20 20v-4h-4"/></svg></span> <span>Reset Identitas</span>
+    🔄 <span>Reset Identitas</span>
 </button>
 
 <!-- TOMBOL LOGOUT -->
@@ -9856,7 +9742,7 @@ document.addEventListener(
     class="logout-button"
     onclick="logoutSellerBooks()"
 >
-    <span class="menu-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H5v16h5"/><path d="m14 8 4 4-4 4"/><path d="M9 12h9"/></svg></span> <span>Logout</span>
+    🚪 <span>Logout</span>
 </button>
 
 </div>
@@ -9880,7 +9766,7 @@ document.addEventListener(
                     class="mobile-menu"
                     onclick="toggleSidebar()"
                 >
-                    <svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    ☰
                 </button>
 
 
@@ -10007,7 +9893,7 @@ document.addEventListener(
         onclick="toggleNotifications()"
         title="Notifikasi"
     >
-        <svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+        🔔
 
         <span
             id="notificationBadge"
@@ -10097,7 +9983,9 @@ document.addEventListener(
                                 TOTAL PENJUALAN
                             </div>
 
-                            <div class="stat-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M7 9h.01M17 15h.01"/></svg></div>
+                            <div class="stat-icon">
+                                💰
+                            </div>
 
                         </div>
 
@@ -10121,7 +10009,9 @@ document.addEventListener(
                                 PRODUK TERJUAL
                             </div>
 
-                            <div class="stat-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg></div>
+                            <div class="stat-icon">
+                                📦
+                            </div>
 
                         </div>
 
@@ -10171,7 +10061,9 @@ document.addEventListener(
                                 MARGIN BERSIH
                             </div>
 
-                            <div class="stat-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 3-4 3 2 5-7"/></svg></div>
+                            <div class="stat-icon">
+                                📊
+                            </div>
 
                         </div>
 
@@ -10195,7 +10087,7 @@ document.addEventListener(
                 ====================================================== -->
                 <div class="sb-piutang-dashboard-card">
                     <div class="sb-piutang-dashboard-left">
-                        <div class="sb-piutang-dashboard-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></div>
+                        <div class="sb-piutang-dashboard-icon">💳</div>
                         <div>
                             <div class="sb-piutang-dashboard-label">TOTAL PIUTANG RESELLER</div>
                             <div class="sb-piutang-dashboard-value" id="sbPiutangDashboardTotal">Rp0</div>
@@ -10382,7 +10274,7 @@ document.addEventListener(
         </div>
 
         <div class="sb-piutang-summary-card">
-            <div class="sb-piutang-summary-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></svg></div>
+            <div class="sb-piutang-summary-icon">💳</div>
             <div class="sb-piutang-summary-label">TOTAL PIUTANG</div>
             <div class="sb-piutang-summary-total" id="sbPiutangPageTotal">Rp0</div>
             <div class="sb-piutang-summary-note">Total seluruh piutang sesuai daftar piutang. Pembayaran ditampilkan terpisah.</div>
@@ -10451,7 +10343,7 @@ document.addEventListener(
         </div>
 
         <div class="sb-piutang-summary-card">
-            <div class="sb-piutang-summary-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M7 9h.01M17 15h.01"/></svg></div>
+            <div class="sb-piutang-summary-icon">💰</div>
             <div class="sb-piutang-summary-label">TOTAL SUDAH DIBAYAR</div>
             <div class="sb-piutang-summary-total" id="sbPiutangBayarTotal">Rp0</div>
             <div class="sb-piutang-summary-note">Total pembayaran yang sudah dicatat dari seluruh nama.</div>
@@ -10730,7 +10622,7 @@ document.addEventListener(
                 onclick="sellerBooksOpenFilePicker('productImportFile')"
             >
 
-                <span class="sb-svg-inline"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 20h16"/></svg></span> Import Excel
+                📥 Import Excel
 
             </button>
 
@@ -10740,7 +10632,7 @@ document.addEventListener(
                 onclick="exportProducts()"
             >
 
-                <span class="sb-svg-inline"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M4 4h16"/></svg></span> Export Excel
+                📤 Export Excel
 
             </button>
 
@@ -10762,7 +10654,7 @@ document.addEventListener(
                 style="display:none"
             >
 
-                ${sellerBooksSvgIcon("trash")} Hapus Terpilih (<span id="selectedProductCount">0</span>)
+                🗑️ Hapus Terpilih (<span id="selectedProductCount">0</span>)
 
             </button>
 
@@ -12240,7 +12132,9 @@ document.addEventListener(
                     TOTAL PENJUALAN
                 </div>
 
-                <div class="stat-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M7 9h.01M17 15h.01"/></svg></div>
+                <div class="stat-icon">
+                    💰
+                </div>
 
             </div>
 
@@ -12301,7 +12195,9 @@ document.addEventListener(
                     PRODUK TERJUAL
                 </div>
 
-                <div class="stat-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg></div>
+                <div class="stat-icon">
+                    📦
+                </div>
 
             </div>
 
@@ -12330,7 +12226,9 @@ document.addEventListener(
                     TOTAL PACKING
                 </div>
 
-                <div class="stat-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg></div>
+                <div class="stat-icon">
+                    📦
+                </div>
 
             </div>
 
@@ -12390,7 +12288,9 @@ document.addEventListener(
                     BIAYA LAIN
                 </div>
 
-                <div class="stat-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v14H4z"/><path d="M4 6V4h13"/><path d="M15 13h5"/><circle cx="15" cy="13" r="1"/></svg></div>
+                <div class="stat-icon">
+                    💸
+                </div>
 
             </div>
 
@@ -12972,7 +12872,7 @@ document.addEventListener(
                     <!-- 1. NAMA BISNIS -->
                     <div class="content-section settings-card">
                         <div class="settings-card-header">
-                            <div class="settings-card-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h10v17"/><path d="M15 9h4v12"/><path d="M8 8h2M8 12h2M8 16h2M17 13h1M17 17h1"/><path d="M3 21h18"/></svg></div>
+                            <div class="settings-card-icon">🏢</div>
                             <div>
                                 <h3>Nama Bisnis</h3>
                                 <p>Atur nama bisnis yang digunakan sebagai identitas usaha.</p>
@@ -12998,7 +12898,7 @@ document.addEventListener(
                                 class="primary-button"
                                 onclick="saveSellerBooksSettings()"
                             >
-                                <span class="sb-svg-inline"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V5"/><path d="m7 10 5-5 5 5"/><path d="M4 19h16"/></svg></span> Simpan
+                                💾 Simpan
                             </button>
                         </div>
                     </div>
@@ -13006,7 +12906,7 @@ document.addEventListener(
                     <!-- 2. LOGO BISNIS -->
                     <div class="content-section settings-card">
                         <div class="settings-card-header">
-                            <div class="settings-card-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 3-3 5 5"/></svg></div>
+                            <div class="settings-card-icon">🖼️</div>
                             <div>
                                 <h3>Logo Bisnis</h3>
                                 <p>Gunakan logo bisnis sebagai identitas visual SellerBooks.</p>
@@ -13056,7 +12956,7 @@ document.addEventListener(
                     <!-- 3. MATA UANG -->
                     <div class="content-section settings-card">
                         <div class="settings-card-header">
-                            <div class="settings-card-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M7 9h.01M17 15h.01"/></svg></div>
+                            <div class="settings-card-icon">💰</div>
                             <div>
                                 <h3>Mata Uang</h3>
                                 <p>Atur mata uang yang digunakan untuk tampilan nilai laporan.</p>
@@ -13134,7 +13034,7 @@ document.addEventListener(
                                     class="primary-button"
                                     onclick="saveSellerBooksSettings()"
                                 >
-                                    <span class="sb-svg-inline"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V5"/><path d="m7 10 5-5 5 5"/><path d="M4 19h16"/></svg></span> Simpan Kurs
+                                    💾 Simpan Kurs
                                 </button>
                             </div>
                         </div>
@@ -13147,7 +13047,7 @@ document.addEventListener(
                     <!-- 4. BIAYA PACKING DEFAULT -->
                     <div class="content-section settings-card">
                         <div class="settings-card-header">
-                            <div class="settings-card-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg></div>
+                            <div class="settings-card-icon">📦</div>
                             <div>
                                 <h3>Biaya Packing Default</h3>
                                 <p>Nilai ini otomatis menjadi biaya packing per 1 order saat import penjualan.</p>
@@ -13176,7 +13076,7 @@ document.addEventListener(
                                 class="primary-button"
                                 onclick="saveSellerBooksSettings()"
                             >
-                                <span class="sb-svg-inline"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V5"/><path d="m7 10 5-5 5 5"/><path d="M4 19h16"/></svg></span> Simpan
+                                💾 Simpan
                             </button>
                         </div>
                     </div>
@@ -13184,7 +13084,7 @@ document.addEventListener(
                     <!-- 5. PEMBULATAN -->
                     <div class="content-section settings-card">
                         <div class="settings-card-header">
-                            <div class="settings-card-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2"/></svg></div>
+                            <div class="settings-card-icon">🔢</div>
                             <div>
                                 <h3>Pembulatan</h3>
                                 <p>Atur pembulatan nilai uang yang ditampilkan di SellerBooks.</p>
@@ -13213,7 +13113,7 @@ document.addEventListener(
                     <!-- 6. BACKUP & RESTORE -->
                     <div class="content-section settings-card">
                         <div class="settings-card-header">
-                            <div class="settings-card-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V5"/><path d="m7 10 5-5 5 5"/><path d="M4 19h16"/></svg></div>
+                            <div class="settings-card-icon">💾</div>
                             <div>
                                 <h3>Backup & Restore Data</h3>
                                 <p>Simpan seluruh data SellerBooks ke file atau pulihkan dari file backup.</p>
@@ -13507,120 +13407,6 @@ document.addEventListener(
     </div>
 
 </div>
-<!-- =====================================================
-     MARKETPLACE API CONNECTION MODAL
-===================================================== -->
-<div class="modal-overlay" id="storeApiConnectionModal">
-    <div class="modal">
-        <div class="modal-header">
-            <h3 id="storeApiConnectionTitle">Integrasi Akun</h3>
-            <button type="button" class="modal-close" onclick="closeStoreApiConnectionModal()">×</button>
-        </div>
-
-        <div class="modal-body">
-            <input type="hidden" id="storeApiConnectionStoreId">
-
-            <div class="form-group">
-                <label>Akun Toko</label>
-                <input type="text" id="storeApiConnectionStoreName" class="form-control" readonly>
-            </div>
-
-            <div class="form-group">
-                <label>Marketplace</label>
-                <select id="storeApiConnectionMarketplace" class="form-control">
-                    <option value="">Memuat marketplace...</option>
-                </select>
-                <small style="display:block;margin-top:6px;color:#64748b;line-height:1.5;">
-                    Marketplace koneksi harus sama dengan marketplace akun toko.
-                </small>
-            </div>
-
-            <div id="storeApiConnectionOAuthFields" style="display:none;">
-                <div style="padding:16px;border:1px solid #e2e8f0;background:#f8fafc;border-radius:10px;">
-                    <div id="storeApiMarketplaceOAuthTitle" style="font-weight:700;color:#0f172a;margin-bottom:6px;">Hubungkan Marketplace</div>
-                    <div id="storeApiMarketplaceOAuthDescription" style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:14px;">
-                        Anda akan diarahkan ke halaman resmi marketplace untuk login dan menyetujui penautan toko.
-                        SellerBooks tidak meminta password marketplace Anda.
-                    </div>
-                    <button type="button" id="storeApiMarketplaceOAuthButton" class="primary-button" onclick="sellerBooksStartMarketplaceOAuth(event)">Login & Tautkan Shopee</button>
-                    <div id="storeApiMarketplaceOAuthStatus" style="display:none;margin-top:10px;font-size:12px;color:#64748b;line-height:1.5;"></div>
-                </div>
-            </div>
-
-            <div id="storeApiConnectionGenericFields" style="display:none;">
-                <div class="form-group">
-                    <label>Credential / Secret API</label>
-                    <textarea
-                        id="storeApiConnectionSecret"
-                        class="form-control"
-                        rows="7"
-                        placeholder='Credential JSON marketplace'
-                        autocomplete="off"
-                        spellcheck="false"
-                    ></textarea>
-                </div>
-            </div>
-
-            <small id="storeApiConnectionSecretNote" style="display:block;margin-top:6px;color:#64748b;line-height:1.5;">
-                Credential dikirim langsung ke Supabase Vault dan tidak disimpan di localStorage SellerBooks.
-            </small>
-
-            <div id="storeApiConnectionStatusBox"
-                 style="padding:12px 14px;border:1px solid #e2e8f0;background:#f8fafc;margin-top:8px;">
-                Status: <strong id="storeApiConnectionStatus">Belum Terhubung</strong>
-            </div>
-            <div id="storeApiOrderSyncStatusBox"
-                 style="display:none;padding:10px 14px;border:1px solid #dbeafe;background:#eff6ff;margin-top:8px;font-size:11px;line-height:1.5;">
-                <strong>Sinkronisasi:</strong> <span id="storeApiOrderSyncStatus">Belum dimulai</span>
-            </div>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="cancel-button" onclick="closeStoreApiConnectionModal()">
-                Batal
-            </button>
-
-            <button
-                type="button"
-                id="storeApiConnectionDisconnectButton"
-                class="secondary-button"
-                onclick="disconnectStoreApiConnection()"
-                style="display:none;"
-            >
-                Putuskan Koneksi
-            </button>
-
-            <button
-                type="button"
-                id="storeApiConnectionTestButton"
-                class="secondary-button"
-                onclick="testStoreApiConnection()"
-            >
-                Tes Koneksi
-            </button>
- 
-            <button
-                type="button"
-                id="storeApiOrderSyncButton"
-                class="secondary-button"
-                onclick="sellerBooksSyncShopeeOrders()"
-                style="display:none;"
-            >
-                Sync Sekarang
-            </button>
-
-            <button
-                type="button"
-                id="storeApiConnectionSaveButton"
-                class="primary-button"
-                onclick="saveStoreApiConnection()"
-            >
-                Simpan Koneksi
-            </button>
-        </div>
-    </div>
-</div>
-
 <!-- =====================================================
      PIUTANG EDIT MODAL
 ===================================================== -->
@@ -14617,32 +14403,7 @@ document.addEventListener(
 ===================================================== */
 const SELLERBOOKS_SUPABASE_URL="https://fysaxpqpqexjnlpkbwap.supabase.co";
 const SELLERBOOKS_SUPABASE_KEY="sb_publishable_DWRaEZTcNMjhglwN3nqCOw_pua8rsjD";
-const SELLERBOOKS_AUTH_STORAGE_KEY="sellerbooks.supabase.auth";
-const SELLERBOOKS_LEGACY_AUTH_STORAGE_KEY="sb-fysaxpqpqexjnlpkbwap-auth-token";
-
-try{
-    const currentAuth=window.localStorage.getItem(SELLERBOOKS_AUTH_STORAGE_KEY);
-    const legacyAuth=window.localStorage.getItem(SELLERBOOKS_LEGACY_AUTH_STORAGE_KEY);
-    if(!currentAuth && legacyAuth){
-        window.localStorage.setItem(SELLERBOOKS_AUTH_STORAGE_KEY,legacyAuth);
-    }
-}catch(error){
-    console.warn("Migrasi session SellerBooks gagal:",error);
-}
-
-const sellerBooksSupabase=window.supabase.createClient(
-    SELLERBOOKS_SUPABASE_URL,
-    SELLERBOOKS_SUPABASE_KEY,
-    {
-        auth:{
-            persistSession:true,
-            autoRefreshToken:true,
-            detectSessionInUrl:true,
-            storage:window.localStorage,
-            storageKey:SELLERBOOKS_AUTH_STORAGE_KEY
-        }
-    }
-);
+const sellerBooksSupabase=window.supabase.createClient(SELLERBOOKS_SUPABASE_URL,SELLERBOOKS_SUPABASE_KEY);
 
 /* =====================================================
    SELLERBOOKS CLOUD STORAGE
@@ -15184,7 +14945,7 @@ function sellerBooksGetApprovalPage(){
     if(page)return page;
     page=document.createElement("section"); page.id="sellerbooksApprovalPage";
     page.style.cssText="min-height:100vh;display:none;align-items:center;justify-content:center;padding:20px;background:#f8fafc;";
-    page.innerHTML=`<div style="width:100%;max-width:560px;background:#fff;border-radius:24px;padding:40px 30px;text-align:center;box-shadow:0 20px 60px rgba(15,23,42,.12);border:1px solid #e2e8f0"><div style="font-size:54px;margin-bottom:14px">⏳</div><h2 style="margin-bottom:10px;color:#0f172a">Menunggu Persetujuan Core Adiimasa</h2><p id="sellerbooksApprovalEmail" style="color:#2563eb;font-weight:700;margin-bottom:16px;word-break:break-word"></p><p id="sellerbooksApprovalText" style="color:#64748b;line-height:1.7;margin-bottom:24px">Akun Anda sudah berhasil login. Silakan menunggu persetujuan dari Core Adiimasa sebelum menggunakan SellerBooks.</p><button type="button" onclick="sellerBooksCheckApproval(true)" style="border:0;background:#2563eb;color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;cursor:pointer"><span class="sb-svg-inline"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14-5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14 5l2-2"/><path d="M20 20v-4h-4"/></svg></span> Cek Status Persetujuan</button><button type="button" onclick="sellerBooksLogout()" style="display:block;margin:14px auto 0;border:0;background:transparent;color:#64748b;padding:8px 16px;cursor:pointer">Keluar</button></div>`;
+    page.innerHTML=`<div style="width:100%;max-width:560px;background:#fff;border-radius:24px;padding:40px 30px;text-align:center;box-shadow:0 20px 60px rgba(15,23,42,.12);border:1px solid #e2e8f0"><div style="font-size:54px;margin-bottom:14px">⏳</div><h2 style="margin-bottom:10px;color:#0f172a">Menunggu Persetujuan Core Adiimasa</h2><p id="sellerbooksApprovalEmail" style="color:#2563eb;font-weight:700;margin-bottom:16px;word-break:break-word"></p><p id="sellerbooksApprovalText" style="color:#64748b;line-height:1.7;margin-bottom:24px">Akun Anda sudah berhasil login. Silakan menunggu persetujuan dari Core Adiimasa sebelum menggunakan SellerBooks.</p><button type="button" onclick="sellerBooksCheckApproval(true)" style="border:0;background:#2563eb;color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;cursor:pointer">🔄 Cek Status Persetujuan</button><button type="button" onclick="sellerBooksLogout()" style="display:block;margin:14px auto 0;border:0;background:transparent;color:#64748b;padding:8px 16px;cursor:pointer">Keluar</button></div>`;
     document.body.appendChild(page); return page;
 }
 function sellerBooksShowApproval(message){
@@ -15230,20 +14991,12 @@ async function sellerBooksCheckApproval(showAlert){
             if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
 
             /*
-               Setelah Core Adiimasa menyetujui akun:
-               - Akun Google BARU yang belum memiliki Nama Pemilik WAJIB masuk
-                 ke halaman pengisian Nama Pemilik terlebih dahulu.
-               - Hanya profile SellerBooks milik user Google yang sedang login
-                 yang menentukan apakah setup Nama Pemilik sudah selesai.
-               - Jangan menggunakan localStorage/cache untuk melewati setup
-                 akun Google baru.
+               Setelah akun disetujui Core Adiimasa:
+               - Jika Nama Pemilik sudah tersimpan di profile akun ini -> masuk Dashboard.
+               - Jika belum ada -> tampilkan tingkat 2 untuk membuat Nama Pemilik.
+               - localStorage TIDAK dipakai untuk menentukan apakah setup sudah selesai,
+                 agar identitas antar akun Google tidak tercampur.
             */
-            const approvedOwnerName=String(sellerBooksProfile?.owner_name||"").trim();
-            if(!approvedOwnerName){
-                sellerBooksOpenApplication();
-                return;
-            }
-
             await sellerBooksLoadCloudData();
             sellerBooksRefreshRuntimeFromCloud();
             if(typeof initializeReports==="function")initializeReports();
@@ -15255,32 +15008,7 @@ async function sellerBooksCheckApproval(showAlert){
         if(status==="suspended"){sellerBooksShowApproval("Akun SellerBooks Anda sedang ditangguhkan oleh Core Adiimasa. Silakan hubungi Core Adiimasa.");return;}
         sellerBooksShowApproval("Akun Anda sudah berhasil login. Silakan menunggu persetujuan dari Core Adiimasa sebelum menggunakan SellerBooks.");
         if(showAlert)sellerBooksAlert("Status akun masih menunggu persetujuan Core Adiimasa.");
-    }catch(error){
-        console.error("Gagal membaca status persetujuan SellerBooks:",error);
-
-        /*
-           Jangan memindahkan user ke halaman Persetujuan hanya karena
-           pembacaan profile gagal sementara (network/RLS/session refresh).
-           Halaman Persetujuan hanya boleh ditampilkan jika status profile
-           benar-benar terbaca dan memang pending/rejected/suspended.
-        */
-        const currentApprovalPage=document.getElementById("sellerbooksApprovalPage");
-        const appVisible=document.getElementById("app")?.style.display==="block";
-        const ownerVisible=document.getElementById("ownerSetupPage")?.style.display==="flex";
-
-        if(currentApprovalPage && currentApprovalPage.style.display==="flex"){
-            const text=document.getElementById("sellerbooksApprovalText");
-            if(text){
-                text.textContent="Status persetujuan belum dapat dibaca. Koneksi atau sesi sedang diperiksa. Tekan “Cek Status Persetujuan” untuk mencoba lagi.";
-            }
-        }else if(!appVisible && !ownerVisible){
-            sellerBooksShowOnly("loginPage");
-        }
-
-        if(showAlert){
-            sellerBooksAlert("Status persetujuan belum dapat dibaca. Silakan coba lagi tanpa logout.");
-        }
-    }
+    }catch(error){console.error(error);sellerBooksShowApproval("Tidak dapat membaca status akun saat ini. Periksa koneksi internet lalu coba lagi.");}
 }
 function sellerBooksOpenApplication(){
     const ownerName = String(sellerBooksProfile?.owner_name || "").trim();
@@ -15357,30 +15085,22 @@ async function sellerBooksHandleAuthSession(){
         */
         if(!data?.session?.user){
 
-            for(let attempt=1;attempt<=3;attempt++){
-                await new Promise(function(resolve){
-                    setTimeout(resolve,500);
-                });
+            sellerBooksAuthUser = null;
+            sellerBooksProfile = null;
 
-                const retry=await sellerBooksSupabase.auth.getSession();
-                if(retry?.data?.session?.user){
-                    data.session=retry.data.session;
-                    break;
-                }
+            if(sellerBooksApprovalTimer){
+                clearInterval(
+                    sellerBooksApprovalTimer
+                );
+
+                sellerBooksApprovalTimer = null;
             }
 
-            if(!data?.session?.user){
-                sellerBooksAuthUser = null;
-                sellerBooksProfile = null;
+            sellerBooksShowOnly(
+                "loginPage"
+            );
 
-                if(sellerBooksApprovalTimer){
-                    clearInterval(sellerBooksApprovalTimer);
-                    sellerBooksApprovalTimer = null;
-                }
-
-                sellerBooksShowOnly("loginPage");
-                return;
-            }
+            return;
         }
 
         /*
@@ -15434,30 +15154,32 @@ async function sellerBooksHandleAuthSession(){
             error
         );
 
-        /*
-           Jangan menganggap error pembacaan profile sebagai logout.
-           Sesi Google/Supabase bisa tetap valid ketika request profile
-           gagal sementara (refresh token, jaringan, RLS, atau cold start).
-           Pertahankan user dan tampilkan halaman aman untuk retry.
-        */
-        if(!sellerBooksAuthUser){
-            sellerBooksShowOnly("loginPage");
-            return;
+        sellerBooksAuthUser = null;
+        sellerBooksProfile = null;
+
+        if(sellerBooksApprovalTimer){
+
+            clearInterval(
+                sellerBooksApprovalTimer
+            );
+
+            sellerBooksApprovalTimer = null;
         }
 
-        sellerBooksShowApproval(
-            "Status akun belum dapat dibaca. Periksa koneksi lalu tekan “Cek Status Persetujuan” untuk mencoba lagi."
+        sellerBooksShowOnly(
+            "loginPage"
         );
     }
 }
-/* Auth listener utama hanya memproses sesi yang valid.
-   Event tanpa session tidak lagi memaksa halaman keluar saat refresh
-   atau ketika Supabase sedang menyegarkan token. Logout eksplisit tetap
-   ditangani oleh sellerBooksLogout()/logoutSellerBooks(). */
 sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
     if(session?.user){
         sellerBooksAuthUser=session.user;
         setTimeout(function(){sellerBooksCheckApproval(false);},0);
+    }else{
+        sellerBooksAuthUser=null;
+        sellerBooksProfile=null;
+        applyBusinessLogoToInterface("");
+        sellerBooksShowOnly("loginPage");
     }
 });
 /* =====================================================
@@ -18826,254 +18548,6 @@ function saveStoreData(){
 
 }
 
-/* =====================================================
-   RELATIONAL STORE SYNC
-   sellerbooks_stores lama tetap menjadi compatibility cache.
-   Tabel sellerbooks_stores menjadi sumber relasional untuk
-   koneksi API / Auto Sync tahap berikutnya.
-===================================================== */
-
-async function sellerBooksResolveRelationalMarketplaceId(marketplaceId){
-
-    const rawId=String(marketplaceId||"").trim();
-
-    if(!rawId){
-
-        throw new Error("Marketplace akun toko belum dipilih.");
-
-    }
-
-    /*
-       sellerbooks_stores.marketplace_id adalah foreign key ke
-       sellerbooks_marketplaces.id. Data marketplace lama masih
-       dapat memakai ID legacy seperti marketplace_... atau nama
-       berbeda (mis. tiktokshop). Jangan kirim ID legacy mentah
-       ke tabel relasional.
-    */
-
-    const direct={
-        shopee:"shopee",
-        tiktok:"tiktok",
-        tiktokshop:"tiktok",
-        tokopedia:"TOKOPEDIA",
-        lazada:"lazada",
-        toco:"toco",
-        blibli:"blibli"
-    };
-
-    const normalize=function(value){
-        return String(value||"")
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g,"");
-    };
-
-    /*
-       Jika ID yang dipilih memang sudah merupakan ID relasional
-       yang valid, pertahankan apa adanya.
-    */
-    const {data:directRow,error:directError}=await sellerBooksSupabase
-        .from("sellerbooks_marketplaces")
-        .select("id")
-        .eq("id",rawId)
-        .maybeSingle();
-
-    if(directError)throw directError;
-
-    if(directRow?.id){
-        return String(directRow.id);
-    }
-
-    /*
-       Cari marketplace lokal berdasarkan id, code, atau name,
-       lalu ubah ke ID canonical yang dipakai SellerBooks.
-    */
-    const localMarketplace=(Array.isArray(marketplaces)?marketplaces:[])
-        .find(function(item){
-            return String(item?.id||"")===rawId;
-        });
-
-    const candidates=[
-        normalize(localMarketplace?.code),
-        normalize(localMarketplace?.name),
-        normalize(rawId)
-    ];
-
-    for(const candidate of candidates){
-
-        if(!candidate)continue;
-
-        const canonical=direct[candidate];
-
-        if(!canonical)continue;
-
-        const {data:canonicalRow,error:canonicalError}=await sellerBooksSupabase
-            .from("sellerbooks_marketplaces")
-            .select("id")
-            .eq("id",canonical)
-            .maybeSingle();
-
-        if(canonicalError)throw canonicalError;
-
-        if(canonicalRow?.id){
-            return String(canonicalRow.id);
-        }
-    }
-
-    /*
-       Fallback terakhir: cocokkan nama/code dengan baris aktif
-       di database. Ini menjaga marketplace lama tetap kompatibel.
-    */
-    if(localMarketplace){
-
-        const localCode=String(localMarketplace.code||"").trim();
-        const localName=String(localMarketplace.name||"").trim();
-
-        if(localCode || localName){
-
-            let query=sellerBooksSupabase
-                .from("sellerbooks_marketplaces")
-                .select("id,code,name")
-                .eq("status","ACTIVE");
-
-            if(localCode){
-                query=query.eq("code",localCode);
-            }else{
-                query=query.ilike("name",localName);
-            }
-
-            const {data:matches,error:matchError}=await query.limit(1);
-
-            if(matchError)throw matchError;
-
-            if(Array.isArray(matches) && matches[0]?.id){
-                return String(matches[0].id);
-            }
-        }
-    }
-
-    throw new Error(
-        "Marketplace akun toko tidak ditemukan di database relasional. Silakan pilih ulang marketplace pada Akun Toko."
-    );
-}
-
-async function sellerBooksSyncStoreRelational(store){
-
-    if(!store || !sellerBooksAuthUser){
-
-        throw new Error("Sesi SellerBooks belum siap.");
-
-    }
-
-    const relationalMarketplaceId=
-        await sellerBooksResolveRelationalMarketplaceId(store.marketplaceId);
-
-    const row = {
-
-        id:String(store.id || "").trim(),
-
-        owner_user_id:String(sellerBooksAuthUser.id),
-
-        marketplace_id:relationalMarketplaceId,
-
-        store_code:String(store.code || "").trim() || null,
-
-        store_name:String(store.name || "").trim(),
-
-        description:String(store.description || "").trim() || null,
-
-        fee_percent:Number(store.feePercent) || 0,
-
-        status:String(store.status || "active").toUpperCase()==="ACTIVE"
-            ? "ACTIVE"
-            : "INACTIVE",
-
-        created_at:store.createdAt || new Date().toISOString(),
-
-        updated_at:store.updatedAt || new Date().toISOString()
-
-    };
-
-    if(!row.id || !row.marketplace_id || !row.store_name){
-
-        throw new Error("Data akun toko tidak lengkap.");
-
-    }
-
-    const {data,error}=await sellerBooksSupabase
-
-        .from("sellerbooks_stores")
-
-        .upsert(row,{onConflict:"owner_user_id,id"})
-
-        .select("*")
-
-        .single();
-
-    if(error)throw error;
-
-    return data;
-
-}
-
-async function sellerBooksDeleteStoreRelational(storeId){
-
-    if(!sellerBooksAuthUser || !storeId){
-
-        throw new Error("Sesi SellerBooks belum siap.");
-
-    }
-
-    const {error}=await sellerBooksSupabase
-
-        .from("sellerbooks_stores")
-
-        .delete()
-
-        .eq("owner_user_id",sellerBooksAuthUser.id)
-
-        .eq("id",String(storeId));
-
-    if(error){
-
-        if(String(error.code||"")==="23503"){
-
-            throw new Error(
-                "Akun toko masih terhubung ke koneksi Auto Sync. Putuskan koneksi tersebut terlebih dahulu."
-            );
-
-        }
-
-        throw error;
-
-    }
-
-}
-
-/* Cegah perubahan marketplace / penghapusan toko yang sudah
-   memiliki koneksi API, sehingga FK dan identitas storeId tetap aman. */
-
-async function sellerBooksStoreHasApiConnection(storeId){
-
-    if(!sellerBooksAuthUser || !storeId)return false;
-
-    const {data,error}=await sellerBooksSupabase
-
-        .from("sellerbooks_api_connections")
-
-        .select("id")
-
-        .eq("owner_user_id",sellerBooksAuthUser.id)
-
-        .eq("store_id",String(storeId))
-
-        .limit(1);
-
-    if(error)throw error;
-
-    return Array.isArray(data) && data.length>0;
-
-}
-
 
 
 /* =====================================================
@@ -19133,6 +18607,7 @@ function renderStoreMarketplaceOptions(){
 
             <option value="${marketplace.id}">
 
+                ${marketplace.icon}
                 ${marketplace.name}
 
             </option>
@@ -19498,7 +18973,11 @@ function renderStores(){
 
             <div class="store-empty">
 
-                <div class="store-empty-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h16v10H4z"/><path d="M3 10 5 4h14l2 6"/><path d="M8 10v2a4 4 0 0 0 8 0v-2"/><path d="M8 20v-5h8v5"/></svg></div>
+                <div class="store-empty-icon">
+
+                    🏬
+
+                </div>
 
 
                 <h3>
@@ -19677,31 +19156,7 @@ function renderStores(){
 </div>
 
 
-                <div class="store-api-status" id="store-api-status-${store.id}" style="
-                    display:flex;
-                    align-items:center;
-                    justify-content:space-between;
-                    gap:10px;
-                    margin-top:12px;
-                    padding:9px 11px;
-                    border:1px solid #e2e8f0;
-                    background:#f8fafc;
-                ">
-                    <span style="font-size:12px;color:#64748b;">INTEGRASI AKUN</span>
-                    <strong data-store-api-status="${store.id}" style="font-size:12px;color:#64748b;">Memuat...</strong>
-                </div>
-
                 <div class="store-actions">
-
-
-                    <button
-                        type="button"
-                        class="store-action-button store-toggle-button"
-                        data-store-api-button="${store.id}"
-                        onclick="openStoreApiConnectionModal('${store.id}')"
-                    >
-                        Integrasikan Akun
-                    </button>
 
 
                     <button
@@ -19712,7 +19167,7 @@ function renderStores(){
                         onclick="editStore('${store.id}')"
                     >
 
-                        ${sellerBooksSvgIcon("edit")} Edit
+                        ✏️ Edit
 
                     </button>
 
@@ -19746,7 +19201,7 @@ function renderStores(){
                         onclick="deleteStore('${store.id}')"
                     >
 
-                        ${sellerBooksSvgIcon("trash")}
+                        🗑
 
                     </button>
 
@@ -19767,1314 +19222,8 @@ function renderStores(){
 
     updateMarketplaceStoreCounts();
 
-    sellerBooksRefreshStoreConnectionStatuses();
-
 }
 
-
-
-/* =====================================================
-   STORE API CONNECTION
-===================================================== */
-
-let sellerBooksStoreApiConnectionStoreId = null;
-let sellerBooksStoreApiConnectionData = null;
-
-async function sellerBooksGetStoreApiConnection(storeId){
-
-    if(!sellerBooksAuthUser || !storeId)return null;
-
-    const {data,error}=await sellerBooksSupabase
-        .from("sellerbooks_api_connections")
-        .select("id,store_id,marketplace_id,marketplace,connection_status,sync_enabled,last_sync_at,last_success_at,last_error,vault_secret_id")
-        .eq("owner_user_id",sellerBooksAuthUser.id)
-        .eq("store_id",String(storeId))
-        .limit(1);
-
-    if(error)throw error;
-
-    return Array.isArray(data) && data.length ? data[0] : null;
-}
-
-function sellerBooksFormatApiStatus(connection){
-
-    if(!connection)return "Belum Terhubung";
-
-    const status=String(connection.connection_status||"").toUpperCase();
-
-    if(status==="CONNECTED")return "Terhubung";
-    if(status==="ERROR")return "Error";
-    if(status==="EXPIRED")return "Expired";
-    if(status==="DISCONNECTED")return "Terputus";
-
-    return status || "Belum Terhubung";
-}
-
-function sellerBooksApplyStoreApiStatus(storeId,connection){
-
-    const nodes=document.querySelectorAll("[data-store-api-status]");
-
-    const label=sellerBooksFormatApiStatus(connection);
-
-    nodes.forEach(function(node){
-
-        if(String(node.getAttribute("data-store-api-status")||"")!==String(storeId))return;
-
-        node.textContent=label;
-
-        const status=String(connection?.connection_status||"").toUpperCase();
-
-        node.style.color =
-            status==="CONNECTED" ? "#16a34a" :
-            status==="ERROR" || status==="EXPIRED" ? "#dc2626" :
-            status==="DISCONNECTED" ? "#f59e0b" :
-            "#64748b";
-
-    });
-
-    const buttons=document.querySelectorAll("[data-store-api-button]");
-
-    buttons.forEach(function(button){
-
-        if(String(button.getAttribute("data-store-api-button")||"")!==String(storeId))return;
-
-        button.textContent =
-            connection && String(connection.connection_status||"").toUpperCase()==="CONNECTED"
-            ? "Kelola API"
-            : "Integrasikan Akun";
-
-    });
-}
-
-async function sellerBooksRefreshStoreConnectionStatuses(){
-
-    if(!sellerBooksAuthUser)return;
-
-    try{
-
-        const {data,error}=await sellerBooksSupabase
-            .from("sellerbooks_api_connections")
-            .select("store_id,connection_status,sync_enabled,last_error")
-            .eq("owner_user_id",sellerBooksAuthUser.id);
-
-        if(error)throw error;
-
-        const byStore={};
-
-        (data||[]).forEach(function(connection){
-            byStore[String(connection.store_id)]=connection;
-        });
-
-        stores.forEach(function(store){
-            sellerBooksApplyStoreApiStatus(store.id,byStore[String(store.id)]||null);
-        });
-
-    }catch(error){
-
-        console.error("Status koneksi API SellerBooks gagal dimuat:",error);
-
-        stores.forEach(function(store){
-
-            const node=document.querySelector(
-                '[data-store-api-status="'+String(store.id).replace(/"/g,'&quot;')+'"]'
-            );
-
-            if(node){
-                node.textContent="Tidak dapat diperiksa";
-                node.style.color="#dc2626";
-            }
-
-        });
-
-    }
-
-}
-
-function sellerBooksIsShopeeConnection(){
-
-    const select=document.getElementById("storeApiConnectionMarketplace");
-
-    if(!select)return false;
-
-    return String(select.value||"").toLowerCase()==="shopee";
-
-}
-
-function sellerBooksUpdateShopeeOAuthLauncherLink(){
-    const button=document.getElementById("storeApiMarketplaceOAuthButton");
-    const storeId=String(document.getElementById("storeApiConnectionStoreId")?.value||"").trim();
-    const marketplaceId=String(document.getElementById("storeApiConnectionMarketplace")?.value||"").trim();
-    if(!button)return;
-    if(storeId&&marketplaceId){
-        button.href="shopee-oauth-launcher.html?store_id="+encodeURIComponent(storeId)+"&marketplace_id="+encodeURIComponent(marketplaceId);
-    }else{
-        button.href="shopee-oauth-launcher.html";
-    }
-}
-
-function sellerBooksSetShopeeCredentialFields(connection){
-
-    const oauthFields=document.getElementById("storeApiConnectionOAuthFields");
-    const genericFields=document.getElementById("storeApiConnectionGenericFields");
-    const marketplaceSelect=document.getElementById("storeApiConnectionMarketplace");
-    const marketplaceName=String(marketplaceSelect?.selectedOptions?.[0]?.textContent||"").trim();
-    const marketplaceCode=marketplaceName.toLowerCase().replace(/\s+/g,"");
-    const isShopee=marketplaceCode==="shopee";
-    const oauthMarketplaces=["shopee","tiktokshop"];
-    const isOAuthMarketplace=oauthMarketplaces.includes(marketplaceCode);
-    const isTokopedia=marketplaceName.toLowerCase()==="tokopedia";
-
-    if(oauthFields)oauthFields.style.display=isOAuthMarketplace?"block":"none";
-    if(genericFields)genericFields.style.display=isOAuthMarketplace||isTokopedia?"none":"block";
-
-    const testButton=document.getElementById("storeApiConnectionTestButton");
-    const oauthButton=document.getElementById("storeApiMarketplaceOAuthButton");
-    const saveButton=document.getElementById("storeApiConnectionSaveButton");
-    const connected=String(connection?.connection_status||"").toUpperCase()==="CONNECTED";
-
-    if(testButton){
-        testButton.style.display=isShopee && connected ? "inline-flex" : "none";
-        testButton.disabled=!isShopee || !connected;
-        testButton.title="Uji koneksi Shopee ke API resmi";
-    }
-
-    if(oauthButton){
-        oauthButton.style.display=isOAuthMarketplace && !connected ? "inline-flex" : "none";
-        oauthButton.disabled=Boolean(window.sellerBooksOrderSyncBusy);
-        oauthButton.textContent=isOAuthMarketplace ? "Login & Tautkan "+marketplaceName : "Login & Tautkan";
-    }
-
-    if(saveButton)saveButton.style.display=isOAuthMarketplace||isTokopedia ? "none" : "inline-flex";
-
-    const oauthTitle=document.getElementById("storeApiMarketplaceOAuthTitle");
-    const oauthDesc=document.getElementById("storeApiMarketplaceOAuthDescription");
-    if(oauthTitle)oauthTitle.textContent=isOAuthMarketplace ? "Hubungkan dengan "+marketplaceName : "";
-    if(oauthDesc)oauthDesc.textContent=isOAuthMarketplace
-        ? "Anda akan diarahkan ke halaman resmi "+marketplaceName+" untuk login dan menyetujui penautan toko. SellerBooks tidak meminta password marketplace Anda."
-        : "";
-
-    const syncButton=document.getElementById("storeApiOrderSyncButton");
-    if(syncButton){
-        syncButton.style.display=isShopee && connected ? "inline-flex" : "none";
-        syncButton.disabled=Boolean(window.sellerBooksOrderSyncBusy)||!connected;
-        syncButton.title=connected ? "Sinkronkan order Shopee ke SellerBooks" : "Tes koneksi Shopee terlebih dahulu";
-    }
-
-    const note=document.getElementById("storeApiConnectionSecretNote");
-    if(note){
-        note.textContent=isOAuthMarketplace
-            ? "Login dan persetujuan dilakukan di halaman resmi marketplace. Token/credential disimpan aman di Supabase Vault."
-            : isTokopedia
-                ? "Integrasi Tokopedia untuk SellerBooks belum diaktifkan. Status: Segera Hadir."
-                : marketplaceName==="Blibli"
-                    ? "Blibli Seller API menggunakan Bind Request resmi. Credential tidak perlu diketik jika fitur Bind Request tersedia untuk platform SellerBooks."
-                    : "Credential dikirim langsung ke Supabase Vault dan tidak disimpan di localStorage SellerBooks.";
-    }
-}
-function sellerBooksBuildShopeeCredential(){
-
-    const partnerId=String(
-        document.getElementById("storeApiShopeePartnerId")?.value||""
-    ).trim();
-
-    const shopId=String(
-        document.getElementById("storeApiShopeeShopId")?.value||""
-    ).trim();
-
-    const partnerKey=String(
-        document.getElementById("storeApiShopeePartnerKey")?.value||""
-    ).trim();
-
-    const accessToken=String(
-        document.getElementById("storeApiShopeeAccessToken")?.value||""
-    ).trim();
-
-    const baseUrl=String(
-        document.getElementById("storeApiShopeeBaseUrl")?.value||""
-    ).trim();
-
-    if(!partnerId||!shopId||!partnerKey||!accessToken){
-        throw new Error(
-            "Partner ID, Shop ID, Partner Key, dan Access Token wajib diisi."
-        );
-    }
-
-    const storeId=String(
-        document.getElementById("storeApiConnectionStoreId")?.value||""
-    ).trim();
-
-    if(shopId!==storeId){
-        throw new Error("Shop ID harus sama dengan Store ID akun toko.");
-    }
-
-    const payload={
-        partner_id:partnerId,
-        shop_id:shopId,
-        partner_key:partnerKey,
-        access_token:accessToken
-    };
-
-    if(baseUrl)payload.api_base_url=baseUrl;
-
-    return JSON.stringify(payload);
-
-}
-
-async function sellerBooksLoadStoreApiMarketplaces(selectedId){
-
-    const select=document.getElementById("storeApiConnectionMarketplace");
-
-    if(!select)return;
-
-    select.innerHTML='<option value="">Memuat marketplace...</option>';
-
-    const {data,error}=await sellerBooksSupabase
-        .from("sellerbooks_marketplaces")
-        .select("id,name,code,status")
-        .eq("status","ACTIVE")
-        .order("name");
-
-    if(error)throw error;
-
-    /*
-      Dropdown API hanya memakai 6 marketplace SellerBooks.
-      Data database boleh memiliki duplikasi nama/case, tetapi UI
-      harus menampilkan satu pilihan untuk masing-masing marketplace.
-    */
-    const marketplaceOrder=[
-        {key:"shopee",label:"Shopee"},
-        {key:"tiktokshop",label:"TikTok Shop"},
-        {key:"tokopedia",label:"Tokopedia"},
-        {key:"lazada",label:"Lazada"},
-        {key:"toco",label:"Toco"},
-        {key:"blibli",label:"Blibli"}
-    ];
-
-    const normalized=function(value){
-        return String(value||"")
-            .toLowerCase()
-            .replace(/[^a-z0-9]/g,"");
-    };
-
-    /*
-      Cocokkan marketplace dari CODE maupun NAME.
-      Beberapa data lama TikTok Shop memiliki code berbeda
-      (mis. "tiktok") tetapi name-nya "TikTok Shop".
-    */
-    const marketplaceAliases={
-        shopee:["shopee"],
-        tiktokshop:["tiktokshop","tiktok"],
-        tokopedia:["tokopedia"],
-        lazada:["lazada"],
-        toco:["toco"],
-        blibli:["blibli"]
-    };
-
-    const isMarketplaceMatch=function(item,targetKey){
-        const aliases=marketplaceAliases[targetKey]||[targetKey];
-        const code=normalized(item.code);
-        const name=normalized(item.name);
-
-        return aliases.includes(code) || aliases.includes(name);
-    };
-
-    const selectedKey=String(selectedId||"");
-    const uniqueMarketplaces=[];
-
-    marketplaceOrder.forEach(function(target){
-
-        const matches=(data||[]).filter(function(item){
-            return isMarketplaceMatch(item,target.key);
-        });
-
-        if(!matches.length)return;
-
-        /*
-          Jika marketplace yang sedang dibuka mempunyai ID tertentu,
-          prioritaskan record tersebut agar selection tetap terjaga.
-        */
-        const selectedMatch=matches.find(function(item){
-            return String(item.id)===selectedKey;
-        });
-
-        uniqueMarketplaces.push({
-            ...((selectedMatch||matches[0])),
-            displayName:target.label
-        });
-    });
-
-    select.innerHTML='<option value="">Pilih Marketplace</option>';
-
-    uniqueMarketplaces.forEach(function(item){
-
-        const option=document.createElement("option");
-
-        option.value=item.id;
-        option.textContent=item.displayName;
-
-        select.appendChild(option);
-
-    });
-
-    if(selectedId){
-        select.value=String(selectedId);
-
-        /*
-          Jika ID lama merupakan duplicate record yang tidak dipilih,
-          gunakan record canonical marketplace yang sudah ditampilkan.
-        */
-        if(select.value!==String(selectedId)){
-            const selectedSource=(data||[]).find(function(item){
-                return String(item.id)===String(selectedId);
-            });
-
-            const selectedKeyFromSourceCode=normalized(selectedSource?.code);
-            const selectedKeyFromSourceName=normalized(selectedSource?.name);
-
-            const canonical=uniqueMarketplaces.find(function(item){
-                return (
-                    normalized(item.code)===selectedKeyFromSourceCode ||
-                    normalized(item.name)===selectedKeyFromSourceName ||
-                    isMarketplaceMatch(item, "tiktokshop") && (
-                        ["tiktok","tiktokshop"].includes(selectedKeyFromSourceCode) ||
-                        ["tiktok","tiktokshop"].includes(selectedKeyFromSourceName)
-                    )
-                );
-            });
-
-            if(canonical)select.value=String(canonical.id);
-        }
-    }
-
-}
-
-async function openStoreApiConnectionModal(storeId){
-
-    const store=stores.find(function(item){
-        return String(item.id)===String(storeId);
-    });
-
-    if(!store){
-
-        sellerBooksAlert("Akun toko tidak ditemukan.");
-        return;
-
-    }
-
-    if(!sellerBooksAuthUser){
-
-        sellerBooksAlert("Sesi login belum siap.");
-        return;
-
-    }
-
-    sellerBooksStoreApiConnectionStoreId=String(store.id);
-    sellerBooksStoreApiConnectionData=null;
-
-    document.getElementById("storeApiConnectionStoreId").value=String(store.id);
-    document.getElementById("storeApiConnectionStoreName").value=store.name||"";
-    const oauthLauncher=document.getElementById("storeApiMarketplaceOAuthButton");
-    if(oauthLauncher){oauthLauncher.href="shopee-oauth-launcher.html?store_id="+encodeURIComponent(String(store.id))+"&marketplace_id="+encodeURIComponent(String(store.marketplaceId||""));}
-    const secretField=document.getElementById("storeApiConnectionSecret");
-    if(secretField)secretField.value="";
-
-    /*
-      Field credential Shopee manual lama sudah tidak menjadi bagian
-      dari modal OAuth. Jangan mengakses element tersebut di sini.
-    */
-    const marketplaceSelect=document.getElementById("storeApiConnectionMarketplace");
-    document.getElementById("storeApiConnectionStatus").textContent="Memuat...";
-    document.getElementById("storeApiConnectionDisconnectButton").style.display="none";
-
-    document.getElementById("storeApiConnectionModal").classList.add("show");
-
-    try{
-
-        const connection=await sellerBooksGetStoreApiConnection(store.id);
-
-        sellerBooksStoreApiConnectionData=connection;
-
-        await sellerBooksLoadStoreApiMarketplaces(store.marketplaceId);
-
-        /*
-          Modal Integrasi Akun selalu mengikuti marketplace akun toko
-          yang tombol "Integrasikan Akun"-nya diklik.
-          Jangan biarkan dropdown kembali ke pilihan pertama.
-        */
-        const marketplaceSelect=document.getElementById("storeApiConnectionMarketplace");
-        if(marketplaceSelect){
-            const targetStoreMarketplaceId=String(store.marketplaceId||"").trim();
-
-            if(targetStoreMarketplaceId){
-                marketplaceSelect.value=targetStoreMarketplaceId;
-
-                /*
-                  Jika ID marketplace lama merupakan record duplikat
-                  yang sudah dinormalisasi oleh loader, cari pilihan
-                  canonical berdasarkan nama/code marketplace asal toko.
-                */
-                if(marketplaceSelect.value!==targetStoreMarketplaceId){
-                    const storeMarketplace=(marketplaces||[]).find(function(item){
-                        return String(item.id)===targetStoreMarketplaceId;
-                    });
-
-                    const normalizeMarketplace=function(value){
-                        return String(value||"")
-                            .toLowerCase()
-                            .replace(/[^a-z0-9]/g,"");
-                    };
-
-                    const storeMarketplaceCode=normalizeMarketplace(storeMarketplace?.code);
-                    const storeMarketplaceName=normalizeMarketplace(storeMarketplace?.name);
-
-                    const canonicalOption=[...marketplaceSelect.options].find(function(option){
-                        const optionKey=normalizeMarketplace(option.textContent);
-
-                        if(optionKey===storeMarketplaceCode || optionKey===storeMarketplaceName){
-                            return true;
-                        }
-
-                        /*
-                          TikTok Shop dapat memiliki code "tiktok"
-                          sedangkan label UI adalah "TikTok Shop".
-                        */
-                        return (
-                            ["tiktok","tiktokshop"].includes(storeMarketplaceCode) &&
-                            optionKey==="tiktokshop"
-                        );
-                    });
-
-                    if(canonicalOption){
-                        marketplaceSelect.value=canonicalOption.value;
-                    }
-                }
-            }
-        }
-
-        sellerBooksSetShopeeCredentialFields(null);
-
-        const status=sellerBooksFormatApiStatus(connection);
-
-        document.getElementById("storeApiConnectionStatus").textContent=status;
-
-        document.getElementById("storeApiConnectionDisconnectButton").style.display =
-            connection ? "inline-flex" : "none";
-
-        document.getElementById("storeApiConnectionSecretNote").textContent =
-            connection && connection.vault_secret_id
-            ? "Credential sudah tersimpan aman di Supabase Vault. Isi ulang hanya jika ingin mengganti secret."
-            : "Secret dikirim langsung ke Supabase Vault dan tidak disimpan di localStorage SellerBooks.";
-
-    }catch(error){
-
-        console.error("Modal koneksi API gagal dimuat:",error);
-
-        closeStoreApiConnectionModal();
-
-        sellerBooksAlert(
-            "Gagal memuat koneksi API.\n\n"+String(error?.message||error)
-        );
-
-    }
-
-}
-
-function closeStoreApiConnectionModal(){
-
-    const modal=document.getElementById("storeApiConnectionModal");
-
-    if(modal)modal.classList.remove("show");
-
-    sellerBooksStoreApiConnectionStoreId=null;
-    sellerBooksStoreApiConnectionData=null;
-
-}
-
-async function saveStoreApiConnection(){
-
-    if(["shopee","tiktokshop","lazada","toco"].includes(String(document.getElementById("storeApiConnectionMarketplace")?.selectedOptions?.[0]?.textContent||"").toLowerCase().replace(/\s+/g,""))){
-        sellerBooksAlert("Gunakan tombol Login & Tautkan. Credential marketplace tidak perlu dimasukkan manual.");
-        return;
-    }
-
-    const storeId=String(
-        document.getElementById("storeApiConnectionStoreId").value||""
-    ).trim();
-
-    const marketplaceId=String(
-        document.getElementById("storeApiConnectionMarketplace").value||""
-    ).trim();
-
-    const secret=String(
-        document.getElementById("storeApiConnectionSecret").value||""
-    ).trim();
-
-    const store=stores.find(function(item){
-        return String(item.id)===storeId;
-    });
-
-    if(!store){
-
-        sellerBooksAlert("Akun toko tidak ditemukan.");
-        return;
-
-    }
-
-    if(!marketplaceId){
-
-        sellerBooksAlert("Silakan pilih marketplace.");
-        return;
-
-    }
-
-    if(String(store.marketplaceId)!==marketplaceId){
-
-        sellerBooksAlert(
-            "Marketplace koneksi harus sama dengan marketplace akun toko."
-        );
-
-        return;
-
-    }
-
-    let secretToSave=secret;
-
-    if(!sellerBooksStoreApiConnectionData && !secretToSave){
-
-        sellerBooksAlert("Credential / Secret API wajib diisi.");
-        return;
-
-    }
-
-    if(sellerBooksIsShopeeConnection()){
-
-        try{
-            secretToSave=sellerBooksBuildShopeeCredential();
-        }catch(error){
-            sellerBooksAlert(String(error?.message||error));
-            return;
-        }
-
-    }else if(secret){
-
-        try{
-            JSON.parse(secret);
-        }catch(error){
-            sellerBooksAlert("Credential harus berupa JSON yang valid.");
-            return;
-        }
-
-    }
-
-    const button=document.getElementById("storeApiConnectionSaveButton");
-
-    if(button){
-
-        button.disabled=true;
-        button.textContent="Menyimpan...";
-
-    }
-
-    try{
-
-        const marketplaceName=
-            document.getElementById("storeApiConnectionMarketplace")
-                .selectedOptions[0]?.textContent || "";
-
-        const {data:connection,error:connectionError}=
-            await sellerBooksSupabase.rpc(
-                "sellerbooks_api_upsert_connection",
-                {
-                    p_store_id:storeId,
-                    p_marketplace_id:marketplaceId,
-                    p_marketplace:marketplaceName
-                }
-            );
-
-        if(connectionError)throw connectionError;
-
-        if(!connection || !connection.id){
-
-            throw new Error("Integrasi Akun tidak berhasil dibuat.");
-
-        }
-
-        if(secretToSave){
-
-            const {data:updatedConnection,error:secretError}=
-                await sellerBooksSupabase.rpc(
-                    "sellerbooks_api_set_secret",
-                    {
-                        p_connection_id:connection.id,
-                        p_secret:secretToSave
-                    }
-                );
-
-            if(secretError)throw secretError;
-
-            sellerBooksStoreApiConnectionData=updatedConnection||connection;
-
-        }else{
-
-            sellerBooksStoreApiConnectionData=connection;
-
-        }
-
-        document.getElementById("storeApiConnectionStatus").textContent=
-            sellerBooksFormatApiStatus(sellerBooksStoreApiConnectionData);
-
-        document.getElementById("storeApiConnectionSecret").value="";
-        document.getElementById("storeApiShopeePartnerKey").value="";
-        document.getElementById("storeApiShopeeAccessToken").value="";
-
-        document.getElementById("storeApiConnectionStatus").textContent=
-            sellerBooksFormatApiStatus(sellerBooksStoreApiConnectionData);
-
-        document.getElementById("storeApiConnectionSecretNote").textContent=
-            "Credential tersimpan aman di Supabase Vault. Klik Tes Koneksi untuk menguji credential ke API resmi.";
-
-        await sellerBooksRefreshStoreConnectionStatuses();
-
-        if(sellerBooksIsShopeeConnection()){
-            const testResult=await sellerBooksTestConnectionInternal(connection.id);
-            if(!testResult.ok){
-
-                const errorMessage=String(
-                    testResult.error||
-                    "Tes koneksi gagal."
-                );
-
-                try{
-                    const {data:errorConnection,error:errorMark}=await sellerBooksSupabase.rpc(
-                        "sellerbooks_api_mark_connection_error",
-                        {
-                            p_connection_id:connection.id,
-                            p_error:errorMessage
-                        }
-                    );
-
-                    if(errorMark)throw errorMark;
-
-                    sellerBooksStoreApiConnectionData=
-                        errorConnection||
-                        {
-                            ...sellerBooksStoreApiConnectionData,
-                            connection_status:"ERROR",
-                            sync_enabled:false,
-                            last_error:errorMessage
-                        };
-
-                }catch(markError){
-                    console.error(
-                        "Gagal menyimpan status error koneksi:",
-                        markError
-                    );
-                }
-
-                document.getElementById(
-                    "storeApiConnectionStatus"
-                ).textContent="Error";
-
-                await sellerBooksRefreshStoreConnectionStatuses();
-
-                sellerBooksAlert(
-                    "Credential tersimpan, tetapi verifikasi Shopee gagal.\n\n"+
-                    errorMessage+
-                    "\n\nStatus akun tidak diubah menjadi Terhubung."
-                );
-
-                return;
-            }
-
-            sellerBooksStoreApiConnectionData={
-                ...sellerBooksStoreApiConnectionData,
-                connection_status:"CONNECTED",
-                last_error:null
-            };
-
-            document.getElementById("storeApiConnectionStatus").textContent="Terhubung";
-            await sellerBooksRefreshStoreConnectionStatuses();
-            sellerBooksAlert(
-                "Koneksi Shopee berhasil diuji dan sudah terhubung."
-            );
-        }else{
-            sellerBooksAlert("Credential berhasil disimpan ke Vault.");
-        }
-
-    }catch(error){
-
-        console.error("Simpan koneksi API SellerBooks gagal:",error);
-
-        sellerBooksAlert(
-            "Integrasi Akun gagal disimpan.\n\n"+String(error?.message||error)
-        );
-
-    }finally{
-
-        if(button){
-
-            button.disabled=false;
-            button.textContent="Simpan Koneksi";
-
-        }
-
-    }
-
-}
-
-async function sellerBooksTestConnectionInternal(connectionId){
-
-    const MAX_ATTEMPTS=3;
-    const TIMEOUT_MS=10000;
-    const INITIAL_RETRY_DELAY_MS=750;
-
-    const sleep=function(ms){
-        return new Promise(function(resolve){
-            setTimeout(resolve,ms);
-        });
-    };
-
-    const getRetryDelay=function(attempt){
-        /*
-           Exponential backoff bertahap:
-           setelah percobaan #1 -> 750ms
-           setelah percobaan #2 -> 1500ms
-           Maksimal tetap 3 percobaan.
-        */
-        return INITIAL_RETRY_DELAY_MS*Math.pow(2,attempt-1);
-    };
-
-    try{
-
-        const {
-            data:sessionData,
-            error:sessionError
-        }=await sellerBooksSupabase.auth.getSession();
-
-        if(sessionError)throw sessionError;
-
-        const accessToken=sessionData?.session?.access_token||"";
-
-        if(!accessToken){
-            return {
-                ok:false,
-                status:"ERROR",
-                attempts:0,
-                error:"Sesi login SellerBooks tidak ditemukan. Silakan login kembali."
-            };
-        }
-
-        let lastError="Tes koneksi gagal.";
-
-        for(let attempt=1;attempt<=MAX_ATTEMPTS;attempt++){
-
-            const controller=new AbortController();
-
-            const timeoutId=setTimeout(function(){
-                controller.abort();
-            },TIMEOUT_MS);
-
-            try{
-
-                const response=await fetch(
-                    SELLERBOOKS_SUPABASE_URL+
-                    "/functions/v1/sellerbooks-api-test-connection",
-                    {
-                        method:"POST",
-                        headers:{
-                            "Content-Type":"application/json",
-                            "apikey":SELLERBOOKS_SUPABASE_KEY,
-                            "Authorization":"Bearer "+accessToken
-                        },
-                        body:JSON.stringify({
-                            connection_id:connectionId
-                        }),
-                        signal:controller.signal
-                    }
-                );
-
-                const raw=await response.text();
-
-                let data=null;
-
-                try{
-                    data=raw?JSON.parse(raw):null;
-                }catch(error){
-                    data=null;
-                }
-
-                if(data && typeof data==="object"){
-
-                    data.attempts=
-                        Number(data.attempts||attempt);
-
-                    data.max_attempts=MAX_ATTEMPTS;
-                    data.timeout_ms=TIMEOUT_MS;
-
-                    if(data.ok){
-                        return data;
-                    }
-
-                    lastError=String(
-                        data.error||
-                        "Tes koneksi gagal."
-                    );
-
-                    /*
-                       Credential/API ditolak dengan respons valid.
-                       Tidak perlu membuat request tanpa batas.
-                       Retry tetap dibatasi maksimal 3 percobaan.
-                    */
-
-                }else{
-
-                    lastError=
-                        !response.ok
-                        ? "Server tes koneksi mengembalikan HTTP "+
-                          response.status+"."
-                        : "Respons tes koneksi kosong.";
-
-                }
-
-            }catch(error){
-
-                if(error?.name==="AbortError"){
-
-                    lastError=
-                        "Timeout: percobaan ke-"+attempt+
-                        " tidak mendapat respons dalam "+
-                        (TIMEOUT_MS/1000)+
-                        " detik.";
-
-                }else{
-
-                    lastError=String(
-                        error?.message||
-                        "Tidak dapat menghubungi layanan tes koneksi."
-                    );
-
-                }
-
-            }finally{
-
-                clearTimeout(timeoutId);
-
-            }
-
-            if(attempt<MAX_ATTEMPTS){
-
-                const retryDelay=getRetryDelay(attempt);
-
-                await sleep(retryDelay);
-
-            }
-
-        }
-
-        return {
-            ok:false,
-            status:"ERROR",
-            attempts:MAX_ATTEMPTS,
-            max_attempts:MAX_ATTEMPTS,
-            timeout_ms:TIMEOUT_MS,
-            error:
-                lastError+
-                "\n\nSemua "+MAX_ATTEMPTS+
-                " percobaan gagal. Status tidak diubah menjadi Terhubung."
-        };
-
-    }catch(error){
-
-        console.error("Tes koneksi API SellerBooks gagal:",error);
-
-        return {
-            ok:false,
-            status:"ERROR",
-            attempts:0,
-            error:String(
-                error?.message||
-                "Tidak dapat menghubungi layanan tes koneksi."
-            )
-        };
-
-    }
-
-}
-
-async function testStoreApiConnection(){
-
-    const connection=sellerBooksStoreApiConnectionData;
-
-    if(!connection || !connection.id){
-
-        sellerBooksAlert(
-            "Simpan credential terlebih dahulu, kemudian lakukan Tes Koneksi."
-        );
-
-        return;
-
-    }
-
-    if(!sellerBooksIsShopeeConnection()){
-
-        sellerBooksAlert(
-            "Tes koneksi API saat ini baru tersedia untuk Shopee."
-        );
-
-        return;
-
-    }
-
-    const button=document.getElementById("storeApiConnectionTestButton");
-
-    if(button){
-        button.disabled=true;
-        button.textContent="Menguji (maks. 3x)...";
-        button.title="Setiap percobaan memiliki timeout 10 detik.";
-    }
-
-    try{
-
-        const result=await sellerBooksTestConnectionInternal(connection.id);
-
-        if(!result.ok){
-
-            document.getElementById("storeApiConnectionStatus").textContent="Error";
-
-            const errorMessage=String(
-                result.error||
-                "Credential Shopee tidak valid."
-            );
-
-            try{
-
-                const {
-                    data:errorConnection,
-                    error:errorMark
-                }=await sellerBooksSupabase.rpc(
-                    "sellerbooks_api_mark_connection_error",
-                    {
-                        p_connection_id:connection.id,
-                        p_error:errorMessage
-                    }
-                );
-
-                if(errorMark)throw errorMark;
-
-                sellerBooksStoreApiConnectionData=
-                    errorConnection||
-                    {
-                        ...connection,
-                        connection_status:"ERROR",
-                        sync_enabled:false,
-                        last_error:errorMessage
-                    };
-
-            }catch(markError){
-
-                console.error(
-                    "Gagal menyimpan status error koneksi:",
-                    markError
-                );
-
-                sellerBooksStoreApiConnectionData={
-                    ...connection,
-                    connection_status:"ERROR",
-                    sync_enabled:false,
-                    last_error:errorMessage
-                };
-
-            }
-
-            document.getElementById(
-                "storeApiConnectionStatus"
-            ).textContent="Error";
-
-            await sellerBooksRefreshStoreConnectionStatuses();
-
-            sellerBooksAlert(
-                "Tes koneksi gagal.\n\n"+
-                errorMessage+
-                "\n\nStatus tetap tidak terhubung karena verifikasi API Shopee gagal."
-            );
-
-            return;
-
-        }
-
-        sellerBooksStoreApiConnectionData={
-            ...connection,
-            connection_status:"CONNECTED",
-            last_error:null
-        };
-
-        document.getElementById("storeApiConnectionStatus").textContent="Terhubung";
-
-        await sellerBooksRefreshStoreConnectionStatuses();
-
-        sellerBooksAlert(
-            "Tes koneksi berhasil. Akun Shopee berhasil terhubung."
-        );
-
-    }finally{
-
-        if(button){
-            button.disabled=false;
-            button.textContent="Tes Koneksi";
-        }
-
-    }
-
-}
-
-let sellerBooksOrderSyncBusy=false;
-let sellerBooksOrderSyncTimer=null;
-
-function sellerBooksSetOrderSyncUi(message,show=true){
-    const box=document.getElementById("storeApiOrderSyncStatusBox");
-    const node=document.getElementById("storeApiOrderSyncStatus");
-    if(box)box.style.display=show?"block":"none";
-    if(node)node.textContent=String(message||"");
-}
-
-async function sellerBooksPollOrderSync(correlationId,connectionId){
-    const started=Date.now();
-    const MAX_POLL_MS=120000;
-
-    while(Date.now()-started<MAX_POLL_MS){
-        try{
-            const {data,error}=await sellerBooksSupabase
-                .from("sellerbooks_sync_runs")
-                .select("id,status,correlation_id,fetched_count,upserted_count,updated_count,skipped_count,error_message,started_at,finished_at")
-                .eq("correlation_id",correlationId)
-                .eq("connection_id",connectionId)
-                .limit(1)
-                .maybeSingle();
-
-            if(error)throw error;
-
-            if(data){
-                const counts=
-                    "Ditemukan "+Number(data.fetched_count||0)+
-                    " • Baru "+Number(data.upserted_count||0)+
-                    " • Diperbarui "+Number(data.updated_count||0);
-
-                if(data.status==="RUNNING"){
-                    sellerBooksSetOrderSyncUi(
-                        "Berjalan • Correlation ID: "+correlationId+" • "+counts
-                    );
-                }else if(data.status==="SUCCESS"){
-                    sellerBooksSetOrderSyncUi(
-                        "Selesai • Correlation ID: "+correlationId+" • "+counts+
-                        " • Dilewati "+Number(data.skipped_count||0)
-                    );
-                    return data;
-                }else if(data.status==="ERROR"){
-                    sellerBooksSetOrderSyncUi(
-                        "Gagal • Correlation ID: "+correlationId+
-                        (data.error_message?" • "+data.error_message:"")
-                    );
-                    return data;
-                }
-            }else{
-                sellerBooksSetOrderSyncUi(
-                    "Menyiapkan sinkronisasi • Correlation ID: "+correlationId
-                );
-            }
-        }catch(error){
-            console.warn("Status sync order gagal diperbarui:",error);
-        }
-
-        await new Promise(function(resolve){
-            sellerBooksOrderSyncTimer=setTimeout(resolve,1000);
-        });
-        sellerBooksOrderSyncTimer=null;
-    }
-
-    sellerBooksSetOrderSyncUi(
-        "Proses masih berjalan. Correlation ID: "+correlationId+
-        ". Status akhir akan diperbarui dari riwayat sinkronisasi."
-    );
-
-    return null;
-}
-
-async function sellerBooksSyncShopeeOrders(){
-    if(sellerBooksOrderSyncBusy)return;
-
-    const connection=sellerBooksStoreApiConnectionData;
-    if(!connection || !connection.id){
-        sellerBooksAlert("Simpan dan tes koneksi Shopee terlebih dahulu.");
-        return;
-    }
-
-    if(String(connection.connection_status||"").toUpperCase()!=="CONNECTED"){
-        sellerBooksAlert("Koneksi Shopee belum berstatus Terhubung.");
-        return;
-    }
-
-    if(!sellerBooksIsShopeeConnection()){
-        sellerBooksAlert("Sinkronisasi order saat ini hanya tersedia untuk Shopee.");
-        return;
-    }
-
-    sellerBooksOrderSyncBusy=true;
-
-    const button=document.getElementById("storeApiOrderSyncButton");
-    const testButton=document.getElementById("storeApiConnectionTestButton");
-    const saveButton=document.getElementById("storeApiConnectionSaveButton");
-    const disconnectButton=document.getElementById("storeApiConnectionDisconnectButton");
-
-    if(button){
-        button.disabled=true;
-        button.textContent="Menyinkronkan...";
-        button.title="Sinkronisasi sedang berlangsung. Jangan klik lagi.";
-    }
-    if(testButton)testButton.disabled=true;
-    if(saveButton)saveButton.disabled=true;
-    if(disconnectButton)disconnectButton.disabled=true;
-
-    const correlationId=crypto.randomUUID();
-
-    sellerBooksSetOrderSyncUi(
-        "Memulai sinkronisasi • Correlation ID: "+correlationId
-    );
-
-    try{
-        const {data:sessionData,error:sessionError}=await sellerBooksSupabase.auth.getSession();
-        if(sessionError)throw sessionError;
-
-        const accessToken=sessionData?.session?.access_token||"";
-        if(!accessToken)throw new Error("Sesi login SellerBooks tidak ditemukan. Silakan login kembali.");
-
-        const statusPromise=sellerBooksPollOrderSync(correlationId,connection.id);
-
-        const response=await fetch(
-            SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-sync-orders",
-            {
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json",
-                    "apikey":SELLERBOOKS_SUPABASE_KEY,
-                    "Authorization":"Bearer "+accessToken
-                },
-                body:JSON.stringify({
-                    connection_id:connection.id,
-                    correlation_id:correlationId
-                })
-            }
-        );
-
-        const raw=await response.text();
-        let result=null;
-        try{result=raw?JSON.parse(raw):null;}catch(error){}
-
-        await statusPromise;
-
-        if(!response.ok || !result?.ok){
-            const finalCorrelationId=result?.correlation_id||correlationId;
-            sellerBooksSetOrderSyncUi(
-                "Gagal • Correlation ID: "+finalCorrelationId+
-                (result?.error?" • "+result.error:"")
-            );
-            throw new Error(result?.error||("Server sync order mengembalikan HTTP "+response.status+"."));
-        }
-
-        sellerBooksSetOrderSyncUi(
-            "Selesai • Correlation ID: "+result.correlation_id+
-            " • Baru "+Number(result.upserted_count||0)+
-            " • Diperbarui "+Number(result.updated_count||0)+
-            " • Dilewati "+Number(result.skipped_count||0)
-        );
-
-        sellerBooksStoreApiConnectionData={
-            ...sellerBooksStoreApiConnectionData,
-            last_sync_at:new Date().toISOString(),
-            last_success_at:new Date().toISOString(),
-            last_error:null
-        };
-
-        await sellerBooksRefreshStoreConnectionStatuses();
-
-    }catch(error){
-        console.error("Sinkronisasi order Shopee gagal:",error);
-        sellerBooksSetOrderSyncUi(
-            "Gagal • Correlation ID: "+correlationId+
-            " • "+String(error?.message||error)
-        );
-    }finally{
-        if(sellerBooksOrderSyncTimer){
-            clearTimeout(sellerBooksOrderSyncTimer);
-            sellerBooksOrderSyncTimer=null;
-        }
-
-        sellerBooksOrderSyncBusy=false;
-
-        if(button){
-            button.disabled=false;
-            button.textContent="Sync Sekarang";
-            button.title="Sinkronkan order Shopee ke SellerBooks";
-        }
-        if(testButton)testButton.disabled=false;
-        if(saveButton)saveButton.disabled=false;
-        if(disconnectButton)disconnectButton.disabled=false;
-    }
-}
-
-async function disconnectStoreApiConnection(){
-
-    const connection=sellerBooksStoreApiConnectionData;
-
-    if(!connection || !connection.id){
-
-        closeStoreApiConnectionModal();
-        return;
-
-    }
-
-    const confirmed=await sellerBooksConfirm(
-        "Putuskan koneksi API akun toko ini?"
-    );
-
-    if(!confirmed)return;
-
-    try{
-
-        const {data,error}=await sellerBooksSupabase.rpc(
-            "sellerbooks_api_disconnect",
-            {
-                p_connection_id:connection.id
-            }
-        );
-
-        if(error)throw error;
-
-        sellerBooksStoreApiConnectionData=data||{
-            ...connection,
-            connection_status:"DISCONNECTED",
-            sync_enabled:false
-        };
-
-        document.getElementById("storeApiConnectionStatus").textContent=
-            sellerBooksFormatApiStatus(sellerBooksStoreApiConnectionData);
-
-        document.getElementById("storeApiConnectionSecret").value="";
-
-        await sellerBooksRefreshStoreConnectionStatuses();
-
-        sellerBooksAlert("Integrasi Akun sudah diputuskan.");
-
-    }catch(error){
-
-        console.error("Putus koneksi API SellerBooks gagal:",error);
-
-        sellerBooksAlert(
-            "Integrasi Akun gagal diputuskan.\n\n"+String(error?.message||error)
-        );
-
-    }
-
-}
 
 
 /* =====================================================
@@ -21193,7 +19342,7 @@ function closeStoreModal(){
    SIMPAN AKUN TOKO
 ===================================================== */
 
-async function saveStore(){
+function saveStore(){
 
     const marketplaceId =
 
@@ -21310,6 +19459,7 @@ if(feePercent < 0 || feePercent > 100){
 
     if(editingStoreId){
 
+
         const store =
 
             stores.find(function(item){
@@ -21318,70 +19468,26 @@ if(feePercent < 0 || feePercent > 100){
 
             });
 
-        if(!store)return;
 
-        const previousStore = {...store};
+        if(store){
 
-        if(previousStore.marketplaceId !== marketplaceId){
+            store.marketplaceId = marketplaceId;
 
-            try{
+            store.name = name;
 
-                if(await sellerBooksStoreHasApiConnection(previousStore.id)){
+            store.code = code;
 
-                    sellerBooksAlert(
-                        "Marketplace akun toko ini tidak dapat diubah karena masih memiliki koneksi Auto Sync. Putuskan koneksi terlebih dahulu."
-                    );
+            store.feePercent = feePercent;
 
-                    return;
+            store.description = description;
 
-                }
+            store.status = status;
 
-            }catch(error){
-
-                console.error("Cek koneksi akun toko gagal:",error);
-
-                sellerBooksAlert(
-                    "Gagal memeriksa koneksi akun toko. Perubahan dibatalkan."
-                );
-
-                return;
-
-            }
+            store.updatedAt =
+                new Date().toISOString();
 
         }
 
-        store.marketplaceId = marketplaceId;
-
-        store.name = name;
-
-        store.code = code;
-
-        store.feePercent = feePercent;
-
-        store.description = description;
-
-        store.status = status;
-
-        store.updatedAt =
-            new Date().toISOString();
-
-        try{
-
-            await sellerBooksSyncStoreRelational(store);
-
-        }catch(error){
-
-            Object.assign(store,previousStore);
-
-            console.error("Sinkronisasi akun toko gagal:",error);
-
-            sellerBooksAlert(
-                "Akun toko belum tersimpan ke database baru. Perubahan dibatalkan.\n\n"+String(error?.message||error)
-            );
-
-            return;
-
-        }
 
     }
 
@@ -21427,7 +19533,7 @@ if(feePercent < 0 || feePercent > 100){
 
 
 
-        const newStore = {
+        stores.push({
 
             id:"store_" + Date.now(),
 
@@ -21449,25 +19555,7 @@ if(feePercent < 0 || feePercent > 100){
             updatedAt:
                 new Date().toISOString()
 
-        };
-
-        try{
-
-            await sellerBooksSyncStoreRelational(newStore);
-
-        }catch(error){
-
-            console.error("Sinkronisasi akun toko baru gagal:",error);
-
-            sellerBooksAlert(
-                "Akun toko belum tersimpan ke database baru. Perubahan dibatalkan.\n\n"+String(error?.message||error)
-            );
-
-            return;
-
-        }
-
-        stores.push(newStore);
+        });
 
     }
 
@@ -21561,7 +19649,7 @@ document.getElementById(
    AKTIF / NONAKTIF TOKO
 ===================================================== */
 
-async function toggleStore(id){
+function toggleStore(id){
 
     const store =
 
@@ -21575,8 +19663,6 @@ async function toggleStore(id){
     if(!store) return;
 
 
-    const previousStatus=store.status;
-
     store.status =
 
         store.status === "active"
@@ -21588,24 +19674,6 @@ async function toggleStore(id){
 
     store.updatedAt =
         new Date().toISOString();
-
-    try{
-
-        await sellerBooksSyncStoreRelational(store);
-
-    }catch(error){
-
-        store.status=previousStatus;
-
-        console.error("Sinkronisasi status akun toko gagal:",error);
-
-        sellerBooksAlert(
-            "Perubahan status belum tersimpan ke database baru.\n\n"+String(error?.message||error)
-        );
-
-        return;
-
-    }
 
 
     saveStoreData();
@@ -21653,32 +19721,6 @@ async function deleteStore(id){
 
     }
 
-
-    try{
-
-        if(await sellerBooksStoreHasApiConnection(store.id)){
-
-            sellerBooksAlert(
-                "Akun toko ini masih memiliki koneksi Auto Sync. Putuskan koneksi terlebih dahulu sebelum menghapus akun toko."
-            );
-
-            return;
-
-        }
-
-        await sellerBooksDeleteStoreRelational(store.id);
-
-    }catch(error){
-
-        console.error("Penghapusan akun toko di database baru gagal:",error);
-
-        sellerBooksAlert(
-            "Akun toko tidak dihapus karena database baru menolak perubahan.\n\n"+String(error?.message||error)
-        );
-
-        return;
-
-    }
 
     stores =
 
@@ -22133,7 +20175,11 @@ function renderProducts(){
 
                     <div class="product-empty">
 
-                        <div class="product-empty-icon"><svg class="sb-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></svg></div>
+                        <div class="product-empty-icon">
+
+                            📦
+
+                        </div>
 
 
                         <h3>
@@ -22324,7 +20370,7 @@ function renderProducts(){
                             onclick="editProduct('${product.id}')"
                         >
 
-                            ${sellerBooksSvgIcon("edit")}
+                            ✏️
 
                         </button>
 
@@ -22358,7 +20404,7 @@ function renderProducts(){
                             onclick="deleteProduct('${product.id}')"
                         >
 
-                            ${sellerBooksSvgIcon("trash")}
+                            🗑️
 
                         </button>
 
@@ -24252,7 +22298,7 @@ const SALES_MARKETPLACE_RULES={
            Packing TIDAK memakai Nomor Pesanan/No. Order.
         */
         packingAliases:["nomor resi/awb","no. awb"],
-        orderAliases:["nomor pesanan","no. order"],
+        orderAliases:["nomor pesanan"],
         priceAliases:["harga produk","total harga produk"],
         dateAliases:["tanggal pesanan","tanggal order"]
     },
@@ -29545,7 +27591,7 @@ function getSellerBooksNotifications(){
 
         notifications.push({
 
-            icon:sellerBooksSvgIcon("box"),
+            icon:"📦",
 
             title:"Master Produk masih kosong",
 
@@ -29571,7 +27617,7 @@ function getSellerBooksNotifications(){
 
         notifications.push({
 
-            icon:sellerBooksSvgIcon("user"),
+            icon:"👤",
 
             title:"Identitas belum diatur",
 
@@ -29600,7 +27646,7 @@ function getSellerBooksNotifications(){
 
             notifications.push({
 
-                icon:sellerBooksSvgIcon("download"),
+                icon:"📥",
 
                 title:"Import penjualan belum selesai",
 
@@ -29625,7 +27671,7 @@ if(lowStockProducts.length > 0){
 
     notifications.push({
 
-        icon:sellerBooksSvgIcon("warning"),
+        icon:"⚠️",
 
         title:
             lowStockProducts.length +
@@ -29646,7 +27692,7 @@ if(lowStockProducts.length > 0){
 
         notifications.push({
 
-            icon:sellerBooksSvgIcon("check"),
+            icon:"✅",
 
             title:"Semua aman",
 
@@ -30129,8 +28175,19 @@ function renderCosts(){
                                 >
 
                                     ${
-                                        !isCostSnapshotLocked(cost)
+                                        isCostSnapshotLocked(cost)
                                         ? `
+                                            <button
+                                                type="button"
+                                                class="secondary-button"
+                                                disabled
+                                                title="Biaya sudah menjadi snapshot setelah 00:00 WIB"
+                                                style="color:#64748b;opacity:.75;cursor:not-allowed;"
+                                            >
+                                                🔒 Snapshot
+                                            </button>
+                                        `
+                                        : `
                                             <button
                                                 type="button"
                                                 class="secondary-button"
@@ -30139,8 +28196,8 @@ function renderCosts(){
                                                 Edit
                                             </button>
                                         `
-                                        : ""
                                     }
+
                                     <button
                                         type="button"
                                         class="secondary-button"
@@ -31896,119 +29953,6 @@ document.addEventListener(
     .sb-piutang-dashboard-card{align-items:flex-start;flex-direction:column;}
     .sb-piutang-dashboard-button{width:100%;}
 }
-
-/* =====================================================
-   SELLERBOOKS DESKTOP RESPONSIVE / NO HORIZONTAL SCROLL
-   Menjaga layout tetap proporsional di Windows Desktop,
-   Chrome, Edge, Firefox, dan WebView desktop.
-   Tidak mengubah breakpoint mobile Android yang sudah stabil.
-===================================================== */
-
-html,
-body{
-    width:100%;
-    max-width:100%;
-    overflow-x:hidden;
-}
-
-#app{
-    width:100%;
-    min-width:0;
-}
-
-.main-app{
-    min-width:0;
-    max-width:none;
-    box-sizing:border-box;
-}
-
-.app-content{
-    width:100%;
-    min-width:0;
-    box-sizing:border-box;
-}
-
-.stats-grid,
-.marketplace-grid,
-.stores-grid{
-    min-width:0;
-}
-
-.stat-card,
-.marketplace-card,
-.store-card,
-.content-section,
-.welcome-card{
-    min-width:0;
-    max-width:100%;
-}
-
-.store-name,
-.store-description,
-.marketplace-card h3,
-.marketplace-card p,
-.store-marketplace-name,
-.store-info-item{
-    min-width:0;
-    overflow-wrap:anywhere;
-    word-break:break-word;
-}
-
-.store-actions{
-    min-width:0;
-}
-
-.store-actions button,
-.store-action-button{
-    min-width:0;
-    max-width:100%;
-    overflow-wrap:anywhere;
-}
-
-/* Pada layar Windows/Chrome ukuran 901-1450px,
-   gunakan 2 kartu per baris agar tidak melebar ke samping. */
-@media (min-width:901px) and (max-width:1450px){
-
-    .stats-grid{
-        grid-template-columns:repeat(2,minmax(0,1fr));
-    }
-
-    .marketplace-grid,
-    .stores-grid{
-        grid-template-columns:repeat(2,minmax(0,1fr));
-    }
-
-    .store-actions{
-        flex-wrap:wrap;
-    }
-
-    .store-actions button{
-        flex:1 1 0;
-    }
-
-}
-
-/* Desktop yang sangat sempit tetap menggunakan ruang yang tersedia,
-   tanpa memaksa halaman membuat horizontal scrollbar. */
-@media (min-width:901px) and (max-width:1100px){
-
-    .app-content{
-        padding-left:24px;
-        padding-right:24px;
-    }
-
-    .store-card,
-    .marketplace-card{
-        padding:18px;
-    }
-
-}
-
-
-/* Sembunyikan catatan secret pada modal Integrasi Akun */
-#storeApiConnectionSecretNote{
-    display:none !important;
-}
 </style>
 
 <script>
@@ -32825,492 +30769,6 @@ body{
             }
         });
     }
-})();
-</script>
-
-
-<!-- SELLERBOOKS_AUTO_SYNC_CONTRACT_V1 -->
-<script>
-/*
-=========================================================
- SELLERBOOKS AUTO SYNC — TRANSACTION CONTRACT V1
- Fondasi ini TIDAK mengubah import Excel/CSV yang sudah berjalan.
- API marketplace nantinya harus menghasilkan struktur kanonik
- yang sama dengan transaksi SellerBooks.
-=========================================================
-*/
-window.SELLERBOOKS_AUTO_SYNC_CONTRACT = {
-    version: "1.0",
-    sourceManual: "manual_import",
-    sourceApi: "api_sync",
-    fields: {
-        marketplace:"string", storeId:"string", orderId:"string", itemId:"string",
-        sku:"string", productName:"string", qty:"number", price:"number",
-        salesAmount:"number", trackingNumber:"string", orderDate:"string", status:"string",
-        adminFeeSku:"number|null", adminFeeSkuSnapshot:"number|null",
-        adminFeeAccountSnapshot:"number|null", adminFeePercent:"number|null",
-        packingFee:"number|null", otherFee:"number|null", hpp:"number|null",
-        source:"manual_import|api_sync"
-    }
-};
-
-window.sellerBooksBuildTransactionKey = function(transaction){
-    return [
-        String(transaction?.marketplace||"").trim().toLowerCase(),
-        String(transaction?.storeId||"").trim().toLowerCase(),
-        String(transaction?.orderId||"").trim().toLowerCase(),
-        String(transaction?.itemId||"").trim().toLowerCase()
-    ].join("|");
-};
-
-window.sellerBooksNormalizeAutoSyncTransaction = function(raw, marketplace, storeId){
-    raw=raw||{};
-    const numberOrNull=function(v){
-        if(v===undefined||v===null||v==="")return null;
-        const n=Number(v); return Number.isFinite(n)?n:null;
-    };
-    const first=function(){
-        for(let i=0;i<arguments.length;i++){
-            const v=arguments[i];
-            if(v!==undefined&&v!==null&&String(v).trim()!=="")return v;
-        }
-        return "";
-    };
-    const qty=numberOrNull(first(raw.qty,raw.quantity,raw.item_quantity,raw.model_quantity_purchased))??0;
-    const price=numberOrNull(first(raw.price,raw.unitPrice,raw.unit_price,raw.item_price,raw.model_original_price))??0;
-    const salesAmount=numberOrNull(first(raw.salesAmount,raw.totalSales,raw.total_amount,raw.item_total,raw.subtotal));
-
-    return {
-        marketplace:String(marketplace||raw.marketplace||"").trim(),
-        storeId:String(storeId||raw.storeId||"").trim(),
-        orderId:String(first(raw.orderId,raw.order_id,raw.order_sn,raw.orderNumber,raw.order_number,raw.invoiceNumber,raw.invoice_number)).trim(),
-        itemId:String(first(raw.itemId,raw.item_id,raw.orderItemId,raw.order_item_id,raw.orderLineId,raw.order_line_id)).trim(),
-        sku:String(first(raw.sku,raw.sellerSku,raw.seller_sku,raw.itemSku,raw.item_sku,raw.productSku,raw.product_sku)).trim(),
-        productName:String(first(raw.productName,raw.product_name,raw.itemName,raw.item_name)).trim(),
-        qty:qty,
-        price:price,
-        salesAmount:salesAmount!==null?salesAmount:(qty*price),
-        trackingNumber:String(first(raw.trackingNumber,raw.tracking_number,raw.trackingCode,raw.tracking_code,raw.awb,raw.resi)).trim(),
-        orderDate:String(first(raw.orderDate,raw.order_date,raw.createdAt,raw.created_at,raw.orderCreatedAt,raw.order_created_at)).trim(),
-        status:String(first(raw.status,raw.orderStatus,raw.order_status,raw.order_status_name)).trim(),
-
-        adminFeeSku:numberOrNull(raw.adminFeeSku),
-        adminFeeSkuSnapshot:numberOrNull(raw.adminFeeSkuSnapshot),
-        adminFeeAccountSnapshot:numberOrNull(raw.adminFeeAccountSnapshot),
-        adminFeePercent:numberOrNull(raw.adminFeePercent),
-        packingFee:numberOrNull(raw.packingFee),
-        otherFee:numberOrNull(raw.otherFee),
-        hpp:numberOrNull(raw.hpp),
-
-        source:"api_sync"
-    };
-};
-
-window.sellerBooksNormalizeAutoSyncBatch=function(rows,marketplace,storeId){
-    return (Array.isArray(rows)?rows:[]).map(function(raw){
-        const t=window.sellerBooksNormalizeAutoSyncTransaction(raw,marketplace,storeId);
-        t.transactionKey=window.sellerBooksBuildTransactionKey(t);
-        return t;
-    });
-};
-
-window.sellerBooksValidateAutoSyncTransaction=function(transaction){
-    if(!transaction)return {valid:false,reason:"Transaksi kosong."};
-    if(!String(transaction.marketplace||"").trim())return {valid:false,reason:"Marketplace kosong."};
-    if(!String(transaction.storeId||"").trim())return {valid:false,reason:"Store ID kosong."};
-    if(!String(transaction.orderId||"").trim())return {valid:false,reason:"Order ID kosong."};
-    if(!String(transaction.sku||"").trim())return {valid:false,reason:"SKU kosong."};
-    if(!(Number(transaction.qty)>0))return {valid:false,reason:"QTY tidak valid."};
-    return {valid:true,reason:"OK"};
-};
-</script>
-
-<script>
-/* SELLERBOOKS_SVG_ICON_SYSTEM_V2
-   Mengganti emoji UI dengan SVG agar konsisten di Chrome/Yandex/Android WebView.
-   Tidak menyentuh mesin transaksi, import Excel/CSV, atau Auto Sync.
-*/
-window.sellerBooksSvgIcon=function(name,extraClass){
-const paths={
-home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/>',
-store:'<path d="M4 9h16l-1-5H5L4 9Z"/><path d="M5 9v11h14V9"/><path d="M9 20v-6h6v6"/><path d="M3 9h18"/>',
-shop:'<path d="M4 10h16v10H4z"/><path d="M3 10 5 4h14l2 6"/><path d="M8 10v2a4 4 0 0 0 8 0v-2"/><path d="M8 20v-5h8v5"/>',
-box:'<path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/>',
-download:'<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 20h16"/>',
-upload:'<path d="M12 17V5"/><path d="m7 10 5-5 5 5"/><path d="M4 19h16"/>',
-wallet:'<path d="M4 6h16v14H4z"/><path d="M4 6V4h13"/><path d="M15 13h5"/><circle cx="15" cy="13" r="1"/>',
-card:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/>',
-search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
-chart:'<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M3 20h18"/>',
-settings:'<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/>',
-refresh:'<path d="M20 11a8 8 0 0 0-14-5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14 5l2-2"/><path d="M20 20v-4h-4"/>',
-logout:'<path d="M10 4H5v16h5"/><path d="m14 8 4 4-4 4"/><path d="M9 12h9"/>',
-menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
-bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
-lock:'<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
-user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
-tag:'<path d="M4 5v6l9 9 7-7-9-9H4Z"/><circle cx="8" cy="9" r="1"/>',
-money:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M7 9h.01M17 15h.01"/>',
-file:'<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v5h5"/><path d="M9 13h6M9 17h6"/>',
-image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r="1.5"/><path d="m4 17 5-5 4 4 3-3 5 5"/>',
-building:'<path d="M5 21V4h10v17"/><path d="M15 9h4v12"/><path d="M8 8h2M8 12h2M8 16h2M17 13h1M17 17h1"/><path d="M3 21h18"/>',
-calculator:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2"/>',
-warning:'<path d="m12 3 9 17H3L12 3Z"/><path d="M12 9v4M12 16h.01"/>',
-check:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
-trash:'<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 14h10l1-14"/><path d="M9 7V4h6v3"/>',
-edit:'<path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z"/><path d="m13.5 7.5 3 3"/>',
-close:'<path d="m6 6 12 12M18 6 6 18"/>',
-filter:'<path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"/>',
-folder:'<path d="M3 6h7l2 2h9v11H3z"/>',
-robot:'<rect x="5" y="7" width="14" height="13" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/>',
-chartUp:'<path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 2 5-6"/><path d="M15 7h4v4"/>',
-moneyBill:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M5 9h.01M19 15h.01"/>',
-receipt:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6M9 16h4"/>',
-diamond:'<path d="m12 3 8 9-8 9-8-9 8-9Z"/><path d="m8 12 4-4 4 4-4 4-4-4Z"/>',
-hand:'<path d="M7 11V6a1.5 1.5 0 0 1 3 0v4"/><path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M13 10V6a1.5 1.5 0 0 1 3 0v6"/><path d="M16 11V9a1.5 1.5 0 0 1 3 0v5c0 4-3 7-7 7h-2c-3 0-5-2-6-5l-1-3a1.5 1.5 0 0 1 2.8-1.1L7 15"/>',
-music:'<path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>',
-status:'<circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/>'
-};
-return '<svg class="sb-svg-icon sb-svg-icon-'+String(name||"box").replace(/[^a-zA-Z0-9_-]/g,"")+' '+(extraClass||"")+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(paths[name]||paths.box)+'</svg>';
-};
-
-window.sellerBooksReplaceEmojiIcons=function(root){
-root=root||document;
-const map={
-"🏠":"home","🏪":"store","🏬":"shop","📦":"box","📥":"download","📤":"upload",
-"💸":"wallet","💳":"card","🔎":"search","📊":"chart","⚙️":"settings","🔄":"refresh",
-"🚪":"logout","☰":"menu","🔔":"bell","🔐":"lock","👤":"user","🏷️":"tag","💰":"money",
-"💵":"moneyBill","🧾":"receipt","📄":"file","🏢":"building","🖼️":"image","🔢":"calculator",
-"⚠️":"warning","✅":"check","🤖":"robot","🗑️":"trash","🗑":"trash","✏️":"edit","✏":"edit",
-"✕":"close","📂":"folder","📈":"chartUp","💎":"diamond","👋":"hand","🎵":"music",
-"🛍️":"store","🟢":"status","🔵":"status","🟣":"status","🔷":"status","🔒":"lock"
-};
-
-const replaceElement=function(el){
-    const key=map[String(el.textContent||"").trim()];
-    if(key)el.innerHTML=window.sellerBooksSvgIcon(key);
-};
-
-const selectors=[
-".menu-icon",".stat-icon",".security-icon",".owner-setup-icon",".sb-piutang-dashboard-icon",
-".sb-piutang-summary-icon",".import-info-icon",".recognition-icon",".settings-card-icon",
-".store-empty-icon",".product-empty-icon",".notification-icon"
-];
-root.querySelectorAll(selectors.join(",")).forEach(replaceElement);
-
-const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
-    acceptNode:function(node){
-        const parent=node.parentElement;
-        if(!parent)return NodeFilter.FILTER_REJECT;
-        const tag=parent.tagName;
-        if(["SCRIPT","STYLE","TEXTAREA","INPUT","OPTION","SELECT","SVG","PATH"].includes(tag))return NodeFilter.FILTER_REJECT;
-        return Object.keys(map).some(function(k){return node.nodeValue.indexOf(k)>=0;})
-            ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-    }
-});
-
-const nodes=[];
-let node;
-while(node=walker.nextNode())nodes.push(node);
-
-nodes.forEach(function(textNode){
-    let text=textNode.nodeValue;
-    const frag=document.createDocumentFragment();
-    let changed=false;
-    const keys=Object.keys(map).sort(function(a,b){return b.length-a.length;});
-    while(text){
-        let found=null,pos=text.length;
-        keys.forEach(function(k){
-            const p=text.indexOf(k);
-            if(p>=0 && p<pos){pos=p;found=k;}
-        });
-        if(!found){frag.appendChild(document.createTextNode(text));break;}
-        if(pos>0)frag.appendChild(document.createTextNode(text.slice(0,pos)));
-        const span=document.createElement("span");
-        span.className="sb-svg-inline";
-        span.innerHTML=window.sellerBooksSvgIcon(map[found]);
-        frag.appendChild(span);
-        text=text.slice(pos+found.length);
-        changed=true;
-    }
-    if(changed)textNode.parentNode.replaceChild(frag,textNode);
-});
-};
-
-document.addEventListener("DOMContentLoaded",function(){
-const style=document.createElement("style");
-style.textContent=
-".sb-svg-icon{width:1.15em;height:1.15em;display:inline-block;vertical-align:-.18em;flex:0 0 auto;stroke:currentColor;transition:transform .15s ease,filter .15s ease}"+".sb-svg-icon-home{color:#3b82f6}.sb-svg-icon-store{color:#f59e0b}.sb-svg-icon-shop{color:#8b5cf6}.sb-svg-icon-box{color:#ec4899}"+".sb-svg-icon-download{color:#10b981}.sb-svg-icon-upload{color:#10b981}.sb-svg-icon-wallet{color:#f97316}.sb-svg-icon-card{color:#06b6d4}"+".sb-svg-icon-search{color:#64748b}.sb-svg-icon-chart{color:#3b82f6}.sb-svg-icon-settings{color:#64748b}.sb-svg-icon-refresh{color:#10b981}"+".sb-svg-icon-logout{color:#ef4444}.sb-svg-icon-menu{color:#94a3b8}.sb-svg-icon-bell{color:#f59e0b}.sb-svg-icon-lock{color:#8b5cf6}"+".sb-svg-icon-user{color:#06b6d4}.sb-svg-icon-tag{color:#ec4899}.sb-svg-icon-money{color:#16a34a}.sb-svg-icon-file{color:#3b82f6}"+".sb-svg-icon-image{color:#8b5cf6}.sb-svg-icon-building{color:#6366f1}.sb-svg-icon-calculator{color:#0ea5e9}.sb-svg-icon-warning{color:#f59e0b}"+".sb-svg-icon-check{color:#10b981}.sb-svg-icon-trash{color:#ef4444}.sb-svg-icon-edit{color:#f59e0b}.sb-svg-icon-close{color:#ef4444}"+".sb-svg-icon-filter{color:#64748b}.sb-svg-icon-folder{color:#f59e0b}.sb-svg-icon-robot{color:#8b5cf6}.sb-svg-icon-chartUp{color:#2563eb}"+".sb-svg-icon-moneyBill{color:#16a34a}.sb-svg-icon-receipt{color:#14b8a6}.sb-svg-icon-diamond{color:#06b6d4}.sb-svg-icon-hand{color:#f59e0b}"+".sb-svg-icon-music{color:#ec4899}.sb-svg-icon-status{color:#22c55e}"+
-".sb-svg-inline{display:inline-flex;align-items:center;vertical-align:-.18em;line-height:0}"+
-".sb-svg-inline .sb-svg-icon{width:1.1em;height:1.1em}"+
-".menu-icon .sb-svg-icon{width:20px;height:20px;display:block;margin:auto}"+
-".stat-icon .sb-svg-icon{width:20px;height:20px}"+
-".security-icon .sb-svg-icon,.owner-setup-icon .sb-svg-icon{width:22px;height:22px}"+
-".settings-card-icon .sb-svg-icon{width:20px;height:20px}"+
-".notification-icon .sb-svg-icon{width:20px;height:20px}"+
-".recognition-icon .sb-svg-icon,.import-info-icon .sb-svg-icon{width:22px;height:22px}"+
-".store-empty-icon .sb-svg-icon,.product-empty-icon .sb-svg-icon{width:28px;height:28px}"+
-".sb-piutang-dashboard-icon .sb-svg-icon,.sb-piutang-summary-icon .sb-svg-icon{width:21px;height:21px}";
-document.head.appendChild(style);
-sellerBooksReplaceEmojiIcons(document);
-});
-
-
-async function sellerBooksDirectShopeeOAuth(event){
-    if(event){event.preventDefault();event.stopPropagation();}
-    const button=document.getElementById("storeApiMarketplaceOAuthButton");
-    const status=document.getElementById("storeApiMarketplaceOAuthStatus");
-    if(button){button.disabled=true;button.textContent="Membuka login Shopee...";}
-    if(status){status.style.display="block";status.textContent="Klik terdeteksi. Menghubungkan ke server OAuth Shopee...";}
-    try{
-        const storeId=String(document.getElementById("storeApiConnectionStoreId")?.value||"").trim();
-        const marketplaceId=String(document.getElementById("storeApiConnectionMarketplace")?.value||"").trim();
-        if(!storeId||!marketplaceId)throw new Error("Store ID atau Marketplace ID belum tersedia.");
-        const sessionResult=await sellerBooksSupabase.auth.getSession();
-        const token=sessionResult?.data?.session?.access_token||"";
-        if(!token)throw new Error("Sesi SellerBooks tidak ditemukan. Silakan login kembali.");
-        const popup=window.open("about:blank","sellerbooksShopeeOAuth","width=520,height=720");
-        if(!popup)throw new Error("Popup diblokir browser. Izinkan popup untuk sellerbooks.github.io.");
-        popup.document.body.innerHTML="<h3 style='font-family:Arial;padding:30px'>Menghubungkan ke Shopee...</h3>";
-        const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-oauth",{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json",
-                "apikey":SELLERBOOKS_SUPABASE_KEY,
-                "Authorization":"Bearer "+token
-            },
-            body:JSON.stringify({store_id:storeId,marketplace_id:marketplaceId})
-        });
-        const raw=await response.text();
-        let data=null;try{data=JSON.parse(raw);}catch(e){}
-        if(!response.ok)throw new Error(data?.error||raw||("HTTP "+response.status));
-        if(!data?.authorization_url)throw new Error(data?.error||"URL autentikasi Shopee tidak diterima.");
-        popup.location.href=data.authorization_url;
-        if(status)status.textContent="Login resmi Shopee sudah dibuka.";
-    }catch(error){
-        const msg=String(error?.message||error);
-        if(status)status.textContent=msg;
-        sellerBooksAlert("Gagal membuka login Shopee.\n\n"+msg);
-    }finally{
-        if(button){button.disabled=false;button.textContent="Login & Tautkan Shopee";}
-    }
-}
-
-window.sellerBooksStartMarketplaceOAuth = async function sellerBooksStartMarketplaceOAuth(event){
-    if(event && typeof event.preventDefault==="function"){
-        event.preventDefault();
-    }
-
-    const storeId=String(document.getElementById("storeApiConnectionStoreId")?.value||"").trim();
-    const marketplaceId=String(document.getElementById("storeApiConnectionMarketplace")?.value||"").trim();
-    const marketplaceName=String(document.getElementById("storeApiConnectionMarketplace")?.selectedOptions?.[0]?.textContent||"").trim();
-    const marketplaceCode=marketplaceName.toLowerCase().replace(/\s+/g,"");
-
-    if(!storeId || !marketplaceId){
-        sellerBooksAlert("Akun toko marketplace belum siap.");
-        return;
-    }
-
-    const oauthConfig={
-        shopee:{
-            endpoint:SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-oauth?action=init",
-            popupName:"sellerbooksShopeeOAuth",
-            label:"Shopee"
-        },
-        tiktokshop:{
-            endpoint:SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-tiktok-oauth?action=init",
-            popupName:"sellerbooksTikTokOAuth",
-            label:"TikTok Shop"
-        }
-    }[marketplaceCode];
-
-    if(!oauthConfig){
-        sellerBooksAlert("Adapter resmi "+(marketplaceName||"marketplace")+" belum diaktifkan.");
-        return;
-    }
-
-    const popup=window.open(
-        "about:blank",
-        oauthConfig.popupName,
-        "popup=yes,width=520,height=720,resizable=yes,scrollbars=yes"
-    );
-
-    if(!popup){
-        sellerBooksAlert("Popup marketplace diblokir browser. Izinkan popup untuk SellerBooks lalu coba lagi.");
-        return;
-    }
-
-    try{
-        popup.document.title="SellerBooks - Menghubungkan "+oauthConfig.label;
-        popup.document.body.innerHTML=
-            '<div style="font-family:Arial,sans-serif;padding:32px;text-align:center;color:#334155">'+
-            '<h3>Menyiapkan koneksi '+oauthConfig.label+'...</h3>'+
-            '<p>Mohon tunggu, SellerBooks sedang membuka halaman resmi '+oauthConfig.label+'.</p>'+
-            '</div>';
-    }catch(e){}
-
-    const button=document.getElementById("storeApiMarketplaceOAuthButton");
-    const status=document.getElementById("storeApiMarketplaceOAuthStatus");
-
-    if(button){
-        button.disabled=true;
-        button.textContent="Menyiapkan login "+oauthConfig.label+"...";
-    }
-    if(status){
-        status.style.display="block";
-        status.textContent="Menghubungkan ke otorisasi resmi "+oauthConfig.label+"...";
-    }
-
-    try{
-        let {data:sessionData,error:sessionError}=await sellerBooksSupabase.auth.getSession();
-        if(sessionError)throw sessionError;
-
-        /*
-          Jika access token lokal sudah kedaluwarsa, minta Supabase
-          melakukan refresh terlebih dahulu sebelum OAuth marketplace.
-        */
-        if(!sessionData?.session?.access_token){
-            const refreshed=await sellerBooksSupabase.auth.refreshSession();
-            if(refreshed.error)throw refreshed.error;
-            sessionData=refreshed.data;
-        }
-
-        const accessToken=sessionData?.session?.access_token||"";
-        if(!accessToken){
-            throw new Error("Sesi login SellerBooks tidak ditemukan atau sudah kedaluwarsa. Silakan login kembali.");
-        }
-
-        const response=await fetch(
-            oauthConfig.endpoint,
-            {
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json",
-                    "apikey":SELLERBOOKS_SUPABASE_KEY,
-                    "Authorization":"Bearer "+accessToken
-                },
-                body:JSON.stringify({
-                    store_id:storeId,
-                    marketplace_id:marketplaceId
-                })
-            }
-        );
-
-        const raw=await response.text();
-        let result=null;
-
-        try{
-            result=JSON.parse(raw);
-        }catch(e){}
-
-        if(!response.ok){
-            throw new Error(
-                result?.error ||
-                raw ||
-                ("HTTP "+response.status)
-            );
-        }
-
-        if(!result?.ok || !result?.authorization_url){
-            const stage=result?.stage ? " ["+result.stage+"]" : "";
-            throw new Error(
-                (result?.error||"URL autentikasi resmi "+oauthConfig.label+" tidak diterima.")+
-                stage
-            );
-        }
-
-        popup.location.replace(result.authorization_url);
-
-        if(status){
-            status.textContent="Halaman resmi "+oauthConfig.label+" sudah dibuka. Silakan login dan setujui penautan toko.";
-        }
-    }catch(error){
-        const message=String(error?.message||error);
-
-        try{
-            popup.document.body.innerHTML=
-                '<div style="font-family:Arial,sans-serif;padding:32px;color:#b91c1c">'+
-                '<h3>Login '+oauthConfig.label+' gagal dimulai</h3>'+
-                '<p>'+message.replace(/</g,"&lt;")+'</p>'+
-                '<p>Silakan tutup jendela ini dan coba lagi.</p>'+
-                '</div>';
-        }catch(e){}
-
-        console.error("Marketplace OAuth gagal dimulai:",error);
-
-        if(status){
-            status.style.display="block";
-            status.textContent=message;
-        }
-
-        sellerBooksAlert(
-            "Login "+oauthConfig.label+" tidak dapat dimulai.\\n\\n"+
-            message
-        );
-    }finally{
-        if(button){
-            button.disabled=false;
-            button.textContent="Login & Tautkan "+(marketplaceName||"");
-        }
-    }
-};
-function sellerBooksHandleMarketplaceOAuthMessage(event){
-    if(event.origin!==window.location.origin)return;
-    if(!event.data || event.data.type!=="SELLERBOOKS_MARKETPLACE_OAUTH")return;
-
-    if(event.data.status==="success"){
-        sellerBooksRefreshStoreConnectionStatuses();
-        if(sellerBooksStoreApiConnectionStoreId){
-            sellerBooksGetStoreApiConnection(sellerBooksStoreApiConnectionStoreId)
-                .then(function(connection){
-                    sellerBooksStoreApiConnectionData=connection;
-                    sellerBooksSetShopeeCredentialFields(connection);
-                    const node=document.getElementById("storeApiConnectionStatus");
-                    if(node)node.textContent=sellerBooksFormatApiStatus(connection);
-                })
-                .catch(console.error);
-        }
-
-        sellerBooksAlert("Marketplace berhasil ditautkan. Store ID "+String(event.data.shop_id||"")+" sudah diverifikasi.");
-    }else{
-        sellerBooksAlert(
-            "Penautan marketplace belum berhasil.\n\n"+
-            String(event.data.reason||"Silakan coba lagi.")
-        );
-    }
-}
-
-window.addEventListener("message",sellerBooksHandleMarketplaceOAuthMessage);
-
-(function sellerBooksCheckMarketplaceOAuthCallback(){
-    const params=new URLSearchParams(window.location.search);
-    const marketplaceStatus=params.get("sellerbooks_marketplace_oauth");
-    const shopeeStatus=params.get("sellerbooks_shopee_oauth");
-    const tiktokStatus=params.get("sellerbooks_tiktok_oauth");
-    const status=tiktokStatus||shopeeStatus||marketplaceStatus;
-    if(!status)return;
-
-    if(window.opener && !window.opener.closed){
-        window.opener.postMessage({
-            type:"SELLERBOOKS_MARKETPLACE_OAUTH",
-            status:status,
-            reason:params.get("reason")||"",
-            shop_id:params.get("shop_id")||"",
-            missing_scopes:params.get("missing_scopes")||""
-        },window.location.origin);
-
-        setTimeout(function(){window.close();},250);
-    }
-
-    const clean=new URL(window.location.href);
-    clean.searchParams.delete("sellerbooks_marketplace_oauth");
-    clean.searchParams.delete("sellerbooks_shopee_oauth");
-    clean.searchParams.delete("sellerbooks_tiktok_oauth");
-    clean.searchParams.delete("missing_scopes");
-    clean.searchParams.delete("connection_id");
-    clean.searchParams.delete("shop_id");
-    clean.searchParams.delete("reason");
-    window.history.replaceState({},document.title,clean.toString());
 })();
 </script>
 
