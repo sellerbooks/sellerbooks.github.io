@@ -15076,45 +15076,19 @@ async function loginGoogle(){
 
     }
 }
-async function sellerBooksHandleAuthSession(){
+let sellerBooksAuthStartupFallbackTimer=null;
+let sellerBooksAuthApprovalRunning=false;
 
-    /*
-       Jangan memanggil getSession() saat startup.
-       Supabase sudah otomatis menginisialisasi session dan mengirim
-       INITIAL_SESSION melalui onAuthStateChange(). getSession() dapat
-       memicu refresh token tambahan bila access token sudah mendekati
-       expired, sehingga startup tidak boleh membuat refresh request kedua.
-    */
-    const deadline=Date.now()+8000;
-
-    while(!sellerBooksAuthInitialResolved && Date.now()<deadline){
-        await new Promise(function(resolve){setTimeout(resolve,100);});
-    }
-
-    if(!sellerBooksAuthInitialResolved){
-        console.warn("SellerBooks Auth: INITIAL_SESSION belum diterima.");
-        return;
-    }
-
-    const session=sellerBooksAuthInitialSession;
-
-    if(!session?.user){
-        sellerBooksAuthUser=null;
-        sellerBooksProfile=null;
-
-        if(sellerBooksApprovalTimer){
-            clearInterval(sellerBooksApprovalTimer);
-            sellerBooksApprovalTimer=null;
-        }
-
-        sellerBooksShowOnly("loginPage");
-        return;
-    }
+async function sellerBooksRestoreAuthenticatedSession(session){
+    if(!session?.user)return false;
 
     sellerBooksAuthUser=session.user;
 
     try{
         const warmedFromCache=await sellerBooksWarmStartFromCache(session.user);
+
+        if(sellerBooksAuthApprovalRunning)return true;
+        sellerBooksAuthApprovalRunning=true;
 
         if(warmedFromCache){
             sellerBooksCheckApproval(false).catch(function(error){
@@ -15135,10 +15109,63 @@ async function sellerBooksHandleAuthSession(){
         }
     }catch(error){
         console.error("Inisialisasi data SellerBooks gagal:",error);
-        /*
-           Jangan menganggap error jaringan / rate-limit sebagai logout.
-           Session tetap dibiarkan ditangani Supabase Auth.
-        */
+    }finally{
+        sellerBooksAuthApprovalRunning=false;
+    }
+
+    return true;
+}
+
+async function sellerBooksHandleAuthSession(){
+
+    /*
+       INITIAL_SESSION adalah titik awal pemuatan session. Jika nilainya
+       null ketika refresh token sedang diproses, JANGAN langsung menganggap
+       user logout. Supabase dapat mengirim TOKEN_REFRESHED sesudahnya.
+    */
+    const deadline=Date.now()+8000;
+
+    while(!sellerBooksAuthInitialResolved && Date.now()<deadline){
+        await new Promise(function(resolve){setTimeout(resolve,100);});
+    }
+
+    if(!sellerBooksAuthInitialResolved){
+        console.warn("SellerBooks Auth: INITIAL_SESSION belum diterima.");
+        return;
+    }
+
+    const session=sellerBooksAuthInitialSession;
+
+    if(session?.user){
+        await sellerBooksRestoreAuthenticatedSession(session);
+        return;
+    }
+
+    /*
+       Jangan memanggil showOnly(loginPage) di sini.
+       Login hanya boleh dipaksakan oleh event SIGNED_OUT atau
+       fallback setelah benar-benar dipastikan tidak ada session.
+    */
+    if(!sellerBooksAuthStartupFallbackTimer){
+        sellerBooksAuthStartupFallbackTimer=setTimeout(async function(){
+            sellerBooksAuthStartupFallbackTimer=null;
+
+            if(sellerBooksAuthUser)return;
+
+            try{
+                const result=await sellerBooksSupabase.auth.getSession();
+                if(result?.data?.session?.user){
+                    await sellerBooksRestoreAuthenticatedSession(result.data.session);
+                    return;
+                }
+            }catch(error){
+                console.warn("SellerBooks Auth fallback gagal:",error);
+            }
+
+            if(!sellerBooksAuthUser){
+                sellerBooksShowOnly("loginPage");
+            }
+        },5000);
     }
 }
 
@@ -15147,29 +15174,51 @@ sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
     if(event==="INITIAL_SESSION"){
         sellerBooksAuthInitialSession=session||null;
         sellerBooksAuthInitialResolved=true;
+
+        if(session?.user && sellerBooksAuthStartupFallbackTimer){
+            clearTimeout(sellerBooksAuthStartupFallbackTimer);
+            sellerBooksAuthStartupFallbackTimer=null;
+        }
     }
 
     if(session?.user){
         sellerBooksAuthUser=session.user;
 
+        /*
+           Semua event yang membawa session valid boleh memulihkan UI.
+           Termasuk TOKEN_REFRESHED, yang sebelumnya tidak menjalankan
+           sellerBooksCheckApproval().
+        */
         if(
+            event==="INITIAL_SESSION" ||
             event==="SIGNED_IN" ||
+            event==="TOKEN_REFRESHED" ||
             event==="USER_UPDATED"
         ){
+            if(sellerBooksAuthStartupFallbackTimer){
+                clearTimeout(sellerBooksAuthStartupFallbackTimer);
+                sellerBooksAuthStartupFallbackTimer=null;
+            }
+
             setTimeout(function(){
-                sellerBooksCheckApproval(false).catch(function(error){
-                    console.error("Verifikasi sesi SellerBooks gagal:",error);
+                sellerBooksRestoreAuthenticatedSession(session).catch(function(error){
+                    console.error("Pemulihan sesi SellerBooks gagal:",error);
                 });
             },0);
         }
 
     }else if(event==="SIGNED_OUT"){
         /*
-           Hanya event SIGNED_OUT yang benar-benar mengosongkan UI login.
-           Error refresh/transient error tidak boleh langsung diperlakukan
-           sebagai logout oleh startup handler.
+           Hanya SIGNED_OUT yang dianggap logout.
+           429 refresh / refresh sementara gagal tidak boleh mengosongkan UI.
         */
+        if(sellerBooksAuthStartupFallbackTimer){
+            clearTimeout(sellerBooksAuthStartupFallbackTimer);
+            sellerBooksAuthStartupFallbackTimer=null;
+        }
+
         sellerBooksAuthUser=null;
+        sellerBooksAuthInitialSession=null;
         sellerBooksProfile=null;
         applyBusinessLogoToInterface("");
 
