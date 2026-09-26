@@ -19031,13 +19031,13 @@ function integrateStoreAccount(storeId){
 
     if(String(marketplaceName).toLowerCase().includes("shopee")){
 
-        const baseUrl = window.location.origin + window.location.pathname.replace(/\\/$/, "");
-
         const launcherUrl =
-            baseUrl.replace(/index\\.html$/i, "") +
-            "shopee-oauth-launcher.html" +
-            "?store_id=" + encodeURIComponent(String(store.id)) +
-            "&marketplace_id=" + encodeURIComponent(String(store.marketplaceId || ""));
+            new URL(
+                "shopee-oauth-launcher.html" +
+                "?store_id=" + encodeURIComponent(String(store.id)) +
+                "&marketplace_id=" + encodeURIComponent(String(store.marketplaceId || "")),
+                window.location.href
+            ).href;
 
         window.location.href = launcherUrl;
 
