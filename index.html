@@ -19722,9 +19722,10 @@ function sellerBooksSetShopeeCredentialFields(connection){
     const isShopee=marketplaceCode==="shopee";
     const oauthMarketplaces=["shopee","tiktokshop","lazada","toco"];
     const isOAuthMarketplace=oauthMarketplaces.includes(marketplaceCode);
+    const isTokopedia=marketplaceName.toLowerCase()==="tokopedia";
 
     if(oauthFields)oauthFields.style.display=isOAuthMarketplace?"block":"none";
-    if(genericFields)genericFields.style.display=isOAuthMarketplace?"none":"block";
+    if(genericFields)genericFields.style.display=isOAuthMarketplace||isTokopedia?"none":"block";
 
     const testButton=document.getElementById("storeApiConnectionTestButton");
     const oauthButton=document.getElementById("storeApiMarketplaceOAuthButton");
@@ -19743,7 +19744,7 @@ function sellerBooksSetShopeeCredentialFields(connection){
         oauthButton.textContent=isOAuthMarketplace ? "Login & Tautkan "+marketplaceName : "Login & Tautkan";
     }
 
-    if(saveButton)saveButton.style.display=isOAuthMarketplace ? "none" : "inline-flex";
+    if(saveButton)saveButton.style.display=isOAuthMarketplace||isTokopedia ? "none" : "inline-flex";
 
     const oauthTitle=document.getElementById("storeApiMarketplaceOAuthTitle");
     const oauthDesc=document.getElementById("storeApiMarketplaceOAuthDescription");
@@ -19763,9 +19764,11 @@ function sellerBooksSetShopeeCredentialFields(connection){
     if(note){
         note.textContent=isOAuthMarketplace
             ? "Login dan persetujuan dilakukan di halaman resmi marketplace. Token/credential disimpan aman di Supabase Vault."
-            : marketplaceName==="Blibli"
-                ? "Blibli Seller API menggunakan Bind Request resmi. Credential tidak perlu diketik jika fitur Bind Request tersedia untuk platform SellerBooks."
-                : "Credential dikirim langsung ke Supabase Vault dan tidak disimpan di localStorage SellerBooks.";
+            : isTokopedia
+                ? "Integrasi Tokopedia untuk SellerBooks belum diaktifkan. Status: Segera Hadir."
+                : marketplaceName==="Blibli"
+                    ? "Blibli Seller API menggunakan Bind Request resmi. Credential tidak perlu diketik jika fitur Bind Request tersedia untuk platform SellerBooks."
+                    : "Credential dikirim langsung ke Supabase Vault dan tidak disimpan di localStorage SellerBooks.";
     }
 }
 function sellerBooksBuildShopeeCredential(){
