@@ -15222,7 +15222,32 @@ async function sellerBooksCheckApproval(showAlert){
         if(status==="suspended"){sellerBooksShowApproval("Akun SellerBooks Anda sedang ditangguhkan oleh Core Adiimasa. Silakan hubungi Core Adiimasa.");return;}
         sellerBooksShowApproval("Akun Anda sudah berhasil login. Silakan menunggu persetujuan dari Core Adiimasa sebelum menggunakan SellerBooks.");
         if(showAlert)sellerBooksAlert("Status akun masih menunggu persetujuan Core Adiimasa.");
-    }catch(error){console.error(error);sellerBooksShowApproval("Tidak dapat membaca status akun saat ini. Periksa koneksi internet lalu coba lagi.");}
+    }catch(error){
+        console.error("Gagal membaca status persetujuan SellerBooks:",error);
+
+        /*
+           Jangan memindahkan user ke halaman Persetujuan hanya karena
+           pembacaan profile gagal sementara (network/RLS/session refresh).
+           Halaman Persetujuan hanya boleh ditampilkan jika status profile
+           benar-benar terbaca dan memang pending/rejected/suspended.
+        */
+        const currentApprovalPage=document.getElementById("sellerbooksApprovalPage");
+        const appVisible=document.getElementById("app")?.style.display==="block";
+        const ownerVisible=document.getElementById("ownerSetupPage")?.style.display==="flex";
+
+        if(currentApprovalPage && currentApprovalPage.style.display==="flex"){
+            const text=document.getElementById("sellerbooksApprovalText");
+            if(text){
+                text.textContent="Status persetujuan belum dapat dibaca. Koneksi atau sesi sedang diperiksa. Tekan “Cek Status Persetujuan” untuk mencoba lagi.";
+            }
+        }else if(!appVisible && !ownerVisible){
+            sellerBooksShowOnly("loginPage");
+        }
+
+        if(showAlert){
+            sellerBooksAlert("Status persetujuan belum dapat dibaca. Silakan coba lagi tanpa logout.");
+        }
+    }
 }
 function sellerBooksOpenApplication(){
     const ownerName = String(sellerBooksProfile?.owner_name || "").trim();
