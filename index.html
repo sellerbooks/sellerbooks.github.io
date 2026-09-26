@@ -9452,7 +9452,7 @@ document.addEventListener(
                 <div class="login-logo">
 
                     <div class="login-logo-icon">
-                        S
+                        SB
                     </div>
 
                     <div>
@@ -9672,7 +9672,7 @@ document.addEventListener(
         <div class="sidebar-brand">
 
             <div class="sidebar-logo">
-                S
+                SB
             </div>
 
             <div>
@@ -13056,7 +13056,7 @@ document.addEventListener(
                                 class="settings-logo-preview"
                                 id="settingsLogoPreview"
                             >
-                                S
+                                SB
                             </div>
 
                             <div class="settings-logo-actions">
@@ -29715,8 +29715,9 @@ function renderSettingsLogo(){
 
     /*
        Logo bisnis hanya boleh tampil saat ada sesi user.
-       Setelah logout, halaman login harus kembali ke huruf S
-       tanpa menunggu refresh. Data logo di cloud tetap aman.
+       Setelah logout, halaman login tetap menggunakan identitas SB.
+       Logo upload hanya diterapkan pada sidebar dashboard.
+       Data logo di cloud tetap aman.
     */
     const visibleLogo =
         sellerBooksAuthUser
@@ -29735,7 +29736,7 @@ function renderSettingsLogo(){
                 visibleLogo +
                 '" alt="Logo Bisnis">';
         }else{
-            preview.textContent = "S";
+            preview.textContent = "SB";
         }
     }
 
@@ -29747,7 +29748,7 @@ function renderSettingsLogo(){
 function applyBusinessLogoToInterface(logo){
     const logoTargets =
         document.querySelectorAll(
-            ".sidebar-logo, .login-logo-icon"
+            ".sidebar-logo"
         );
 
     logoTargets.forEach(function(target){
@@ -29757,7 +29758,7 @@ function applyBusinessLogoToInterface(logo){
                 logo +
                 '" alt="Logo Bisnis" style="width:100%;height:100%;object-fit:contain;border-radius:inherit;">';
         }else{
-            target.textContent = "S";
+            target.textContent = "SB";
         }
     });
 }
