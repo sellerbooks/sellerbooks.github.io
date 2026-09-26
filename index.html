@@ -19039,7 +19039,23 @@ function integrateStoreAccount(storeId){
                 window.location.href
             ).href;
 
-        window.location.href = launcherUrl;
+        /*
+           OAuth Shopee dibuka di TAB BARU agar sesi SellerBooks
+           tetap terbuka di tab utama, seperti konsep integrasi
+           marketplace pada platform lain.
+        */
+        const oauthTab = window.open(
+            launcherUrl,
+            "_blank",
+            "noopener,noreferrer"
+        );
+
+        if(!oauthTab){
+            sellerBooksAlert(
+                "Popup/tab baru diblokir browser. Silakan izinkan pop-up untuk SellerBooks lalu klik Integrasikan Akun lagi.",
+                "Integrasikan Akun"
+            );
+        }
 
         return;
 
