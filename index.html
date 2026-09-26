@@ -19710,6 +19710,18 @@ function sellerBooksIsShopeeConnection(){
 
 }
 
+function sellerBooksUpdateShopeeOAuthLauncherLink(){
+    const button=document.getElementById("storeApiMarketplaceOAuthButton");
+    const storeId=String(document.getElementById("storeApiConnectionStoreId")?.value||"").trim();
+    const marketplaceId=String(document.getElementById("storeApiConnectionMarketplace")?.value||"").trim();
+    if(!button)return;
+    if(storeId&&marketplaceId){
+        button.href="shopee-oauth-launcher.html?store_id="+encodeURIComponent(storeId)+"&marketplace_id="+encodeURIComponent(marketplaceId);
+    }else{
+        button.href="shopee-oauth-launcher.html";
+    }
+}
+
 function sellerBooksSetShopeeCredentialFields(connection){
 
     const oauthFields=document.getElementById("storeApiConnectionOAuthFields");
@@ -32745,6 +32757,7 @@ async function sellerBooksStartMarketplaceOAuth(){
     const marketplaceId=String(document.getElementById("storeApiConnectionMarketplace")?.value||"").trim();
     const marketplaceName=String(document.getElementById("storeApiConnectionMarketplace")?.selectedOptions?.[0]?.textContent||"").trim();
     const marketplaceCode=marketplaceName.toLowerCase().replace(/\\s+/g,"");
+    sellerBooksUpdateShopeeOAuthLauncherLink();
 
     if(!storeId || !marketplaceId){
         sellerBooksAlert("Akun toko marketplace belum siap.");
