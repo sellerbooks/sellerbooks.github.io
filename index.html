@@ -19846,14 +19846,60 @@ async function sellerBooksLoadStoreApiMarketplaces(selectedId){
 
     if(error)throw error;
 
+    /*
+      Dropdown API hanya memakai 6 marketplace SellerBooks.
+      Data database boleh memiliki duplikasi nama/case, tetapi UI
+      harus menampilkan satu pilihan untuk masing-masing marketplace.
+    */
+    const marketplaceOrder=[
+        {key:"shopee",label:"Shopee"},
+        {key:"tiktokshop",label:"TikTok Shop"},
+        {key:"tokopedia",label:"Tokopedia"},
+        {key:"lazada",label:"Lazada"},
+        {key:"toco",label:"Toco"},
+        {key:"blibli",label:"Blibli"}
+    ];
+
+    const normalized=function(value){
+        return String(value||"")
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g,"");
+    };
+
+    const selectedKey=String(selectedId||"");
+    const uniqueMarketplaces=[];
+
+    marketplaceOrder.forEach(function(target){
+
+        const matches=(data||[]).filter(function(item){
+            const key=normalized(item.code||item.name);
+            return key===target.key;
+        });
+
+        if(!matches.length)return;
+
+        /*
+          Jika marketplace yang sedang dibuka mempunyai ID tertentu,
+          prioritaskan record tersebut agar selection tetap terjaga.
+        */
+        const selectedMatch=matches.find(function(item){
+            return String(item.id)===selectedKey;
+        });
+
+        uniqueMarketplaces.push({
+            ...((selectedMatch||matches[0])),
+            displayName:target.label
+        });
+    });
+
     select.innerHTML='<option value="">Pilih Marketplace</option>';
 
-    (data||[]).forEach(function(item){
+    uniqueMarketplaces.forEach(function(item){
 
         const option=document.createElement("option");
 
         option.value=item.id;
-        option.textContent=item.name;
+        option.textContent=item.displayName;
 
         select.appendChild(option);
 
@@ -19861,6 +19907,26 @@ async function sellerBooksLoadStoreApiMarketplaces(selectedId){
 
     if(selectedId){
         select.value=String(selectedId);
+
+        /*
+          Jika ID lama merupakan duplicate record yang tidak dipilih,
+          gunakan record canonical marketplace yang sudah ditampilkan.
+        */
+        if(select.value!==String(selectedId)){
+            const selectedSource=(data||[]).find(function(item){
+                return String(item.id)===String(selectedId);
+            });
+
+            const selectedKeyFromSource=normalized(
+                selectedSource?.code||selectedSource?.name
+            );
+
+            const canonical=uniqueMarketplaces.find(function(item){
+                return normalized(item.code||item.name)===selectedKeyFromSource;
+            });
+
+            if(canonical)select.value=String(canonical.id);
+        }
     }
 
 }
