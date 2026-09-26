@@ -19866,14 +19866,35 @@ async function sellerBooksLoadStoreApiMarketplaces(selectedId){
             .replace(/[^a-z0-9]/g,"");
     };
 
+    /*
+      Cocokkan marketplace dari CODE maupun NAME.
+      Beberapa data lama TikTok Shop memiliki code berbeda
+      (mis. "tiktok") tetapi name-nya "TikTok Shop".
+    */
+    const marketplaceAliases={
+        shopee:["shopee"],
+        tiktokshop:["tiktokshop","tiktok"],
+        tokopedia:["tokopedia"],
+        lazada:["lazada"],
+        toco:["toco"],
+        blibli:["blibli"]
+    };
+
+    const isMarketplaceMatch=function(item,targetKey){
+        const aliases=marketplaceAliases[targetKey]||[targetKey];
+        const code=normalized(item.code);
+        const name=normalized(item.name);
+
+        return aliases.includes(code) || aliases.includes(name);
+    };
+
     const selectedKey=String(selectedId||"");
     const uniqueMarketplaces=[];
 
     marketplaceOrder.forEach(function(target){
 
         const matches=(data||[]).filter(function(item){
-            const key=normalized(item.code||item.name);
-            return key===target.key;
+            return isMarketplaceMatch(item,target.key);
         });
 
         if(!matches.length)return;
@@ -19917,12 +19938,18 @@ async function sellerBooksLoadStoreApiMarketplaces(selectedId){
                 return String(item.id)===String(selectedId);
             });
 
-            const selectedKeyFromSource=normalized(
-                selectedSource?.code||selectedSource?.name
-            );
+            const selectedKeyFromSourceCode=normalized(selectedSource?.code);
+            const selectedKeyFromSourceName=normalized(selectedSource?.name);
 
             const canonical=uniqueMarketplaces.find(function(item){
-                return normalized(item.code||item.name)===selectedKeyFromSource;
+                return (
+                    normalized(item.code)===selectedKeyFromSourceCode ||
+                    normalized(item.name)===selectedKeyFromSourceName ||
+                    isMarketplaceMatch(item, "tiktokshop") && (
+                        ["tiktok","tiktokshop"].includes(selectedKeyFromSourceCode) ||
+                        ["tiktok","tiktokshop"].includes(selectedKeyFromSourceName)
+                    )
+                );
             });
 
             if(canonical)select.value=String(canonical.id);
@@ -20007,12 +20034,24 @@ async function openStoreApiConnectionModal(storeId){
                             .replace(/[^a-z0-9]/g,"");
                     };
 
-                    const storeMarketplaceKey=normalizeMarketplace(
-                        storeMarketplace?.code||storeMarketplace?.name
-                    );
+                    const storeMarketplaceCode=normalizeMarketplace(storeMarketplace?.code);
+                    const storeMarketplaceName=normalizeMarketplace(storeMarketplace?.name);
 
                     const canonicalOption=[...marketplaceSelect.options].find(function(option){
-                        return normalizeMarketplace(option.textContent)===storeMarketplaceKey;
+                        const optionKey=normalizeMarketplace(option.textContent);
+
+                        if(optionKey===storeMarketplaceCode || optionKey===storeMarketplaceName){
+                            return true;
+                        }
+
+                        /*
+                          TikTok Shop dapat memiliki code "tiktok"
+                          sedangkan label UI adalah "TikTok Shop".
+                        */
+                        return (
+                            ["tiktok","tiktokshop"].includes(storeMarketplaceCode) &&
+                            optionKey==="tiktokshop"
+                        );
                     });
 
                     if(canonicalOption){
