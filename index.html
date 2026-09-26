@@ -6843,7 +6843,7 @@ function getReportTransactionFeePercent(transaction){
             ? Number(transaction.adminFeeSku)
             : NaN;
 
-    if(Number.isFinite(transactionSkuFee)){
+    if(Number.isFinite(transactionSkuFee) && transactionSkuFee > 0){
         return transactionSkuFee;
     }
 
@@ -6857,7 +6857,7 @@ function getReportTransactionFeePercent(transaction){
             ? Number(transaction.adminFeeSkuSnapshot)
             : NaN;
 
-    if(Number.isFinite(snapshotSkuFee)){
+    if(Number.isFinite(snapshotSkuFee) && snapshotSkuFee > 0){
         return snapshotSkuFee;
     }
 
@@ -6923,7 +6923,7 @@ function getReportTransactionFeePercent(transaction){
                     ? Number(masterProduct.adminFeePercent)
                     : NaN;
 
-            if(Number.isFinite(masterSkuFee)){
+            if(Number.isFinite(masterSkuFee) && masterSkuFee > 0){
                 return masterSkuFee;
             }
         }
@@ -6949,7 +6949,7 @@ function getReportTransactionFeePercent(transaction){
             ? Number(accountSnapshotValue)
             : NaN;
 
-    if(Number.isFinite(accountSnapshotFee)){
+    if(Number.isFinite(accountSnapshotFee) && accountSnapshotFee > 0){
         return accountSnapshotFee;
     }
 
@@ -22275,7 +22275,7 @@ const SALES_MARKETPLACE_RULES={
            Packing TIDAK memakai Nomor Pesanan/No. Order.
         */
         packingAliases:["nomor resi/awb","no. awb"],
-        orderAliases:["nomor pesanan","no. Order"],
+        orderAliases:["nomor pesanan","no. order"],
         priceAliases:["harga produk","total harga produk"],
         dateAliases:["tanggal pesanan","tanggal order"]
     },
