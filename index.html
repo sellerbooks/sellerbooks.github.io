@@ -33098,12 +33098,22 @@ window.sellerBooksStartMarketplaceOAuth = async function sellerBooksStartMarketp
     }
 
     try{
-        const {data:sessionData,error:sessionError}=await sellerBooksSupabase.auth.getSession();
+        let {data:sessionData,error:sessionError}=await sellerBooksSupabase.auth.getSession();
         if(sessionError)throw sessionError;
+
+        /*
+          Jika access token lokal sudah kedaluwarsa, minta Supabase
+          melakukan refresh terlebih dahulu sebelum OAuth marketplace.
+        */
+        if(!sessionData?.session?.access_token){
+            const refreshed=await sellerBooksSupabase.auth.refreshSession();
+            if(refreshed.error)throw refreshed.error;
+            sessionData=refreshed.data;
+        }
 
         const accessToken=sessionData?.session?.access_token||"";
         if(!accessToken){
-            throw new Error("Sesi login SellerBooks tidak ditemukan. Silakan login kembali.");
+            throw new Error("Sesi login SellerBooks tidak ditemukan atau sudah kedaluwarsa. Silakan login kembali.");
         }
 
         const response=await fetch(
