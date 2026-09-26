@@ -13421,20 +13421,53 @@ document.addEventListener(
                 </small>
             </div>
 
-            <div class="form-group">
-                <label>Credential / Secret API</label>
-                <textarea
-                    id="storeApiConnectionSecret"
-                    class="form-control"
-                    rows="7"
-                    placeholder='Contoh JSON: {"partner_id":"...","shop_id":"...","partner_key":"...","access_token":"..."}'
-                    autocomplete="off"
-                    spellcheck="false"
-                ></textarea>
-                <small id="storeApiConnectionSecretNote" style="display:block;margin-top:6px;color:#64748b;line-height:1.5;">
-                    Secret dikirim langsung ke Supabase Vault dan tidak disimpan di localStorage SellerBooks.
-                </small>
+            <div id="storeApiConnectionShopeeFields" style="display:none;">
+                <div class="form-group">
+                    <label>Partner ID</label>
+                    <input type="text" id="storeApiShopeePartnerId" class="form-control" autocomplete="off">
+                </div>
+
+                <div class="form-group">
+                    <label>Shop ID</label>
+                    <input type="text" id="storeApiShopeeShopId" class="form-control" autocomplete="off">
+                    <small style="display:block;margin-top:6px;color:#64748b;line-height:1.5;">
+                        Shop ID harus sama dengan Store ID akun toko.
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label>Partner Key</label>
+                    <input type="password" id="storeApiShopeePartnerKey" class="form-control" autocomplete="new-password">
+                </div>
+
+                <div class="form-group">
+                    <label>Access Token</label>
+                    <input type="password" id="storeApiShopeeAccessToken" class="form-control" autocomplete="new-password">
+                </div>
+
+                <div class="form-group">
+                    <label>API Base URL <span style="color:#94a3b8;">(Opsional)</span></label>
+                    <input type="url" id="storeApiShopeeBaseUrl" class="form-control" placeholder="https://partner.shopeemobile.com" autocomplete="off">
+                </div>
             </div>
+
+            <div id="storeApiConnectionGenericFields" style="display:none;">
+                <div class="form-group">
+                    <label>Credential / Secret API</label>
+                    <textarea
+                        id="storeApiConnectionSecret"
+                        class="form-control"
+                        rows="7"
+                        placeholder='Credential JSON marketplace'
+                        autocomplete="off"
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+            </div>
+
+            <small id="storeApiConnectionSecretNote" style="display:block;margin-top:6px;color:#64748b;line-height:1.5;">
+                Credential dikirim langsung ke Supabase Vault dan tidak disimpan di localStorage SellerBooks.
+            </small>
 
             <div id="storeApiConnectionStatusBox"
                  style="padding:12px 14px;border:1px solid #e2e8f0;background:#f8fafc;margin-top:8px;">
@@ -13455,6 +13488,15 @@ document.addEventListener(
                 style="display:none;"
             >
                 Putuskan Koneksi
+            </button>
+
+            <button
+                type="button"
+                id="storeApiConnectionTestButton"
+                class="secondary-button"
+                onclick="testStoreApiConnection()"
+            >
+                Tes Koneksi
             </button>
 
             <button
@@ -19548,6 +19590,123 @@ async function sellerBooksRefreshStoreConnectionStatuses(){
 
 }
 
+function sellerBooksIsShopeeConnection(){
+
+    const select=document.getElementById("storeApiConnectionMarketplace");
+
+    if(!select)return false;
+
+    return String(select.value||"").toLowerCase()==="shopee";
+
+}
+
+function sellerBooksSetShopeeCredentialFields(connection){
+
+    const shopeeFields=document.getElementById("storeApiConnectionShopeeFields");
+    const genericFields=document.getElementById("storeApiConnectionGenericFields");
+
+    const isShopee=sellerBooksIsShopeeConnection();
+
+    if(shopeeFields)shopeeFields.style.display=isShopee?"block":"none";
+    if(genericFields)genericFields.style.display=isShopee?"none":"block";
+
+    const testButton=document.getElementById("storeApiConnectionTestButton");
+
+    if(testButton){
+        testButton.disabled=!isShopee;
+        testButton.title=isShopee
+            ? "Uji credential Shopee ke API resmi"
+            : "Tes koneksi saat ini hanya tersedia untuk Shopee";
+    }
+
+    if(!isShopee){
+        const note=document.getElementById("storeApiConnectionSecretNote");
+        if(note){
+            note.textContent=
+                "Untuk marketplace selain Shopee, gunakan Credential JSON. Tes API langsung akan ditambahkan per marketplace.";
+        }
+    }else{
+        const note=document.getElementById("storeApiConnectionSecretNote");
+        if(note){
+            note.textContent=
+                "Credential disimpan aman di Supabase Vault. Secret tidak disimpan di localStorage SellerBooks.";
+        }
+    }
+
+    if(connection){
+
+        let parsed=null;
+
+        try{
+            if(connection.__secretJson)parsed=JSON.parse(connection.__secretJson);
+        }catch(error){}
+
+        if(parsed){
+
+            document.getElementById("storeApiShopeePartnerId").value=
+                parsed.partner_id ?? parsed.partnerId ?? "";
+
+            document.getElementById("storeApiShopeeShopId").value=
+                parsed.shop_id ?? parsed.shopId ?? "";
+
+            document.getElementById("storeApiShopeeBaseUrl").value=
+                parsed.api_base_url ?? parsed.apiBaseUrl ?? "";
+
+        }
+
+    }
+
+}
+
+function sellerBooksBuildShopeeCredential(){
+
+    const partnerId=String(
+        document.getElementById("storeApiShopeePartnerId")?.value||""
+    ).trim();
+
+    const shopId=String(
+        document.getElementById("storeApiShopeeShopId")?.value||""
+    ).trim();
+
+    const partnerKey=String(
+        document.getElementById("storeApiShopeePartnerKey")?.value||""
+    ).trim();
+
+    const accessToken=String(
+        document.getElementById("storeApiShopeeAccessToken")?.value||""
+    ).trim();
+
+    const baseUrl=String(
+        document.getElementById("storeApiShopeeBaseUrl")?.value||""
+    ).trim();
+
+    if(!partnerId||!shopId||!partnerKey||!accessToken){
+        throw new Error(
+            "Partner ID, Shop ID, Partner Key, dan Access Token wajib diisi."
+        );
+    }
+
+    const storeId=String(
+        document.getElementById("storeApiConnectionStoreId")?.value||""
+    ).trim();
+
+    if(shopId!==storeId){
+        throw new Error("Shop ID harus sama dengan Store ID akun toko.");
+    }
+
+    const payload={
+        partner_id:partnerId,
+        shop_id:shopId,
+        partner_key:partnerKey,
+        access_token:accessToken
+    };
+
+    if(baseUrl)payload.api_base_url=baseUrl;
+
+    return JSON.stringify(payload);
+
+}
+
 async function sellerBooksLoadStoreApiMarketplaces(selectedId){
 
     const select=document.getElementById("storeApiConnectionMarketplace");
@@ -19609,6 +19768,11 @@ async function openStoreApiConnectionModal(storeId){
     document.getElementById("storeApiConnectionStoreId").value=String(store.id);
     document.getElementById("storeApiConnectionStoreName").value=store.name||"";
     document.getElementById("storeApiConnectionSecret").value="";
+    document.getElementById("storeApiShopeePartnerId").value="";
+    document.getElementById("storeApiShopeeShopId").value="";
+    document.getElementById("storeApiShopeePartnerKey").value="";
+    document.getElementById("storeApiShopeeAccessToken").value="";
+    document.getElementById("storeApiShopeeBaseUrl").value="";
     document.getElementById("storeApiConnectionStatus").textContent="Memuat...";
     document.getElementById("storeApiConnectionDisconnectButton").style.display="none";
 
@@ -19621,6 +19785,8 @@ async function openStoreApiConnectionModal(storeId){
         sellerBooksStoreApiConnectionData=connection;
 
         await sellerBooksLoadStoreApiMarketplaces(store.marketplaceId);
+
+        sellerBooksSetShopeeCredentialFields(null);
 
         const status=sellerBooksFormatApiStatus(connection);
 
@@ -19701,27 +19867,31 @@ async function saveStoreApiConnection(){
 
     }
 
-    if(!sellerBooksStoreApiConnectionData && !secret){
+    if(!sellerBooksStoreApiConnectionData && !secretToSave){
 
         sellerBooksAlert("Credential / Secret API wajib diisi.");
         return;
 
     }
 
-    if(secret){
+    let secretToSave=secret;
+
+    if(sellerBooksIsShopeeConnection()){
 
         try{
-
-            JSON.parse(secret);
-
+            secretToSave=sellerBooksBuildShopeeCredential();
         }catch(error){
-
-            sellerBooksAlert(
-                "Credential harus berupa JSON yang valid."
-            );
-
+            sellerBooksAlert(String(error?.message||error));
             return;
+        }
 
+    }else if(secret){
+
+        try{
+            JSON.parse(secret);
+        }catch(error){
+            sellerBooksAlert("Credential harus berupa JSON yang valid.");
+            return;
         }
 
     }
@@ -19766,7 +19936,7 @@ async function saveStoreApiConnection(){
                     "sellerbooks_api_set_secret",
                     {
                         p_connection_id:connection.id,
-                        p_secret:secret
+                        p_secret:secretToSave
                     }
                 );
 
@@ -19784,13 +19954,41 @@ async function saveStoreApiConnection(){
             sellerBooksFormatApiStatus(sellerBooksStoreApiConnectionData);
 
         document.getElementById("storeApiConnectionSecret").value="";
+        document.getElementById("storeApiShopeePartnerKey").value="";
+        document.getElementById("storeApiShopeeAccessToken").value="";
+
+        document.getElementById("storeApiConnectionStatus").textContent=
+            sellerBooksFormatApiStatus(sellerBooksStoreApiConnectionData);
 
         document.getElementById("storeApiConnectionSecretNote").textContent=
-            "Credential tersimpan aman di Supabase Vault. Secret tidak disimpan di localStorage SellerBooks.";
-
-        sellerBooksAlert("Koneksi API berhasil disimpan.");
+            "Credential tersimpan aman di Supabase Vault. Klik Tes Koneksi untuk menguji credential ke API resmi.";
 
         await sellerBooksRefreshStoreConnectionStatuses();
+
+        if(sellerBooksIsShopeeConnection()){
+            const testResult=await sellerBooksTestConnectionInternal(connection.id);
+            if(!testResult.ok){
+                sellerBooksAlert(
+                    "Credential tersimpan, tetapi tes koneksi gagal.\n\n"+
+                    String(testResult.error||"Tes koneksi gagal.")
+                );
+                return;
+            }
+
+            sellerBooksStoreApiConnectionData={
+                ...sellerBooksStoreApiConnectionData,
+                connection_status:"CONNECTED",
+                last_error:null
+            };
+
+            document.getElementById("storeApiConnectionStatus").textContent="Terhubung";
+            await sellerBooksRefreshStoreConnectionStatuses();
+            sellerBooksAlert(
+                "Koneksi Shopee berhasil diuji dan sudah terhubung."
+            );
+        }else{
+            sellerBooksAlert("Credential berhasil disimpan ke Vault.");
+        }
 
     }catch(error){
 
@@ -19807,6 +20005,118 @@ async function saveStoreApiConnection(){
             button.disabled=false;
             button.textContent="Simpan Koneksi";
 
+        }
+
+    }
+
+}
+
+async function sellerBooksTestConnectionInternal(connectionId){
+
+    try{
+
+        const {data,error}=await sellerBooksSupabase.functions.invoke(
+            "sellerbooks-api-test-connection",
+            {
+                body:{connection_id:connectionId}
+            }
+        );
+
+        if(error)throw error;
+
+        return data||{
+            ok:false,
+            error:"Respons tes koneksi kosong."
+        };
+
+    }catch(error){
+
+        console.error("Tes koneksi API SellerBooks gagal:",error);
+
+        return {
+            ok:false,
+            error:String(error?.message||error)
+        };
+
+    }
+
+}
+
+async function testStoreApiConnection(){
+
+    const connection=sellerBooksStoreApiConnectionData;
+
+    if(!connection || !connection.id){
+
+        sellerBooksAlert(
+            "Simpan credential terlebih dahulu, kemudian lakukan Tes Koneksi."
+        );
+
+        return;
+
+    }
+
+    if(!sellerBooksIsShopeeConnection()){
+
+        sellerBooksAlert(
+            "Tes koneksi API saat ini baru tersedia untuk Shopee."
+        );
+
+        return;
+
+    }
+
+    const button=document.getElementById("storeApiConnectionTestButton");
+
+    if(button){
+        button.disabled=true;
+        button.textContent="Menguji...";
+    }
+
+    try{
+
+        const result=await sellerBooksTestConnectionInternal(connection.id);
+
+        if(!result.ok){
+
+            document.getElementById("storeApiConnectionStatus").textContent="Error";
+
+            sellerBooksStoreApiConnectionData={
+                ...connection,
+                connection_status:"ERROR",
+                last_error:result.error||"Tes koneksi gagal."
+            };
+
+            await sellerBooksRefreshStoreConnectionStatuses();
+
+            sellerBooksAlert(
+                "Tes koneksi gagal.\n\n"+
+                String(result.error||"Credential Shopee tidak valid.")
+            );
+
+            return;
+
+        }
+
+        sellerBooksStoreApiConnectionData={
+            ...connection,
+            connection_status:"CONNECTED",
+            last_error:null
+        };
+
+        document.getElementById("storeApiConnectionStatus").textContent="Terhubung";
+
+        await sellerBooksRefreshStoreConnectionStatuses();
+
+        sellerBooksAlert(
+            "Tes koneksi berhasil. Akun Shopee berhasil terhubung."
+        );
+
+    }finally{
+
+        if(button){
+            button.disabled=false;
+            button.textContent="Tes Koneksi";
         }
 
     }
