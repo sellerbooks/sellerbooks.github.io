@@ -8,6 +8,66 @@
 
 <style>
 
+
+/* =====================================================
+   HASIL OAUTH LAZADA DARI POPUP
+===================================================== */
+
+if(!window.sellerBooksLazadaOAuthMessageHandler){
+
+    window.sellerBooksLazadaOAuthMessageHandler = true;
+
+    window.addEventListener("message", function(event){
+
+        if(event.origin !== window.location.origin){
+            return;
+        }
+
+        const data = event.data || {};
+
+        if(data.source !== "sellerbooks-lazada-oauth"){
+            return;
+        }
+
+        if(data.status === "success"){
+
+            sellerBooksAlert(
+                "Akun Lazada berhasil terhubung ke SellerBooks.",
+                "Integrasikan Akun"
+            );
+
+            if(typeof loadStores === "function"){
+                setTimeout(function(){
+                    loadStores();
+                },300);
+            }else if(typeof renderStores === "function"){
+                setTimeout(function(){
+                    renderStores();
+                },300);
+            }
+
+            return;
+        }
+
+        const reason = data.reason || "OAUTH_FAILED";
+
+        if(reason === "LAZADA_ACCOUNT_ALREADY_CONNECTED"){
+            sellerBooksAlert(
+                "Akun Lazada ini sudah terhubung ke akun atau toko SellerBooks lain.",
+                "Integrasikan Akun"
+            );
+        }else{
+            sellerBooksAlert(
+                "Integrasi Lazada gagal.\n\nKode: " + reason,
+                "Integrasikan Akun"
+            );
+        }
+
+    });
+
+}
+
+
 /* =====================================================
    SELLERBOOKS CUSTOM DIALOG
    Menghilangkan native browser "sellerbooks.github.io says"
@@ -19037,14 +19097,18 @@ function integrateStoreAccount(storeId){
     */
     if(
         lowerMarketplaceName.includes("shopee") ||
-        lowerMarketplaceName.includes("tiktok")
+        lowerMarketplaceName.includes("tiktok") ||
+        lowerMarketplaceName.includes("lazada")
     ){
 
         const isTikTok = lowerMarketplaceName.includes("tiktok");
+        const isLazada = lowerMarketplaceName.includes("lazada");
 
         const launcherFile = isTikTok
             ? "tiktok-oauth-launcher.html"
-            : "shopee-oauth-launcher.html";
+            : isLazada
+                ? "lazada-oauth-launcher.html"
+                : "shopee-oauth-launcher.html";
 
         const launcherUrl =
             new URL(
@@ -19072,7 +19136,9 @@ function integrateStoreAccount(storeId){
 
         const popupName = isTikTok
             ? "SellerBooksTikTokOAuth"
-            : "SellerBooksShopeeOAuth";
+            : isLazada
+                ? "SellerBooksLazadaOAuth"
+                : "SellerBooksShopeeOAuth";
 
         const oauthTab = window.open(
             launcherUrl,
