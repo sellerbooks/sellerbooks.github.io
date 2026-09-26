@@ -20170,12 +20170,22 @@ async function sellerBooksTestConnectionInternal(connectionId){
 
     const MAX_ATTEMPTS=3;
     const TIMEOUT_MS=10000;
-    const RETRY_DELAY_MS=750;
+    const INITIAL_RETRY_DELAY_MS=750;
 
     const sleep=function(ms){
         return new Promise(function(resolve){
             setTimeout(resolve,ms);
         });
+    };
+
+    const getRetryDelay=function(attempt){
+        /*
+           Exponential backoff bertahap:
+           setelah percobaan #1 -> 750ms
+           setelah percobaan #2 -> 1500ms
+           Maksimal tetap 3 percobaan.
+        */
+        return INITIAL_RETRY_DELAY_MS*Math.pow(2,attempt-1);
     };
 
     try{
@@ -20297,7 +20307,9 @@ async function sellerBooksTestConnectionInternal(connectionId){
 
             if(attempt<MAX_ATTEMPTS){
 
-                await sleep(RETRY_DELAY_MS);
+                const retryDelay=getRetryDelay(attempt);
+
+                await sleep(retryDelay);
 
             }
 
