@@ -13587,6 +13587,10 @@ document.addEventListener(
                  style="padding:12px 14px;border:1px solid #e2e8f0;background:#f8fafc;margin-top:8px;">
                 Status: <strong id="storeApiConnectionStatus">Belum Terhubung</strong>
             </div>
+            <div id="storeApiOrderSyncStatusBox"
+                 style="display:none;padding:10px 14px;border:1px solid #dbeafe;background:#eff6ff;margin-top:8px;font-size:11px;line-height:1.5;">
+                <strong>Sinkronisasi:</strong> <span id="storeApiOrderSyncStatus">Belum dimulai</span>
+            </div>
         </div>
 
         <div class="modal-footer">
@@ -13611,6 +13615,16 @@ document.addEventListener(
                 onclick="testStoreApiConnection()"
             >
                 Tes Koneksi
+            </button>
+ 
+            <button
+                type="button"
+                id="storeApiOrderSyncButton"
+                class="secondary-button"
+                onclick="sellerBooksSyncShopeeOrders()"
+                style="display:none;"
+            >
+                Sync Sekarang
             </button>
 
             <button
@@ -19733,6 +19747,16 @@ function sellerBooksSetShopeeCredentialFields(connection){
             : "Tes koneksi saat ini hanya tersedia untuk Shopee";
     }
 
+    const syncButton=document.getElementById("storeApiOrderSyncButton");
+    if(syncButton){
+        const connected=String(connection?.connection_status||"").toUpperCase()==="CONNECTED";
+        syncButton.style.display=isShopee && connected ? "inline-flex" : "none";
+        syncButton.disabled=Boolean(window.sellerBooksOrderSyncBusy)||!connected;
+        syncButton.title=connected
+            ? "Sinkronkan order Shopee ke SellerBooks"
+            : "Tes koneksi Shopee terlebih dahulu";
+    }
+
     if(!isShopee){
         const note=document.getElementById("storeApiConnectionSecretNote");
         if(note){
@@ -20469,6 +20493,200 @@ async function testStoreApiConnection(){
 
     }
 
+}
+
+let sellerBooksOrderSyncBusy=false;
+let sellerBooksOrderSyncTimer=null;
+
+function sellerBooksSetOrderSyncUi(message,show=true){
+    const box=document.getElementById("storeApiOrderSyncStatusBox");
+    const node=document.getElementById("storeApiOrderSyncStatus");
+    if(box)box.style.display=show?"block":"none";
+    if(node)node.textContent=String(message||"");
+}
+
+async function sellerBooksPollOrderSync(correlationId,connectionId){
+    const started=Date.now();
+    const MAX_POLL_MS=120000;
+
+    while(Date.now()-started<MAX_POLL_MS){
+        try{
+            const {data,error}=await sellerBooksSupabase
+                .from("sellerbooks_sync_runs")
+                .select("id,status,correlation_id,fetched_count,upserted_count,updated_count,skipped_count,error_message,started_at,finished_at")
+                .eq("correlation_id",correlationId)
+                .eq("connection_id",connectionId)
+                .limit(1)
+                .maybeSingle();
+
+            if(error)throw error;
+
+            if(data){
+                const counts=
+                    "Ditemukan "+Number(data.fetched_count||0)+
+                    " • Baru "+Number(data.upserted_count||0)+
+                    " • Diperbarui "+Number(data.updated_count||0);
+
+                if(data.status==="RUNNING"){
+                    sellerBooksSetOrderSyncUi(
+                        "Berjalan • Correlation ID: "+correlationId+" • "+counts
+                    );
+                }else if(data.status==="SUCCESS"){
+                    sellerBooksSetOrderSyncUi(
+                        "Selesai • Correlation ID: "+correlationId+" • "+counts+
+                        " • Dilewati "+Number(data.skipped_count||0)
+                    );
+                    return data;
+                }else if(data.status==="ERROR"){
+                    sellerBooksSetOrderSyncUi(
+                        "Gagal • Correlation ID: "+correlationId+
+                        (data.error_message?" • "+data.error_message:"")
+                    );
+                    return data;
+                }
+            }else{
+                sellerBooksSetOrderSyncUi(
+                    "Menyiapkan sinkronisasi • Correlation ID: "+correlationId
+                );
+            }
+        }catch(error){
+            console.warn("Status sync order gagal diperbarui:",error);
+        }
+
+        await new Promise(function(resolve){
+            sellerBooksOrderSyncTimer=setTimeout(resolve,1000);
+        });
+        sellerBooksOrderSyncTimer=null;
+    }
+
+    sellerBooksSetOrderSyncUi(
+        "Proses masih berjalan. Correlation ID: "+correlationId+
+        ". Status akhir akan diperbarui dari riwayat sinkronisasi."
+    );
+
+    return null;
+}
+
+async function sellerBooksSyncShopeeOrders(){
+    if(sellerBooksOrderSyncBusy)return;
+
+    const connection=sellerBooksStoreApiConnectionData;
+    if(!connection || !connection.id){
+        sellerBooksAlert("Simpan dan tes koneksi Shopee terlebih dahulu.");
+        return;
+    }
+
+    if(String(connection.connection_status||"").toUpperCase()!=="CONNECTED"){
+        sellerBooksAlert("Koneksi Shopee belum berstatus Terhubung.");
+        return;
+    }
+
+    if(!sellerBooksIsShopeeConnection()){
+        sellerBooksAlert("Sinkronisasi order saat ini hanya tersedia untuk Shopee.");
+        return;
+    }
+
+    sellerBooksOrderSyncBusy=true;
+
+    const button=document.getElementById("storeApiOrderSyncButton");
+    const testButton=document.getElementById("storeApiConnectionTestButton");
+    const saveButton=document.getElementById("storeApiConnectionSaveButton");
+    const disconnectButton=document.getElementById("storeApiConnectionDisconnectButton");
+
+    if(button){
+        button.disabled=true;
+        button.textContent="Menyinkronkan...";
+        button.title="Sinkronisasi sedang berlangsung. Jangan klik lagi.";
+    }
+    if(testButton)testButton.disabled=true;
+    if(saveButton)saveButton.disabled=true;
+    if(disconnectButton)disconnectButton.disabled=true;
+
+    const correlationId=crypto.randomUUID();
+
+    sellerBooksSetOrderSyncUi(
+        "Memulai sinkronisasi • Correlation ID: "+correlationId
+    );
+
+    try{
+        const {data:sessionData,error:sessionError}=await sellerBooksSupabase.auth.getSession();
+        if(sessionError)throw sessionError;
+
+        const accessToken=sessionData?.session?.access_token||"";
+        if(!accessToken)throw new Error("Sesi login SellerBooks tidak ditemukan. Silakan login kembali.");
+
+        const statusPromise=sellerBooksPollOrderSync(correlationId,connection.id);
+
+        const response=await fetch(
+            SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-sync-orders",
+            {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json",
+                    "apikey":SELLERBOOKS_SUPABASE_KEY,
+                    "Authorization":"Bearer "+accessToken
+                },
+                body:JSON.stringify({
+                    connection_id:connection.id,
+                    correlation_id:correlationId
+                })
+            }
+        );
+
+        const raw=await response.text();
+        let result=null;
+        try{result=raw?JSON.parse(raw):null;}catch(error){}
+
+        await statusPromise;
+
+        if(!response.ok || !result?.ok){
+            const finalCorrelationId=result?.correlation_id||correlationId;
+            sellerBooksSetOrderSyncUi(
+                "Gagal • Correlation ID: "+finalCorrelationId+
+                (result?.error?" • "+result.error:"")
+            );
+            throw new Error(result?.error||("Server sync order mengembalikan HTTP "+response.status+"."));
+        }
+
+        sellerBooksSetOrderSyncUi(
+            "Selesai • Correlation ID: "+result.correlation_id+
+            " • Baru "+Number(result.upserted_count||0)+
+            " • Diperbarui "+Number(result.updated_count||0)+
+            " • Dilewati "+Number(result.skipped_count||0)
+        );
+
+        sellerBooksStoreApiConnectionData={
+            ...sellerBooksStoreApiConnectionData,
+            last_sync_at:new Date().toISOString(),
+            last_success_at:new Date().toISOString(),
+            last_error:null
+        };
+
+        await sellerBooksRefreshStoreConnectionStatuses();
+
+    }catch(error){
+        console.error("Sinkronisasi order Shopee gagal:",error);
+        sellerBooksSetOrderSyncUi(
+            "Gagal • Correlation ID: "+correlationId+
+            " • "+String(error?.message||error)
+        );
+    }finally{
+        if(sellerBooksOrderSyncTimer){
+            clearTimeout(sellerBooksOrderSyncTimer);
+            sellerBooksOrderSyncTimer=null;
+        }
+
+        sellerBooksOrderSyncBusy=false;
+
+        if(button){
+            button.disabled=false;
+            button.textContent="Sync Sekarang";
+            button.title="Sinkronkan order Shopee ke SellerBooks";
+        }
+        if(testButton)testButton.disabled=false;
+        if(saveButton)saveButton.disabled=false;
+        if(disconnectButton)disconnectButton.disabled=false;
+    }
 }
 
 async function disconnectStoreApiConnection(){
