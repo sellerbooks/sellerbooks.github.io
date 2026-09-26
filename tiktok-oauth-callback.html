@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SellerBooks - TikTok Shop</title>
+<style>
+html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#0f172a}
+body{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.box{text-align:center;padding:32px 24px;max-width:430px}
+.icon{width:58px;height:58px;border-radius:50%;margin:0 auto 18px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:bold}
+.icon.error{background:#fee2e2;color:#b91c1c}
+h1{font-size:25px;margin:0 0 10px}
+p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
+</style>
+</head>
+<body>
+<div class="box" id="box">
+    <div class="icon" id="icon">✓</div>
+    <h1 id="title">TikTok Shop berhasil terhubung</h1>
+    <p id="message">Jendela ini akan ditutup otomatis.</p>
+</div>
+<script>
+(function(){
+    const params=new URLSearchParams(window.location.search);
+    const result=params.get("sellerbooks_tiktok_oauth")||"error";
+    const reason=params.get("reason")||"OAUTH_FAILED";
+    const missing=params.get("missing_scopes")||"";
+    const target=window.location.origin;
+
+    let payload;
+
+    if(result==="success"){
+        payload={
+            source:"sellerbooks-tiktok-oauth",
+            status:"success"
+        };
+    }else if(result==="partial"){
+        payload={
+            source:"sellerbooks-tiktok-oauth",
+            status:"error",
+            reason:"MISSING_SCOPES"
+        };
+        document.getElementById("icon").textContent="!";
+        document.getElementById("icon").classList.add("error");
+        document.getElementById("title").textContent="TikTok Shop terhubung sebagian";
+        document.getElementById("message").textContent=
+            "Ada izin API yang belum diberikan. Kode: "+(missing||"MISSING_SCOPES");
+    }else{
+        payload={
+            source:"sellerbooks-tiktok-oauth",
+            status:"error",
+            reason:reason
+        };
+        document.getElementById("icon").textContent="!";
+        document.getElementById("icon").classList.add("error");
+        document.getElementById("title").textContent="Integrasi TikTok Shop gagal";
+        document.getElementById("message").textContent="Kode: "+reason;
+    }
+
+    try{
+        if(window.opener && !window.opener.closed){
+            window.opener.postMessage(payload,target);
+        }
+    }catch(e){}
+
+    setTimeout(function(){
+        try{ window.close(); }catch(e){}
+    },1400);
+})();
+</script>
+</body>
+</html>
