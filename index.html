@@ -19041,17 +19041,29 @@ function integrateStoreAccount(storeId){
     if(
         lowerMarketplaceName.includes("shopee") ||
         lowerMarketplaceName.includes("tiktok") ||
-        lowerMarketplaceName.includes("lazada")
+        lowerMarketplaceName.includes("lazada") ||
+        lowerMarketplaceName.includes("blibli") ||
+        lowerMarketplaceName.includes("toco") ||
+        lowerMarketplaceName.includes("tokopedia")
     ){
 
         const isTikTok = lowerMarketplaceName.includes("tiktok");
         const isLazada = lowerMarketplaceName.includes("lazada");
+        const isBlibli = lowerMarketplaceName.includes("blibli");
+        const isToco = lowerMarketplaceName.includes("toco");
+        const isTokopedia = lowerMarketplaceName.includes("tokopedia");
 
         const launcherFile = isTikTok
             ? "tiktok-oauth-launcher.html"
             : isLazada
                 ? "lazada-oauth-launcher.html"
-                : "shopee-oauth-launcher.html";
+                : isBlibli
+                    ? "blibli-oauth-launcher.html"
+                    : isToco
+                        ? "toco-oauth-launcher.html"
+                        : isTokopedia
+                            ? "tokopedia-oauth-launcher.html"
+                            : "shopee-oauth-launcher.html";
 
         const launcherUrl =
             new URL(
@@ -19081,7 +19093,13 @@ function integrateStoreAccount(storeId){
             ? "SellerBooksTikTokOAuth"
             : isLazada
                 ? "SellerBooksLazadaOAuth"
-                : "SellerBooksShopeeOAuth";
+                : isBlibli
+                    ? "SellerBooksBlibliOAuth"
+                    : isToco
+                        ? "SellerBooksTocoOAuth"
+                        : isTokopedia
+                            ? "SellerBooksTokopediaOAuth"
+                            : "SellerBooksShopeeOAuth";
 
         const oauthTab = window.open(
             launcherUrl,
