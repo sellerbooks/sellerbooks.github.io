@@ -32821,7 +32821,9 @@ window.addEventListener("message",sellerBooksHandleMarketplaceOAuthMessage);
 
 (function sellerBooksCheckMarketplaceOAuthCallback(){
     const params=new URLSearchParams(window.location.search);
-    const status=params.get("sellerbooks_marketplace_oauth");
+    const marketplaceStatus=params.get("sellerbooks_marketplace_oauth");
+    const shopeeStatus=params.get("sellerbooks_shopee_oauth");
+    const status=shopeeStatus||marketplaceStatus;
     if(!status)return;
 
     if(window.opener && !window.opener.closed){
@@ -32837,6 +32839,7 @@ window.addEventListener("message",sellerBooksHandleMarketplaceOAuthMessage);
 
     const clean=new URL(window.location.href);
     clean.searchParams.delete("sellerbooks_marketplace_oauth");
+    clean.searchParams.delete("sellerbooks_shopee_oauth");
     clean.searchParams.delete("connection_id");
     clean.searchParams.delete("shop_id");
     clean.searchParams.delete("reason");
