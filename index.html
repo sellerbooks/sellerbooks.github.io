@@ -13513,7 +13513,7 @@ document.addEventListener(
 <div class="modal-overlay" id="storeApiConnectionModal">
     <div class="modal">
         <div class="modal-header">
-            <h3 id="storeApiConnectionTitle">Koneksi API</h3>
+            <h3 id="storeApiConnectionTitle">Integrasi Akun</h3>
             <button type="button" class="modal-close" onclick="closeStoreApiConnectionModal()">×</button>
         </div>
 
@@ -19497,7 +19497,7 @@ function renderStores(){
                     border:1px solid #e2e8f0;
                     background:#f8fafc;
                 ">
-                    <span style="font-size:12px;color:#64748b;">KONEKSI API</span>
+                    <span style="font-size:12px;color:#64748b;">INTEGRASI AKUN</span>
                     <strong data-store-api-status="${store.id}" style="font-size:12px;color:#64748b;">Memuat...</strong>
                 </div>
 
@@ -19510,7 +19510,7 @@ function renderStores(){
                         data-store-api-button="${store.id}"
                         onclick="openStoreApiConnectionModal('${store.id}')"
                     >
-                        Hubungkan API
+                        Integrasikan Akun
                     </button>
 
 
@@ -19651,7 +19651,7 @@ function sellerBooksApplyStoreApiStatus(storeId,connection){
         button.textContent =
             connection && String(connection.connection_status||"").toUpperCase()==="CONNECTED"
             ? "Kelola API"
-            : "Hubungkan API";
+            : "Integrasikan Akun";
 
     });
 }
@@ -20007,8 +20007,8 @@ async function openStoreApiConnectionModal(storeId){
         await sellerBooksLoadStoreApiMarketplaces(store.marketplaceId);
 
         /*
-          Modal Koneksi API selalu mengikuti marketplace akun toko
-          yang tombol "Hubungkan API"-nya diklik.
+          Modal Integrasi Akun selalu mengikuti marketplace akun toko
+          yang tombol "Integrasikan Akun"-nya diklik.
           Jangan biarkan dropdown kembali ke pilihan pertama.
         */
         const marketplaceSelect=document.getElementById("storeApiConnectionMarketplace");
@@ -20205,7 +20205,7 @@ async function saveStoreApiConnection(){
 
         if(!connection || !connection.id){
 
-            throw new Error("Koneksi API tidak berhasil dibuat.");
+            throw new Error("Integrasi Akun tidak berhasil dibuat.");
 
         }
 
@@ -20316,7 +20316,7 @@ async function saveStoreApiConnection(){
         console.error("Simpan koneksi API SellerBooks gagal:",error);
 
         sellerBooksAlert(
-            "Koneksi API gagal disimpan.\n\n"+String(error?.message||error)
+            "Integrasi Akun gagal disimpan.\n\n"+String(error?.message||error)
         );
 
     }finally{
@@ -20872,14 +20872,14 @@ async function disconnectStoreApiConnection(){
 
         await sellerBooksRefreshStoreConnectionStatuses();
 
-        sellerBooksAlert("Koneksi API sudah diputuskan.");
+        sellerBooksAlert("Integrasi Akun sudah diputuskan.");
 
     }catch(error){
 
         console.error("Putus koneksi API SellerBooks gagal:",error);
 
         sellerBooksAlert(
-            "Koneksi API gagal diputuskan.\n\n"+String(error?.message||error)
+            "Integrasi Akun gagal diputuskan.\n\n"+String(error?.message||error)
         );
 
     }
