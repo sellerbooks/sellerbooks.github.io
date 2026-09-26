@@ -4299,6 +4299,120 @@ td{
     }
 
 }
+
+/* =====================================================
+   SELLERBOOKS DESKTOP / CHROME RESPONSIVE V2
+   Fokus: Akun Toko tidak melebar horizontal.
+   Tombol aksi tetap satu baris dan mudah dibaca.
+===================================================== */
+
+html,
+body{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden;
+}
+
+#app{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden;
+}
+
+.main-app{
+    min-width:0;
+    max-width:100%;
+}
+
+.app-content{
+    width:100%;
+    min-width:0;
+    overflow-x:hidden;
+}
+
+/* AKUN TOKO */
+.stores-grid{
+    width:100%;
+    min-width:0;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+}
+
+.store-card{
+    min-width:0;
+    width:100%;
+    overflow:hidden;
+}
+
+.store-card-top,
+.store-marketplace,
+.store-info{
+    min-width:0;
+}
+
+.store-marketplace-name,
+.store-name,
+.store-description{
+    min-width:0;
+    overflow-wrap:anywhere;
+}
+
+.store-actions{
+    width:100%;
+    min-width:0;
+    display:grid;
+    grid-template-columns:minmax(105px,1.35fr) minmax(65px,.8fr) minmax(105px,1.2fr) 44px;
+    gap:8px;
+    align-items:stretch;
+}
+
+.store-actions button,
+.store-action-button{
+    width:100%;
+    min-width:0;
+    max-width:none;
+    flex:none;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:clip;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    line-height:1.2;
+}
+
+.store-delete-button{
+    padding-left:8px;
+    padding-right:8px;
+}
+
+@media(max-width:1200px) and (min-width:901px){
+    .stores-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .app-content{
+        padding-left:24px;
+        padding-right:24px;
+    }
+}
+
+@media(max-width:900px){
+    .stores-grid{
+        grid-template-columns:1fr;
+    }
+
+    .store-actions{
+        grid-template-columns:minmax(115px,1.4fr) minmax(70px,.8fr) minmax(115px,1.2fr) 46px;
+    }
+}
+
+@media(max-width:650px){
+    .store-actions{
+        grid-template-columns:minmax(105px,1.35fr) minmax(65px,.8fr) minmax(105px,1.2fr) 44px;
+    }
+}
+
 </style>
 
 <script>
