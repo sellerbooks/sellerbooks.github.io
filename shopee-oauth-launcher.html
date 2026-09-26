@@ -10,7 +10,7 @@
  const url=new URL(location.href);
  const storeId=url.searchParams.get("store_id")||"", marketplaceId=url.searchParams.get("marketplace_id")||"";
  const SUPABASE_URL="https://fysaxpqpqexjnlpkbwap.supabase.co";
- const SUPABASE_KEY="sb_publishable_DWRaEZTcNMjhglwN3nQCOw_pua8rsjD";
+ const SUPABASE_KEY="sb_publishable_DWRaEZTcNMjhglwN3nqCOw_pua8rsjD";
  try{
   if(!storeId||!marketplaceId) throw new Error("Store ID atau Marketplace ID tidak tersedia.");
   const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
