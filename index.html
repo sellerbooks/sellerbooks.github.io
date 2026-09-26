@@ -19044,10 +19044,38 @@ function integrateStoreAccount(storeId){
            tetap terbuka di tab utama, seperti konsep integrasi
            marketplace pada platform lain.
         */
+        /*
+           Buka OAuth Shopee sebagai POPUP kecil seperti konsep BigSeller.
+           Tab utama SellerBooks tetap terbuka dan tidak berpindah halaman.
+        */
+        const popupWidth = 520;
+        const popupHeight = 760;
+        const screenLeft = typeof window.screenLeft === "number" ? window.screenLeft : window.screenX;
+        const screenTop = typeof window.screenTop === "number" ? window.screenTop : window.screenY;
+        const outerWidth = window.outerWidth || window.innerWidth;
+        const outerHeight = window.outerHeight || window.innerHeight;
+
+        const popupLeft = Math.max(
+            0,
+            screenLeft + Math.round((outerWidth - popupWidth) / 2)
+        );
+        const popupTop = Math.max(
+            0,
+            screenTop + Math.round((outerHeight - popupHeight) / 2)
+        );
+
         const oauthTab = window.open(
             launcherUrl,
-            "_blank",
-            "noopener,noreferrer"
+            "SellerBooksShopeeOAuth",
+            [
+                "popup=yes",
+                "width=" + popupWidth,
+                "height=" + popupHeight,
+                "left=" + popupLeft,
+                "top=" + popupTop,
+                "resizable=yes",
+                "scrollbars=yes"
+            ].join(",")
         );
 
         if(!oauthTab){
