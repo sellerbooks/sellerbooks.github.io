@@ -19979,6 +19979,49 @@ async function openStoreApiConnectionModal(storeId){
 
         await sellerBooksLoadStoreApiMarketplaces(store.marketplaceId);
 
+        /*
+          Modal Koneksi API selalu mengikuti marketplace akun toko
+          yang tombol "Hubungkan API"-nya diklik.
+          Jangan biarkan dropdown kembali ke pilihan pertama.
+        */
+        const marketplaceSelect=document.getElementById("storeApiConnectionMarketplace");
+        if(marketplaceSelect){
+            const targetStoreMarketplaceId=String(store.marketplaceId||"").trim();
+
+            if(targetStoreMarketplaceId){
+                marketplaceSelect.value=targetStoreMarketplaceId;
+
+                /*
+                  Jika ID marketplace lama merupakan record duplikat
+                  yang sudah dinormalisasi oleh loader, cari pilihan
+                  canonical berdasarkan nama/code marketplace asal toko.
+                */
+                if(marketplaceSelect.value!==targetStoreMarketplaceId){
+                    const storeMarketplace=(marketplaces||[]).find(function(item){
+                        return String(item.id)===targetStoreMarketplaceId;
+                    });
+
+                    const normalizeMarketplace=function(value){
+                        return String(value||"")
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]/g,"");
+                    };
+
+                    const storeMarketplaceKey=normalizeMarketplace(
+                        storeMarketplace?.code||storeMarketplace?.name
+                    );
+
+                    const canonicalOption=[...marketplaceSelect.options].find(function(option){
+                        return normalizeMarketplace(option.textContent)===storeMarketplaceKey;
+                    });
+
+                    if(canonicalOption){
+                        marketplaceSelect.value=canonicalOption.value;
+                    }
+                }
+            }
+        }
+
         sellerBooksSetShopeeCredentialFields(null);
 
         const status=sellerBooksFormatApiStatus(connection);
