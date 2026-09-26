@@ -13536,32 +13536,16 @@ document.addEventListener(
             </div>
 
             <div id="storeApiConnectionShopeeFields" style="display:none;">
-                <div class="form-group">
-                    <label>Partner ID</label>
-                    <input type="text" id="storeApiShopeePartnerId" class="form-control" autocomplete="off">
-                </div>
-
-                <div class="form-group">
-                    <label>Shop ID</label>
-                    <input type="text" id="storeApiShopeeShopId" class="form-control" autocomplete="off">
-                    <small style="display:block;margin-top:6px;color:#64748b;line-height:1.5;">
-                        Shop ID harus sama dengan Store ID akun toko.
-                    </small>
-                </div>
-
-                <div class="form-group">
-                    <label>Partner Key</label>
-                    <input type="password" id="storeApiShopeePartnerKey" class="form-control" autocomplete="new-password">
-                </div>
-
-                <div class="form-group">
-                    <label>Access Token</label>
-                    <input type="password" id="storeApiShopeeAccessToken" class="form-control" autocomplete="new-password">
-                </div>
-
-                <div class="form-group">
-                    <label>API Base URL <span style="color:#94a3b8;">(Opsional)</span></label>
-                    <input type="url" id="storeApiShopeeBaseUrl" class="form-control" placeholder="https://partner.shopeemobile.com" autocomplete="off">
+                <div style="padding:16px;border:1px solid #e2e8f0;background:#f8fafc;border-radius:10px;">
+                    <div style="font-weight:700;color:#0f172a;margin-bottom:6px;">Hubungkan dengan Shopee</div>
+                    <div style="font-size:13px;color:#64748b;line-height:1.6;margin-bottom:14px;">
+                        Anda akan diarahkan ke halaman resmi Shopee untuk login dan menyetujui penautan toko.
+                        SellerBooks tidak meminta password Shopee Anda.
+                    </div>
+                    <button type="button" id="storeApiShopeeOAuthButton" class="primary-button" onclick="sellerBooksStartShopeeOAuth()">
+                        Login & Tautkan Shopee
+                    </button>
+                    <div id="storeApiShopeeOAuthStatus" style="display:none;margin-top:10px;font-size:12px;color:#64748b;line-height:1.5;"></div>
                 </div>
             </div>
 
@@ -19739,12 +19723,24 @@ function sellerBooksSetShopeeCredentialFields(connection){
     if(genericFields)genericFields.style.display=isShopee?"none":"block";
 
     const testButton=document.getElementById("storeApiConnectionTestButton");
+    const oauthButton=document.getElementById("storeApiShopeeOAuthButton");
+    const saveButton=document.getElementById("storeApiConnectionSaveButton");
+
+    const connected=String(connection?.connection_status||"").toUpperCase()==="CONNECTED";
 
     if(testButton){
-        testButton.disabled=!isShopee;
-        testButton.title=isShopee
-            ? "Uji credential Shopee ke API resmi"
-            : "Tes koneksi saat ini hanya tersedia untuk Shopee";
+        testButton.style.display=isShopee && connected ? "inline-flex" : "none";
+        testButton.disabled=!isShopee || !connected;
+        testButton.title="Uji koneksi Shopee ke API resmi";
+    }
+
+    if(oauthButton){
+        oauthButton.style.display=isShopee && !connected ? "inline-flex" : "none";
+        oauthButton.disabled=Boolean(window.sellerBooksOrderSyncBusy);
+    }
+
+    if(saveButton){
+        saveButton.style.display=isShopee ? "none" : "inline-flex";
     }
 
     const syncButton=document.getElementById("storeApiOrderSyncButton");
@@ -19767,7 +19763,7 @@ function sellerBooksSetShopeeCredentialFields(connection){
         const note=document.getElementById("storeApiConnectionSecretNote");
         if(note){
             note.textContent=
-                "Credential disimpan aman di Supabase Vault. Secret tidak disimpan di localStorage SellerBooks.";
+                "Login dan persetujuan dilakukan di halaman resmi Shopee. Token OAuth disimpan aman di Supabase Vault.";
         }
     }
 
@@ -19964,6 +19960,11 @@ function closeStoreApiConnectionModal(){
 }
 
 async function saveStoreApiConnection(){
+
+    if(sellerBooksIsShopeeConnection()){
+        sellerBooksAlert("Untuk Shopee gunakan tombol Login & Tautkan Shopee. Credential API tidak perlu dimasukkan manual.");
+        return;
+    }
 
     const storeId=String(
         document.getElementById("storeApiConnectionStoreId").value||""
@@ -32717,6 +32718,143 @@ style.textContent=
 document.head.appendChild(style);
 sellerBooksReplaceEmojiIcons(document);
 });
+
+
+async function sellerBooksStartShopeeOAuth(){
+    const storeId=String(document.getElementById("storeApiConnectionStoreId")?.value||"").trim();
+    const marketplaceId=String(document.getElementById("storeApiConnectionMarketplace")?.value||"").trim();
+
+    if(!storeId || !marketplaceId){
+        sellerBooksAlert("Akun toko Shopee belum siap.");
+        return;
+    }
+
+    const popup=window.open("about:blank","sellerbooksShopeeOAuth","width=520,height=720,resizable=yes,scrollbars=yes");
+    if(!popup){
+        sellerBooksAlert("Popup Shopee diblokir browser. Izinkan popup untuk SellerBooks lalu coba lagi.");
+        return;
+    }
+
+    const button=document.getElementById("storeApiShopeeOAuthButton");
+    const status=document.getElementById("storeApiShopeeOAuthStatus");
+
+    if(button){
+        button.disabled=true;
+        button.textContent="Menyiapkan login Shopee...";
+    }
+    if(status){
+        status.style.display="block";
+        status.textContent="Menghubungkan ke otorisasi resmi Shopee...";
+    }
+
+    try{
+        const {data:sessionData,error:sessionError}=await sellerBooksSupabase.auth.getSession();
+        if(sessionError)throw sessionError;
+
+        const accessToken=sessionData?.session?.access_token||"";
+        if(!accessToken)throw new Error("Sesi login SellerBooks tidak ditemukan. Silakan login kembali.");
+
+        const response=await fetch(
+            SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-oauth?action=init",
+            {
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json",
+                    "apikey":SELLERBOOKS_SUPABASE_KEY,
+                    "Authorization":"Bearer "+accessToken
+                },
+                body:JSON.stringify({
+                    store_id:storeId,
+                    marketplace_id:marketplaceId
+                })
+            }
+        );
+
+        const raw=await response.text();
+        let result=null;
+        try{result=raw?JSON.parse(raw):null;}catch(error){}
+
+        if(!response.ok || !result?.ok || !result?.authorization_url){
+            throw new Error(result?.error||"Gagal menyiapkan OAuth Shopee.");
+        }
+
+        popup.location.href=result.authorization_url;
+
+        if(status){
+            status.textContent="Silakan login di Shopee dan setujui penautan toko. SellerBooks akan memperbarui status setelah verifikasi berhasil.";
+        }
+    }catch(error){
+        popup.close();
+        console.error("Shopee OAuth gagal dimulai:",error);
+
+        if(status){
+            status.style.display="block";
+            status.textContent=String(error?.message||error);
+        }
+
+        sellerBooksAlert(
+            "Login Shopee tidak dapat dimulai.\n\n"+
+            String(error?.message||error)
+        );
+    }finally{
+        if(button){
+            button.disabled=false;
+            button.textContent="Login & Tautkan Shopee";
+        }
+    }
+}
+
+function sellerBooksHandleShopeeOAuthMessage(event){
+    if(event.origin!==window.location.origin)return;
+    if(!event.data || event.data.type!=="SELLERBOOKS_SHOPEE_OAUTH")return;
+
+    if(event.data.status==="success"){
+        sellerBooksRefreshStoreConnectionStatuses();
+        if(sellerBooksStoreApiConnectionStoreId){
+            sellerBooksGetStoreApiConnection(sellerBooksStoreApiConnectionStoreId)
+                .then(function(connection){
+                    sellerBooksStoreApiConnectionData=connection;
+                    sellerBooksSetShopeeCredentialFields(connection);
+                    const node=document.getElementById("storeApiConnectionStatus");
+                    if(node)node.textContent=sellerBooksFormatApiStatus(connection);
+                })
+                .catch(console.error);
+        }
+
+        sellerBooksAlert("Shopee berhasil ditautkan. Shop ID "+String(event.data.shop_id||"")+" sudah diverifikasi.");
+    }else{
+        sellerBooksAlert(
+            "Penautan Shopee belum berhasil.\n\n"+
+            String(event.data.reason||"Silakan coba lagi.")
+        );
+    }
+}
+
+window.addEventListener("message",sellerBooksHandleShopeeOAuthMessage);
+
+(function sellerBooksCheckShopeeOAuthCallback(){
+    const params=new URLSearchParams(window.location.search);
+    const status=params.get("sellerbooks_shopee_oauth");
+    if(!status)return;
+
+    if(window.opener && !window.opener.closed){
+        window.opener.postMessage({
+            type:"SELLERBOOKS_SHOPEE_OAUTH",
+            status:status,
+            reason:params.get("reason")||"",
+            shop_id:params.get("shop_id")||""
+        },window.location.origin);
+
+        setTimeout(function(){window.close();},250);
+    }
+
+    const clean=new URL(window.location.href);
+    clean.searchParams.delete("sellerbooks_shopee_oauth");
+    clean.searchParams.delete("connection_id");
+    clean.searchParams.delete("shop_id");
+    clean.searchParams.delete("reason");
+    window.history.replaceState({},document.title,clean.toString());
+})();
 </script>
 </body>
 </html>
