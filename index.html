@@ -30848,7 +30848,10 @@ window.sellerBooksValidateAutoSyncTransaction=function(transaction){
 </script>
 
 <script>
-/* SELLERBOOKS_SVG_ICON_SYSTEM_V1 */
+/* SELLERBOOKS_SVG_ICON_SYSTEM_V2
+   Mengganti emoji UI dengan SVG agar konsisten di Chrome/Yandex/Android WebView.
+   Tidak menyentuh mesin transaksi, import Excel/CSV, atau Auto Sync.
+*/
 window.sellerBooksSvgIcon=function(name,extraClass){
 const paths={
 home:'<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M9.5 21v-6h5v6"/>',
@@ -30859,8 +30862,8 @@ download:'<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 20h16"/>',
 upload:'<path d="M12 17V5"/><path d="m7 10 5-5 5 5"/><path d="M4 19h16"/>',
 wallet:'<path d="M4 6h16v14H4z"/><path d="M4 6V4h13"/><path d="M15 13h5"/><circle cx="15" cy="13" r="1"/>',
 card:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/>',
-search:'<circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/>',
-chart:'<path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 3-4 3 2 5-7"/>',
+search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
+chart:'<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M3 20h18"/>',
 settings:'<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/>',
 refresh:'<path d="M20 11a8 8 0 0 0-14-5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14 5l2-2"/><path d="M20 20v-4h-4"/>',
 logout:'<path d="M10 4H5v16h5"/><path d="m14 8 4 4-4 4"/><path d="M9 12h9"/>',
@@ -30875,20 +30878,103 @@ image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8" cy="9" r=
 building:'<path d="M5 21V4h10v17"/><path d="M15 9h4v12"/><path d="M8 8h2M8 12h2M8 16h2M17 13h1M17 17h1"/><path d="M3 21h18"/>',
 calculator:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h2M14 19h2"/>',
 warning:'<path d="m12 3 9 17H3L12 3Z"/><path d="M12 9v4M12 16h.01"/>',
-check:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>'};
-return '<svg class="sb-svg-icon '+(extraClass||"") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(paths[name]||paths.box)+'</svg>';
+check:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+trash:'<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 14h10l1-14"/><path d="M9 7V4h6v3"/>',
+edit:'<path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z"/><path d="m13.5 7.5 3 3"/>',
+close:'<path d="m6 6 12 12M18 6 6 18"/>',
+filter:'<path d="M4 5h16l-6 7v6l-4 2v-8L4 5Z"/>',
+folder:'<path d="M3 6h7l2 2h9v11H3z"/>',
+robot:'<rect x="5" y="7" width="14" height="13" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 16h6"/>',
+chartUp:'<path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 2 5-6"/><path d="M15 7h4v4"/>',
+moneyBill:'<rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M5 9h.01M19 15h.01"/>',
+receipt:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+diamond:'<path d="m12 3 8 9-8 9-8-9 8-9Z"/><path d="m8 12 4-4 4 4-4 4-4-4Z"/>',
+hand:'<path d="M7 11V6a1.5 1.5 0 0 1 3 0v4"/><path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M13 10V6a1.5 1.5 0 0 1 3 0v6"/><path d="M16 11V9a1.5 1.5 0 0 1 3 0v5c0 4-3 7-7 7h-2c-3 0-5-2-6-5l-1-3a1.5 1.5 0 0 1 2.8-1.1L7 15"/>',
+music:'<path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>',
+status:'<circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/>'
 };
+return '<svg class="sb-svg-icon '+(extraClass||"")+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+(paths[name]||paths.box)+'</svg>';
+};
+
 window.sellerBooksReplaceEmojiIcons=function(root){
 root=root||document;
-const map={"🏠":"home","🏪":"store","🏬":"shop","📦":"box","📥":"download","📤":"upload","💸":"wallet","💳":"card","🔎":"search","📊":"chart","⚙️":"settings","🔄":"refresh","🚪":"logout","☰":"menu","🔔":"bell","🔐":"lock","👤":"user","🏷️":"tag","💰":"money","💵":"money","🧾":"file","📄":"file","🏢":"building","🖼️":"image","🔢":"calculator","⚠️":"warning","✅":"check","🤖":"settings"};
-const selectors=[".menu-icon",".stat-icon",".security-icon",".owner-setup-icon",".sb-piutang-dashboard-icon",".sb-piutang-summary-icon",".import-info-icon",".recognition-icon",".settings-card-icon",".store-empty-icon",".product-empty-icon"];
-root.querySelectorAll(selectors.join(",")).forEach(function(el){const key=map[String(el.textContent||"").trim()];if(key)el.innerHTML=sellerBooksSvgIcon(key);});
-root.querySelectorAll(".notification-icon").forEach(function(el){const key=map[String(el.textContent||"").trim()];if(key)el.innerHTML=sellerBooksSvgIcon(key);});
+const map={
+"🏠":"home","🏪":"store","🏬":"shop","📦":"box","📥":"download","📤":"upload",
+"💸":"wallet","💳":"card","🔎":"search","📊":"chart","⚙️":"settings","🔄":"refresh",
+"🚪":"logout","☰":"menu","🔔":"bell","🔐":"lock","👤":"user","🏷️":"tag","💰":"money",
+"💵":"moneyBill","🧾":"receipt","📄":"file","🏢":"building","🖼️":"image","🔢":"calculator",
+"⚠️":"warning","✅":"check","🤖":"robot","🗑️":"trash","🗑":"trash","✏️":"edit","✏":"edit",
+"✕":"close","📂":"folder","📈":"chartUp","💎":"diamond","👋":"hand","🎵":"music",
+"🛍️":"store","🟢":"status","🔵":"status","🟣":"status","🔷":"status","🔒":"lock"
 };
+
+const replaceElement=function(el){
+    const key=map[String(el.textContent||"").trim()];
+    if(key)el.innerHTML=window.sellerBooksSvgIcon(key);
+};
+
+const selectors=[
+".menu-icon",".stat-icon",".security-icon",".owner-setup-icon",".sb-piutang-dashboard-icon",
+".sb-piutang-summary-icon",".import-info-icon",".recognition-icon",".settings-card-icon",
+".store-empty-icon",".product-empty-icon",".notification-icon"
+];
+root.querySelectorAll(selectors.join(",")).forEach(replaceElement);
+
+const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{
+    acceptNode:function(node){
+        const parent=node.parentElement;
+        if(!parent)return NodeFilter.FILTER_REJECT;
+        const tag=parent.tagName;
+        if(["SCRIPT","STYLE","TEXTAREA","INPUT","OPTION","SELECT","SVG","PATH"].includes(tag))return NodeFilter.FILTER_REJECT;
+        return Object.keys(map).some(function(k){return node.nodeValue.indexOf(k)>=0;})
+            ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    }
+});
+
+const nodes=[];
+let node;
+while(node=walker.nextNode())nodes.push(node);
+
+nodes.forEach(function(textNode){
+    let text=textNode.nodeValue;
+    const frag=document.createDocumentFragment();
+    let changed=false;
+    const keys=Object.keys(map).sort(function(a,b){return b.length-a.length;});
+    while(text){
+        let found=null,pos=text.length;
+        keys.forEach(function(k){
+            const p=text.indexOf(k);
+            if(p>=0 && p<pos){pos=p;found=k;}
+        });
+        if(!found){frag.appendChild(document.createTextNode(text));break;}
+        if(pos>0)frag.appendChild(document.createTextNode(text.slice(0,pos)));
+        const span=document.createElement("span");
+        span.className="sb-svg-inline";
+        span.innerHTML=window.sellerBooksSvgIcon(map[found]);
+        frag.appendChild(span);
+        text=text.slice(pos+found.length);
+        changed=true;
+    }
+    if(changed)textNode.parentNode.replaceChild(frag,textNode);
+});
+};
+
 document.addEventListener("DOMContentLoaded",function(){
 const style=document.createElement("style");
-style.textContent=".sb-svg-icon{width:1.15em;height:1.15em;display:block;flex:0 0 auto;stroke:currentColor}.menu-icon .sb-svg-icon{width:20px;height:20px;margin:auto}.stat-icon .sb-svg-icon{width:20px;height:20px}.security-icon .sb-svg-icon,.owner-setup-icon .sb-svg-icon{width:22px;height:22px}.settings-card-icon .sb-svg-icon{width:20px;height:20px}.notification-icon .sb-svg-icon{width:20px;height:20px}.recognition-icon .sb-svg-icon,.import-info-icon .sb-svg-icon{width:22px;height:22px}.store-empty-icon .sb-svg-icon,.product-empty-icon .sb-svg-icon{width:28px;height:28px}.sb-piutang-dashboard-icon .sb-svg-icon,.sb-piutang-summary-icon .sb-svg-icon{width:21px;height:21px}";
-document.head.appendChild(style);sellerBooksReplaceEmojiIcons(document);
+style.textContent=
+".sb-svg-icon{width:1.15em;height:1.15em;display:inline-block;vertical-align:-.18em;flex:0 0 auto;stroke:currentColor}"+
+".sb-svg-inline{display:inline-flex;align-items:center;vertical-align:-.18em;line-height:0}"+
+".sb-svg-inline .sb-svg-icon{width:1.1em;height:1.1em}"+
+".menu-icon .sb-svg-icon{width:20px;height:20px;display:block;margin:auto}"+
+".stat-icon .sb-svg-icon{width:20px;height:20px}"+
+".security-icon .sb-svg-icon,.owner-setup-icon .sb-svg-icon{width:22px;height:22px}"+
+".settings-card-icon .sb-svg-icon{width:20px;height:20px}"+
+".notification-icon .sb-svg-icon{width:20px;height:20px}"+
+".recognition-icon .sb-svg-icon,.import-info-icon .sb-svg-icon{width:22px;height:22px}"+
+".store-empty-icon .sb-svg-icon,.product-empty-icon .sb-svg-icon{width:28px;height:28px}"+
+".sb-piutang-dashboard-icon .sb-svg-icon,.sb-piutang-summary-icon .sb-svg-icon{width:21px;height:21px}";
+document.head.appendChild(style);
+sellerBooksReplaceEmojiIcons(document);
 });
 </script>
 </body>
