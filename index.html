@@ -19892,12 +19892,13 @@ async function openStoreApiConnectionModal(storeId){
     document.getElementById("storeApiConnectionStoreName").value=store.name||"";
     const oauthLauncher=document.getElementById("storeApiMarketplaceOAuthButton");
     if(oauthLauncher){oauthLauncher.href="shopee-oauth-launcher.html?store_id="+encodeURIComponent(String(store.id))+"&marketplace_id="+encodeURIComponent(String(store.marketplaceId||""));}
-    document.getElementById("storeApiConnectionSecret").value="";
-    document.getElementById("storeApiShopeePartnerId").value="";
-    document.getElementById("storeApiShopeeShopId").value="";
-    document.getElementById("storeApiShopeePartnerKey").value="";
-    document.getElementById("storeApiShopeeAccessToken").value="";
-    document.getElementById("storeApiShopeeBaseUrl").value="";
+    const secretField=document.getElementById("storeApiConnectionSecret");
+    if(secretField)secretField.value="";
+
+    /*
+      Field credential Shopee manual lama sudah tidak menjadi bagian
+      dari modal OAuth. Jangan mengakses element tersebut di sini.
+    */
     const marketplaceSelect=document.getElementById("storeApiConnectionMarketplace");
     document.getElementById("storeApiConnectionStatus").textContent="Memuat...";
     document.getElementById("storeApiConnectionDisconnectButton").style.display="none";
