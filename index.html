@@ -14403,7 +14403,20 @@ document.addEventListener(
 ===================================================== */
 const SELLERBOOKS_SUPABASE_URL="https://fysaxpqpqexjnlpkbwap.supabase.co";
 const SELLERBOOKS_SUPABASE_KEY="sb_publishable_DWRaEZTcNMjhglwN3nqCOw_pua8rsjD";
-const sellerBooksSupabase=window.supabase.createClient(SELLERBOOKS_SUPABASE_URL,SELLERBOOKS_SUPABASE_KEY);
+const sellerBooksSupabase=window.supabase.createClient(
+    SELLERBOOKS_SUPABASE_URL,
+    SELLERBOOKS_SUPABASE_KEY,
+    {
+        auth:{
+            persistSession:true,
+            autoRefreshToken:true,
+            detectSessionInUrl:true
+        }
+    }
+);
+
+let sellerBooksAuthInitialResolved=false;
+let sellerBooksAuthInitialSession=null;
 
 /* =====================================================
    SELLERBOOKS CLOUD STORAGE
@@ -15065,55 +15078,43 @@ async function loginGoogle(){
 }
 async function sellerBooksHandleAuthSession(){
 
+    /*
+       Jangan memanggil getSession() saat startup.
+       Supabase sudah otomatis menginisialisasi session dan mengirim
+       INITIAL_SESSION melalui onAuthStateChange(). getSession() dapat
+       memicu refresh token tambahan bila access token sudah mendekati
+       expired, sehingga startup tidak boleh membuat refresh request kedua.
+    */
+    const deadline=Date.now()+8000;
+
+    while(!sellerBooksAuthInitialResolved && Date.now()<deadline){
+        await new Promise(function(resolve){setTimeout(resolve,100);});
+    }
+
+    if(!sellerBooksAuthInitialResolved){
+        console.warn("SellerBooks Auth: INITIAL_SESSION belum diterima.");
+        return;
+    }
+
+    const session=sellerBooksAuthInitialSession;
+
+    if(!session?.user){
+        sellerBooksAuthUser=null;
+        sellerBooksProfile=null;
+
+        if(sellerBooksApprovalTimer){
+            clearInterval(sellerBooksApprovalTimer);
+            sellerBooksApprovalTimer=null;
+        }
+
+        sellerBooksShowOnly("loginPage");
+        return;
+    }
+
+    sellerBooksAuthUser=session.user;
+
     try{
-
-        const {
-            data,
-            error
-        } =
-            await sellerBooksSupabase
-                .auth
-                .getSession();
-
-        if(error){
-            throw error;
-        }
-
-        /*
-           TIDAK ADA SESI SUPABASE
-           = WAJIB LOGIN ULANG
-        */
-        if(!data?.session?.user){
-
-            sellerBooksAuthUser = null;
-            sellerBooksProfile = null;
-
-            if(sellerBooksApprovalTimer){
-                clearInterval(
-                    sellerBooksApprovalTimer
-                );
-
-                sellerBooksApprovalTimer = null;
-            }
-
-            sellerBooksShowOnly(
-                "loginPage"
-            );
-
-            return;
-        }
-
-        /*
-           SESI MASIH VALID
-           = LANJUTKAN LOGIN NORMAL
-        */
-        sellerBooksAuthUser =
-            data.session.user;
-
-        const warmedFromCache =
-            await sellerBooksWarmStartFromCache(
-                data.session.user
-            );
+        const warmedFromCache=await sellerBooksWarmStartFromCache(session.user);
 
         if(warmedFromCache){
             sellerBooksCheckApproval(false).catch(function(error){
@@ -15123,62 +15124,61 @@ async function sellerBooksHandleAuthSession(){
             await sellerBooksCheckApproval(false);
         }
 
-        /*
-           TIMER APPROVAL
-        */
         if(
             sellerBooksProfile &&
-            String(
-                sellerBooksProfile.status
-            ).toLowerCase() === "pending" &&
+            String(sellerBooksProfile.status).toLowerCase()==="pending" &&
             !sellerBooksApprovalTimer
         ){
-
-            sellerBooksApprovalTimer =
-                setInterval(
-                    function(){
-
-                        sellerBooksCheckApproval(
-                            false
-                        );
-
-                    },
-                    30000
-                );
+            sellerBooksApprovalTimer=setInterval(function(){
+                sellerBooksCheckApproval(false);
+            },30000);
         }
-
     }catch(error){
-
-        console.error(
-            "Inisialisasi SellerBooks Auth gagal:",
-            error
-        );
-
-        sellerBooksAuthUser = null;
-        sellerBooksProfile = null;
-
-        if(sellerBooksApprovalTimer){
-
-            clearInterval(
-                sellerBooksApprovalTimer
-            );
-
-            sellerBooksApprovalTimer = null;
-        }
-
-        sellerBooksShowOnly(
-            "loginPage"
-        );
+        console.error("Inisialisasi data SellerBooks gagal:",error);
+        /*
+           Jangan menganggap error jaringan / rate-limit sebagai logout.
+           Session tetap dibiarkan ditangani Supabase Auth.
+        */
     }
 }
+
 sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
+
+    if(event==="INITIAL_SESSION"){
+        sellerBooksAuthInitialSession=session||null;
+        sellerBooksAuthInitialResolved=true;
+    }
+
     if(session?.user){
         sellerBooksAuthUser=session.user;
-        setTimeout(function(){sellerBooksCheckApproval(false);},0);
-    }else{
+
+        if(
+            event==="INITIAL_SESSION" ||
+            event==="SIGNED_IN" ||
+            event==="USER_UPDATED"
+        ){
+            setTimeout(function(){
+                sellerBooksCheckApproval(false).catch(function(error){
+                    console.error("Verifikasi sesi SellerBooks gagal:",error);
+                });
+            },0);
+        }
+
+    }else if(event==="SIGNED_OUT"){
+        /*
+           Hanya event SIGNED_OUT yang benar-benar mengosongkan UI login.
+           Error refresh/transient error tidak boleh langsung diperlakukan
+           sebagai logout oleh startup handler.
+        */
         sellerBooksAuthUser=null;
         sellerBooksProfile=null;
         applyBusinessLogoToInterface("");
+
+        if(sellerBooksApprovalTimer){
+            clearInterval(sellerBooksApprovalTimer);
+            sellerBooksApprovalTimer=null;
+        }
+
         sellerBooksShowOnly("loginPage");
     }
 });
