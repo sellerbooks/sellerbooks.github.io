@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SellerBooks - Integrasi Tokopedia</title>
+<style>
+html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#0f172a}
+body{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.box{text-align:center;padding:32px 24px;max-width:430px}
+.spinner{width:34px;height:34px;border:4px solid #e2e8f0;border-top-color:#0f172a;border-radius:50%;margin:0 auto 20px;animation:spin .8s linear infinite}
+h1{font-size:25px;margin:0 0 12px}
+p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
+.note{display:none;margin-top:18px;color:#b91c1c;line-height:1.6}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="box">
+    <div class="spinner" id="spinner"></div>
+    <h1 id="title">Menyiapkan integrasi Tokopedia</h1>
+    <p id="message">Menyiapkan koneksi akun Tokopedia...</p>
+    <p class="note" id="note">Integrasi OAuth Tokopedia belum diaktifkan. Jendela ini dapat ditutup.</p>
+</div>
+<script>
+(function(){
+    const params=new URLSearchParams(window.location.search);
+    const storeId=params.get("store_id")||"";
+    const marketplaceId=params.get("marketplace_id")||"";
+
+    window.setTimeout(function(){
+        document.getElementById("spinner").style.display="none";
+        document.getElementById("title").textContent="Integrasi Tokopedia belum diaktifkan";
+        document.getElementById("message").textContent=
+            "Popup Tokopedia sudah berhasil dibuka seperti marketplace lain.";
+        document.getElementById("note").style.display="block";
+    },350);
+})();
+</script>
+</body>
+</html>
