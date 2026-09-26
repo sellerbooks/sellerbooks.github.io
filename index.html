@@ -13542,9 +13542,7 @@ document.addEventListener(
                         Anda akan diarahkan ke halaman resmi marketplace untuk login dan menyetujui penautan toko.
                         SellerBooks tidak meminta password marketplace Anda.
                     </div>
-                    <button type="button" id="storeApiMarketplaceOAuthButton" class="primary-button" onclick="sellerBooksDirectShopeeOAuth(event)">
-                        Login & Tautkan
-                    </button>
+                    <a id="storeApiMarketplaceOAuthButton" class="primary-button" href="shopee-oauth-launcher.html" target="_blank" rel="noopener">Login & Tautkan</a>
                     <div id="storeApiMarketplaceOAuthStatus" style="display:none;margin-top:10px;font-size:12px;color:#64748b;line-height:1.5;"></div>
                 </div>
             </div>
@@ -19880,6 +19878,8 @@ async function openStoreApiConnectionModal(storeId){
 
     document.getElementById("storeApiConnectionStoreId").value=String(store.id);
     document.getElementById("storeApiConnectionStoreName").value=store.name||"";
+    const oauthLauncher=document.getElementById("storeApiMarketplaceOAuthButton");
+    if(oauthLauncher){oauthLauncher.href="shopee-oauth-launcher.html?store_id="+encodeURIComponent(String(store.id))+"&marketplace_id="+encodeURIComponent(String(store.marketplaceId||""));}
     document.getElementById("storeApiConnectionSecret").value="";
     document.getElementById("storeApiShopeePartnerId").value="";
     document.getElementById("storeApiShopeeShopId").value="";
