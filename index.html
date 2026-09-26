@@ -19716,10 +19716,10 @@ function sellerBooksSetShopeeCredentialFields(connection){
 
     const oauthFields=document.getElementById("storeApiConnectionOAuthFields");
     const genericFields=document.getElementById("storeApiConnectionGenericFields");
-
     const marketplaceSelect=document.getElementById("storeApiConnectionMarketplace");
-    const marketplaceCode=String(marketplaceSelect?.selectedOptions?.[0]?.textContent||"").toLowerCase().replace(/\s+/g,"");
-    const isShopee=String(marketplaceSelect?.value||"").toLowerCase()==="shopee";
+    const marketplaceName=String(marketplaceSelect?.selectedOptions?.[0]?.textContent||"").trim();
+    const marketplaceCode=marketplaceName.toLowerCase().replace(/\s+/g,"");
+    const isShopee=marketplaceCode==="shopee";
     const oauthMarketplaces=["shopee","tiktokshop","lazada","toco"];
     const isOAuthMarketplace=oauthMarketplaces.includes(marketplaceCode);
 
@@ -19729,7 +19729,6 @@ function sellerBooksSetShopeeCredentialFields(connection){
     const testButton=document.getElementById("storeApiConnectionTestButton");
     const oauthButton=document.getElementById("storeApiMarketplaceOAuthButton");
     const saveButton=document.getElementById("storeApiConnectionSaveButton");
-
     const connected=String(connection?.connection_status||"").toUpperCase()==="CONNECTED";
 
     if(testButton){
@@ -19741,65 +19740,34 @@ function sellerBooksSetShopeeCredentialFields(connection){
     if(oauthButton){
         oauthButton.style.display=isOAuthMarketplace && !connected ? "inline-flex" : "none";
         oauthButton.disabled=Boolean(window.sellerBooksOrderSyncBusy);
+        oauthButton.textContent=isOAuthMarketplace ? "Login & Tautkan "+marketplaceName : "Login & Tautkan";
     }
 
-    if(saveButton){
-        saveButton.style.display=isOAuthMarketplace ? "none" : "inline-flex";
-    }
+    if(saveButton)saveButton.style.display=isOAuthMarketplace ? "none" : "inline-flex";
 
     const oauthTitle=document.getElementById("storeApiMarketplaceOAuthTitle");
     const oauthDesc=document.getElementById("storeApiMarketplaceOAuthDescription");
-    if(oauthTitle)oauthTitle.textContent=isOAuthMarketplace ? "Hubungkan dengan "+(marketplaceSelect?.selectedOptions?.[0]?.textContent||"Marketplace") : "";
-    if(oauthButton)oauthButton.textContent=isOAuthMarketplace ? "Login & Tautkan "+(marketplaceSelect?.selectedOptions?.[0]?.textContent||"") : "Login & Tautkan";
-    if(oauthDesc)oauthDesc.textContent=isOAuthMarketplace ? "Anda akan diarahkan ke halaman resmi "+(marketplaceSelect?.selectedOptions?.[0]?.textContent||"marketplace")+" untuk login dan menyetujui penautan toko. SellerBooks tidak meminta password marketplace Anda." : "";
+    if(oauthTitle)oauthTitle.textContent=isOAuthMarketplace ? "Hubungkan dengan "+marketplaceName : "";
+    if(oauthDesc)oauthDesc.textContent=isOAuthMarketplace
+        ? "Anda akan diarahkan ke halaman resmi "+marketplaceName+" untuk login dan menyetujui penautan toko. SellerBooks tidak meminta password marketplace Anda."
+        : "";
 
     const syncButton=document.getElementById("storeApiOrderSyncButton");
     if(syncButton){
-        const connected=String(connection?.connection_status||"").toUpperCase()==="CONNECTED";
         syncButton.style.display=isShopee && connected ? "inline-flex" : "none";
         syncButton.disabled=Boolean(window.sellerBooksOrderSyncBusy)||!connected;
-        syncButton.title=connected
-            ? "Sinkronkan order Shopee ke SellerBooks"
-            : "Tes koneksi Shopee terlebih dahulu";
+        syncButton.title=connected ? "Sinkronkan order Shopee ke SellerBooks" : "Tes koneksi Shopee terlebih dahulu";
     }
 
-    if(!isOAuthMarketplace){
-        const note=document.getElementById("storeApiConnectionSecretNote");
-        if(note){
-            note.textContent="Blibli menggunakan mekanisme Bind Request resmi, bukan OAuth Authorization Code. Tokopedia sementara Segera Hadir.";
-        }
-    }else{
-        const note=document.getElementById("storeApiConnectionSecretNote");
-        if(note){
-            note.textContent="Login dan persetujuan dilakukan di halaman resmi marketplace. Token/credential disimpan aman di Supabase Vault.";
-        }
+    const note=document.getElementById("storeApiConnectionSecretNote");
+    if(note){
+        note.textContent=isOAuthMarketplace
+            ? "Login dan persetujuan dilakukan di halaman resmi marketplace. Token/credential disimpan aman di Supabase Vault."
+            : marketplaceName==="Blibli"
+                ? "Blibli Seller API menggunakan Bind Request resmi. Credential tidak perlu diketik jika fitur Bind Request tersedia untuk platform SellerBooks."
+                : "Credential dikirim langsung ke Supabase Vault dan tidak disimpan di localStorage SellerBooks.";
     }
-
-    if(connection){
-
-        let parsed=null;
-
-        try{
-            if(connection.__secretJson)parsed=JSON.parse(connection.__secretJson);
-        }catch(error){}
-
-        if(parsed){
-
-            document.getElementById("storeApiShopeePartnerId").value=
-                parsed.partner_id ?? parsed.partnerId ?? "";
-
-            document.getElementById("storeApiShopeeShopId").value=
-                parsed.shop_id ?? parsed.shopId ?? "";
-
-            document.getElementById("storeApiShopeeBaseUrl").value=
-                parsed.api_base_url ?? parsed.apiBaseUrl ?? "";
-
-        }
-
-    }
-
 }
-
 function sellerBooksBuildShopeeCredential(){
 
     const partnerId=String(
