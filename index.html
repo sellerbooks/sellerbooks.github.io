@@ -18534,6 +18534,128 @@ function saveStoreData(){
 
 }
 
+/* =====================================================
+   RELATIONAL STORE SYNC
+   sellerbooks_stores lama tetap menjadi compatibility cache.
+   Tabel sellerbooks_stores menjadi sumber relasional untuk
+   koneksi API / Auto Sync tahap berikutnya.
+===================================================== */
+
+async function sellerBooksSyncStoreRelational(store){
+
+    if(!store || !sellerBooksAuthUser){
+
+        throw new Error("Sesi SellerBooks belum siap.");
+
+    }
+
+    const row = {
+
+        id:String(store.id || "").trim(),
+
+        owner_user_id:String(sellerBooksAuthUser.id),
+
+        marketplace_id:String(store.marketplaceId || "").trim(),
+
+        store_code:String(store.code || "").trim() || null,
+
+        store_name:String(store.name || "").trim(),
+
+        description:String(store.description || "").trim() || null,
+
+        fee_percent:Number(store.feePercent) || 0,
+
+        status:String(store.status || "active").toUpperCase()==="ACTIVE"
+            ? "ACTIVE"
+            : "INACTIVE",
+
+        created_at:store.createdAt || new Date().toISOString(),
+
+        updated_at:store.updatedAt || new Date().toISOString()
+
+    };
+
+    if(!row.id || !row.marketplace_id || !row.store_name){
+
+        throw new Error("Data akun toko tidak lengkap.");
+
+    }
+
+    const {data,error}=await sellerBooksSupabase
+
+        .from("sellerbooks_stores")
+
+        .upsert(row,{onConflict:"owner_user_id,id"})
+
+        .select("*")
+
+        .single();
+
+    if(error)throw error;
+
+    return data;
+
+}
+
+async function sellerBooksDeleteStoreRelational(storeId){
+
+    if(!sellerBooksAuthUser || !storeId){
+
+        throw new Error("Sesi SellerBooks belum siap.");
+
+    }
+
+    const {error}=await sellerBooksSupabase
+
+        .from("sellerbooks_stores")
+
+        .delete()
+
+        .eq("owner_user_id",sellerBooksAuthUser.id)
+
+        .eq("id",String(storeId));
+
+    if(error){
+
+        if(String(error.code||"")==="23503"){
+
+            throw new Error(
+                "Akun toko masih terhubung ke koneksi Auto Sync. Putuskan koneksi tersebut terlebih dahulu."
+            );
+
+        }
+
+        throw error;
+
+    }
+
+}
+
+/* Cegah perubahan marketplace / penghapusan toko yang sudah
+   memiliki koneksi API, sehingga FK dan identitas storeId tetap aman. */
+
+async function sellerBooksStoreHasApiConnection(storeId){
+
+    if(!sellerBooksAuthUser || !storeId)return false;
+
+    const {data,error}=await sellerBooksSupabase
+
+        .from("sellerbooks_api_connections")
+
+        .select("id")
+
+        .eq("owner_user_id",sellerBooksAuthUser.id)
+
+        .eq("store_id",String(storeId))
+
+        .limit(1);
+
+    if(error)throw error;
+
+    return Array.isArray(data) && data.length>0;
+
+}
+
 
 
 /* =====================================================
@@ -19323,7 +19445,7 @@ function closeStoreModal(){
    SIMPAN AKUN TOKO
 ===================================================== */
 
-function saveStore(){
+async function saveStore(){
 
     const marketplaceId =
 
@@ -19440,7 +19562,6 @@ if(feePercent < 0 || feePercent > 100){
 
     if(editingStoreId){
 
-
         const store =
 
             stores.find(function(item){
@@ -19449,26 +19570,70 @@ if(feePercent < 0 || feePercent > 100){
 
             });
 
+        if(!store)return;
 
-        if(store){
+        const previousStore = {...store};
 
-            store.marketplaceId = marketplaceId;
+        if(previousStore.marketplaceId !== marketplaceId){
 
-            store.name = name;
+            try{
 
-            store.code = code;
+                if(await sellerBooksStoreHasApiConnection(previousStore.id)){
 
-            store.feePercent = feePercent;
+                    sellerBooksAlert(
+                        "Marketplace akun toko ini tidak dapat diubah karena masih memiliki koneksi Auto Sync. Putuskan koneksi terlebih dahulu."
+                    );
 
-            store.description = description;
+                    return;
 
-            store.status = status;
+                }
 
-            store.updatedAt =
-                new Date().toISOString();
+            }catch(error){
+
+                console.error("Cek koneksi akun toko gagal:",error);
+
+                sellerBooksAlert(
+                    "Gagal memeriksa koneksi akun toko. Perubahan dibatalkan."
+                );
+
+                return;
+
+            }
 
         }
 
+        store.marketplaceId = marketplaceId;
+
+        store.name = name;
+
+        store.code = code;
+
+        store.feePercent = feePercent;
+
+        store.description = description;
+
+        store.status = status;
+
+        store.updatedAt =
+            new Date().toISOString();
+
+        try{
+
+            await sellerBooksSyncStoreRelational(store);
+
+        }catch(error){
+
+            Object.assign(store,previousStore);
+
+            console.error("Sinkronisasi akun toko gagal:",error);
+
+            sellerBooksAlert(
+                "Akun toko belum tersimpan ke database baru. Perubahan dibatalkan.\n\n"+String(error?.message||error)
+            );
+
+            return;
+
+        }
 
     }
 
@@ -19514,7 +19679,7 @@ if(feePercent < 0 || feePercent > 100){
 
 
 
-        stores.push({
+        const newStore = {
 
             id:"store_" + Date.now(),
 
@@ -19536,7 +19701,25 @@ if(feePercent < 0 || feePercent > 100){
             updatedAt:
                 new Date().toISOString()
 
-        });
+        };
+
+        try{
+
+            await sellerBooksSyncStoreRelational(newStore);
+
+        }catch(error){
+
+            console.error("Sinkronisasi akun toko baru gagal:",error);
+
+            sellerBooksAlert(
+                "Akun toko belum tersimpan ke database baru. Perubahan dibatalkan.\n\n"+String(error?.message||error)
+            );
+
+            return;
+
+        }
+
+        stores.push(newStore);
 
     }
 
@@ -19630,7 +19813,7 @@ document.getElementById(
    AKTIF / NONAKTIF TOKO
 ===================================================== */
 
-function toggleStore(id){
+async function toggleStore(id){
 
     const store =
 
@@ -19644,6 +19827,8 @@ function toggleStore(id){
     if(!store) return;
 
 
+    const previousStatus=store.status;
+
     store.status =
 
         store.status === "active"
@@ -19655,6 +19840,24 @@ function toggleStore(id){
 
     store.updatedAt =
         new Date().toISOString();
+
+    try{
+
+        await sellerBooksSyncStoreRelational(store);
+
+    }catch(error){
+
+        store.status=previousStatus;
+
+        console.error("Sinkronisasi status akun toko gagal:",error);
+
+        sellerBooksAlert(
+            "Perubahan status belum tersimpan ke database baru.\n\n"+String(error?.message||error)
+        );
+
+        return;
+
+    }
 
 
     saveStoreData();
@@ -19702,6 +19905,32 @@ async function deleteStore(id){
 
     }
 
+
+    try{
+
+        if(await sellerBooksStoreHasApiConnection(store.id)){
+
+            sellerBooksAlert(
+                "Akun toko ini masih memiliki koneksi Auto Sync. Putuskan koneksi terlebih dahulu sebelum menghapus akun toko."
+            );
+
+            return;
+
+        }
+
+        await sellerBooksDeleteStoreRelational(store.id);
+
+    }catch(error){
+
+        console.error("Penghapusan akun toko di database baru gagal:",error);
+
+        sellerBooksAlert(
+            "Akun toko tidak dihapus karena database baru menolak perubahan.\n\n"+String(error?.message||error)
+        );
+
+        return;
+
+    }
 
     stores =
 
