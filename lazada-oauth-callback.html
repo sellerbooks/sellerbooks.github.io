@@ -2,49 +2,67 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SellerBooks - Lazada</title>
 <style>
-body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#0f172a;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.box{width:min(420px,calc(100vw - 40px));background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:28px;box-shadow:0 20px 60px rgba(15,23,42,.12);text-align:center}
-.icon{width:64px;height:64px;margin:0 auto 16px;border-radius:16px;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:32px}
-h1{font-size:20px;margin:0 0 8px}p{font-size:13px;color:#64748b;line-height:1.6;margin:0}.error{margin-top:18px;background:#fef2f2;color:#b91c1c;border-radius:10px;padding:12px;font-size:12px;line-height:1.5}
+html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#0f172a}
+body{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.box{text-align:center;padding:32px 24px;max-width:430px}
+.icon{width:58px;height:58px;border-radius:50%;margin:0 auto 18px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:bold}
+.icon.error{background:#fee2e2;color:#b91c1c}
+h1{font-size:25px;margin:0 0 10px}
+p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
 </style>
 </head>
 <body>
-<div class="box">
-  <div class="icon" id="icon">✓</div>
-  <h1 id="title">Memproses Lazada...</h1>
-  <p id="message">Mengembalikan hasil otorisasi ke SellerBooks.</p>
+<div class="box" id="box">
+    <div class="icon" id="icon">✓</div>
+    <h1 id="title">Lazada berhasil terhubung</h1>
+    <p id="message">Jendela ini akan ditutup otomatis.</p>
 </div>
 <script>
 (function(){
-  const p=new URLSearchParams(location.search);
-  const result=p.get("sellerbooks_lazada_oauth")||"error";
-  const reason=p.get("reason")||"OAUTH_FAILED";
-  const payload={
-    source:"sellerbooks-lazada-oauth",
-    status:result,
-    reason:reason,
-    connection_id:p.get("connection_id")||""
-  };
+    const params=new URLSearchParams(window.location.search);
+    const result=params.get("sellerbooks_lazada_oauth")||"error";
+    const reason=params.get("reason")||"OAUTH_FAILED";
+    const target=window.location.origin;
 
-  if(result==="success"){
-    document.getElementById("title").textContent="Lazada berhasil terhubung";
-    document.getElementById("message").textContent="Kembali ke SellerBooks...";
-  }else{
-    document.getElementById("icon").textContent="!";
-    document.getElementById("title").textContent="Integrasi Lazada gagal";
-    document.getElementById("message").textContent=reason;
-  }
+    let payload;
 
-  if(window.opener&&!window.opener.closed){
-    try{window.opener.postMessage(payload,window.location.origin);}catch(e){}
-  }
+    if(result==="success"){
+        payload={
+            source:"sellerbooks-lazada-oauth",
+            status:"success"
+        };
+    }else{
+        payload={
+            source:"sellerbooks-lazada-oauth",
+            status:"error",
+            reason:reason
+        };
 
-  setTimeout(function(){
-    try{window.close();}catch(e){}
-  },1400);
+        document.getElementById("icon").textContent="!";
+        document.getElementById("icon").classList.add("error");
+
+        if(reason==="LAZADA_ACCOUNT_ALREADY_CONNECTED"){
+            document.getElementById("title").textContent="Akun Lazada sudah terhubung";
+            document.getElementById("message").textContent=
+                "Akun Lazada ini sudah terhubung ke akun atau toko SellerBooks lain.";
+        }else{
+            document.getElementById("title").textContent="Integrasi Lazada gagal";
+            document.getElementById("message").textContent="Kode: "+reason;
+        }
+    }
+
+    try{
+        if(window.opener && !window.opener.closed){
+            window.opener.postMessage(payload,target);
+        }
+    }catch(e){}
+
+    setTimeout(function(){
+        try{ window.close(); }catch(e){}
+    },1800);
 })();
 </script>
 </body>
