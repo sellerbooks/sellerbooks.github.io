@@ -30772,5 +30772,102 @@ document.addEventListener(
 })();
 </script>
 
+
+<!-- SELLERBOOKS_AUTO_SYNC_CONTRACT_V1 -->
+<script>
+/*
+=========================================================
+ SELLERBOOKS AUTO SYNC — TRANSACTION CONTRACT V1
+ Fondasi ini TIDAK mengubah import Excel/CSV yang sudah berjalan.
+ API marketplace nantinya harus menghasilkan struktur kanonik
+ yang sama dengan transaksi SellerBooks.
+=========================================================
+*/
+window.SELLERBOOKS_AUTO_SYNC_CONTRACT = {
+    version: "1.0",
+    sourceManual: "manual_import",
+    sourceApi: "api_sync",
+    fields: {
+        marketplace:"string", storeId:"string", orderId:"string", itemId:"string",
+        sku:"string", productName:"string", qty:"number", price:"number",
+        salesAmount:"number", trackingNumber:"string", orderDate:"string", status:"string",
+        adminFeeSku:"number|null", adminFeeSkuSnapshot:"number|null",
+        adminFeeAccountSnapshot:"number|null", adminFeePercent:"number|null",
+        packingFee:"number|null", otherFee:"number|null", hpp:"number|null",
+        source:"manual_import|api_sync"
+    }
+};
+
+window.sellerBooksBuildTransactionKey = function(transaction){
+    return [
+        String(transaction?.marketplace||"").trim().toLowerCase(),
+        String(transaction?.storeId||"").trim().toLowerCase(),
+        String(transaction?.orderId||"").trim().toLowerCase(),
+        String(transaction?.itemId||"").trim().toLowerCase()
+    ].join("|");
+};
+
+window.sellerBooksNormalizeAutoSyncTransaction = function(raw, marketplace, storeId){
+    raw=raw||{};
+    const numberOrNull=function(v){
+        if(v===undefined||v===null||v==="")return null;
+        const n=Number(v); return Number.isFinite(n)?n:null;
+    };
+    const first=function(){
+        for(let i=0;i<arguments.length;i++){
+            const v=arguments[i];
+            if(v!==undefined&&v!==null&&String(v).trim()!=="")return v;
+        }
+        return "";
+    };
+    const qty=numberOrNull(first(raw.qty,raw.quantity,raw.item_quantity,raw.model_quantity_purchased))??0;
+    const price=numberOrNull(first(raw.price,raw.unitPrice,raw.unit_price,raw.item_price,raw.model_original_price))??0;
+    const salesAmount=numberOrNull(first(raw.salesAmount,raw.totalSales,raw.total_amount,raw.item_total,raw.subtotal));
+
+    return {
+        marketplace:String(marketplace||raw.marketplace||"").trim(),
+        storeId:String(storeId||raw.storeId||"").trim(),
+        orderId:String(first(raw.orderId,raw.order_id,raw.order_sn,raw.orderNumber,raw.order_number,raw.invoiceNumber,raw.invoice_number)).trim(),
+        itemId:String(first(raw.itemId,raw.item_id,raw.orderItemId,raw.order_item_id,raw.orderLineId,raw.order_line_id)).trim(),
+        sku:String(first(raw.sku,raw.sellerSku,raw.seller_sku,raw.itemSku,raw.item_sku,raw.productSku,raw.product_sku)).trim(),
+        productName:String(first(raw.productName,raw.product_name,raw.itemName,raw.item_name)).trim(),
+        qty:qty,
+        price:price,
+        salesAmount:salesAmount!==null?salesAmount:(qty*price),
+        trackingNumber:String(first(raw.trackingNumber,raw.tracking_number,raw.trackingCode,raw.tracking_code,raw.awb,raw.resi)).trim(),
+        orderDate:String(first(raw.orderDate,raw.order_date,raw.createdAt,raw.created_at,raw.orderCreatedAt,raw.order_created_at)).trim(),
+        status:String(first(raw.status,raw.orderStatus,raw.order_status,raw.order_status_name)).trim(),
+
+        adminFeeSku:numberOrNull(raw.adminFeeSku),
+        adminFeeSkuSnapshot:numberOrNull(raw.adminFeeSkuSnapshot),
+        adminFeeAccountSnapshot:numberOrNull(raw.adminFeeAccountSnapshot),
+        adminFeePercent:numberOrNull(raw.adminFeePercent),
+        packingFee:numberOrNull(raw.packingFee),
+        otherFee:numberOrNull(raw.otherFee),
+        hpp:numberOrNull(raw.hpp),
+
+        source:"api_sync"
+    };
+};
+
+window.sellerBooksNormalizeAutoSyncBatch=function(rows,marketplace,storeId){
+    return (Array.isArray(rows)?rows:[]).map(function(raw){
+        const t=window.sellerBooksNormalizeAutoSyncTransaction(raw,marketplace,storeId);
+        t.transactionKey=window.sellerBooksBuildTransactionKey(t);
+        return t;
+    });
+};
+
+window.sellerBooksValidateAutoSyncTransaction=function(transaction){
+    if(!transaction)return {valid:false,reason:"Transaksi kosong."};
+    if(!String(transaction.marketplace||"").trim())return {valid:false,reason:"Marketplace kosong."};
+    if(!String(transaction.storeId||"").trim())return {valid:false,reason:"Store ID kosong."};
+    if(!String(transaction.orderId||"").trim())return {valid:false,reason:"Order ID kosong."};
+    if(!String(transaction.sku||"").trim())return {valid:false,reason:"SKU kosong."};
+    if(!(Number(transaction.qty)>0))return {valid:false,reason:"QTY tidak valid."};
+    return {valid:true,reason:"OK"};
+};
+</script>
+
 </body>
 </html>
