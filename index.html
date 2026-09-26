@@ -19022,16 +19022,115 @@ function integrateStoreAccount(storeId){
 
     const marketplaceName = marketplace ? marketplace.name : "Marketplace";
 
+    /*
+       Tahap 1 OAuth:
+       Shopee diarahkan ke launcher resmi SellerBooks.
+       Launcher kemudian meminta Edge Function membuat
+       authorization_url yang ditandatangani server-side.
+    */
+
+    if(String(marketplaceName).toLowerCase().includes("shopee")){
+
+        const baseUrl = window.location.origin + window.location.pathname.replace(/\\/$/, "");
+
+        const launcherUrl =
+            baseUrl.replace(/index\\.html$/i, "") +
+            "shopee-oauth-launcher.html" +
+            "?store_id=" + encodeURIComponent(String(store.id)) +
+            "&marketplace_id=" + encodeURIComponent(String(store.marketplaceId || ""));
+
+        window.location.href = launcherUrl;
+
+        return;
+
+    }
+
     sellerBooksAlert(
-        "Akun \"" +
-        (store.name || "Tanpa Nama") +
-        "\" dipilih untuk integrasi " +
+        "Integrasi " +
         marketplaceName +
-        ".\n\nTahap berikutnya kita sambungkan ke autentikasi resmi marketplace.",
+        " belum diaktifkan. Saat ini OAuth Shopee yang sedang disambungkan.",
         "Integrasikan Akun"
     );
 
 }
+
+/* =====================================================
+   HASIL OAUTH SHOPEE
+===================================================== */
+
+function handleShopeeOAuthResult(){
+
+    const params = new URLSearchParams(window.location.search);
+
+    const result = params.get("sellerbooks_shopee_oauth");
+
+    if(!result) return;
+
+    if(result === "success"){
+
+        sellerBooksAlert(
+            "Akun Shopee berhasil terhubung ke SellerBooks.",
+            "Integrasikan Akun"
+        );
+
+        try{
+
+            window.history.replaceState(
+                {},
+                document.title,
+                window.location.pathname + window.location.hash
+            );
+
+        }catch(e){}
+
+        if(typeof loadStores === "function"){
+
+            setTimeout(function(){
+
+                loadStores();
+
+            },300);
+
+        }else if(typeof renderStores === "function"){
+
+            setTimeout(function(){
+
+                renderStores();
+
+            },300);
+
+        }
+
+        return;
+
+    }
+
+    const reason = params.get("reason") || "OAUTH_FAILED";
+
+    sellerBooksAlert(
+        "Integrasi Shopee gagal.\n\n" +
+        "Kode: " + reason,
+        "Integrasikan Akun"
+    );
+
+    try{
+
+        window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname + window.location.hash
+        );
+
+    }catch(e){}
+
+}
+
+
+/* =====================================================
+   CEK HASIL OAUTH SAAT HALAMAN DIBUKA
+===================================================== */
+
+handleShopeeOAuthResult();
 
 
 /* =====================================================
