@@ -28152,19 +28152,8 @@ function renderCosts(){
                                 >
 
                                     ${
-                                        isCostSnapshotLocked(cost)
+                                        !isCostSnapshotLocked(cost)
                                         ? `
-                                            <button
-                                                type="button"
-                                                class="secondary-button"
-                                                disabled
-                                                title="Biaya sudah menjadi snapshot setelah 00:00 WIB"
-                                                style="color:#64748b;opacity:.75;cursor:not-allowed;"
-                                            >
-                                                🔒 Snapshot
-                                            </button>
-                                        `
-                                        : `
                                             <button
                                                 type="button"
                                                 class="secondary-button"
@@ -28173,8 +28162,8 @@ function renderCosts(){
                                                 Edit
                                             </button>
                                         `
+                                        : ""
                                     }
-
                                     <button
                                         type="button"
                                         class="secondary-button"
