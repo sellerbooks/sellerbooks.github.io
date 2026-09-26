@@ -10,7 +10,7 @@ const bearer=(r:Request)=>{const h=r.headers.get("Authorization")||"";return h.t
 const hex=(b:Uint8Array)=>Array.from(b).map(x=>x.toString(16).padStart(2,"0")).join("");
 async function digest(s:string){return hex(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s))))}
 async function hmac(k:string,m:string){const x=await crypto.subtle.importKey("raw",new TextEncoder().encode(k),{name:"HMAC",hash:"SHA-256"},false,["sign"]);return hex(new Uint8Array(await crypto.subtle.sign("HMAC",x,new TextEncoder().encode(m))))}
-const env=(n:string)=>{const v=Deno.env.get(n);if(!v)throw Error("CONFIG_MISSING_"+n);return v};
+const env=(n:string)=>{const v=Deno.env.get(n);if(v)return v;const aliases:any={SUPABASE_PUBLISHABLE_KEY:"SUPABASE_ANON_KEY",SUPABASE_SECRET_KEY:"SUPABASE_SERVICE_ROLE_KEY"};const a=aliases[n];if(a&&Deno.env.get(a))return Deno.env.get(a)!;if(n==="SUPABASE_PUBLISHABLE_KEY"){try{const x=JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS")||"{}");if(x.default)return x.default}catch{}}if(n==="SUPABASE_SECRET_KEY"){try{const x=JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS")||"{}");if(x.default)return x.default}catch{}}throw Error("CONFIG_MISSING_"+n)};
 async function rest(base:string,key:string,path:string,init:RequestInit={}){const h=new Headers(init.headers);h.set("apikey",key);h.set("Authorization","Bearer "+key);h.set("Content-Type","application/json");return fetch(base+"/rest/v1/"+path,{...init,headers:h})}
 async function rpc(base:string,key:string,fn:string,body:any){return rest(base,key,"rpc/"+fn,{method:"POST",body:JSON.stringify(body)})}
 async function user(base:string,key:string,t:string){const r=await fetch(base+"/auth/v1/user",{headers:{apikey:key,Authorization:"Bearer "+t}});return r.ok?r.json():null}
