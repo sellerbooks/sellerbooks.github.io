@@ -19029,25 +19029,31 @@ function integrateStoreAccount(storeId){
        authorization_url yang ditandatangani server-side.
     */
 
-    if(String(marketplaceName).toLowerCase().includes("shopee")){
+    const lowerMarketplaceName = String(marketplaceName).toLowerCase();
+
+    /*
+       OAuth Shopee dan TikTok Shop sama-sama dibuka sebagai
+       POPUP resmi marketplace. Tab utama SellerBooks tetap terbuka.
+    */
+    if(
+        lowerMarketplaceName.includes("shopee") ||
+        lowerMarketplaceName.includes("tiktok")
+    ){
+
+        const isTikTok = lowerMarketplaceName.includes("tiktok");
+
+        const launcherFile = isTikTok
+            ? "tiktok-oauth-launcher.html"
+            : "shopee-oauth-launcher.html";
 
         const launcherUrl =
             new URL(
-                "shopee-oauth-launcher.html" +
+                launcherFile +
                 "?store_id=" + encodeURIComponent(String(store.id)) +
                 "&marketplace_id=" + encodeURIComponent(String(store.marketplaceId || "")),
                 window.location.href
             ).href;
 
-        /*
-           OAuth Shopee dibuka di TAB BARU agar sesi SellerBooks
-           tetap terbuka di tab utama, seperti konsep integrasi
-           marketplace pada platform lain.
-        */
-        /*
-           Buka OAuth Shopee sebagai POPUP kecil seperti konsep BigSeller.
-           Tab utama SellerBooks tetap terbuka dan tidak berpindah halaman.
-        */
         const popupWidth = 520;
         const popupHeight = 760;
         const screenLeft = typeof window.screenLeft === "number" ? window.screenLeft : window.screenX;
@@ -19064,9 +19070,13 @@ function integrateStoreAccount(storeId){
             screenTop + Math.round((outerHeight - popupHeight) / 2)
         );
 
+        const popupName = isTikTok
+            ? "SellerBooksTikTokOAuth"
+            : "SellerBooksShopeeOAuth";
+
         const oauthTab = window.open(
             launcherUrl,
-            "SellerBooksShopeeOAuth",
+            popupName,
             [
                 "popup=yes",
                 "width=" + popupWidth,
@@ -19092,7 +19102,7 @@ function integrateStoreAccount(storeId){
     sellerBooksAlert(
         "Integrasi " +
         marketplaceName +
-        " belum diaktifkan. Saat ini OAuth Shopee yang sedang disambungkan.",
+        " belum diaktifkan.",
         "Integrasikan Akun"
     );
 
@@ -19172,6 +19182,62 @@ function handleShopeeOAuthResult(){
 
 /* =====================================================
    CEK HASIL OAUTH SAAT HALAMAN DIBUKA
+===================================================== */
+
+/* =====================================================
+   HASIL OAUTH TIKTOK SHOP DARI POPUP
+===================================================== */
+
+if(!window.sellerBooksTikTokOAuthMessageHandler){
+
+    window.sellerBooksTikTokOAuthMessageHandler = true;
+
+    window.addEventListener("message", function(event){
+
+        if(event.origin !== window.location.origin){
+            return;
+        }
+
+        const data = event.data || {};
+
+        if(data.source !== "sellerbooks-tiktok-oauth"){
+            return;
+        }
+
+        if(data.status === "success"){
+
+            sellerBooksAlert(
+                "Akun TikTok Shop berhasil terhubung ke SellerBooks.",
+                "Integrasikan Akun"
+            );
+
+            if(typeof loadStores === "function"){
+                setTimeout(function(){
+                    loadStores();
+                },300);
+            }else if(typeof renderStores === "function"){
+                setTimeout(function(){
+                    renderStores();
+                },300);
+            }
+
+            return;
+        }
+
+        const reason = data.reason || "OAUTH_FAILED";
+
+        sellerBooksAlert(
+            "Integrasi TikTok Shop gagal.\n\nKode: " + reason,
+            "Integrasikan Akun"
+        );
+
+    });
+
+}
+
+
+/* =====================================================
+   HASIL OAUTH SHOPEE
 ===================================================== */
 
 handleShopeeOAuthResult();
