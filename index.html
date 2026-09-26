@@ -32757,7 +32757,6 @@ async function sellerBooksStartMarketplaceOAuth(){
     const marketplaceId=String(document.getElementById("storeApiConnectionMarketplace")?.value||"").trim();
     const marketplaceName=String(document.getElementById("storeApiConnectionMarketplace")?.selectedOptions?.[0]?.textContent||"").trim();
     const marketplaceCode=marketplaceName.toLowerCase().replace(/\\s+/g,"");
-    sellerBooksUpdateShopeeOAuthLauncherLink();
 
     if(!storeId || !marketplaceId){
         sellerBooksAlert("Akun toko marketplace belum siap.");
@@ -32797,27 +32796,41 @@ async function sellerBooksStartMarketplaceOAuth(){
         const accessToken=sessionData?.session?.access_token||"";
         if(!accessToken)throw new Error("Sesi login SellerBooks tidak ditemukan. Silakan login kembali.");
 
-        const {data:result,error:functionError}=await sellerBooksSupabase.functions.invoke(
-            "sellerbooks-shopee-oauth",
+        const response=await fetch(
+            SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-oauth",
             {
-                body:{
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json",
+                    "apikey":SELLERBOOKS_SUPABASE_KEY,
+                    "Authorization":"Bearer "+accessToken
+                },
+                body:JSON.stringify({
                     store_id:storeId,
                     marketplace_id:marketplaceId
-                },
-                headers:{
-                    Authorization:"Bearer "+accessToken
-                }
+                })
             }
         );
 
-        if(functionError){
-            let detail="";
-            try{detail=typeof functionError.context?.body==="string"?functionError.context.body:"";}catch(e){}
-            throw new Error(detail||functionError.message||"Gagal memanggil layanan OAuth Shopee.");
+        const raw=await response.text();
+        let result=null;
+        try{
+            result=JSON.parse(raw);
+        }catch(e){}
+
+        if(!response.ok){
+            throw new Error(
+                result?.error ||
+                raw ||
+                ("HTTP "+response.status)
+            );
         }
 
         if(!result?.ok || !result?.authorization_url){
-            throw new Error(result?.error||"SellerBooks tidak menerima URL login Shopee.");
+            throw new Error(
+                result?.error ||
+                "URL autentikasi resmi Shopee tidak diterima."
+            );
         }
 
         popup.location.replace(result.authorization_url);
@@ -32845,7 +32858,6 @@ async function sellerBooksStartMarketplaceOAuth(){
         }
     }
 }
-
 function sellerBooksHandleMarketplaceOAuthMessage(event){
     if(event.origin!==window.location.origin)return;
     if(!event.data || event.data.type!=="SELLERBOOKS_MARKETPLACE_OAUTH")return;
