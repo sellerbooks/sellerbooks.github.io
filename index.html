@@ -13394,6 +13394,82 @@ document.addEventListener(
 
 </div>
 <!-- =====================================================
+     MARKETPLACE API CONNECTION MODAL
+===================================================== -->
+<div class="modal-overlay" id="storeApiConnectionModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="storeApiConnectionTitle">Koneksi API</h3>
+            <button type="button" class="modal-close" onclick="closeStoreApiConnectionModal()">×</button>
+        </div>
+
+        <div class="modal-body">
+            <input type="hidden" id="storeApiConnectionStoreId">
+
+            <div class="form-group">
+                <label>Akun Toko</label>
+                <input type="text" id="storeApiConnectionStoreName" class="form-control" readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Marketplace</label>
+                <select id="storeApiConnectionMarketplace" class="form-control">
+                    <option value="">Memuat marketplace...</option>
+                </select>
+                <small style="display:block;margin-top:6px;color:#64748b;line-height:1.5;">
+                    Marketplace koneksi harus sama dengan marketplace akun toko.
+                </small>
+            </div>
+
+            <div class="form-group">
+                <label>Credential / Secret API</label>
+                <textarea
+                    id="storeApiConnectionSecret"
+                    class="form-control"
+                    rows="7"
+                    placeholder='Contoh JSON: {"partner_id":"...","shop_id":"...","partner_key":"...","access_token":"..."}'
+                    autocomplete="off"
+                    spellcheck="false"
+                ></textarea>
+                <small id="storeApiConnectionSecretNote" style="display:block;margin-top:6px;color:#64748b;line-height:1.5;">
+                    Secret dikirim langsung ke Supabase Vault dan tidak disimpan di localStorage SellerBooks.
+                </small>
+            </div>
+
+            <div id="storeApiConnectionStatusBox"
+                 style="padding:12px 14px;border:1px solid #e2e8f0;background:#f8fafc;margin-top:8px;">
+                Status: <strong id="storeApiConnectionStatus">Belum Terhubung</strong>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="cancel-button" onclick="closeStoreApiConnectionModal()">
+                Batal
+            </button>
+
+            <button
+                type="button"
+                id="storeApiConnectionDisconnectButton"
+                class="secondary-button"
+                onclick="disconnectStoreApiConnection()"
+                style="display:none;"
+            >
+                Putuskan Koneksi
+            </button>
+
+            <button
+                type="button"
+                id="storeApiConnectionSaveButton"
+                class="primary-button"
+                onclick="saveStoreApiConnection()"
+            >
+                Simpan Koneksi
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- =====================================================
      PIUTANG EDIT MODAL
 ===================================================== -->
 <div class="modal-overlay" id="sbPiutangEditModal">
@@ -19259,7 +19335,30 @@ function renderStores(){
 </div>
 
 
+                <div class="store-api-status" id="store-api-status-undefined" style="
+                    display:flex;
+                    align-items:center;
+                    justify-content:space-between;
+                    gap:10px;
+                    margin-top:12px;
+                    padding:9px 11px;
+                    border:1px solid #e2e8f0;
+                    background:#f8fafc;
+                ">
+                    <span style="font-size:12px;color:#64748b;">KONEKSI API</span>
+                    <strong data-store-api-status="undefined" style="font-size:12px;color:#64748b;">Memuat...</strong>
+                </div>
+
                 <div class="store-actions">
+
+
+                    <button
+                        type="button"
+                        class="store-action-button store-toggle-button"
+                        onclick="openStoreApiConnectionModal('undefined')"
+                    >
+                        Hubungkan API
+                    </button>
 
 
                     <button
@@ -19325,8 +19424,446 @@ function renderStores(){
 
     updateMarketplaceStoreCounts();
 
+    sellerBooksRefreshStoreConnectionStatuses();
+
 }
 
+
+
+/* =====================================================
+   STORE API CONNECTION
+===================================================== */
+
+let sellerBooksStoreApiConnectionStoreId = null;
+let sellerBooksStoreApiConnectionData = null;
+
+async function sellerBooksGetStoreApiConnection(storeId){
+
+    if(!sellerBooksAuthUser || !storeId)return null;
+
+    const {data,error}=await sellerBooksSupabase
+        .from("sellerbooks_api_connections")
+        .select("id,store_id,marketplace_id,marketplace,connection_status,sync_enabled,last_sync_at,last_success_at,last_error,vault_secret_id")
+        .eq("owner_user_id",sellerBooksAuthUser.id)
+        .eq("store_id",String(storeId))
+        .limit(1);
+
+    if(error)throw error;
+
+    return Array.isArray(data) && data.length ? data[0] : null;
+}
+
+function sellerBooksFormatApiStatus(connection){
+
+    if(!connection)return "Belum Terhubung";
+
+    const status=String(connection.connection_status||"").toUpperCase();
+
+    if(status==="CONNECTED")return "Terhubung";
+    if(status==="ERROR")return "Error";
+    if(status==="EXPIRED")return "Expired";
+    if(status==="DISCONNECTED")return "Terputus";
+
+    return status || "Belum Terhubung";
+}
+
+function sellerBooksApplyStoreApiStatus(storeId,connection){
+
+    const nodes=document.querySelectorAll(
+        '[data-store-api-status="'+String(storeId).replace(/"/g,'&quot;')+'"]'
+    );
+
+    const label=sellerBooksFormatApiStatus(connection);
+
+    nodes.forEach(function(node){
+
+        node.textContent=label;
+
+        const status=String(connection?.connection_status||"").toUpperCase();
+
+        node.style.color =
+            status==="CONNECTED" ? "#16a34a" :
+            status==="ERROR" || status==="EXPIRED" ? "#dc2626" :
+            status==="DISCONNECTED" ? "#f59e0b" :
+            "#64748b";
+
+    });
+
+    const button=document.querySelector(
+        '[onclick="openStoreApiConnectionModal(\''+String(storeId).replace(/'/g,"\\'")+'\')"]'
+    );
+
+    if(button){
+        button.textContent =
+            connection && String(connection.connection_status||"").toUpperCase()==="CONNECTED"
+            ? "Kelola API"
+            : "Hubungkan API";
+    }
+}
+
+async function sellerBooksRefreshStoreConnectionStatuses(){
+
+    if(!sellerBooksAuthUser)return;
+
+    try{
+
+        const {data,error}=await sellerBooksSupabase
+            .from("sellerbooks_api_connections")
+            .select("store_id,connection_status,sync_enabled,last_error")
+            .eq("owner_user_id",sellerBooksAuthUser.id);
+
+        if(error)throw error;
+
+        const byStore={};
+
+        (data||[]).forEach(function(connection){
+            byStore[String(connection.store_id)]=connection;
+        });
+
+        stores.forEach(function(store){
+            sellerBooksApplyStoreApiStatus(store.id,byStore[String(store.id)]||null);
+        });
+
+    }catch(error){
+
+        console.error("Status koneksi API SellerBooks gagal dimuat:",error);
+
+        stores.forEach(function(store){
+
+            const node=document.querySelector(
+                '[data-store-api-status="'+String(store.id).replace(/"/g,'&quot;')+'"]'
+            );
+
+            if(node){
+                node.textContent="Tidak dapat diperiksa";
+                node.style.color="#dc2626";
+            }
+
+        });
+
+    }
+
+}
+
+async function sellerBooksLoadStoreApiMarketplaces(selectedId){
+
+    const select=document.getElementById("storeApiConnectionMarketplace");
+
+    if(!select)return;
+
+    select.innerHTML='<option value="">Memuat marketplace...</option>';
+
+    const {data,error}=await sellerBooksSupabase
+        .from("sellerbooks_marketplaces")
+        .select("id,name,code,status")
+        .eq("status","ACTIVE")
+        .order("name");
+
+    if(error)throw error;
+
+    select.innerHTML='<option value="">Pilih Marketplace</option>';
+
+    (data||[]).forEach(function(item){
+
+        const option=document.createElement("option");
+
+        option.value=item.id;
+        option.textContent=item.name;
+
+        select.appendChild(option);
+
+    });
+
+    if(selectedId){
+        select.value=String(selectedId);
+    }
+
+}
+
+async function openStoreApiConnectionModal(storeId){
+
+    const store=stores.find(function(item){
+        return String(item.id)===String(storeId);
+    });
+
+    if(!store){
+
+        sellerBooksAlert("Akun toko tidak ditemukan.");
+        return;
+
+    }
+
+    if(!sellerBooksAuthUser){
+
+        sellerBooksAlert("Sesi login belum siap.");
+        return;
+
+    }
+
+    sellerBooksStoreApiConnectionStoreId=String(store.id);
+    sellerBooksStoreApiConnectionData=null;
+
+    document.getElementById("storeApiConnectionStoreId").value=String(store.id);
+    document.getElementById("storeApiConnectionStoreName").value=store.name||"";
+    document.getElementById("storeApiConnectionSecret").value="";
+    document.getElementById("storeApiConnectionStatus").textContent="Memuat...";
+    document.getElementById("storeApiConnectionDisconnectButton").style.display="none";
+
+    document.getElementById("storeApiConnectionModal").classList.add("show");
+
+    try{
+
+        const connection=await sellerBooksGetStoreApiConnection(store.id);
+
+        sellerBooksStoreApiConnectionData=connection;
+
+        await sellerBooksLoadStoreApiMarketplaces(store.marketplaceId);
+
+        const status=sellerBooksFormatApiStatus(connection);
+
+        document.getElementById("storeApiConnectionStatus").textContent=status;
+
+        document.getElementById("storeApiConnectionDisconnectButton").style.display =
+            connection ? "inline-flex" : "none";
+
+        document.getElementById("storeApiConnectionSecretNote").textContent =
+            connection && connection.vault_secret_id
+            ? "Credential sudah tersimpan aman di Supabase Vault. Isi ulang hanya jika ingin mengganti secret."
+            : "Secret dikirim langsung ke Supabase Vault dan tidak disimpan di localStorage SellerBooks.";
+
+    }catch(error){
+
+        console.error("Modal koneksi API gagal dimuat:",error);
+
+        closeStoreApiConnectionModal();
+
+        sellerBooksAlert(
+            "Gagal memuat koneksi API.\n\n"+String(error?.message||error)
+        );
+
+    }
+
+}
+
+function closeStoreApiConnectionModal(){
+
+    const modal=document.getElementById("storeApiConnectionModal");
+
+    if(modal)modal.classList.remove("show");
+
+    sellerBooksStoreApiConnectionStoreId=null;
+    sellerBooksStoreApiConnectionData=null;
+
+}
+
+async function saveStoreApiConnection(){
+
+    const storeId=String(
+        document.getElementById("storeApiConnectionStoreId").value||""
+    ).trim();
+
+    const marketplaceId=String(
+        document.getElementById("storeApiConnectionMarketplace").value||""
+    ).trim();
+
+    const secret=String(
+        document.getElementById("storeApiConnectionSecret").value||""
+    ).trim();
+
+    const store=stores.find(function(item){
+        return String(item.id)===storeId;
+    });
+
+    if(!store){
+
+        sellerBooksAlert("Akun toko tidak ditemukan.");
+        return;
+
+    }
+
+    if(!marketplaceId){
+
+        sellerBooksAlert("Silakan pilih marketplace.");
+        return;
+
+    }
+
+    if(String(store.marketplaceId)!==marketplaceId){
+
+        sellerBooksAlert(
+            "Marketplace koneksi harus sama dengan marketplace akun toko."
+        );
+
+        return;
+
+    }
+
+    if(!sellerBooksStoreApiConnectionData && !secret){
+
+        sellerBooksAlert("Credential / Secret API wajib diisi.");
+        return;
+
+    }
+
+    if(secret){
+
+        try{
+
+            JSON.parse(secret);
+
+        }catch(error){
+
+            sellerBooksAlert(
+                "Credential harus berupa JSON yang valid."
+            );
+
+            return;
+
+        }
+
+    }
+
+    const button=document.getElementById("storeApiConnectionSaveButton");
+
+    if(button){
+
+        button.disabled=true;
+        button.textContent="Menyimpan...";
+
+    }
+
+    try{
+
+        const marketplaceName=
+            document.getElementById("storeApiConnectionMarketplace")
+                .selectedOptions[0]?.textContent || "";
+
+        const {data:connection,error:connectionError}=
+            await sellerBooksSupabase.rpc(
+                "sellerbooks_api_upsert_connection",
+                {
+                    p_store_id:storeId,
+                    p_marketplace_id:marketplaceId,
+                    p_marketplace:marketplaceName
+                }
+            );
+
+        if(connectionError)throw connectionError;
+
+        if(!connection || !connection.id){
+
+            throw new Error("Koneksi API tidak berhasil dibuat.");
+
+        }
+
+        if(secret){
+
+            const {data:updatedConnection,error:secretError}=
+                await sellerBooksSupabase.rpc(
+                    "sellerbooks_api_set_secret",
+                    {
+                        p_connection_id:connection.id,
+                        p_secret:secret
+                    }
+                );
+
+            if(secretError)throw secretError;
+
+            sellerBooksStoreApiConnectionData=updatedConnection||connection;
+
+        }else{
+
+            sellerBooksStoreApiConnectionData=connection;
+
+        }
+
+        document.getElementById("storeApiConnectionStatus").textContent=
+            sellerBooksFormatApiStatus(sellerBooksStoreApiConnectionData);
+
+        document.getElementById("storeApiConnectionSecret").value="";
+
+        document.getElementById("storeApiConnectionSecretNote").textContent=
+            "Credential tersimpan aman di Supabase Vault. Secret tidak disimpan di localStorage SellerBooks.";
+
+        sellerBooksAlert("Koneksi API berhasil disimpan.");
+
+        await sellerBooksRefreshStoreConnectionStatuses();
+
+    }catch(error){
+
+        console.error("Simpan koneksi API SellerBooks gagal:",error);
+
+        sellerBooksAlert(
+            "Koneksi API gagal disimpan.\n\n"+String(error?.message||error)
+        );
+
+    }finally{
+
+        if(button){
+
+            button.disabled=false;
+            button.textContent="Simpan Koneksi";
+
+        }
+
+    }
+
+}
+
+async function disconnectStoreApiConnection(){
+
+    const connection=sellerBooksStoreApiConnectionData;
+
+    if(!connection || !connection.id){
+
+        closeStoreApiConnectionModal();
+        return;
+
+    }
+
+    const confirmed=await sellerBooksConfirm(
+        "Putuskan koneksi API akun toko ini?"
+    );
+
+    if(!confirmed)return;
+
+    try{
+
+        const {data,error}=await sellerBooksSupabase.rpc(
+            "sellerbooks_api_disconnect",
+            {
+                p_connection_id:connection.id
+            }
+        );
+
+        if(error)throw error;
+
+        sellerBooksStoreApiConnectionData=data||{
+            ...connection,
+            connection_status:"DISCONNECTED",
+            sync_enabled:false
+        };
+
+        document.getElementById("storeApiConnectionStatus").textContent=
+            sellerBooksFormatApiStatus(sellerBooksStoreApiConnectionData);
+
+        document.getElementById("storeApiConnectionSecret").value="";
+
+        await sellerBooksRefreshStoreConnectionStatuses();
+
+        sellerBooksAlert("Koneksi API sudah diputuskan.");
+
+    }catch(error){
+
+        console.error("Putus koneksi API SellerBooks gagal:",error);
+
+        sellerBooksAlert(
+            "Koneksi API gagal diputuskan.\n\n"+String(error?.message||error)
+        );
+
+    }
+
+}
 
 
 /* =====================================================
