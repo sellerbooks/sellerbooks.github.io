@@ -19981,14 +19981,14 @@ async function saveStoreApiConnection(){
 
     }
 
+    let secretToSave=secret;
+
     if(!sellerBooksStoreApiConnectionData && !secretToSave){
 
         sellerBooksAlert("Credential / Secret API wajib diisi.");
         return;
 
     }
-
-    let secretToSave=secret;
 
     if(sellerBooksIsShopeeConnection()){
 
@@ -20043,7 +20043,7 @@ async function saveStoreApiConnection(){
 
         }
 
-        if(secret){
+        if(secretToSave){
 
             const {data:updatedConnection,error:secretError}=
                 await sellerBooksSupabase.rpc(
@@ -20129,18 +20129,65 @@ async function sellerBooksTestConnectionInternal(connectionId){
 
     try{
 
-        const {data,error}=await sellerBooksSupabase.functions.invoke(
-            "sellerbooks-api-test-connection",
+        /*
+           Gunakan fetch langsung agar body error dari Edge Function
+           tetap bisa dibaca walaupun API mengembalikan HTTP 4xx/5xx.
+           Ini membuat pesan error Shopee tetap jelas di UI.
+        */
+        const {
+            data:sessionData,
+            error:sessionError
+        }=await sellerBooksSupabase.auth.getSession();
+
+        if(sessionError)throw sessionError;
+
+        const accessToken=sessionData?.session?.access_token||"";
+
+        if(!accessToken){
+            return {
+                ok:false,
+                status:"ERROR",
+                error:"Sesi login SellerBooks tidak ditemukan. Silakan login kembali."
+            };
+        }
+
+        const response=await fetch(
+            SELLERBOOKS_SUPABASE_URL+
+            "/functions/v1/sellerbooks-api-test-connection",
             {
-                body:{connection_id:connectionId}
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json",
+                    "apikey":SELLERBOOKS_SUPABASE_KEY,
+                    "Authorization":"Bearer "+accessToken
+                },
+                body:JSON.stringify({
+                    connection_id:connectionId
+                })
             }
         );
 
-        if(error)throw error;
+        const raw=await response.text();
 
-        return data||{
+        let data=null;
+
+        try{
+            data=raw?JSON.parse(raw):null;
+        }catch(error){
+            data=null;
+        }
+
+        if(data && typeof data==="object"){
+            return data;
+        }
+
+        return {
             ok:false,
-            error:"Respons tes koneksi kosong."
+            status:"ERROR",
+            error:
+                !response.ok
+                ? "Tes koneksi gagal. Server mengembalikan HTTP "+response.status+"."
+                : "Respons tes koneksi kosong."
         };
 
     }catch(error){
@@ -20149,7 +20196,11 @@ async function sellerBooksTestConnectionInternal(connectionId){
 
         return {
             ok:false,
-            error:String(error?.message||error)
+            status:"ERROR",
+            error:String(
+                error?.message||
+                "Tidak dapat menghubungi layanan tes koneksi."
+            )
         };
 
     }
