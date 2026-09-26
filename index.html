@@ -20361,7 +20361,8 @@ async function testStoreApiConnection(){
 
     if(button){
         button.disabled=true;
-        button.textContent="Menguji...";
+        button.textContent="Menguji (maks. 3x)...";
+        button.title="Setiap percobaan memiliki timeout 10 detik.";
     }
 
     try{
