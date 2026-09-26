@@ -2278,16 +2278,22 @@ td{
 
     display:flex;
 
+    align-items:stretch;
+
     gap:8px;
 
     margin-top:18px;
+
+    width:100%;
+
+    flex-wrap:nowrap;
 
 }
 
 
 .store-actions button{
 
-    flex:1;
+    flex:0 0 auto;
 
 }
 
@@ -2296,13 +2302,47 @@ td{
 
     border:none;
 
-    padding:10px 12px;
+    padding:10px 10px;
 
     border-radius:9px;
 
     cursor:pointer;
 
     font-size:12px;
+
+    line-height:1.15;
+
+    white-space:nowrap;
+
+    text-align:center;
+
+}
+
+
+.store-integrate-button{
+
+    min-width:108px;
+
+}
+
+
+.store-edit-button{
+
+    min-width:48px;
+
+}
+
+
+.store-toggle-button{
+
+    min-width:86px;
+
+}
+
+
+.store-delete-button{
+
+    min-width:38px;
 
 }
 
@@ -2431,7 +2471,21 @@ td{
 
     .store-actions{
 
-        flex-wrap:wrap;
+        flex-wrap:nowrap;
+
+        gap:6px;
+
+        overflow-x:auto;
+
+        padding-bottom:2px;
+
+    }
+
+    .store-action-button{
+
+        font-size:11px;
+
+        padding:9px 8px;
 
     }
 
