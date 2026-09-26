@@ -19226,10 +19226,17 @@ if(!window.sellerBooksTikTokOAuthMessageHandler){
 
         const reason = data.reason || "OAUTH_FAILED";
 
-        sellerBooksAlert(
-            "Integrasi TikTok Shop gagal.\n\nKode: " + reason,
-            "Integrasikan Akun"
-        );
+        if(reason === "TIKTOK_ACCOUNT_ALREADY_CONNECTED"){
+            sellerBooksAlert(
+                "Akun TikTok Shop ini sudah terhubung ke akun atau toko SellerBooks lain.",
+                "Integrasikan Akun"
+            );
+        }else{
+            sellerBooksAlert(
+                "Integrasi TikTok Shop gagal.\n\nKode: " + reason,
+                "Integrasikan Akun"
+            );
+        }
 
     });
 
