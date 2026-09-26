@@ -19720,7 +19720,7 @@ function sellerBooksSetShopeeCredentialFields(connection){
     const marketplaceName=String(marketplaceSelect?.selectedOptions?.[0]?.textContent||"").trim();
     const marketplaceCode=marketplaceName.toLowerCase().replace(/\s+/g,"");
     const isShopee=marketplaceCode==="shopee";
-    const oauthMarketplaces=["shopee","tiktokshop","lazada","toco"];
+    const oauthMarketplaces=["shopee"];
     const isOAuthMarketplace=oauthMarketplaces.includes(marketplaceCode);
     const isTokopedia=marketplaceName.toLowerCase()==="tokopedia";
 
