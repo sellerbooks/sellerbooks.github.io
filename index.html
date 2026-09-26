@@ -32702,13 +32702,13 @@ async function sellerBooksStartMarketplaceOAuth(){
     const marketplaceId=String(document.getElementById("storeApiConnectionMarketplace")?.value||"").trim();
 
     if(!storeId || !marketplaceId){
-        sellerBooksAlert("Akun toko Shopee belum siap.");
+        sellerBooksAlert("Akun toko marketplace belum siap.");
         return;
     }
 
-    const popup=window.open("about:blank","sellerbooksShopeeOAuth","width=520,height=720,resizable=yes,scrollbars=yes");
+    const popup=window.open("about:blank","sellerbooksMarketplaceOAuth","width=520,height=720,resizable=yes,scrollbars=yes");
     if(!popup){
-        sellerBooksAlert("Popup Shopee diblokir browser. Izinkan popup untuk SellerBooks lalu coba lagi.");
+        sellerBooksAlert("Popup marketplace diblokir browser. Izinkan popup untuk SellerBooks lalu coba lagi.");
         return;
     }
 
@@ -32717,11 +32717,11 @@ async function sellerBooksStartMarketplaceOAuth(){
 
     if(button){
         button.disabled=true;
-        button.textContent="Menyiapkan login Shopee...";
+        button.textContent="Menyiapkan login marketplace...";
     }
     if(status){
         status.style.display="block";
-        status.textContent="Menghubungkan ke otorisasi resmi Shopee...";
+        status.textContent="Menghubungkan ke otorisasi resmi marketplace...";
     }
 
     try{
@@ -32752,13 +32752,13 @@ async function sellerBooksStartMarketplaceOAuth(){
         try{result=raw?JSON.parse(raw):null;}catch(error){}
 
         if(!response.ok || !result?.ok || !result?.authorization_url){
-            throw new Error(result?.error||"Gagal menyiapkan OAuth Shopee.");
+            throw new Error(result?.error||"Gagal menyiapkan OAuth marketplace.");
         }
 
         popup.location.href=result.authorization_url;
 
         if(status){
-            status.textContent="Silakan login di Shopee dan setujui penautan toko. SellerBooks akan memperbarui status setelah verifikasi berhasil.";
+            status.textContent="Silakan login di marketplace dan setujui penautan toko. SellerBooks akan memperbarui status setelah verifikasi berhasil.";
         }
     }catch(error){
         popup.close();
@@ -32770,7 +32770,7 @@ async function sellerBooksStartMarketplaceOAuth(){
         }
 
         sellerBooksAlert(
-            "Login Shopee tidak dapat dimulai.\n\n"+
+            "Login marketplace tidak dapat dimulai.\n\n"+
             String(error?.message||error)
         );
     }finally{
@@ -32798,10 +32798,10 @@ function sellerBooksHandleMarketplaceOAuthMessage(event){
                 .catch(console.error);
         }
 
-        sellerBooksAlert("Shopee berhasil ditautkan. Shop ID "+String(event.data.shop_id||"")+" sudah diverifikasi.");
+        sellerBooksAlert("Marketplace berhasil ditautkan. Store ID "+String(event.data.shop_id||"")+" sudah diverifikasi.");
     }else{
         sellerBooksAlert(
-            "Penautan Shopee belum berhasil.\n\n"+
+            "Penautan marketplace belum berhasil.\n\n"+
             String(event.data.reason||"Silakan coba lagi.")
         );
     }
