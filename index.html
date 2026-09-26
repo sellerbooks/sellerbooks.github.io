@@ -30998,6 +30998,114 @@ document.addEventListener(
     .sb-piutang-dashboard-card{align-items:flex-start;flex-direction:column;}
     .sb-piutang-dashboard-button{width:100%;}
 }
+
+/* =====================================================
+   SELLERBOOKS DESKTOP RESPONSIVE / NO HORIZONTAL SCROLL
+   Menjaga layout tetap proporsional di Windows Desktop,
+   Chrome, Edge, Firefox, dan WebView desktop.
+   Tidak mengubah breakpoint mobile Android yang sudah stabil.
+===================================================== */
+
+html,
+body{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden;
+}
+
+#app{
+    width:100%;
+    min-width:0;
+}
+
+.main-app{
+    min-width:0;
+    max-width:none;
+    box-sizing:border-box;
+}
+
+.app-content{
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+}
+
+.stats-grid,
+.marketplace-grid,
+.stores-grid{
+    min-width:0;
+}
+
+.stat-card,
+.marketplace-card,
+.store-card,
+.content-section,
+.welcome-card{
+    min-width:0;
+    max-width:100%;
+}
+
+.store-name,
+.store-description,
+.marketplace-card h3,
+.marketplace-card p,
+.store-marketplace-name,
+.store-info-item{
+    min-width:0;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+}
+
+.store-actions{
+    min-width:0;
+}
+
+.store-actions button,
+.store-action-button{
+    min-width:0;
+    max-width:100%;
+    overflow-wrap:anywhere;
+}
+
+/* Pada layar Windows/Chrome ukuran 901-1450px,
+   gunakan 2 kartu per baris agar tidak melebar ke samping. */
+@media (min-width:901px) and (max-width:1450px){
+
+    .stats-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .marketplace-grid,
+    .stores-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .store-actions{
+        flex-wrap:wrap;
+    }
+
+    .store-actions button{
+        flex:1 1 0;
+    }
+
+}
+
+/* Desktop yang sangat sempit tetap menggunakan ruang yang tersedia,
+   tanpa memaksa halaman membuat horizontal scrollbar. */
+@media (min-width:901px) and (max-width:1100px){
+
+    .app-content{
+        padding-left:24px;
+        padding-right:24px;
+    }
+
+    .store-card,
+    .marketplace-card{
+        padding:18px;
+    }
+
+}
+
 </style>
 
 <script>
