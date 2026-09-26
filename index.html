@@ -9,63 +9,6 @@
 <style>
 
 
-/* =====================================================
-   HASIL OAUTH LAZADA DARI POPUP
-===================================================== */
-
-if(!window.sellerBooksLazadaOAuthMessageHandler){
-
-    window.sellerBooksLazadaOAuthMessageHandler = true;
-
-    window.addEventListener("message", function(event){
-
-        if(event.origin !== window.location.origin){
-            return;
-        }
-
-        const data = event.data || {};
-
-        if(data.source !== "sellerbooks-lazada-oauth"){
-            return;
-        }
-
-        if(data.status === "success"){
-
-            sellerBooksAlert(
-                "Akun Lazada berhasil terhubung ke SellerBooks.",
-                "Integrasikan Akun"
-            );
-
-            if(typeof loadStores === "function"){
-                setTimeout(function(){
-                    loadStores();
-                },300);
-            }else if(typeof renderStores === "function"){
-                setTimeout(function(){
-                    renderStores();
-                },300);
-            }
-
-            return;
-        }
-
-        const reason = data.reason || "OAUTH_FAILED";
-
-        if(reason === "LAZADA_ACCOUNT_ALREADY_CONNECTED"){
-            sellerBooksAlert(
-                "Akun Lazada ini sudah terhubung ke akun atau toko SellerBooks lain.",
-                "Integrasikan Akun"
-            );
-        }else{
-            sellerBooksAlert(
-                "Integrasi Lazada gagal.\n\nKode: " + reason,
-                "Integrasikan Akun"
-            );
-        }
-
-    });
-
-}
 
 
 /* =====================================================
@@ -19359,6 +19302,63 @@ if(!window.sellerBooksLazadaOAuthMessageHandler){
         }else{
             sellerBooksAlert(
                 "Integrasi Lazada gagal.\\n\\nKode: " + reason,
+                "Integrasikan Akun"
+            );
+        }
+
+    });
+
+}
+/* =====================================================
+   HASIL OAUTH LAZADA DARI POPUP
+===================================================== */
+
+if(!window.sellerBooksLazadaOAuthMessageHandler){
+
+    window.sellerBooksLazadaOAuthMessageHandler = true;
+
+    window.addEventListener("message", function(event){
+
+        if(event.origin !== window.location.origin){
+            return;
+        }
+
+        const data = event.data || {};
+
+        if(data.source !== "sellerbooks-lazada-oauth"){
+            return;
+        }
+
+        if(data.status === "success"){
+
+            sellerBooksAlert(
+                "Akun Lazada berhasil terhubung ke SellerBooks.",
+                "Integrasikan Akun"
+            );
+
+            if(typeof loadStores === "function"){
+                setTimeout(function(){
+                    loadStores();
+                },300);
+            }else if(typeof renderStores === "function"){
+                setTimeout(function(){
+                    renderStores();
+                },300);
+            }
+
+            return;
+        }
+
+        const reason = data.reason || "OAUTH_FAILED";
+
+        if(reason === "LAZADA_ACCOUNT_ALREADY_CONNECTED"){
+            sellerBooksAlert(
+                "Akun Lazada ini sudah terhubung ke akun atau toko SellerBooks lain.",
+                "Integrasikan Akun"
+            );
+        }else{
+            sellerBooksAlert(
+                "Integrasi Lazada gagal.\n\nKode: " + reason,
                 "Integrasikan Akun"
             );
         }
