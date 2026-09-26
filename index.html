@@ -2306,13 +2306,15 @@ td{
 
     display:grid;
 
-    grid-template-columns:minmax(0,1.9fr) minmax(0,.75fr) minmax(0,1.25fr) minmax(32px,.45fr);
+    grid-template-columns:105px 48px 85px 32px;
 
-    gap:7px;
+    gap:5px;
 
     margin-top:18px;
 
     width:100%;
+
+    align-items:stretch;
 
 }
 
@@ -2332,13 +2334,15 @@ td{
 
     border:none;
 
-    padding:10px 6px;
+    padding:10px 5px;
 
     border-radius:9px;
 
     cursor:pointer;
 
-    font-size:12px;
+    font-size:11px;
+
+    font-weight:600;
 
     line-height:1.1;
 
@@ -2348,19 +2352,12 @@ td{
 
     min-width:0;
 
-    overflow:hidden;
-
-    text-overflow:ellipsis;
+    overflow:visible;
 
 }
 
 
-.store-integrate-button{
-
-    min-width:0;
-
-}
-
+.store-integrate-button,
 
 .store-edit-button,
 
@@ -2369,6 +2366,19 @@ td{
 .store-delete-button{
 
     min-width:0;
+
+}
+
+
+.store-delete-button{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:10px 0;
 
 }
 
@@ -2495,7 +2505,7 @@ td{
     }
 
     .store-actions{
-        grid-template-columns:minmax(88px,1.25fr) minmax(52px,.72fr) minmax(88px,1.25fr) 40px;
+        grid-template-columns:minmax(104px,1.35fr) minmax(48px,.65fr) minmax(82px,1.05fr) 34px;
         gap:5px;
         width:100%;
         overflow:visible;
@@ -2503,9 +2513,13 @@ td{
 
     .store-action-button{
         font-size:10.5px;
-        padding:9px 3px;
-        letter-spacing:-.1px;
+        padding:9px 4px;
+        letter-spacing:-.15px;
         white-space:nowrap;
+    }
+
+    .store-delete-button{
+        font-size:13px;
     }
 
 }
