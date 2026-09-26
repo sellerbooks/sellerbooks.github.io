@@ -15205,12 +15205,20 @@ async function sellerBooksCheckApproval(showAlert){
             if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
 
             /*
-               Setelah akun disetujui Core Adiimasa:
-               - Jika Nama Pemilik sudah tersimpan di profile akun ini -> masuk Dashboard.
-               - Jika belum ada -> tampilkan tingkat 2 untuk membuat Nama Pemilik.
-               - localStorage TIDAK dipakai untuk menentukan apakah setup sudah selesai,
-                 agar identitas antar akun Google tidak tercampur.
+               Setelah Core Adiimasa menyetujui akun:
+               - Akun Google BARU yang belum memiliki Nama Pemilik WAJIB masuk
+                 ke halaman pengisian Nama Pemilik terlebih dahulu.
+               - Hanya profile SellerBooks milik user Google yang sedang login
+                 yang menentukan apakah setup Nama Pemilik sudah selesai.
+               - Jangan menggunakan localStorage/cache untuk melewati setup
+                 akun Google baru.
             */
+            const approvedOwnerName=String(sellerBooksProfile?.owner_name||"").trim();
+            if(!approvedOwnerName){
+                sellerBooksOpenApplication();
+                return;
+            }
+
             await sellerBooksLoadCloudData();
             sellerBooksRefreshRuntimeFromCloud();
             if(typeof initializeReports==="function")initializeReports();
@@ -15393,32 +15401,30 @@ async function sellerBooksHandleAuthSession(){
             error
         );
 
-        sellerBooksAuthUser = null;
-        sellerBooksProfile = null;
-
-        if(sellerBooksApprovalTimer){
-
-            clearInterval(
-                sellerBooksApprovalTimer
-            );
-
-            sellerBooksApprovalTimer = null;
+        /*
+           Jangan menganggap error pembacaan profile sebagai logout.
+           Sesi Google/Supabase bisa tetap valid ketika request profile
+           gagal sementara (refresh token, jaringan, RLS, atau cold start).
+           Pertahankan user dan tampilkan halaman aman untuk retry.
+        */
+        if(!sellerBooksAuthUser){
+            sellerBooksShowOnly("loginPage");
+            return;
         }
 
-        sellerBooksShowOnly(
-            "loginPage"
+        sellerBooksShowApproval(
+            "Status akun belum dapat dibaca. Periksa koneksi lalu tekan “Cek Status Persetujuan” untuk mencoba lagi."
         );
     }
 }
+/* Auth listener utama hanya memproses sesi yang valid.
+   Event tanpa session tidak lagi memaksa halaman keluar saat refresh
+   atau ketika Supabase sedang menyegarkan token. Logout eksplisit tetap
+   ditangani oleh sellerBooksLogout()/logoutSellerBooks(). */
 sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
     if(session?.user){
         sellerBooksAuthUser=session.user;
         setTimeout(function(){sellerBooksCheckApproval(false);},0);
-    }else{
-        sellerBooksAuthUser=null;
-        sellerBooksProfile=null;
-        applyBusinessLogoToInterface("");
-        sellerBooksShowOnly("loginPage");
     }
 });
 /* =====================================================
