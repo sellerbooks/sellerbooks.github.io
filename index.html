@@ -20082,10 +20082,51 @@ async function saveStoreApiConnection(){
         if(sellerBooksIsShopeeConnection()){
             const testResult=await sellerBooksTestConnectionInternal(connection.id);
             if(!testResult.ok){
-                sellerBooksAlert(
-                    "Credential tersimpan, tetapi tes koneksi gagal.\n\n"+
-                    String(testResult.error||"Tes koneksi gagal.")
+
+                const errorMessage=String(
+                    testResult.error||
+                    "Tes koneksi gagal."
                 );
+
+                try{
+                    const {data:errorConnection,error:errorMark}=await sellerBooksSupabase.rpc(
+                        "sellerbooks_api_mark_connection_error",
+                        {
+                            p_connection_id:connection.id,
+                            p_error:errorMessage
+                        }
+                    );
+
+                    if(errorMark)throw errorMark;
+
+                    sellerBooksStoreApiConnectionData=
+                        errorConnection||
+                        {
+                            ...sellerBooksStoreApiConnectionData,
+                            connection_status:"ERROR",
+                            sync_enabled:false,
+                            last_error:errorMessage
+                        };
+
+                }catch(markError){
+                    console.error(
+                        "Gagal menyimpan status error koneksi:",
+                        markError
+                    );
+                }
+
+                document.getElementById(
+                    "storeApiConnectionStatus"
+                ).textContent="Error";
+
+                await sellerBooksRefreshStoreConnectionStatuses();
+
+                sellerBooksAlert(
+                    "Credential tersimpan, tetapi verifikasi Shopee gagal.\n\n"+
+                    errorMessage+
+                    "\n\nStatus akun tidak diubah menjadi Terhubung."
+                );
+
                 return;
             }
 
@@ -20246,17 +20287,61 @@ async function testStoreApiConnection(){
 
             document.getElementById("storeApiConnectionStatus").textContent="Error";
 
-            sellerBooksStoreApiConnectionData={
-                ...connection,
-                connection_status:"ERROR",
-                last_error:result.error||"Tes koneksi gagal."
-            };
+            const errorMessage=String(
+                result.error||
+                "Credential Shopee tidak valid."
+            );
+
+            try{
+
+                const {
+                    data:errorConnection,
+                    error:errorMark
+                }=await sellerBooksSupabase.rpc(
+                    "sellerbooks_api_mark_connection_error",
+                    {
+                        p_connection_id:connection.id,
+                        p_error:errorMessage
+                    }
+                );
+
+                if(errorMark)throw errorMark;
+
+                sellerBooksStoreApiConnectionData=
+                    errorConnection||
+                    {
+                        ...connection,
+                        connection_status:"ERROR",
+                        sync_enabled:false,
+                        last_error:errorMessage
+                    };
+
+            }catch(markError){
+
+                console.error(
+                    "Gagal menyimpan status error koneksi:",
+                    markError
+                );
+
+                sellerBooksStoreApiConnectionData={
+                    ...connection,
+                    connection_status:"ERROR",
+                    sync_enabled:false,
+                    last_error:errorMessage
+                };
+
+            }
+
+            document.getElementById(
+                "storeApiConnectionStatus"
+            ).textContent="Error";
 
             await sellerBooksRefreshStoreConnectionStatuses();
 
             sellerBooksAlert(
                 "Tes koneksi gagal.\n\n"+
-                String(result.error||"Credential Shopee tidak valid.")
+                errorMessage+
+                "\n\nStatus tetap tidak terhubung karena verifikasi API Shopee gagal."
             );
 
             return;
