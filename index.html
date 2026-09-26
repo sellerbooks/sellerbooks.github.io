@@ -10648,7 +10648,7 @@ document.addEventListener(
                 style="display:none"
             >
 
-                🗑️ Hapus Terpilih (<span id="selectedProductCount">0</span>)
+                ${sellerBooksSvgIcon("trash")} Hapus Terpilih (<span id="selectedProductCount">0</span>)
 
             </button>
 
@@ -19148,7 +19148,7 @@ function renderStores(){
                         onclick="editStore('${store.id}')"
                     >
 
-                        ✏️ Edit
+                        ${sellerBooksSvgIcon("edit")} Edit
 
                     </button>
 
@@ -19182,7 +19182,7 @@ function renderStores(){
                         onclick="deleteStore('${store.id}')"
                     >
 
-                        🗑
+                        ${sellerBooksSvgIcon("trash")}
 
                     </button>
 
@@ -20347,7 +20347,7 @@ function renderProducts(){
                             onclick="editProduct('${product.id}')"
                         >
 
-                            ✏️
+                            ${sellerBooksSvgIcon("edit")}
 
                         </button>
 
@@ -20381,7 +20381,7 @@ function renderProducts(){
                             onclick="deleteProduct('${product.id}')"
                         >
 
-                            🗑️
+                            ${sellerBooksSvgIcon("trash")}
 
                         </button>
 
