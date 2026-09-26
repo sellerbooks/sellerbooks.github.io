@@ -14617,7 +14617,25 @@ document.addEventListener(
 ===================================================== */
 const SELLERBOOKS_SUPABASE_URL="https://fysaxpqpqexjnlpkbwap.supabase.co";
 const SELLERBOOKS_SUPABASE_KEY="sb_publishable_DWRaEZTcNMjhglwN3nqCOw_pua8rsjD";
-const sellerBooksSupabase=window.supabase.createClient(SELLERBOOKS_SUPABASE_URL,SELLERBOOKS_SUPABASE_KEY);
+const sellerBooksSupabase=window.supabase.createClient(
+    SELLERBOOKS_SUPABASE_URL,
+    SELLERBOOKS_SUPABASE_KEY,
+    {
+        auth:{
+            /*
+               SESSION PERSISTENCE:
+               Jangan bergantung pada default browser storage.
+               Session Google SellerBooks wajib tetap tersimpan saat
+               refresh halaman / membuka ulang website.
+            */
+            persistSession:true,
+            autoRefreshToken:true,
+            detectSessionInUrl:true,
+            storage:window.localStorage,
+            storageKey:"sellerbooks.supabase.auth"
+        }
+    }
+);
 
 /* =====================================================
    SELLERBOOKS CLOUD STORAGE
