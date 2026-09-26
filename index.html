@@ -2333,6 +2333,16 @@ td{
 
 }
 
+.store-integrate-button{
+
+    background:#eef2ff;
+
+    color:#4338ca;
+
+    font-weight:600;
+
+}
+
 
 .store-empty{
 
@@ -18860,6 +18870,46 @@ if(!window.sellerBooksStoreMarketplaceFilterOutsideHandler){
 
 
 /* =====================================================
+   INTEGRASI AKUN TOKO
+===================================================== */
+
+function integrateStoreAccount(storeId){
+
+    const store = stores.find(function(item){
+
+        return String(item.id) === String(storeId);
+
+    });
+
+    if(!store){
+
+        sellerBooksAlert("Akun toko tidak ditemukan.","Integrasikan Akun");
+
+        return;
+
+    }
+
+    const marketplace = marketplaces.find(function(item){
+
+        return item.id === store.marketplaceId;
+
+    });
+
+    const marketplaceName = marketplace ? marketplace.name : "Marketplace";
+
+    sellerBooksAlert(
+        "Akun \"" +
+        (store.name || "Tanpa Nama") +
+        "\" dipilih untuk integrasi " +
+        marketplaceName +
+        ".\n\nTahap berikutnya kita sambungkan ke autentikasi resmi marketplace.",
+        "Integrasikan Akun"
+    );
+
+}
+
+
+/* =====================================================
    RENDER AKUN TOKO
 ===================================================== */
 
@@ -19157,6 +19207,19 @@ function renderStores(){
 
 
                 <div class="store-actions">
+
+
+                    <button
+                        class="
+                            store-action-button
+                            store-integrate-button
+                        "
+                        onclick="integrateStoreAccount('undefined')"
+                    >
+
+                        🔗 Integrasikan Akun
+
+                    </button>
 
 
                     <button
