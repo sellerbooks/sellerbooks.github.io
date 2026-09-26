@@ -33040,21 +33040,34 @@ window.sellerBooksStartMarketplaceOAuth = async function sellerBooksStartMarketp
     const storeId=String(document.getElementById("storeApiConnectionStoreId")?.value||"").trim();
     const marketplaceId=String(document.getElementById("storeApiConnectionMarketplace")?.value||"").trim();
     const marketplaceName=String(document.getElementById("storeApiConnectionMarketplace")?.selectedOptions?.[0]?.textContent||"").trim();
-    const marketplaceCode=marketplaceName.toLowerCase().replace(/\s+/g,"");
+    const marketplaceCode=marketplaceName.toLowerCase().replace(/\\s+/g,"");
 
     if(!storeId || !marketplaceId){
         sellerBooksAlert("Akun toko marketplace belum siap.");
         return;
     }
 
-    if(marketplaceCode!=="shopee"){
+    const oauthConfig={
+        shopee:{
+            endpoint:SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-oauth?action=init",
+            popupName:"sellerbooksShopeeOAuth",
+            label:"Shopee"
+        },
+        tiktokshop:{
+            endpoint:SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-tiktok-oauth?action=init",
+            popupName:"sellerbooksTikTokOAuth",
+            label:"TikTok Shop"
+        }
+    }[marketplaceCode];
+
+    if(!oauthConfig){
         sellerBooksAlert("Adapter resmi "+(marketplaceName||"marketplace")+" belum diaktifkan.");
         return;
     }
 
     const popup=window.open(
         "about:blank",
-        "sellerbooksShopeeOAuth",
+        oauthConfig.popupName,
         "popup=yes,width=520,height=720,resizable=yes,scrollbars=yes"
     );
 
@@ -33064,8 +33077,12 @@ window.sellerBooksStartMarketplaceOAuth = async function sellerBooksStartMarketp
     }
 
     try{
-        popup.document.title="SellerBooks - Menghubungkan Shopee";
-        popup.document.body.innerHTML='<div style="font-family:Arial,sans-serif;padding:32px;text-align:center;color:#334155"><h3>Menyiapkan koneksi Shopee...</h3><p>Mohon tunggu, SellerBooks sedang membuka halaman resmi Shopee.</p></div>';
+        popup.document.title="SellerBooks - Menghubungkan "+oauthConfig.label;
+        popup.document.body.innerHTML=
+            '<div style="font-family:Arial,sans-serif;padding:32px;text-align:center;color:#334155">'+
+            '<h3>Menyiapkan koneksi '+oauthConfig.label+'...</h3>'+
+            '<p>Mohon tunggu, SellerBooks sedang membuka halaman resmi '+oauthConfig.label+'.</p>'+
+            '</div>';
     }catch(e){}
 
     const button=document.getElementById("storeApiMarketplaceOAuthButton");
@@ -33073,11 +33090,11 @@ window.sellerBooksStartMarketplaceOAuth = async function sellerBooksStartMarketp
 
     if(button){
         button.disabled=true;
-        button.textContent="Menyiapkan login Shopee...";
+        button.textContent="Menyiapkan login "+oauthConfig.label+"...";
     }
     if(status){
         status.style.display="block";
-        status.textContent="Menghubungkan ke otorisasi resmi Shopee...";
+        status.textContent="Menghubungkan ke otorisasi resmi "+oauthConfig.label+"...";
     }
 
     try{
@@ -33089,12 +33106,8 @@ window.sellerBooksStartMarketplaceOAuth = async function sellerBooksStartMarketp
             throw new Error("Sesi login SellerBooks tidak ditemukan. Silakan login kembali.");
         }
 
-        const endpoint=
-            SELLERBOOKS_SUPABASE_URL+
-            "/functions/v1/sellerbooks-shopee-oauth?action=init";
-
         const response=await fetch(
-            endpoint,
+            oauthConfig.endpoint,
             {
                 method:"POST",
                 headers:{
@@ -33127,20 +33140,15 @@ window.sellerBooksStartMarketplaceOAuth = async function sellerBooksStartMarketp
         if(!result?.ok || !result?.authorization_url){
             const stage=result?.stage ? " ["+result.stage+"]" : "";
             throw new Error(
-                (result?.error||"URL autentikasi resmi Shopee tidak diterima.")+
+                (result?.error||"URL autentikasi resmi "+oauthConfig.label+" tidak diterima.")+
                 stage
             );
         }
 
-        /*
-          Navigasi dilakukan pada popup yang sudah dibuka secara
-          synchronous sehingga Chrome tidak menganggapnya sebagai
-          popup baru yang diblokir.
-        */
         popup.location.replace(result.authorization_url);
 
         if(status){
-            status.textContent="Halaman resmi Shopee sudah dibuka. Silakan login dan setujui penautan toko.";
+            status.textContent="Halaman resmi "+oauthConfig.label+" sudah dibuka. Silakan login dan setujui penautan toko.";
         }
     }catch(error){
         const message=String(error?.message||error);
@@ -33148,7 +33156,7 @@ window.sellerBooksStartMarketplaceOAuth = async function sellerBooksStartMarketp
         try{
             popup.document.body.innerHTML=
                 '<div style="font-family:Arial,sans-serif;padding:32px;color:#b91c1c">'+
-                '<h3>Login Shopee gagal dimulai</h3>'+
+                '<h3>Login '+oauthConfig.label+' gagal dimulai</h3>'+
                 '<p>'+message.replace(/</g,"&lt;")+'</p>'+
                 '<p>Silakan tutup jendela ini dan coba lagi.</p>'+
                 '</div>';
@@ -33162,13 +33170,13 @@ window.sellerBooksStartMarketplaceOAuth = async function sellerBooksStartMarketp
         }
 
         sellerBooksAlert(
-            "Login Shopee tidak dapat dimulai.\n\n"+
+            "Login "+oauthConfig.label+" tidak dapat dimulai.\\n\\n"+
             message
         );
     }finally{
         if(button){
             button.disabled=false;
-            button.textContent="Login & Tautkan Shopee";
+            button.textContent="Login & Tautkan "+(marketplaceName||"");
         }
     }
 };
