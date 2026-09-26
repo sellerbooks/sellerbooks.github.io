@@ -2306,15 +2306,15 @@ td{
 
     display:grid;
 
-    grid-template-columns:105px 48px 85px 32px;
+    grid-template-columns:repeat(2,minmax(0,1fr));
 
-    gap:5px;
+    gap:8px;
 
-    margin-top:18px;
+    margin-top:16px;
 
     width:100%;
 
-    align-items:stretch;
+    min-width:0;
 
 }
 
@@ -2334,9 +2334,11 @@ td{
 
     border:none;
 
-    padding:10px 5px;
+    min-height:40px;
 
-    border-radius:9px;
+    padding:9px 8px;
+
+    border-radius:8px;
 
     cursor:pointer;
 
@@ -2344,33 +2346,51 @@ td{
 
     font-weight:600;
 
-    line-height:1.1;
-
-    white-space:nowrap;
+    line-height:1.15;
 
     text-align:center;
 
-    min-width:0;
+    white-space:normal;
+
+    word-break:normal;
 
     overflow:visible;
 
 }
 
 
-.store-integrate-button,
+.store-integrate-button{
 
-.store-edit-button,
+    background:#eef2ff;
 
-.store-toggle-button,
+    color:#4338ca;
 
-.store-delete-button{
+}
 
-    min-width:0;
+
+.store-edit-button{
+
+    background:#eff6ff;
+
+    color:#2563eb;
+
+}
+
+
+.store-toggle-button{
+
+    background:#f8fafc;
+
+    color:var(--text);
 
 }
 
 
 .store-delete-button{
+
+    background:#fef2f2;
+
+    color:#dc2626;
 
     display:flex;
 
@@ -2378,7 +2398,7 @@ td{
 
     justify-content:center;
 
-    padding:10px 0;
+    padding:9px 8px;
 
 }
 
@@ -2505,21 +2525,33 @@ td{
     }
 
     .store-actions{
-        grid-template-columns:minmax(104px,1.35fr) minmax(48px,.65fr) minmax(82px,1.05fr) 34px;
-        gap:5px;
+
+        grid-template-columns:repeat(2,minmax(0,1fr));
+
+        gap:7px;
+
         width:100%;
+
         overflow:visible;
+
     }
 
     .store-action-button{
+
+        min-height:40px;
+
         font-size:10.5px;
-        padding:9px 4px;
-        letter-spacing:-.15px;
-        white-space:nowrap;
+
+        padding:9px 6px;
+
+        white-space:normal;
+
     }
 
     .store-delete-button{
+
         font-size:13px;
+
     }
 
 }
