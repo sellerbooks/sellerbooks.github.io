@@ -19489,7 +19489,7 @@ function renderStores(){
 </div>
 
 
-                <div class="store-api-status" id="store-api-status-undefined" style="
+                <div class="store-api-status" id="store-api-status-${store.id}" style="
                     display:flex;
                     align-items:center;
                     justify-content:space-between;
@@ -19500,7 +19500,7 @@ function renderStores(){
                     background:#f8fafc;
                 ">
                     <span style="font-size:12px;color:#64748b;">KONEKSI API</span>
-                    <strong data-store-api-status="undefined" style="font-size:12px;color:#64748b;">Memuat...</strong>
+                    <strong data-store-api-status="${store.id}" style="font-size:12px;color:#64748b;">Memuat...</strong>
                 </div>
 
                 <div class="store-actions">
@@ -19509,8 +19509,8 @@ function renderStores(){
                     <button
                         type="button"
                         class="store-action-button store-toggle-button"
-                        data-store-api-button="undefined"
-                        onclick="openStoreApiConnectionModal('undefined')"
+                        data-store-api-button="${store.id}"
+                        onclick="openStoreApiConnectionModal('${store.id}')"
                     >
                         Hubungkan API
                     </button>
