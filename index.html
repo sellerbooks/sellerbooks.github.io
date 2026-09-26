@@ -19856,7 +19856,7 @@ function sellerBooksSetShopeeCredentialFields(connection){
     const marketplaceName=String(marketplaceSelect?.selectedOptions?.[0]?.textContent||"").trim();
     const marketplaceCode=marketplaceName.toLowerCase().replace(/\s+/g,"");
     const isShopee=marketplaceCode==="shopee";
-    const oauthMarketplaces=["shopee"];
+    const oauthMarketplaces=["shopee","tiktokshop"];
     const isOAuthMarketplace=oauthMarketplaces.includes(marketplaceCode);
     const isTokopedia=marketplaceName.toLowerCase()==="tokopedia";
 
@@ -33212,7 +33212,8 @@ window.addEventListener("message",sellerBooksHandleMarketplaceOAuthMessage);
     const params=new URLSearchParams(window.location.search);
     const marketplaceStatus=params.get("sellerbooks_marketplace_oauth");
     const shopeeStatus=params.get("sellerbooks_shopee_oauth");
-    const status=shopeeStatus||marketplaceStatus;
+    const tiktokStatus=params.get("sellerbooks_tiktok_oauth");
+    const status=tiktokStatus||shopeeStatus||marketplaceStatus;
     if(!status)return;
 
     if(window.opener && !window.opener.closed){
@@ -33220,7 +33221,8 @@ window.addEventListener("message",sellerBooksHandleMarketplaceOAuthMessage);
             type:"SELLERBOOKS_MARKETPLACE_OAUTH",
             status:status,
             reason:params.get("reason")||"",
-            shop_id:params.get("shop_id")||""
+            shop_id:params.get("shop_id")||"",
+            missing_scopes:params.get("missing_scopes")||""
         },window.location.origin);
 
         setTimeout(function(){window.close();},250);
@@ -33229,6 +33231,8 @@ window.addEventListener("message",sellerBooksHandleMarketplaceOAuthMessage);
     const clean=new URL(window.location.href);
     clean.searchParams.delete("sellerbooks_marketplace_oauth");
     clean.searchParams.delete("sellerbooks_shopee_oauth");
+    clean.searchParams.delete("sellerbooks_tiktok_oauth");
+    clean.searchParams.delete("missing_scopes");
     clean.searchParams.delete("connection_id");
     clean.searchParams.delete("shop_id");
     clean.searchParams.delete("reason");
