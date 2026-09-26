@@ -18769,6 +18769,129 @@ function saveStoreData(){
    koneksi API / Auto Sync tahap berikutnya.
 ===================================================== */
 
+async function sellerBooksResolveRelationalMarketplaceId(marketplaceId){
+
+    const rawId=String(marketplaceId||"").trim();
+
+    if(!rawId){
+
+        throw new Error("Marketplace akun toko belum dipilih.");
+
+    }
+
+    /*
+       sellerbooks_stores.marketplace_id adalah foreign key ke
+       sellerbooks_marketplaces.id. Data marketplace lama masih
+       dapat memakai ID legacy seperti marketplace_... atau nama
+       berbeda (mis. tiktokshop). Jangan kirim ID legacy mentah
+       ke tabel relasional.
+    */
+
+    const direct={
+        shopee:"shopee",
+        tiktok:"tiktok",
+        tiktokshop:"tiktok",
+        tokopedia:"TOKOPEDIA",
+        lazada:"lazada",
+        toco:"toco",
+        blibli:"blibli"
+    };
+
+    const normalize=function(value){
+        return String(value||"")
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g,"");
+    };
+
+    /*
+       Jika ID yang dipilih memang sudah merupakan ID relasional
+       yang valid, pertahankan apa adanya.
+    */
+    const {data:directRow,error:directError}=await sellerBooksSupabase
+        .from("sellerbooks_marketplaces")
+        .select("id")
+        .eq("id",rawId)
+        .maybeSingle();
+
+    if(directError)throw directError;
+
+    if(directRow?.id){
+        return String(directRow.id);
+    }
+
+    /*
+       Cari marketplace lokal berdasarkan id, code, atau name,
+       lalu ubah ke ID canonical yang dipakai SellerBooks.
+    */
+    const localMarketplace=(Array.isArray(marketplaces)?marketplaces:[])
+        .find(function(item){
+            return String(item?.id||"")===rawId;
+        });
+
+    const candidates=[
+        normalize(localMarketplace?.code),
+        normalize(localMarketplace?.name),
+        normalize(rawId)
+    ];
+
+    for(const candidate of candidates){
+
+        if(!candidate)continue;
+
+        const canonical=direct[candidate];
+
+        if(!canonical)continue;
+
+        const {data:canonicalRow,error:canonicalError}=await sellerBooksSupabase
+            .from("sellerbooks_marketplaces")
+            .select("id")
+            .eq("id",canonical)
+            .maybeSingle();
+
+        if(canonicalError)throw canonicalError;
+
+        if(canonicalRow?.id){
+            return String(canonicalRow.id);
+        }
+    }
+
+    /*
+       Fallback terakhir: cocokkan nama/code dengan baris aktif
+       di database. Ini menjaga marketplace lama tetap kompatibel.
+    */
+    if(localMarketplace){
+
+        const localCode=String(localMarketplace.code||"").trim();
+        const localName=String(localMarketplace.name||"").trim();
+
+        if(localCode || localName){
+
+            let query=sellerBooksSupabase
+                .from("sellerbooks_marketplaces")
+                .select("id,code,name")
+                .eq("status","ACTIVE");
+
+            if(localCode){
+                query=query.eq("code",localCode);
+            }else{
+                query=query.ilike("name",localName);
+            }
+
+            const {data:matches,error:matchError}=await query.limit(1);
+
+            if(matchError)throw matchError;
+
+            if(Array.isArray(matches) && matches[0]?.id){
+                return String(matches[0].id);
+            }
+        }
+    }
+
+    throw new Error(
+        "Marketplace akun toko tidak ditemukan di database relasional. Silakan pilih ulang marketplace pada Akun Toko."
+    );
+}
+
 async function sellerBooksSyncStoreRelational(store){
 
     if(!store || !sellerBooksAuthUser){
@@ -18777,13 +18900,16 @@ async function sellerBooksSyncStoreRelational(store){
 
     }
 
+    const relationalMarketplaceId=
+        await sellerBooksResolveRelationalMarketplaceId(store.marketplaceId);
+
     const row = {
 
         id:String(store.id || "").trim(),
 
         owner_user_id:String(sellerBooksAuthUser.id),
 
-        marketplace_id:String(store.marketplaceId || "").trim(),
+        marketplace_id:relationalMarketplaceId,
 
         store_code:String(store.code || "").trim() || null,
 
