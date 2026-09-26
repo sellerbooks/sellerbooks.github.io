@@ -54,8 +54,15 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
         };
         document.getElementById("icon").textContent="!";
         document.getElementById("icon").classList.add("error");
-        document.getElementById("title").textContent="Integrasi TikTok Shop gagal";
-        document.getElementById("message").textContent="Kode: "+reason;
+
+        if(reason==="TIKTOK_ACCOUNT_ALREADY_CONNECTED"){
+            document.getElementById("title").textContent="Akun TikTok Shop sudah terhubung";
+            document.getElementById("message").textContent=
+                "Akun TikTok Shop ini sudah terhubung ke akun atau toko SellerBooks lain.";
+        }else{
+            document.getElementById("title").textContent="Integrasi TikTok Shop gagal";
+            document.getElementById("message").textContent="Kode: "+reason;
+        }
     }
 
     try{
@@ -66,7 +73,7 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
 
     setTimeout(function(){
         try{ window.close(); }catch(e){}
-    },1400);
+    },1800);
 })();
 </script>
 </body>
