@@ -21,7 +21,7 @@ async function init(r:Request){
  const q=await rpc(base,pub,"sellerbooks_api_upsert_connection",{p_store_id:store,p_marketplace_id:mid,p_marketplace:"Shopee"}); const c=await q.json(); if(!q.ok||!c?.id)return out({ok:false,error:"Koneksi Shopee tidak dapat dibuat."},400);
  const raw=crypto.randomUUID()+"."+crypto.randomUUID(),hash=await digest(raw),expires=new Date(Date.now()+600000).toISOString();
  const s=await rpc(base,secret,"sellerbooks_api_create_oauth_state",{p_owner_user_id:u.id,p_store_id:store,p_connection_id:c.id,p_state_hash:hash,p_expires_at:expires}); if(!s.ok)return out({ok:false,error:"OAuth state gagal dibuat."},500);
- const ts=Math.floor(Date.now()/1000),sign=await hmac(pkey,String(pid)+AUTH_PATH+ts),a=new URL(HOST+AUTH_PATH); a.pathname="/api/v2"+AUTH_PATH; a.searchParams.set("partner_id",String(pid));a.searchParams.set("timestamp",String(ts));a.searchParams.set("sign",sign);a.searchParams.set("redirect",redirect);a.searchParams.set("state",raw);
+ const ts=Math.floor(Date.now()/1000),sign=await hmac(pkey,String(pid)+AUTH_PATH+ts),a=new URL(HOST+AUTH_PATH); a.searchParams.set("partner_id",String(pid));a.searchParams.set("timestamp",String(ts));a.searchParams.set("sign",sign);a.searchParams.set("redirect",redirect);a.searchParams.set("state",raw);
  return out({ok:true,connection_id:c.id,authorization_url:a.toString(),expires_at:expires});
 }
 async function callback(r:Request){
@@ -32,7 +32,7 @@ async function callback(r:Request){
  try{
   const sid=Number(shop),ts=Math.floor(Date.now()/1000),sign=await hmac(pkey,String(pid)+TOKEN_PATH+ts);
   const tr=await fetch(HOST+TOKEN_PATH,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,shop_id:sid,partner_id:pid,timestamp:ts,sign})}),td=await tr.json(); if(!tr.ok||td?.error||!td?.access_token)return fail("TOKEN_EXCHANGE_FAILED");
-  const its=Math.floor(Date.now()/1000),isign=await hmac(pkey,String(pid)+INFO_PATH+its+td.access_token+sid),iu=new URL(HOST+INFO_PATH);iu.pathname="/api/v2"+INFO_PATH;for(const [k,v] of Object.entries({partner_id:pid,timestamp:its,access_token:td.access_token,shop_id:sid,sign:isign}))iu.searchParams.set(k,String(v));
+  const its=Math.floor(Date.now()/1000),isign=await hmac(pkey,String(pid)+INFO_PATH+its+td.access_token+sid),iu=new URL(HOST+INFO_PATH);for(const [k,v] of Object.entries({partner_id:pid,timestamp:its,access_token:td.access_token,shop_id:sid,sign:isign}))iu.searchParams.set(k,String(v));
   const ir=await fetch(iu),info=await ir.json();if(!ir.ok||info?.error)return fail("SHOP_VERIFY_FAILED");
   const verified=String(info?.response?.shop_id??sid);if(verified!==String(st.store_id))return fail("SHOP_ID_MISMATCH");
   const credential=JSON.stringify({provider:"shopee",auth_type:"oauth",partner_id:pid,shop_id:sid,access_token:td.access_token,refresh_token:td.refresh_token||"",expire_in:td.expire_in||null,token_received_at:new Date().toISOString(),api_base_url:HOST});
