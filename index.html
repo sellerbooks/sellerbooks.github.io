@@ -19339,7 +19339,7 @@ function renderStores(){
                             store-action-button
                             store-integrate-button
                         "
-                        onclick="integrateStoreAccount('${store.id}')"
+                        onclick="integrateStoreAccount('\${store.id}')"
                     >
 
                         🔗 Integrasi
@@ -19348,30 +19348,28 @@ function renderStores(){
 
 
                     <button
-                    <button
                         class="
                             store-action-button
                             store-toggle-button
                         "
-                        onclick="toggleStore('${store.id}')"
+                        onclick="toggleStore('\${store.id}')"
                     >
 
-                        ${
+                        \${
                             store.status === "active"
-
                             ? "Nonaktifkan"
-
                             : "Aktifkan"
                         }
 
                     </button>
 
 
+                    <button
                         class="
                             store-action-button
                             store-edit-button
                         "
-                        onclick="editStore('${store.id}')"
+                        onclick="editStore('\${store.id}')"
                     >
 
                         ✏️ Edit
@@ -19379,19 +19377,19 @@ function renderStores(){
                     </button>
 
 
-
-
                     <button
                         class="
                             store-action-button
                             store-delete-button
                         "
-                        onclick="deleteStore('${store.id}')"
+                        onclick="deleteStore('\${store.id}')"
                     >
 
                         🗑
 
                     </button>
+
+                </div>
 
 
                 </div>
