@@ -32703,9 +32703,16 @@ sellerBooksReplaceEmojiIcons(document);
 async function sellerBooksStartMarketplaceOAuth(){
     const storeId=String(document.getElementById("storeApiConnectionStoreId")?.value||"").trim();
     const marketplaceId=String(document.getElementById("storeApiConnectionMarketplace")?.value||"").trim();
+    const marketplaceName=String(document.getElementById("storeApiConnectionMarketplace")?.selectedOptions?.[0]?.textContent||"").trim();
+    const marketplaceCode=marketplaceName.toLowerCase().replace(/\s+/g,"");
 
     if(!storeId || !marketplaceId){
         sellerBooksAlert("Akun toko marketplace belum siap.");
+        return;
+    }
+
+    if(marketplaceCode!=="shopee"){
+        sellerBooksAlert("Adapter resmi "+(marketplaceName||"marketplace")+" belum diaktifkan.");
         return;
     }
 
@@ -32735,7 +32742,7 @@ async function sellerBooksStartMarketplaceOAuth(){
         if(!accessToken)throw new Error("Sesi login SellerBooks tidak ditemukan. Silakan login kembali.");
 
         const response=await fetch(
-            SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-marketplace-oauth?action=init",
+            SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-oauth?action=init",
             {
                 method:"POST",
                 headers:{
