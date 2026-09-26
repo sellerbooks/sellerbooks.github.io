@@ -20168,13 +20168,18 @@ async function saveStoreApiConnection(){
 
 async function sellerBooksTestConnectionInternal(connectionId){
 
+    const MAX_ATTEMPTS=3;
+    const TIMEOUT_MS=10000;
+    const RETRY_DELAY_MS=750;
+
+    const sleep=function(ms){
+        return new Promise(function(resolve){
+            setTimeout(resolve,ms);
+        });
+    };
+
     try{
 
-        /*
-           Gunakan fetch langsung agar body error dari Edge Function
-           tetap bisa dibaca walaupun API mengembalikan HTTP 4xx/5xx.
-           Ini membuat pesan error Shopee tetap jelas di UI.
-        */
         const {
             data:sessionData,
             error:sessionError
@@ -20188,47 +20193,126 @@ async function sellerBooksTestConnectionInternal(connectionId){
             return {
                 ok:false,
                 status:"ERROR",
+                attempts:0,
                 error:"Sesi login SellerBooks tidak ditemukan. Silakan login kembali."
             };
         }
 
-        const response=await fetch(
-            SELLERBOOKS_SUPABASE_URL+
-            "/functions/v1/sellerbooks-api-test-connection",
-            {
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json",
-                    "apikey":SELLERBOOKS_SUPABASE_KEY,
-                    "Authorization":"Bearer "+accessToken
-                },
-                body:JSON.stringify({
-                    connection_id:connectionId
-                })
+        let lastError="Tes koneksi gagal.";
+
+        for(let attempt=1;attempt<=MAX_ATTEMPTS;attempt++){
+
+            const controller=new AbortController();
+
+            const timeoutId=setTimeout(function(){
+                controller.abort();
+            },TIMEOUT_MS);
+
+            try{
+
+                const response=await fetch(
+                    SELLERBOOKS_SUPABASE_URL+
+                    "/functions/v1/sellerbooks-api-test-connection",
+                    {
+                        method:"POST",
+                        headers:{
+                            "Content-Type":"application/json",
+                            "apikey":SELLERBOOKS_SUPABASE_KEY,
+                            "Authorization":"Bearer "+accessToken
+                        },
+                        body:JSON.stringify({
+                            connection_id:connectionId
+                        }),
+                        signal:controller.signal
+                    }
+                );
+
+                const raw=await response.text();
+
+                let data=null;
+
+                try{
+                    data=raw?JSON.parse(raw):null;
+                }catch(error){
+                    data=null;
+                }
+
+                if(data && typeof data==="object"){
+
+                    data.attempts=
+                        Number(data.attempts||attempt);
+
+                    data.max_attempts=MAX_ATTEMPTS;
+                    data.timeout_ms=TIMEOUT_MS;
+
+                    if(data.ok){
+                        return data;
+                    }
+
+                    lastError=String(
+                        data.error||
+                        "Tes koneksi gagal."
+                    );
+
+                    /*
+                       Credential/API ditolak dengan respons valid.
+                       Tidak perlu membuat request tanpa batas.
+                       Retry tetap dibatasi maksimal 3 percobaan.
+                    */
+
+                }else{
+
+                    lastError=
+                        !response.ok
+                        ? "Server tes koneksi mengembalikan HTTP "+
+                          response.status+"."
+                        : "Respons tes koneksi kosong.";
+
+                }
+
+            }catch(error){
+
+                if(error?.name==="AbortError"){
+
+                    lastError=
+                        "Timeout: percobaan ke-"+attempt+
+                        " tidak mendapat respons dalam "+
+                        (TIMEOUT_MS/1000)+
+                        " detik.";
+
+                }else{
+
+                    lastError=String(
+                        error?.message||
+                        "Tidak dapat menghubungi layanan tes koneksi."
+                    );
+
+                }
+
+            }finally{
+
+                clearTimeout(timeoutId);
+
             }
-        );
 
-        const raw=await response.text();
+            if(attempt<MAX_ATTEMPTS){
 
-        let data=null;
+                await sleep(RETRY_DELAY_MS);
 
-        try{
-            data=raw?JSON.parse(raw):null;
-        }catch(error){
-            data=null;
-        }
+            }
 
-        if(data && typeof data==="object"){
-            return data;
         }
 
         return {
             ok:false,
             status:"ERROR",
+            attempts:MAX_ATTEMPTS,
+            max_attempts:MAX_ATTEMPTS,
+            timeout_ms:TIMEOUT_MS,
             error:
-                !response.ok
-                ? "Tes koneksi gagal. Server mengembalikan HTTP "+response.status+"."
-                : "Respons tes koneksi kosong."
+                lastError+
+                "\n\nSemua "+MAX_ATTEMPTS+
+                " percobaan gagal. Status tidak diubah menjadi Terhubung."
         };
 
     }catch(error){
@@ -20238,6 +20322,7 @@ async function sellerBooksTestConnectionInternal(connectionId){
         return {
             ok:false,
             status:"ERROR",
+            attempts:0,
             error:String(
                 error?.message||
                 "Tidak dapat menghubungi layanan tes koneksi."
