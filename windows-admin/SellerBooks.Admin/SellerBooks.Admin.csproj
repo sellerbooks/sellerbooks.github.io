@@ -10,10 +10,11 @@
     <AssemblyName>SellerBooks Admin</AssemblyName>
     <RootNamespace>SellerBooks.Admin</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>..\installer\SellerBooks Admin.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\SellerBooks-SB.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <Resource Include="Assets\SellerBooks-SB.ico" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3485.44" />
   </ItemGroup>
 
