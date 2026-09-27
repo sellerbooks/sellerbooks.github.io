@@ -24197,40 +24197,32 @@ function saveSalesImportData(){
             sellerBooksGetSalesImportIdentity(transaction);
 
         /*
-           Semua marketplace menggunakan aturan yang sama.
-           Jika transaksi dengan ID unik + SKU yang sama
-           sudah pernah disimpan, transaksi tersebut DILEWATI.
-           Tetapi transaksi baru dalam file yang sama tetap disimpan.
-
-           Jadi:
-           - Data lama yang sama tidak menumpuk.
-           - Data baru / order baru otomatis masuk.
-           - Produk/SKU baru pada order yang sama juga bisa masuk.
-           - Import campuran (sebagian lama + sebagian baru) tetap disimpan
-             hanya bagian yang benar-benar baru.
+           identityKey sekarang menjadi satu-satunya sumber kunci
+           transaksi. Variabel orderKey/packingKey lama tidak lagi
+           dipakai karena sudah dihapus saat penyelarasan identity.
         */
         if(
-            (orderKey || packingKey) &&
+            identityKey &&
             existingTransactionKeys.has(identityKey)
         ){
             return;
         }
 
         /*
-           Cegah baris dengan ID unik + SKU yang sama
-           muncul lebih dari sekali di file import yang sedang diproses.
+           Cegah baris dengan identity yang sama muncul dua kali
+           dalam file import yang sedang diproses.
+           Khusus Lazada, sourceRowIndex membuat setiap baris Excel
+           tetap berbeda.
         */
         if(
-            (orderKey || packingKey) &&
+            identityKey &&
             incomingTransactionKeys.has(identityKey)
         ){
             return;
         }
 
-        if(orderKey || packingKey){
-            incomingTransactionKeys.add(
-                identityKey
-            );
+        if(identityKey){
+            incomingTransactionKeys.add(identityKey);
         }
 
         newTransactions.push(
