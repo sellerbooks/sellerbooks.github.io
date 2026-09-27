@@ -24162,54 +24162,17 @@ function saveSalesImportData(){
         (existingImport.transactions || [])
             .forEach(function(existingTransaction){
 
-                const marketplaceKey =
-                    String(
-                        existingTransaction.marketplaceId ||
-                        existingTransaction.marketplace ||
-                        ""
-                    ).trim().toLowerCase();
-
-                const storeKey =
-                    String(
-                        existingTransaction.storeId ||
-                        ""
-                    ).trim().toLowerCase();
-
-                const orderKey =
-                    String(
-                        existingTransaction.orderId ||
-                        ""
-                    ).trim().toLowerCase();
-
-                const packingKey =
-                    String(
-                        existingTransaction.packingId ||
-                        ""
-                    ).trim().toLowerCase();
-
-                const skuKey =
-                    String(
-                        existingTransaction.sku ||
-                        ""
-                    ).trim().toLowerCase();
-
+                /*
+                   Gunakan identity yang sama dengan Cloud Sync.
+                   Khusus Lazada, sourceRowIndex ikut menjadi bagian
+                   identity agar baris SKU yang sama dalam Order Number
+                   yang sama tidak digabung.
+                */
                 const identityKey =
-                    marketplaceKey + "|" +
-                    storeKey + "|" +
-                    (
-                        orderKey
-                            ? "ORDER:" + orderKey
-                            : "PACKING:" + packingKey
-                    ) + "|" +
-                    skuKey;
+                    sellerBooksGetSalesImportIdentity(existingTransaction);
 
-                if(
-                    orderKey ||
-                    packingKey
-                ){
-                    existingTransactionKeys.add(
-                        identityKey
-                    );
+                if(identityKey){
+                    existingTransactionKeys.add(identityKey);
                 }
 
             });
@@ -24225,46 +24188,13 @@ function saveSalesImportData(){
 
     transactions.forEach(function(transaction){
 
-        const marketplaceKey =
-            String(
-                transaction.marketplaceId ||
-                transaction.marketplace ||
-                ""
-            ).trim().toLowerCase();
-
-        const storeKey =
-            String(
-                transaction.storeId ||
-                ""
-            ).trim().toLowerCase();
-
-        const orderKey =
-            String(
-                transaction.orderId ||
-                ""
-            ).trim().toLowerCase();
-
-        const packingKey =
-            String(
-                transaction.packingId ||
-                ""
-            ).trim().toLowerCase();
-
-        const skuKey =
-            String(
-                transaction.sku ||
-                ""
-            ).trim().toLowerCase();
-
+        /*
+           Gunakan identity pusat yang sama dengan Cloud Sync.
+           Khusus Lazada, sourceRowIndex menjaga setiap baris Excel
+           tetap terpisah meskipun Order Number + Seller SKU sama.
+        */
         const identityKey =
-            marketplaceKey + "|" +
-            storeKey + "|" +
-            (
-                orderKey
-                    ? "ORDER:" + orderKey
-                    : "PACKING:" + packingKey
-            ) + "|" +
-            skuKey;
+            sellerBooksGetSalesImportIdentity(transaction);
 
         /*
            Semua marketplace menggunakan aturan yang sama.
