@@ -14573,6 +14573,23 @@ function sellerBooksGetSalesImportIdentity(transaction){
     const packingKey=String(transaction?.packingId||"").trim().toLowerCase();
     const skuKey=String(transaction?.sku||"").trim().toLowerCase();
     if(!orderKey && !packingKey)return "";
+
+    /* Lazada: pertahankan setiap baris sumber sebagai transaksi terpisah.
+       sourceRowIndex sudah dibuat saat import dan harus ikut dalam identity
+       agar baris SKU yang sama dalam Order Number yang sama tidak tergabung. */
+    if(
+        String(transaction?.marketplace||"").trim().toLowerCase()==="lazada" ||
+        String(transaction?.marketplaceId||"").trim().toLowerCase()==="lazada"
+    ){
+        const sourceRow=String(transaction?.sourceRowIndex ?? "").trim();
+        if(sourceRow!==""){
+            return marketplaceKey+"|"+storeKey+
+                   "|ORDER:"+orderKey+
+                   "|SKU:"+skuKey+
+                   "|ROW:"+sourceRow;
+        }
+    }
+
     return marketplaceKey+"|"+storeKey+"|"+(orderKey?"ORDER:"+orderKey:"PACKING:"+packingKey)+"|"+skuKey;
 }
 
