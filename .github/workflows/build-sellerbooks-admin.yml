@@ -17,16 +17,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET 8
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Prepare professional SellerBooks icon
+      - name: Use exact SellerBooks logo icon
         shell: pwsh
         run: |
-          choco install imagemagick --no-progress -y
-          magick "windows-admin/installer/SellerBooks-Admin.svg" -background none -define icon:auto-resize=256,128,64,48,32,16 "windows-admin/installer/SellerBooks Admin.ico"
+          if (-not (Test-Path "windows-admin/installer/SellerBooks Admin.ico")) {
+            throw "SellerBooks Admin.ico tidak ditemukan."
+          }
+          Write-Host "Menggunakan icon SellerBooks Admin.ico yang sudah tersimpan di repository."
 
       - name: Restore
         run: dotnet restore windows-admin/SellerBooks.Admin/SellerBooks.Admin.csproj
