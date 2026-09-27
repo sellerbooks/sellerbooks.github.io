@@ -19115,7 +19115,16 @@ function integrateStoreAccount(storeId){
             ].join(",")
         );
 
-        if(!oauthTab){
+        /*
+           Windows SellerBooks Admin membuka OAuth melalui browser Windows.
+           Pada WebView2, window.open() dapat mengembalikan null walaupun
+           NewWindowRequested berhasil diteruskan ke Chrome/Edge eksternal.
+           Karena itu pesan blokir popup hanya ditampilkan pada browser biasa.
+        */
+        const isSellerBooksWindowsApp =
+            /SellerBooksAdmin\/1\.0/i.test(navigator.userAgent);
+
+        if(!oauthTab && !isSellerBooksWindowsApp){
             sellerBooksAlert(
                 "Popup/tab baru diblokir browser. Silakan izinkan pop-up untuk SellerBooks lalu klik Integrasikan Akun lagi.",
                 "Integrasikan Akun"
