@@ -96,6 +96,11 @@ public partial class MainWindow : Window
         web.Settings.IsStatusBarEnabled = false;
         web.Settings.AreBrowserAcceleratorKeysEnabled = true;
 
+        // Tandai WebView sebagai aplikasi Windows SellerBooks.
+        // Dipakai oleh index.html agar hasil window.open() yang diteruskan
+        // ke Chrome/Edge eksternal tidak dianggap sebagai popup terblokir.
+        web.Settings.UserAgent = web.Settings.UserAgent + " SellerBooksAdmin/1.0";
+
         web.AddWebResourceRequestedFilter(
             "https://sellerbooks.github.io/*",
             CoreWebView2WebResourceContext.All);
