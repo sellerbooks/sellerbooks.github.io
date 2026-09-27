@@ -4,6 +4,7 @@ using Microsoft.Win32;
 using System.ComponentModel;
 using System.IO;
 using System.Net.NetworkInformation;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -127,9 +128,31 @@ public partial class MainWindow : Window
         object? sender,
         CoreWebView2NewWindowRequestedEventArgs e)
     {
+        // OAuth marketplace harus dibuka di browser Windows terpisah.
+        // Jangan menavigasikan WebView utama karena popup OAuth dapat
+        // kehilangan konteks/session dan berakhir menjadi halaman putih.
         e.Handled = true;
-        if (!string.IsNullOrWhiteSpace(e.Uri))
-            Browser.CoreWebView2.Navigate(e.Uri);
+
+        if (string.IsNullOrWhiteSpace(e.Uri))
+            return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = e.Uri,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                this,
+                "Jendela autentikasi tidak dapat dibuka.\\n\\n" + ex.Message,
+                "Integrasikan Akun",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
     }
 
     private void Web_ProcessFailed(
