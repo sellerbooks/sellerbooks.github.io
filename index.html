@@ -26795,9 +26795,20 @@ function confirmSalesColumns(){
 
 
     /* SIMPAN DATA */
-    const record =
-        saveSalesImportData();
+    let record = null;
 
+    try{
+        record = saveSalesImportData();
+    }catch(error){
+        console.error("SellerBooks: saveSalesImportData gagal:", error);
+
+        sellerBooksAlert(
+            "Data penjualan gagal disimpan.\n\n" +
+            (error?.message || String(error))
+        );
+
+        return;
+    }
 
     if(!record){
 
