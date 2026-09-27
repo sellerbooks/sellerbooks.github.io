@@ -17,13 +17,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use exact SellerBooks logo icon
+      - name: Validate unified SellerBooks SB icon
         shell: pwsh
         run: |
-          if (-not (Test-Path "windows-admin/installer/SellerBooks Admin.ico")) {
-            throw "SellerBooks Admin.ico tidak ditemukan."
+          if (-not (Test-Path "windows-admin/SellerBooks.Admin/Assets/SellerBooks-SB.ico")) {
+            throw "SellerBooks-SB.ico tidak ditemukan."
           }
-          Write-Host "Menggunakan icon SellerBooks Admin.ico yang sudah tersimpan di repository."
+          Write-Host "Menggunakan satu sumber ikon: SellerBooks-SB.ico untuk EXE, title bar, taskbar, shortcut, Start Menu, dan installer."
 
       - name: Restore
         run: dotnet restore windows-admin/SellerBooks.Admin/SellerBooks.Admin.csproj
