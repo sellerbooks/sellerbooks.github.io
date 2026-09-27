@@ -26,10 +26,11 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 Source: "..\publish-admin\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 Source: "..\MicrosoftEdgeWebView2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 Source: "..\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
+Source: "SellerBooks Admin.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{autodesktop}\SellerBooks Admin"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\SellerBooks Admin"; Filename: "{app}\{#MyAppExeName}"
+Name: "{autodesktop}\SellerBooks Admin"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\SellerBooks Admin.ico"; IconIndex: 0
+Name: "{group}\SellerBooks Admin"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\SellerBooks Admin.ico"; IconIndex: 0
 
 [Run]
 Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Memeriksa Microsoft Visual C++ Runtime..."; Flags: waituntilterminated
