@@ -12,7 +12,7 @@ DefaultDirName={autopf}\SellerBooks Admin
 DefaultGroupName=SellerBooks Admin
 OutputDir=..\artifacts
 OutputBaseFilename=SellerBooks Admin Setup
-SetupIconFile=SellerBooks Admin.ico
+SetupIconFile=..\SellerBooks.Admin\Assets\SellerBooks-SB.ico
 Compression=lzma2
 SolidCompression=yes
 ArchitecturesAllowed=x64compatible
@@ -26,10 +26,10 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 Source: "..\publish-admin\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 Source: "..\MicrosoftEdgeWebView2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
 Source: "..\vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
-Source: "SellerBooks Admin.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\SellerBooks.Admin\Assets\SellerBooks-SB.ico"; DestDir: "{app}"; DestName: "SellerBooks-SB.ico"; Flags: ignoreversion
 
 [Icons]
-Name: "{autodesktop}\SellerBooks Admin"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\SellerBooks Admin.ico"; IconIndex: 0
+Name: "{autodesktop}\SellerBooks Admin"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\SellerBooks-SB.ico"; IconIndex: 0
 Name: "{group}\SellerBooks Admin"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\SellerBooks Admin.ico"; IconIndex: 0
 
 [Run]
