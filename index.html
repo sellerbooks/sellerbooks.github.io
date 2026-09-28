@@ -19021,145 +19021,74 @@ if(!window.sellerBooksStoreMarketplaceFilterOutsideHandler){
 function integrateStoreAccount(storeId){
 
     const store = stores.find(function(item){
-
         return String(item.id) === String(storeId);
-
     });
 
     if(!store){
-
         sellerBooksAlert("Akun toko tidak ditemukan.","Integrasikan Akun");
-
         return;
-
     }
 
     const marketplace = marketplaces.find(function(item){
-
         return item.id === store.marketplaceId;
-
     });
 
-    const marketplaceName = marketplace ? marketplace.name : "Marketplace";
-
-    /*
-       Tahap 1 OAuth:
-       Shopee diarahkan ke launcher resmi SellerBooks.
-       Launcher kemudian meminta Edge Function membuat
-       authorization_url yang ditandatangani server-side.
-    */
-
-    const lowerMarketplaceName = String(marketplaceName).toLowerCase();
-
-    /*
-       OAuth Shopee dan TikTok Shop sama-sama dibuka sebagai
-       POPUP resmi marketplace. Tab utama SellerBooks tetap terbuka.
-    */
-    if(
-        lowerMarketplaceName.includes("shopee") ||
-        lowerMarketplaceName.includes("tiktok") ||
-        lowerMarketplaceName.includes("lazada") ||
-        lowerMarketplaceName.includes("blibli") ||
-        lowerMarketplaceName.includes("toco") ||
-        lowerMarketplaceName.includes("tokopedia")
-    ){
-
-        const isTikTok = lowerMarketplaceName.includes("tiktok");
-        const isLazada = lowerMarketplaceName.includes("lazada");
-        const isBlibli = lowerMarketplaceName.includes("blibli");
-        const isToco = lowerMarketplaceName.includes("toco");
-        const isTokopedia = lowerMarketplaceName.includes("tokopedia");
-
-        const launcherFile = isTikTok
-            ? "tiktok-oauth-launcher.html"
-            : isLazada
-                ? "lazada-oauth-launcher.html"
-                : isBlibli
-                    ? "blibli-oauth-launcher.html"
-                    : isToco
-                        ? "toco-oauth-launcher.html"
-                        : isTokopedia
-                            ? "tokopedia-oauth-launcher.html"
-                            : "shopee-oauth-launcher.html";
-
-        const launcherUrl =
-            new URL(
-                launcherFile +
-                "?store_id=" + encodeURIComponent(String(store.id)) +
-                "&marketplace_id=" + encodeURIComponent(String(store.marketplaceId || "")),
-                window.location.href
-            ).href;
-
-        const popupWidth = 520;
-        const popupHeight = 760;
-        const screenLeft = typeof window.screenLeft === "number" ? window.screenLeft : window.screenX;
-        const screenTop = typeof window.screenTop === "number" ? window.screenTop : window.screenY;
-        const outerWidth = window.outerWidth || window.innerWidth;
-        const outerHeight = window.outerHeight || window.innerHeight;
-
-        const popupLeft = Math.max(
-            0,
-            screenLeft + Math.round((outerWidth - popupWidth) / 2)
-        );
-        const popupTop = Math.max(
-            0,
-            screenTop + Math.round((outerHeight - popupHeight) / 2)
-        );
-
-        const popupName = isTikTok
-            ? "SellerBooksTikTokOAuth"
-            : isLazada
-                ? "SellerBooksLazadaOAuth"
-                : isBlibli
-                    ? "SellerBooksBlibliOAuth"
-                    : isToco
-                        ? "SellerBooksTocoOAuth"
-                        : isTokopedia
-                            ? "SellerBooksTokopediaOAuth"
-                            : "SellerBooksShopeeOAuth";
-
-        const oauthTab = window.open(
-            launcherUrl,
-            popupName,
-            [
-                "popup=yes",
-                "width=" + popupWidth,
-                "height=" + popupHeight,
-                "left=" + popupLeft,
-                "top=" + popupTop,
-                "resizable=yes",
-                "scrollbars=yes"
-            ].join(",")
-        );
-
-        /*
-           Windows SellerBooks Admin membuka OAuth melalui browser Windows.
-           Pada WebView2, window.open() dapat mengembalikan null walaupun
-           NewWindowRequested berhasil diteruskan ke Chrome/Edge eksternal.
-           Karena itu pesan blokir popup hanya ditampilkan pada browser biasa.
-        */
-        const isSellerBooksWindowsApp =
-            /SellerBooksAdmin\/1\.0/i.test(navigator.userAgent);
-
-        if(!oauthTab && !isSellerBooksWindowsApp){
-            sellerBooksAlert(
-                "Popup/tab baru diblokir browser. Silakan izinkan pop-up untuk SellerBooks lalu klik Integrasikan Akun lagi.",
-                "Integrasikan Akun"
-            );
-        }
-
+    if(!marketplace){
+        sellerBooksAlert("Marketplace akun toko tidak ditemukan.","Integrasikan Akun");
         return;
-
     }
 
-    sellerBooksAlert(
-        "Integrasi " +
-        marketplaceName +
-        " belum diaktifkan.",
-        "Integrasikan Akun"
+    /*
+       UNIVERSAL MARKETPLACE OAUTH
+       Semua marketplace memakai satu launcher dan satu alur UI.
+       Launcher memilih konektor OAuth berdasarkan nama marketplace.
+       Backend tetap memakai adapter resmi masing-masing marketplace.
+    */
+    const launcherUrl = new URL(
+        "marketplace-oauth-launcher.html" +
+        "?store_id=" + encodeURIComponent(String(store.id)) +
+        "&marketplace_id=" + encodeURIComponent(String(store.marketplaceId || "")) +
+        "&marketplace_name=" + encodeURIComponent(String(marketplace.name || "")),
+        window.location.href
+    ).href;
+
+    const popupWidth = 520;
+    const popupHeight = 760;
+    const screenLeft = typeof window.screenLeft === "number" ? window.screenLeft : window.screenX;
+    const screenTop = typeof window.screenTop === "number" ? window.screenTop : window.screenY;
+    const outerWidth = window.outerWidth || window.innerWidth;
+    const outerHeight = window.outerHeight || window.innerHeight;
+
+    const popupLeft = Math.max(0, screenLeft + Math.round((outerWidth - popupWidth) / 2));
+    const popupTop = Math.max(0, screenTop + Math.round((outerHeight - popupHeight) / 2));
+
+    const popupName = "SellerBooksMarketplaceOAuth";
+
+    const oauthTab = window.open(
+        launcherUrl,
+        popupName,
+        [
+            "popup=yes",
+            "width=" + popupWidth,
+            "height=" + popupHeight,
+            "left=" + popupLeft,
+            "top=" + popupTop,
+            "resizable=yes",
+            "scrollbars=yes"
+        ].join(",")
     );
 
+    const isSellerBooksWindowsApp =
+        /SellerBooksAdmin\/1\.0/i.test(navigator.userAgent);
+
+    if(!oauthTab && !isSellerBooksWindowsApp){
+        sellerBooksAlert(
+            "Popup/tab baru diblokir browser. Silakan izinkan pop-up untuk SellerBooks lalu klik Integrasikan Akun lagi.",
+            "Integrasikan Akun"
+        );
+    }
 }
+
 
 /* =====================================================
    HASIL OAUTH SHOPEE
