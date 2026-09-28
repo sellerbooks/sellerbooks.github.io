@@ -29,6 +29,7 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
 (function(){
   const SUPABASE_URL="https://fysaxpqpqexjnlpkbwap.supabase.co";
   const SUPABASE_KEY="sb_publishable_DWRaEZTcNMjhglwN3nqCOw_pua8rsjD";
+  const PROJECT_REF="fysaxpqpqexjnlpkbwap";
 
   const PROVIDERS={
     tiktok:{label:"TikTok Shop",endpoint:"sellerbooks-tiktok-oauth"},
@@ -50,6 +51,29 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
     if(n.includes("blibli"))return "blibli";
     if(n.includes("toco"))return "toco";
     if(n.includes("tokopedia"))return "tokopedia";
+    return "";
+  }
+
+  function readSellerBooksAccessToken(){
+    const exactKey="sb-"+PROJECT_REF+"-auth-token";
+    const candidates=[exactKey];
+
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i);
+      if(key && key.startsWith("sb-"+PROJECT_REF+"-auth-token") && !candidates.includes(key)){
+        candidates.push(key);
+      }
+    }
+
+    for(const key of candidates){
+      try{
+        const raw=localStorage.getItem(key);
+        if(!raw)continue;
+        const parsed=JSON.parse(raw);
+        const token=parsed?.access_token || parsed?.currentSession?.access_token || parsed?.session?.access_token;
+        if(token)return token;
+      }catch(e){}
+    }
     return "";
   }
 
@@ -76,11 +100,21 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
       document.getElementById("title").textContent="Menghubungkan "+provider.label;
       document.getElementById("message").textContent="Menyiapkan autentikasi resmi "+provider.label+"...";
 
-      const s=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
-      const client=s.createClient(SUPABASE_URL,SUPABASE_KEY);
-      const sessionResult=await client.auth.getSession();
-      const session=sessionResult?.data?.session;
-      if(!session?.access_token)throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
+      // Jangan memuat SDK Supabase di popup. Launcher ini satu-origin dengan
+      // sellerbooks.github.io, jadi session Supabase yang dibuat halaman utama
+      // dapat dibaca langsung dari localStorage. Ini menghindari error
+      // "s.createClient is not a function" dari dynamic import CDN.
+      const accessToken=readSellerBooksAccessToken();
+      if(!accessToken)throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
+
+      // Pastikan token masih valid sebelum memanggil Edge Function.
+      const userResponse=await fetch(SUPABASE_URL+"/auth/v1/user",{
+        headers:{
+          "apikey":SUPABASE_KEY,
+          "Authorization":"Bearer "+accessToken
+        }
+      });
+      if(!userResponse.ok)throw new Error("Sesi SellerBooks sudah berakhir. Silakan login kembali.");
 
       const response=await fetch(
         SUPABASE_URL+"/functions/v1/"+provider.endpoint+"?action=init",
@@ -88,7 +122,7 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
           method:"POST",
           headers:{
             "apikey":SUPABASE_KEY,
-            "Authorization":"Bearer "+session.access_token,
+            "Authorization":"Bearer "+accessToken,
             "Content-Type":"application/json"
           },
           body:JSON.stringify({
