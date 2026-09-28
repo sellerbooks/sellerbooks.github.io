@@ -19046,7 +19046,8 @@ function integrateStoreAccount(storeId){
     */
     const launcherUrl = new URL(
         "marketplace-oauth-launcher.html" +
-        "?store_id=" + encodeURIComponent(String(store.id)) +
+        "?v=20260928-2" +
+        "&store_id=" + encodeURIComponent(String(store.id)) +
         "&marketplace_id=" + encodeURIComponent(String(store.marketplaceId || "")) +
         "&marketplace_name=" + encodeURIComponent(String(marketplace.name || "")),
         window.location.href
