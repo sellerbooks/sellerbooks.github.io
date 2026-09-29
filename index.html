@@ -18673,14 +18673,6 @@ function goToStores(id){
 
     renderStoreMarketplaceFilter();
 
-    /*
-       Status integrasi dibaca dari tabel koneksi backend.
-       Render awal tetap cepat, lalu status diperbarui dari Supabase.
-    */
-    if(!skipIntegrationRefresh){
-        refreshStoreIntegrationStates(false);
-    }
-
 
     const filter =
 
@@ -19515,6 +19507,13 @@ function getStoreIntegrationConnection(store){
 ===================================================== */
 
 function renderStores(skipIntegrationRefresh){
+
+    // Muat status integrasi dari Supabase saat render normal.
+    // Render ulang dari refreshStoreIntegrationStates(true) memakai
+    // skipIntegrationRefresh=true agar tidak terjadi loop.
+    if(!skipIntegrationRefresh){
+        refreshStoreIntegrationStates(false);
+    }
 
     const grid =
 
