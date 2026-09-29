@@ -19514,7 +19514,14 @@ async function refreshStoreIntegrationStates(force){
         // Bandingkan status lama vs status terbaru. Ini menjadi fallback
         // realtime untuk WebView/browser yang tidak menerima WebSocket
         // Supabase Realtime secara konsisten.
+        //
+        // Selain CONNECTED -> CONNECTED, perubahan kebalikannya juga
+        // harus langsung diterapkan: CONNECTED -> DISCONNECTED/EXPIRED/ERROR
+        // atau koneksi hilang dari hasil RPC. Dengan begitu semua client
+        // mengikuti kondisi Supabase tanpa refresh.
         if(sellerBooksStoreConnectionsInitialized){
+
+            // 1. Status berubah menjadi CONNECTED.
             next.forEach(function(connection, key){
                 const previous = previousConnections.get(key);
 
@@ -19553,6 +19560,25 @@ async function refreshStoreIntegrationStates(force){
                             "Integrasi Berhasil"
                         );
                     }
+                }
+
+                // 2. Status berubah dari CONNECTED menjadi tidak aktif.
+                // Tidak memakai alert untuk setiap polling agar tidak spam;
+                // UI/button tetap langsung berubah di semua client.
+            });
+
+            // 3. Koneksi dihapus dari tabel. Ini penting untuk kasus
+            // tombol "Copot Integrasi" yang benar-benar menghapus row.
+            previousConnections.forEach(function(previous, key){
+                if(next.has(key)) return;
+
+                const previousStatus = String(
+                    previous?.connection_status || ""
+                ).toUpperCase();
+
+                if(previousStatus === "CONNECTED"){
+                    // Row sudah hilang dari Supabase, sehingga renderStores()
+                    // di bawah akan otomatis menampilkan "Integrasikan Akun".
                 }
             });
         }
@@ -19825,6 +19851,9 @@ function sellerBooksStartIntegrationRealtime(){
                     filter:"owner_user_id=eq." + userId
                 },
                 function(payload){
+                    // DELETE berarti koneksi benar-benar sudah dicopot.
+                    // Paksa baca ulang sekarang agar semua browser/WebView
+                    // langsung menampilkan tombol "Integrasikan Akun".
                     sellerBooksStoreConnectionsUserId = "";
                     refreshStoreIntegrationStates(true);
                 }
