@@ -19427,7 +19427,7 @@ handleShopeeOAuthResult();
    Chrome -> OAuth -> APK -> WebView
 ===================================================== */
 
-window.onMarketplaceOAuthReturn = function(marketplace, status, reason){
+window.onMarketplaceOAuthReturn = function(marketplace, status, reason, connectionId){
 
     marketplace = String(marketplace || "").toLowerCase();
     status = String(status || "").toLowerCase();
@@ -19459,6 +19459,15 @@ window.onMarketplaceOAuthReturn = function(marketplace, status, reason){
                 callbackStoreId,
                 marketplace
             );
+        }
+
+        /*
+           Gunakan connection_id dari callback sebagai jalur langsung.
+           Dengan ini kartu berubah segera setelah backend menyelesaikan
+           OAuth, tanpa menunggu Realtime atau polling.
+        */
+        if(connectionId){
+            sellerBooksApplyOAuthConnectionState(connectionId);
         }
 
         sellerBooksAlert(
@@ -19904,6 +19913,55 @@ function sellerBooksIntegrationMarketplaceLabel(marketplaceId, marketplaceName){
     }
 
     return String(marketplaceName || marketplaceId || "Marketplace");
+}
+
+async function sellerBooksApplyOAuthConnectionState(connectionId){
+    const id = String(connectionId || "").trim();
+    if(!id || !sellerBooksAuthUser || !sellerBooksSupabase){
+        return false;
+    }
+
+    try{
+        const {data,error} = await sellerBooksSupabase
+            .from("sellerbooks_api_connections")
+            .select(
+                "id,store_id,marketplace_id,marketplace,connection_status,sync_enabled,external_store_id,updated_at"
+            )
+            .eq("id", id)
+            .maybeSingle();
+
+        if(error) throw error;
+        if(!data) return false;
+
+        const key = sellerBooksStoreConnectionKey(
+            data.store_id,
+            data.marketplace_id
+        );
+
+        const next = new Map(sellerBooksStoreConnections);
+
+        if(
+            String(data.connection_status || "").toUpperCase() === "CONNECTED"
+        ){
+            next.set(key, data);
+        }else{
+            next.delete(key);
+        }
+
+        sellerBooksStoreConnections = next;
+        sellerBooksStoreConnectionsUserId =
+            String(sellerBooksAuthUser.id || "");
+        sellerBooksStoreConnectionsInitialized = true;
+
+        if(typeof renderStores === "function"){
+            renderStores(true);
+        }
+
+        return String(data.connection_status || "").toUpperCase() === "CONNECTED";
+    }catch(error){
+        console.warn("Status koneksi OAuth langsung gagal dibaca:", error);
+        return false;
+    }
 }
 
 function sellerBooksHandleIntegrationRealtimePayload(payload){
