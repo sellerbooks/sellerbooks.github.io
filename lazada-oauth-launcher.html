@@ -84,7 +84,42 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
                 );
             }
 
-            window.location.replace(data.authorization_url);
+            // Lazada OAuth harus berjalan di browser top-level.
+            // Android WebView (APK) tidak dipakai untuk mempertahankan session Seller Center,
+            // karena pada WebView Lazada dapat mengembalikan user langsung ke Seller Center/Produk.
+            // Buka URL OAuth yang sama di Chrome Android dari WebView; Chrome/desktop
+            // tetap memakai alur normal tanpa perubahan.
+            const ua=navigator.userAgent||"";
+            const isAndroidWebView=/Android/i.test(ua)&&/(;\\s*wv\\)|\\bwv\\b|SellerBooksAPK/i.test(ua);
+
+            if(isAndroidWebView){
+                const encodedAuthUrl=encodeURIComponent(data.authorization_url);
+                const intentUrl=
+                    "intent://"+data.authorization_url.replace(/^https?:\\/\\//,"")+
+                    "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url="+
+                    encodedAuthUrl+";end";
+
+                // First attempt: Android Chrome intent. If the host blocks intent URLs,
+                // fall back to the normal top-level navigation.
+                let launched=false;
+                const fallbackTimer=setTimeout(function(){
+                    if(!launched){
+                        window.location.href=data.authorization_url;
+                    }
+                },1200);
+
+                const onVisibility=function(){
+                    launched=true;
+                    clearTimeout(fallbackTimer);
+                    document.removeEventListener("visibilitychange",onVisibility);
+                };
+                document.addEventListener("visibilitychange",onVisibility);
+
+                window.location.href=intentUrl;
+            }else{
+                // Chrome mobile and desktop keep the existing OAuth handoff unchanged.
+                window.location.replace(data.authorization_url);
+            }
 
         }catch(error){
             console.error(error);
