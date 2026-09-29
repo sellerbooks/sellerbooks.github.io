@@ -25,6 +25,7 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
     const params=new URLSearchParams(window.location.search);
     const result=params.get("sellerbooks_tiktok_oauth")||"error";
     const reason=params.get("reason")||"OAUTH_FAILED";
+    const connectionId=params.get("connection_id")||"";
     const missing=params.get("missing_scopes")||"";
     const target=window.location.origin;
 
@@ -33,7 +34,8 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
     if(result==="success"){
         payload={
             source:"sellerbooks-tiktok-oauth",
-            status:"success"
+            status:"success",
+            connection_id:connectionId
         };
     }else if(result==="partial"){
         payload={
@@ -82,6 +84,10 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
             "sellerbooks://oauth-callback" +
             "?marketplace=tiktok" +
             "&status=" + encodeURIComponent(payload.status || "error");
+
+        if(payload.connection_id){
+            deepLink += "&connection_id=" + encodeURIComponent(payload.connection_id);
+        }
 
         if(payload.reason){
             deepLink += "&reason=" + encodeURIComponent(payload.reason);
