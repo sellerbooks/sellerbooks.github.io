@@ -19833,10 +19833,16 @@ function sellerBooksIntegrationMarketplaceLabel(marketplaceId, marketplaceName){
 }
 
 function sellerBooksHandleIntegrationRealtimePayload(payload){
+    const eventType = String(payload?.eventType || "").toUpperCase();
     const record = payload?.new || {};
     const oldRecord = payload?.old || {};
 
-    const storeId = String(record.store_id || oldRecord.store_id || "");
+    const storeId = String(
+        record.store_id ||
+        oldRecord.store_id ||
+        ""
+    );
+
     const marketplaceId = String(
         record.marketplace_id ||
         oldRecord.marketplace_id ||
@@ -19847,6 +19853,52 @@ function sellerBooksHandleIntegrationRealtimePayload(payload){
         return;
     }
 
+    /*
+       REALTIME HARDENING
+       Jangan menunggu RPC/polling untuk mengubah UI.
+       Begitu event Supabase masuk, langsung terapkan row tersebut
+       ke Map lokal dan render kartu. Setelah itu tetap lakukan RPC
+       sebagai verifikasi/sinkronisasi penuh.
+       
+       Ini penting untuk:
+       - Chrome -> Android WebView
+       - Android WebView -> Chrome
+       - Windows WebView -> Chrome
+       - CONNECTED -> DISCONNECTED
+       - DISCONNECTED -> CONNECTED
+    */
+    const key = sellerBooksStoreConnectionKey(
+        storeId,
+        marketplaceId
+    );
+
+    const nextConnections =
+        new Map(sellerBooksStoreConnections);
+
+    if(eventType === "DELETE"){
+        nextConnections.delete(key);
+    }else if(record && record.id){
+        nextConnections.set(key, record);
+    }
+
+    sellerBooksStoreConnections = nextConnections;
+    sellerBooksStoreConnectionsUserId =
+        String(sellerBooksAuthUser?.id || "");
+
+    sellerBooksStoreConnectionsInitialized = true;
+
+    if(typeof renderStores === "function"){
+        renderStores(true);
+    }
+
+    /*
+       Verifikasi ulang dari database. Jika WebView kehilangan event
+       atau event datang sebelum sesi siap, polling/RPC tetap menjadi
+       fallback.
+    */
+    sellerBooksStoreConnectionsUserId = "";
+    refreshStoreIntegrationStates(true);
+
     const newStatus = String(
         record.connection_status || ""
     ).toUpperCase();
@@ -19854,10 +19906,6 @@ function sellerBooksHandleIntegrationRealtimePayload(payload){
     const oldStatus = String(
         oldRecord.connection_status || ""
     ).toUpperCase();
-
-    // Selalu sinkronkan tampilan terlebih dahulu.
-    sellerBooksStoreConnectionsUserId = "";
-    refreshStoreIntegrationStates(true);
 
     // Notifikasi hanya ketika status benar-benar berubah menjadi CONNECTED.
     if(
@@ -19867,17 +19915,13 @@ function sellerBooksHandleIntegrationRealtimePayload(payload){
         return;
     }
 
-    const key = sellerBooksStoreConnectionKey(
-        storeId,
-        marketplaceId
-    );
-
     const suppressedUntil =
         sellerBooksIntegrationRealtimeSuppress.get(key) || 0;
 
     const marketplaceSuppressUntil =
         sellerBooksIntegrationRealtimeSuppress.get(
-            "__MARKETPLACE__|" + String(marketplaceId).toLowerCase()
+            "__MARKETPLACE__|" +
+            String(marketplaceId).toLowerCase()
         ) || 0;
 
     if(
@@ -19886,7 +19930,8 @@ function sellerBooksHandleIntegrationRealtimePayload(payload){
     ){
         sellerBooksIntegrationRealtimeSuppress.delete(key);
         sellerBooksIntegrationRealtimeSuppress.delete(
-            "__MARKETPLACE__|" + String(marketplaceId).toLowerCase()
+            "__MARKETPLACE__|" +
+            String(marketplaceId).toLowerCase()
         );
         return;
     }
