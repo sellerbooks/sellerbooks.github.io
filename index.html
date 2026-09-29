@@ -2374,6 +2374,34 @@ td{
 
 }
 
+.store-integrated-disabled{
+    background:#e5e7eb !important;
+    color:#6b7280 !important;
+    cursor:not-allowed !important;
+    opacity:1;
+}
+
+.store-integration-success{
+    margin-top:10px;
+    padding:8px 10px;
+    border-radius:8px;
+    background:#ecfdf5;
+    color:#15803d;
+    border:1px solid #bbf7d0;
+    font-size:11px;
+    font-weight:700;
+    text-align:center;
+}
+
+.store-disconnect-button{
+    background:#fff7ed;
+    color:#c2410c;
+}
+
+.store-disconnect-button:hover{
+    background:#ffedd5;
+}
+
 
 .store-edit-button{
 
@@ -18645,6 +18673,14 @@ function goToStores(id){
 
     renderStoreMarketplaceFilter();
 
+    /*
+       Status integrasi dibaca dari tabel koneksi backend.
+       Render awal tetap cepat, lalu status diperbarui dari Supabase.
+    */
+    if(!skipIntegrationRefresh){
+        refreshStoreIntegrationStates(false);
+    }
+
 
     const filter =
 
@@ -19018,6 +19054,80 @@ if(!window.sellerBooksStoreMarketplaceFilterOutsideHandler){
    INTEGRASI AKUN TOKO
 ===================================================== */
 
+
+
+/* =====================================================
+   COPOT INTEGRASI AKUN TOKO
+===================================================== */
+
+async function disconnectStoreAccount(storeId){
+
+    const store = stores.find(function(item){
+        return String(item.id) === String(storeId);
+    });
+
+    if(!store){
+        sellerBooksAlert("Akun toko tidak ditemukan.","Copot Integrasi");
+        return;
+    }
+
+    const marketplace = marketplaces.find(function(item){
+        return String(item.id) === String(store.marketplaceId);
+    });
+
+    if(!marketplace){
+        sellerBooksAlert("Marketplace akun toko tidak ditemukan.","Copot Integrasi");
+        return;
+    }
+
+    const connection = getStoreIntegrationConnection(store);
+
+    if(!connection ||
+       String(connection.connection_status || "").toUpperCase() !== "CONNECTED"){
+        await refreshStoreIntegrationStates(true);
+        return;
+    }
+
+    const confirmed = await sellerBooksConfirm(
+        "Copot integrasi " + marketplace.name + " dari akun toko \"" + store.name + "\"?\n\nSetelah dicopot, akun ini harus diotorisasi ulang jika ingin terhubung kembali.",
+        "Copot Integrasi"
+    );
+
+    if(!confirmed) return;
+
+    try{
+        const {data,error} = await sellerBooksSupabase.rpc(
+            "sellerbooks_api_disconnect_marketplace",
+            {
+                p_connection_id: connection.id,
+                p_store_id: String(store.id),
+                p_marketplace_id: String(store.marketplaceId)
+            }
+        );
+
+        if(error) throw error;
+
+        if(!data?.ok){
+            throw new Error("Koneksi tidak berhasil dicopot.");
+        }
+
+        sellerBooksStoreConnectionsUserId = "";
+        await refreshStoreIntegrationStates(true);
+
+        sellerBooksAlert(
+            "Integrasi " + marketplace.name + " berhasil dicopot.",
+            "Copot Integrasi"
+        );
+    }catch(error){
+        console.error("Copot integrasi gagal:",error);
+        sellerBooksAlert(
+            "Integrasi gagal dicopot.\n\n" +
+            (error?.message || "Terjadi kesalahan pada server."),
+            "Copot Integrasi"
+        );
+    }
+}
+
 function integrateStoreAccount(storeId){
 
     const store = stores.find(function(item){
@@ -19194,15 +19304,9 @@ if(!window.sellerBooksTikTokOAuthMessageHandler){
                 "Integrasikan Akun"
             );
 
-            if(typeof loadStores === "function"){
-                setTimeout(function(){
-                    loadStores();
-                },300);
-            }else if(typeof renderStores === "function"){
-                setTimeout(function(){
-                    renderStores();
-                },300);
-            }
+            setTimeout(function(){
+                refreshStoreIntegrationStates(true);
+            },300);
 
             return;
         }
@@ -19253,15 +19357,9 @@ if(!window.sellerBooksLazadaOAuthMessageHandler){
                 "Integrasikan Akun"
             );
 
-            if(typeof loadStores === "function"){
-                setTimeout(function(){
-                    loadStores();
-                },300);
-            }else if(typeof renderStores === "function"){
-                setTimeout(function(){
-                    renderStores();
-                },300);
-            }
+            setTimeout(function(){
+                refreshStoreIntegrationStates(true);
+            },300);
 
             return;
         }
@@ -19293,10 +19391,79 @@ handleShopeeOAuthResult();
 
 
 /* =====================================================
+   STATUS INTEGRASI AKUN TOKO
+===================================================== */
+
+let sellerBooksStoreConnections = new Map();
+let sellerBooksStoreConnectionsUserId = "";
+let sellerBooksStoreConnectionsLoading = false;
+
+function sellerBooksStoreConnectionKey(storeId, marketplaceId){
+    return String(storeId || "") + "|" + String(marketplaceId || "");
+}
+
+async function refreshStoreIntegrationStates(force){
+    if(!sellerBooksAuthUser) return;
+
+    const userId = String(sellerBooksAuthUser.id || "");
+    if(!userId) return;
+
+    if(sellerBooksStoreConnectionsLoading) return;
+
+    if(!force && sellerBooksStoreConnectionsUserId === userId){
+        return;
+    }
+
+    sellerBooksStoreConnectionsLoading = true;
+
+    try{
+        const {data,error} = await sellerBooksSupabase.rpc(
+            "sellerbooks_api_list_connections"
+        );
+
+        if(error) throw error;
+
+        const next = new Map();
+
+        (Array.isArray(data) ? data : []).forEach(function(connection){
+            next.set(
+                sellerBooksStoreConnectionKey(
+                    connection.store_id,
+                    connection.marketplace_id
+                ),
+                connection
+            );
+        });
+
+        sellerBooksStoreConnections = next;
+        sellerBooksStoreConnectionsUserId = userId;
+
+        if(force && typeof renderStores === "function"){
+            renderStores(true);
+        }
+    }catch(error){
+        console.warn("Status integrasi akun toko gagal dimuat:",error);
+    }finally{
+        sellerBooksStoreConnectionsLoading = false;
+    }
+}
+
+function getStoreIntegrationConnection(store){
+    if(!store) return null;
+
+    return sellerBooksStoreConnections.get(
+        sellerBooksStoreConnectionKey(
+            store.id,
+            store.marketplaceId
+        )
+    ) || null;
+}
+
+/* =====================================================
    RENDER AKUN TOKO
 ===================================================== */
 
-function renderStores(){
+function renderStores(skipIntegrationRefresh){
 
     const grid =
 
@@ -19474,6 +19641,38 @@ function renderStores(){
 
             : "inactive";
 
+        const integration = getStoreIntegrationConnection(store);
+        const isIntegrated =
+            String(integration?.connection_status || "").toUpperCase() === "CONNECTED";
+
+        const integrationStatusHtml = isIntegrated
+            ? `
+                <div class="store-integration-success">
+                    ✓ Sudah terintegrasi sukses
+                </div>
+              `
+            : "";
+
+        const integrationButtonHtml = isIntegrated
+            ? `
+                <button
+                    type="button"
+                    class="store-action-button store-disconnect-button"
+                    onclick="disconnectStoreAccount('${store.id}')"
+                    title="Copot integrasi akun toko"
+                >
+                    ⛓ Copot Integrasi
+                </button>
+              `
+            : `
+                <button
+                    type="button"
+                    class="store-action-button store-integrate-button"
+                    onclick="integrateStoreAccount('${store.id}')"
+                >
+                    🔗 Integrasikan Akun
+                </button>
+              `;
 
         grid.innerHTML += `
 
@@ -19592,20 +19791,11 @@ function renderStores(){
                 </div>
 
 
+                ${integrationStatusHtml}
+
                 <div class="store-actions">
 
-
-                    <button
-                        class="
-                            store-action-button
-                            store-integrate-button
-                        "
-                        onclick="integrateStoreAccount('${store.id}')"
-                    >
-
-                        🔗 Integrasikan Akun
-
-                    </button>
+                    ${integrationButtonHtml}
 
 
                     <button
