@@ -19434,9 +19434,21 @@ window.onMarketplaceOAuthReturn = function(marketplace, status, reason){
             "Integrasikan Akun"
         );
 
-        setTimeout(function(){
-            refreshStoreIntegrationStates(true);
-        }, 200);
+        /*
+           Setelah OAuth sukses, koneksi sudah ditulis ke Supabase.
+           Jangan hanya melakukan satu refresh karena callback popup
+           bisa selesai sedikit lebih cepat daripada state sesi utama.
+           Paksa sinkronisasi beberapa kali sampai tombol kartu berubah
+           menjadi "Copot Integrasi".
+        */
+        sellerBooksStoreConnectionsUserId = "";
+
+        [200, 700, 1500, 3000].forEach(function(delay){
+            setTimeout(function(){
+                sellerBooksStoreConnectionsUserId = "";
+                refreshStoreIntegrationStates(true);
+            }, delay);
+        });
 
         return;
     }
@@ -19466,6 +19478,7 @@ window.onMarketplaceOAuthReturn = function(marketplace, status, reason){
 let sellerBooksStoreConnections = new Map();
 let sellerBooksStoreConnectionsUserId = "";
 let sellerBooksStoreConnectionsLoading = false;
+let sellerBooksStoreConnectionsQueued = false;
 let sellerBooksStoreConnectionsInitialized = false;
 let sellerBooksIntegrationStatusPollingTimer = null;
 
@@ -19479,7 +19492,21 @@ async function refreshStoreIntegrationStates(force){
     const userId = String(sellerBooksAuthUser.id || "");
     if(!userId) return;
 
-    if(sellerBooksStoreConnectionsLoading) return;
+    if(sellerBooksStoreConnectionsLoading){
+        /*
+           Jika refresh berikutnya datang ketika request sebelumnya masih
+           berjalan, jadwalkan satu refresh ulang agar status CONNECTED
+           tidak terlewat setelah OAuth callback.
+        */
+        if(force && !sellerBooksStoreConnectionsQueued){
+            sellerBooksStoreConnectionsQueued = true;
+            setTimeout(function(){
+                sellerBooksStoreConnectionsQueued = false;
+                refreshStoreIntegrationStates(true);
+            }, 350);
+        }
+        return;
+    }
 
     if(!force && sellerBooksStoreConnectionsUserId === userId){
         return;
