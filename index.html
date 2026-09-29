@@ -19369,7 +19369,20 @@ if(!window.sellerBooksLazadaOAuthMessageHandler){
 
         if(data.status === "success"){
 
-            sellerBooksIntegrationRealtimeSuppressMarketplace("lazada");
+            /*
+               Callback desktop sudah menampilkan notif sukses.
+               Tandai supaya event realtime yang datang sesudahnya
+               tidak menampilkan notif kedua.
+            */
+            const callbackStoreId =
+                String(data.store_id || "");
+
+            if(callbackStoreId){
+                sellerBooksMarkIntegrationSuccessNotice(
+                    callbackStoreId,
+                    "lazada"
+                );
+            }
 
             sellerBooksAlert(
                 "Akun Lazada berhasil terhubung ke SellerBooks.",
@@ -19441,7 +19454,12 @@ window.onMarketplaceOAuthReturn = function(marketplace, status, reason){
             );
         }
 
-        sellerBooksIntegrationRealtimeSuppressMarketplace(marketplace);
+        if(callbackStoreId && marketplace){
+            sellerBooksMarkIntegrationSuccessNotice(
+                callbackStoreId,
+                marketplace
+            );
+        }
 
         sellerBooksAlert(
             "Akun " + marketplaceLabel + " berhasil terhubung ke SellerBooks.",
@@ -19747,6 +19765,62 @@ function sellerBooksStopIntegrationStatusPolling(){
 let sellerBooksIntegrationRealtimeChannel = null;
 let sellerBooksIntegrationRealtimeSuppress = new Map();
 
+/*
+   Anti-duplicate notification:
+   callback OAuth dan Supabase Realtime sama-sama dapat memberitahu
+   bahwa koneksi berhasil. Simpan waktu notifikasi langsung agar
+   realtime hanya menjadi fallback, bukan ikut membungkam notifikasi.
+*/
+let sellerBooksIntegrationSuccessNoticeAt = new Map();
+
+function sellerBooksMarkIntegrationSuccessNotice(
+    storeId,
+    marketplaceId
+){
+    const key = sellerBooksStoreConnectionKey(
+        storeId,
+        marketplaceId
+    );
+
+    sellerBooksIntegrationSuccessNoticeAt.set(
+        key,
+        Date.now()
+    );
+
+    setTimeout(function(){
+        const noticedAt =
+            sellerBooksIntegrationSuccessNoticeAt.get(key) || 0;
+
+        if(noticedAt && Date.now() - noticedAt >= 10000){
+            sellerBooksIntegrationSuccessNoticeAt.delete(key);
+        }
+    },10500);
+}
+
+function sellerBooksShouldShowIntegrationSuccessNotice(
+    storeId,
+    marketplaceId
+){
+    const key = sellerBooksStoreConnectionKey(
+        storeId,
+        marketplaceId
+    );
+
+    const noticedAt =
+        sellerBooksIntegrationSuccessNoticeAt.get(key) || 0;
+
+    if(noticedAt && Date.now() - noticedAt < 10000){
+        return false;
+    }
+
+    sellerBooksIntegrationSuccessNoticeAt.set(
+        key,
+        Date.now()
+    );
+
+    return true;
+}
+
 function sellerBooksStopIntegrationRealtime(){
     if(sellerBooksIntegrationRealtimeChannel){
         sellerBooksSupabase.removeChannel(
@@ -19915,24 +19989,15 @@ function sellerBooksHandleIntegrationRealtimePayload(payload){
         return;
     }
 
-    const suppressedUntil =
-        sellerBooksIntegrationRealtimeSuppress.get(key) || 0;
-
-    const marketplaceSuppressUntil =
-        sellerBooksIntegrationRealtimeSuppress.get(
-            "__MARKETPLACE__|" +
-            String(marketplaceId).toLowerCase()
-        ) || 0;
-
-    if(
-        suppressedUntil > Date.now() ||
-        marketplaceSuppressUntil > Date.now()
-    ){
-        sellerBooksIntegrationRealtimeSuppress.delete(key);
-        sellerBooksIntegrationRealtimeSuppress.delete(
-            "__MARKETPLACE__|" +
-            String(marketplaceId).toLowerCase()
-        );
+    /*
+       Jangan membungkam event realtime hanya karena callback OAuth
+       juga mengirim notifikasi. Realtime tetap menjadi fallback.
+       Hanya cegah notifikasi ganda dalam window 10 detik.
+    */
+    if(!sellerBooksShouldShowIntegrationSuccessNotice(
+        storeId,
+        marketplaceId
+    )){
         return;
     }
 
