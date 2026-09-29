@@ -19520,7 +19520,15 @@ let sellerBooksStoreConnectionsInitialized = false;
 let sellerBooksIntegrationStatusPollingTimer = null;
 
 function sellerBooksStoreConnectionKey(storeId, marketplaceId){
-    return String(storeId || "") + "|" + String(marketplaceId || "");
+    return String(storeId || "") + "|" + String(marketplaceId || "").trim().toLowerCase();
+}
+
+function sellerBooksConnectionMarketplaceKey(connection){
+    if(!connection) return "";
+    return sellerBooksCanonicalMarketplaceId(
+        connection.marketplace_id,
+        connection.marketplace
+    );
 }
 
 async function refreshStoreIntegrationStates(force){
@@ -19561,10 +19569,17 @@ async function refreshStoreIntegrationStates(force){
         const next = new Map();
 
         (Array.isArray(data) ? data : []).forEach(function(connection){
+            const canonicalMarketplaceId =
+                sellerBooksConnectionMarketplaceKey(connection);
+
+            if(!canonicalMarketplaceId){
+                return;
+            }
+
             next.set(
                 sellerBooksStoreConnectionKey(
                     connection.store_id,
-                    connection.marketplace_id
+                    canonicalMarketplaceId
                 ),
                 connection
             );
@@ -19929,9 +19944,16 @@ async function sellerBooksApplyOAuthConnectionState(connectionId){
         if(error) throw error;
         if(!data) return false;
 
+        const canonicalMarketplaceId =
+            sellerBooksConnectionMarketplaceKey(data);
+
+        if(!canonicalMarketplaceId){
+            return false;
+        }
+
         const key = sellerBooksStoreConnectionKey(
             data.store_id,
-            data.marketplace_id
+            canonicalMarketplaceId
         );
 
         const next = new Map(sellerBooksStoreConnections);
@@ -19971,10 +19993,15 @@ function sellerBooksHandleIntegrationRealtimePayload(payload){
         ""
     );
 
-    const marketplaceId = String(
+    const rawMarketplaceId = String(
         record.marketplace_id ||
         oldRecord.marketplace_id ||
         ""
+    );
+
+    const marketplaceId = sellerBooksCanonicalMarketplaceId(
+        rawMarketplaceId,
+        record.marketplace || oldRecord.marketplace
     );
 
     if(!storeId || !marketplaceId){
@@ -19995,9 +20022,15 @@ function sellerBooksHandleIntegrationRealtimePayload(payload){
        - CONNECTED -> DISCONNECTED
        - DISCONNECTED -> CONNECTED
     */
+    const canonicalMarketplaceId =
+        sellerBooksCanonicalMarketplaceId(
+            marketplaceId,
+            record.marketplace || oldRecord.marketplace
+        );
+
     const key = sellerBooksStoreConnectionKey(
         storeId,
-        marketplaceId
+        canonicalMarketplaceId
     );
 
     const nextConnections =
