@@ -19100,7 +19100,21 @@ async function disconnectStoreAccount(storeId){
             {
                 p_connection_id: connection.id,
                 p_store_id: String(store.id),
-                p_marketplace_id: String(store.marketplaceId)
+                /*
+                   sellerbooks_api_connections memakai marketplace_id
+                   kanonik konektor (contoh: "lazada", "tiktok"),
+                   sedangkan store.marketplaceId adalah ID marketplace
+                   milik user (contoh: "marketplace_...").
+                   Gunakan ID dari row koneksi yang sudah ditemukan
+                   oleh getStoreIntegrationConnection().
+                */
+                p_marketplace_id: String(
+                    connection.marketplace_id ||
+                    sellerBooksCanonicalMarketplaceId(
+                        store.marketplaceId,
+                        marketplace.name
+                    )
+                )
             }
         );
 
