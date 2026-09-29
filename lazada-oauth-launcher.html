@@ -116,8 +116,20 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
                 document.addEventListener("visibilitychange",onVisibility);
 
                 window.location.href=intentUrl;
+            }else if(/Android/i.test(ua) && /Chrome\\//i.test(ua)){
+                // Mobile Chrome: keep the server-side state/callback exactly the same,
+                // but do not force-refresh Lazada's browser cookie on every mobile
+                // authorization start. Lazada documents force_auth as optional.
+                // Desktop remains completely unchanged.
+                let mobileChromeUrl=data.authorization_url;
+                try{
+                    const u=new URL(data.authorization_url);
+                    u.searchParams.delete("force_auth");
+                    mobileChromeUrl=u.toString();
+                }catch(_){}
+                window.location.replace(mobileChromeUrl);
             }else{
-                // Chrome mobile and desktop keep the existing OAuth handoff unchanged.
+                // Desktop and non-Chrome clients keep the existing OAuth handoff unchanged.
                 window.location.replace(data.authorization_url);
             }
 
