@@ -19293,12 +19293,14 @@ function handleShopeeOAuthResult(){
 ===================================================== */
 
 /* =====================================================
-   HASIL OAUTH TIKTOK SHOP DARI POPUP
+   HASIL OAUTH MARKETPLACE DARI POPUP
+   Mekanisme diseragamkan mengikuti alur TikTok Shop
+   yang sudah terbukti realtime + tombol Copot berjalan.
 ===================================================== */
 
-if(!window.sellerBooksTikTokOAuthMessageHandler){
+if(!window.sellerBooksMarketplaceOAuthMessageHandler){
 
-    window.sellerBooksTikTokOAuthMessageHandler = true;
+    window.sellerBooksMarketplaceOAuthMessageHandler = true;
 
     window.addEventListener("message", function(event){
 
@@ -19307,107 +19309,100 @@ if(!window.sellerBooksTikTokOAuthMessageHandler){
         }
 
         const data = event.data || {};
+        const source = String(data.source || "");
 
-        if(data.source !== "sellerbooks-tiktok-oauth"){
+        const marketplaceMatch =
+            source.match(/^sellerbooks-(tiktok|shopee|lazada|toco|tokopedia|blibli)-oauth$/i);
+
+        if(!marketplaceMatch){
             return;
         }
 
-        if(data.status === "success"){
+        const marketplace =
+            String(marketplaceMatch[1] || "").toLowerCase();
 
-            sellerBooksIntegrationRealtimeSuppressMarketplace("tiktok");
+        const labels = {
+            tiktok:"TikTok Shop",
+            shopee:"Shopee",
+            lazada:"Lazada",
+            toco:"Toco",
+            tokopedia:"Tokopedia",
+            blibli:"Blibli"
+        };
 
-            sellerBooksAlert(
-                "Akun TikTok Shop berhasil terhubung ke SellerBooks.",
-                "Integrasikan Akun"
-            );
-
-            setTimeout(function(){
-                refreshStoreIntegrationStates(true);
-            },300);
-
-            return;
-        }
-
-        const reason = data.reason || "OAUTH_FAILED";
-
-        if(reason === "TIKTOK_ACCOUNT_ALREADY_CONNECTED"){
-            sellerBooksAlert(
-                "Akun TikTok Shop ini sudah terhubung ke akun atau toko SellerBooks lain.",
-                "Integrasikan Akun"
-            );
-        }else{
-            sellerBooksAlert(
-                "Integrasi TikTok Shop gagal.\n\nKode: " + reason,
-                "Integrasikan Akun"
-            );
-        }
-
-    });
-
-}
-
-
-/* =====================================================
-   HASIL OAUTH LAZADA DARI POPUP
-===================================================== */
-
-if(!window.sellerBooksLazadaOAuthMessageHandler){
-
-    window.sellerBooksLazadaOAuthMessageHandler = true;
-
-    window.addEventListener("message", function(event){
-
-        if(event.origin !== window.location.origin){
-            return;
-        }
-
-        const data = event.data || {};
-
-        if(data.source !== "sellerbooks-lazada-oauth"){
-            return;
-        }
+        const marketplaceLabel =
+            labels[marketplace] || "Marketplace";
 
         if(data.status === "success"){
 
             /*
-               Callback desktop sudah menampilkan notif sukses.
-               Tandai supaya event realtime yang datang sesudahnya
-               tidak menampilkan notif kedua.
+               INI SENGAJA MENGIKUTI MEKANISME TIKTOK SHOP:
+               1. Callback kirim hasil ke window utama.
+               2. Langsung tampilkan notif sukses.
+               3. Langsung sinkronkan status koneksi.
+               4. Jika callback membawa connection_id, gunakan row
+                  tersebut sebagai sumber kebenaran utama.
+               5. Tetap jalankan refresh sebagai verifikasi/fallback.
             */
-            const callbackStoreId =
-                String(data.store_id || "");
-
-            if(callbackStoreId){
-                sellerBooksMarkIntegrationSuccessNotice(
-                    callbackStoreId,
-                    "lazada"
-                );
-            }
 
             sellerBooksAlert(
-                "Akun Lazada berhasil terhubung ke SellerBooks.",
+                "Akun " + marketplaceLabel +
+                " berhasil terhubung ke SellerBooks.",
                 "Integrasikan Akun"
             );
 
+            if(data.connection_id){
+
+                sellerBooksApplyOAuthConnectionState(
+                    data.connection_id
+                ).catch(function(error){
+                    console.warn(
+                        "Sinkronisasi OAuth " + marketplaceLabel + " gagal:",
+                        error
+                    );
+                });
+
+            }
+
             setTimeout(function(){
+
+                sellerBooksStoreConnectionsUserId = "";
+
                 refreshStoreIntegrationStates(true);
+
             },300);
 
             return;
         }
 
-        const reason = data.reason || "OAUTH_FAILED";
+        const reason =
+            String(data.reason || "OAUTH_FAILED");
 
-        if(reason === "LAZADA_ACCOUNT_ALREADY_CONNECTED"){
+        const alreadyConnectedReasons = {
+            tiktok:"TIKTOK_ACCOUNT_ALREADY_CONNECTED",
+            shopee:"SHOPEE_ACCOUNT_ALREADY_CONNECTED",
+            lazada:"LAZADA_ACCOUNT_ALREADY_CONNECTED",
+            toco:"TOCO_ACCOUNT_ALREADY_CONNECTED",
+            tokopedia:"TOKOPEDIA_ACCOUNT_ALREADY_CONNECTED",
+            blibli:"BLIBLI_ACCOUNT_ALREADY_CONNECTED"
+        };
+
+        if(reason === alreadyConnectedReasons[marketplace]){
+
             sellerBooksAlert(
-                "Akun Lazada ini sudah terhubung ke akun atau toko SellerBooks lain.",
+                "Akun " + marketplaceLabel +
+                " ini sudah terhubung ke akun atau toko SellerBooks lain.",
                 "Integrasikan Akun"
             );
+
         }else{
+
             sellerBooksAlert(
-                "Integrasi Lazada gagal.\n\nKode: " + reason,
+                "Integrasi " + marketplaceLabel +
+                " gagal.\n\nKode: " + reason,
                 "Integrasikan Akun"
             );
+
         }
 
     });
@@ -19416,7 +19411,8 @@ if(!window.sellerBooksLazadaOAuthMessageHandler){
 
 
 /* =====================================================
-   HASIL OAUTH SHOPEE
+   HASIL OAUTH SHOPEE/LINK LAMA
+   Tetap dipanggil untuk kompatibilitas callback URL lama.
 ===================================================== */
 
 handleShopeeOAuthResult();
