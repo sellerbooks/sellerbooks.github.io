@@ -19209,6 +19209,8 @@ function handleShopeeOAuthResult(){
 
     if(result === "success"){
 
+        sellerBooksIntegrationRealtimeSuppressMarketplace("shopee");
+
         sellerBooksAlert(
             "Akun Shopee berhasil terhubung ke SellerBooks.",
             "Integrasikan Akun"
@@ -19293,6 +19295,8 @@ if(!window.sellerBooksTikTokOAuthMessageHandler){
 
         if(data.status === "success"){
 
+            sellerBooksIntegrationRealtimeSuppressMarketplace("tiktok");
+
             sellerBooksAlert(
                 "Akun TikTok Shop berhasil terhubung ke SellerBooks.",
                 "Integrasikan Akun"
@@ -19345,6 +19349,8 @@ if(!window.sellerBooksLazadaOAuthMessageHandler){
         }
 
         if(data.status === "success"){
+
+            sellerBooksIntegrationRealtimeSuppressMarketplace("lazada");
 
             sellerBooksAlert(
                 "Akun Lazada berhasil terhubung ke SellerBooks.",
@@ -19415,6 +19421,8 @@ window.onMarketplaceOAuthReturn = function(marketplace, status, reason){
                 marketplace
             );
         }
+
+        sellerBooksIntegrationRealtimeSuppressMarketplace(marketplace);
 
         sellerBooksAlert(
             "Akun " + marketplaceLabel + " berhasil terhubung ke SellerBooks.",
@@ -19536,6 +19544,28 @@ function sellerBooksStopIntegrationRealtime(){
     }
 }
 
+function sellerBooksIntegrationRealtimeSuppressMarketplace(
+    marketplaceId
+){
+    const key =
+        "__MARKETPLACE__|" +
+        String(marketplaceId || "").toLowerCase();
+
+    sellerBooksIntegrationRealtimeSuppress.set(
+        key,
+        Date.now() + 10000
+    );
+
+    setTimeout(function(){
+        const expiresAt =
+            sellerBooksIntegrationRealtimeSuppress.get(key) || 0;
+
+        if(expiresAt <= Date.now()){
+            sellerBooksIntegrationRealtimeSuppress.delete(key);
+        }
+    },10500);
+}
+
 function sellerBooksIntegrationRealtimeSuppressSuccess(
     storeId,
     marketplaceId
@@ -19633,8 +19663,19 @@ function sellerBooksHandleIntegrationRealtimePayload(payload){
     const suppressedUntil =
         sellerBooksIntegrationRealtimeSuppress.get(key) || 0;
 
-    if(suppressedUntil > Date.now()){
+    const marketplaceSuppressUntil =
+        sellerBooksIntegrationRealtimeSuppress.get(
+            "__MARKETPLACE__|" + String(marketplaceId).toLowerCase()
+        ) || 0;
+
+    if(
+        suppressedUntil > Date.now() ||
+        marketplaceSuppressUntil > Date.now()
+    ){
         sellerBooksIntegrationRealtimeSuppress.delete(key);
+        sellerBooksIntegrationRealtimeSuppress.delete(
+            "__MARKETPLACE__|" + String(marketplaceId).toLowerCase()
+        );
         return;
     }
 
