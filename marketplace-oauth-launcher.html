@@ -145,6 +145,35 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
     }
   }
 
+  // Teruskan hasil OAuth dari callback marketplace ke halaman SellerBooks utama.
+  // Struktur desktop: index.html -> launcher popup -> OAuth -> callback -> launcher -> index.html
+  window.addEventListener("message", function(event){
+    if(event.origin !== window.location.origin){
+      return;
+    }
+
+    const data = event.data || {};
+    if(
+      data.source !== "sellerbooks-tiktok-oauth" &&
+      data.source !== "sellerbooks-shopee-oauth" &&
+      data.source !== "sellerbooks-lazada-oauth"
+    ){
+      return;
+    }
+
+    try{
+      if(window.opener && !window.opener.closed){
+        window.opener.postMessage(data, window.location.origin);
+      }
+    }catch(e){
+      console.warn("Gagal meneruskan hasil OAuth ke SellerBooks:", e);
+    }
+
+    setTimeout(function(){
+      try{ window.close(); }catch(e){}
+    }, 500);
+  });
+
   start();
 })();
 </script>
