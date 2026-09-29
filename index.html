@@ -19487,7 +19487,9 @@ async function refreshStoreIntegrationStates(force){
         sellerBooksStoreConnections = next;
         sellerBooksStoreConnectionsUserId = userId;
 
-        if(force && typeof renderStores === "function"){
+        // Setiap kali status koneksi selesai dibaca dari Supabase,
+        // render ulang kartu akun toko agar tombol mengikuti status terbaru.
+        if(typeof renderStores === "function"){
             renderStores(true);
         }
     }catch(error){
