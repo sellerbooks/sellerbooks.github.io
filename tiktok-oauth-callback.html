@@ -18,7 +18,7 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
 <div class="box" id="box">
     <div class="icon" id="icon">✓</div>
     <h1 id="title">TikTok Shop berhasil terhubung</h1>
-    <p id="message">Jendela ini akan ditutup otomatis.</p>
+    <p id="message">Mengembalikan Anda ke SellerBooks...</p>
 </div>
 <script>
 (function(){
@@ -68,12 +68,27 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
     try{
         if(window.opener && !window.opener.closed){
             window.opener.postMessage(payload,target);
+
+            setTimeout(function(){
+                try{ window.close(); }catch(e){}
+            },1800);
+
+            return;
         }
     }catch(e){}
 
     setTimeout(function(){
-        try{ window.close(); }catch(e){}
-    },1800);
+        var deepLink =
+            "sellerbooks://oauth-callback" +
+            "?marketplace=tiktok" +
+            "&status=" + encodeURIComponent(payload.status || "error");
+
+        if(payload.reason){
+            deepLink += "&reason=" + encodeURIComponent(payload.reason);
+        }
+
+        window.location.href = deepLink;
+    },250);
 })();
 </script>
 </body>
