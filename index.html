@@ -15584,11 +15584,16 @@ sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
         sellerBooksStartAccountRealtime();
         sellerBooksStartDataRealtime();
         sellerBooksStartIntegrationRealtime();
+        sellerBooksStartIntegrationStatusPolling();
         sellerBooksStartAccountPolling();
     }else{
         sellerBooksStopAccountRealtime();
         sellerBooksStopDataRealtime();
         sellerBooksStopIntegrationRealtime();
+        sellerBooksStopIntegrationStatusPolling();
+        sellerBooksStoreConnections = new Map();
+        sellerBooksStoreConnectionsUserId = "";
+        sellerBooksStoreConnectionsInitialized = false;
         sellerBooksStopAccountPolling();
     }
 });
@@ -19461,6 +19466,8 @@ window.onMarketplaceOAuthReturn = function(marketplace, status, reason){
 let sellerBooksStoreConnections = new Map();
 let sellerBooksStoreConnectionsUserId = "";
 let sellerBooksStoreConnectionsLoading = false;
+let sellerBooksStoreConnectionsInitialized = false;
+let sellerBooksIntegrationStatusPollingTimer = null;
 
 function sellerBooksStoreConnectionKey(storeId, marketplaceId){
     return String(storeId || "") + "|" + String(marketplaceId || "");
@@ -19499,8 +19506,58 @@ async function refreshStoreIntegrationStates(force){
             );
         });
 
+        const previousConnections = sellerBooksStoreConnections;
+
         sellerBooksStoreConnections = next;
         sellerBooksStoreConnectionsUserId = userId;
+
+        // Bandingkan status lama vs status terbaru. Ini menjadi fallback
+        // realtime untuk WebView/browser yang tidak menerima WebSocket
+        // Supabase Realtime secara konsisten.
+        if(sellerBooksStoreConnectionsInitialized){
+            next.forEach(function(connection, key){
+                const previous = previousConnections.get(key);
+
+                const previousStatus = String(
+                    previous?.connection_status || ""
+                ).toUpperCase();
+
+                const nextStatus = String(
+                    connection?.connection_status || ""
+                ).toUpperCase();
+
+                if(
+                    previousStatus !== "CONNECTED" &&
+                    nextStatus === "CONNECTED"
+                ){
+                    const marketplaceId =
+                        String(connection.marketplace_id || "").toLowerCase();
+
+                    const suppressedUntil =
+                        sellerBooksIntegrationRealtimeSuppress.get(
+                            "__MARKETPLACE__|" + marketplaceId
+                        ) || 0;
+
+                    if(suppressedUntil > Date.now()){
+                        sellerBooksIntegrationRealtimeSuppress.delete(
+                            "__MARKETPLACE__|" + marketplaceId
+                        );
+                    }else{
+                        sellerBooksAlert(
+                            "Akun " +
+                            sellerBooksIntegrationMarketplaceLabel(
+                                connection.marketplace_id,
+                                connection.marketplace
+                            ) +
+                            " berhasil terintegrasi ke SellerBooks.",
+                            "Integrasi Berhasil"
+                        );
+                    }
+                }
+            });
+        }
+
+        sellerBooksStoreConnectionsInitialized = true;
 
         // Setiap kali status koneksi selesai dibaca dari Supabase,
         // render ulang kartu akun toko agar tombol mengikuti status terbaru.
@@ -19524,6 +19581,35 @@ function getStoreIntegrationConnection(store){
         )
     ) || null;
 }
+
+function sellerBooksStartIntegrationStatusPolling(){
+    if(sellerBooksIntegrationStatusPollingTimer){
+        clearInterval(sellerBooksIntegrationStatusPollingTimer);
+    }
+
+    // 1,5 detik sebagai fallback realtime. Tidak bergantung pada
+    // refresh halaman dan tetap bekerja pada Chrome, Windows WebView,
+    // maupun Android WebView jika WebSocket Realtime gagal.
+    const check=function(){
+        if(!sellerBooksAuthUser)return;
+        refreshStoreIntegrationStates(true);
+    };
+
+    check();
+
+    sellerBooksIntegrationStatusPollingTimer =
+        setInterval(check,1500);
+}
+
+function sellerBooksStopIntegrationStatusPolling(){
+    if(sellerBooksIntegrationStatusPollingTimer){
+        clearInterval(
+            sellerBooksIntegrationStatusPollingTimer
+        );
+        sellerBooksIntegrationStatusPollingTimer = null;
+    }
+}
+
 
 
 /* =====================================================
