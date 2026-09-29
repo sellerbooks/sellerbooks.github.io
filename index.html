@@ -19391,6 +19391,55 @@ handleShopeeOAuthResult();
 
 
 /* =====================================================
+   CALLBACK OAUTH DARI APK SELLERBOOKS
+   Chrome -> OAuth -> APK -> WebView
+===================================================== */
+
+window.onMarketplaceOAuthReturn = function(marketplace, status, reason){
+
+    marketplace = String(marketplace || "").toLowerCase();
+    status = String(status || "").toLowerCase();
+    reason = String(reason || "");
+
+    if(status === "success"){
+
+        var marketplaceLabel =
+            marketplace === "shopee" ? "Shopee" :
+            marketplace === "tiktok" ? "TikTok Shop" :
+            marketplace === "lazada" ? "Lazada" :
+            marketplace || "Marketplace";
+
+        sellerBooksAlert(
+            "Akun " + marketplaceLabel + " berhasil terhubung ke SellerBooks.",
+            "Integrasikan Akun"
+        );
+
+        setTimeout(function(){
+            refreshStoreIntegrationStates(true);
+        }, 200);
+
+        return;
+    }
+
+    var errorLabel =
+        marketplace === "shopee" ? "Shopee" :
+        marketplace === "tiktok" ? "TikTok Shop" :
+        marketplace === "lazada" ? "Lazada" :
+        marketplace || "Marketplace";
+
+    sellerBooksAlert(
+        "Integrasi " + errorLabel + " gagal." +
+        (reason ? "\n\nKode: " + reason : ""),
+        "Integrasikan Akun"
+    );
+
+    setTimeout(function(){
+        refreshStoreIntegrationStates(true);
+    }, 200);
+};
+
+
+/* =====================================================
    STATUS INTEGRASI AKUN TOKO
 ===================================================== */
 
