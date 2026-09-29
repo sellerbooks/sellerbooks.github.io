@@ -15583,10 +15583,12 @@ sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
         sellerBooksAuthUser=session.user;
         sellerBooksStartAccountRealtime();
         sellerBooksStartDataRealtime();
+        sellerBooksStartIntegrationRealtime();
         sellerBooksStartAccountPolling();
     }else{
         sellerBooksStopAccountRealtime();
         sellerBooksStopDataRealtime();
+        sellerBooksStopIntegrationRealtime();
         sellerBooksStopAccountPolling();
     }
 });
@@ -19401,6 +19403,19 @@ window.onMarketplaceOAuthReturn = function(marketplace, status, reason){
             marketplace === "lazada" ? "Lazada" :
             marketplace || "Marketplace";
 
+        const callbackStoreId =
+            String(new URLSearchParams(window.location.search).get("store_id") || "");
+
+        if(
+            callbackStoreId &&
+            marketplace
+        ){
+            sellerBooksIntegrationRealtimeSuppressSuccess(
+                callbackStoreId,
+                marketplace
+            );
+        }
+
         sellerBooksAlert(
             "Akun " + marketplaceLabel + " berhasil terhubung ke SellerBooks.",
             "Integrasikan Akun"
@@ -19501,6 +19516,210 @@ function getStoreIntegrationConnection(store){
         )
     ) || null;
 }
+
+
+/* =====================================================
+   REALTIME STATUS INTEGRASI AKUN TOKO
+   Semua perangkat/tab yang sedang login menerima perubahan
+   status koneksi tanpa perlu refresh.
+===================================================== */
+
+let sellerBooksIntegrationRealtimeChannel = null;
+let sellerBooksIntegrationRealtimeSuppress = new Map();
+
+function sellerBooksStopIntegrationRealtime(){
+    if(sellerBooksIntegrationRealtimeChannel){
+        sellerBooksSupabase.removeChannel(
+            sellerBooksIntegrationRealtimeChannel
+        );
+        sellerBooksIntegrationRealtimeChannel = null;
+    }
+}
+
+function sellerBooksIntegrationRealtimeSuppressSuccess(
+    storeId,
+    marketplaceId
+){
+    const key = sellerBooksStoreConnectionKey(
+        storeId,
+        marketplaceId
+    );
+
+    sellerBooksIntegrationRealtimeSuppress.set(
+        key,
+        Date.now() + 10000
+    );
+
+    setTimeout(function(){
+        const expiresAt =
+            sellerBooksIntegrationRealtimeSuppress.get(key) || 0;
+
+        if(expiresAt <= Date.now()){
+            sellerBooksIntegrationRealtimeSuppress.delete(key);
+        }
+    },10500);
+}
+
+function sellerBooksIntegrationMarketplaceLabel(marketplaceId, marketplaceName){
+    const id = String(marketplaceId || "").toLowerCase();
+
+    if(id === "tiktok" || id === "tiktokshop"){
+        return "TikTok Shop";
+    }
+
+    if(id === "shopee"){
+        return "Shopee";
+    }
+
+    if(id === "lazada"){
+        return "Lazada";
+    }
+
+    if(id === "toco"){
+        return "Toco";
+    }
+
+    if(id === "tokopedia"){
+        return "Tokopedia";
+    }
+
+    if(id === "blibli"){
+        return "Blibli";
+    }
+
+    return String(marketplaceName || marketplaceId || "Marketplace");
+}
+
+function sellerBooksHandleIntegrationRealtimePayload(payload){
+    const record = payload?.new || {};
+    const oldRecord = payload?.old || {};
+
+    const storeId = String(record.store_id || oldRecord.store_id || "");
+    const marketplaceId = String(
+        record.marketplace_id ||
+        oldRecord.marketplace_id ||
+        ""
+    );
+
+    if(!storeId || !marketplaceId){
+        return;
+    }
+
+    const newStatus = String(
+        record.connection_status || ""
+    ).toUpperCase();
+
+    const oldStatus = String(
+        oldRecord.connection_status || ""
+    ).toUpperCase();
+
+    // Selalu sinkronkan tampilan terlebih dahulu.
+    sellerBooksStoreConnectionsUserId = "";
+    refreshStoreIntegrationStates(true);
+
+    // Notifikasi hanya ketika status benar-benar berubah menjadi CONNECTED.
+    if(
+        newStatus !== "CONNECTED" ||
+        oldStatus === "CONNECTED"
+    ){
+        return;
+    }
+
+    const key = sellerBooksStoreConnectionKey(
+        storeId,
+        marketplaceId
+    );
+
+    const suppressedUntil =
+        sellerBooksIntegrationRealtimeSuppress.get(key) || 0;
+
+    if(suppressedUntil > Date.now()){
+        sellerBooksIntegrationRealtimeSuppress.delete(key);
+        return;
+    }
+
+    const marketplaceLabel =
+        sellerBooksIntegrationMarketplaceLabel(
+            marketplaceId,
+            record.marketplace
+        );
+
+    sellerBooksAlert(
+        "Akun " + marketplaceLabel +
+        " berhasil terintegrasi ke SellerBooks.",
+        "Integrasi Berhasil"
+    );
+}
+
+function sellerBooksStartIntegrationRealtime(){
+    if(!sellerBooksAuthUser){
+        return;
+    }
+
+    sellerBooksStopIntegrationRealtime();
+
+    const userId = String(
+        sellerBooksAuthUser.id || ""
+    );
+
+    if(!userId){
+        return;
+    }
+
+    sellerBooksIntegrationRealtimeChannel =
+        sellerBooksSupabase
+            .channel("sellerbooks-integration-" + userId)
+            .on(
+                "postgres_changes",
+                {
+                    event:"INSERT",
+                    schema:"public",
+                    table:"sellerbooks_api_connections",
+                    filter:"owner_user_id=eq." + userId
+                },
+                sellerBooksHandleIntegrationRealtimePayload
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event:"UPDATE",
+                    schema:"public",
+                    table:"sellerbooks_api_connections",
+                    filter:"owner_user_id=eq." + userId
+                },
+                sellerBooksHandleIntegrationRealtimePayload
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event:"DELETE",
+                    schema:"public",
+                    table:"sellerbooks_api_connections",
+                    filter:"owner_user_id=eq." + userId
+                },
+                function(payload){
+                    sellerBooksStoreConnectionsUserId = "";
+                    refreshStoreIntegrationStates(true);
+                }
+            )
+            .subscribe(function(status){
+                if(
+                    status !== "SUBSCRIBED" &&
+                    status !== "CHANNEL_ERROR" &&
+                    status !== "TIMED_OUT"
+                ){
+                    return;
+                }
+
+                if(status !== "SUBSCRIBED"){
+                    console.warn(
+                        "Realtime integrasi SellerBooks:",
+                        status
+                    );
+                }
+            });
+}
+
 
 /* =====================================================
    RENDER AKUN TOKO
