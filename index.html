@@ -19624,10 +19624,69 @@ async function refreshStoreIntegrationStates(force){
     }
 }
 
+function sellerBooksCanonicalMarketplaceId(value, marketplaceName){
+    const normalize = function(input){
+        return String(input || "")
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "");
+    };
+
+    const idKey = normalize(value);
+    const nameKey = normalize(marketplaceName);
+
+    const aliases = {
+        shopee: "shopee",
+        tiktok: "tiktok",
+        tiktokshop: "tiktok",
+        tokopedia: "tokopedia",
+        tokped: "tokopedia",
+        lazada: "lazada",
+        toco: "toco",
+        blibli: "blibli"
+    };
+
+    if(aliases[idKey]){
+        return aliases[idKey];
+    }
+
+    if(aliases[nameKey]){
+        return aliases[nameKey];
+    }
+
+    return String(value || "");
+}
+
 function getStoreIntegrationConnection(store){
     if(!store) return null;
 
+    /*
+       Akun toko menyimpan marketplaceId sebagai ID marketplace
+       milik user, misalnya "marketplace_1790509307069".
+       Tabel sellerbooks_api_connections memakai ID kanonik
+       konektor, misalnya "tiktok".
+       Cari marketplace berdasarkan ID toko lalu normalkan ke ID
+       konektor agar status CONNECTED dapat dipasangkan ke kartu
+       toko yang benar.
+    */
+    const marketplace = Array.isArray(marketplaces)
+        ? marketplaces.find(function(item){
+            return String(item.id) === String(store.marketplaceId);
+        })
+        : null;
+
+    const canonicalMarketplaceId =
+        sellerBooksCanonicalMarketplaceId(
+            store.marketplaceId,
+            marketplace?.name
+        );
+
     return sellerBooksStoreConnections.get(
+        sellerBooksStoreConnectionKey(
+            store.id,
+            canonicalMarketplaceId
+        )
+    ) || sellerBooksStoreConnections.get(
         sellerBooksStoreConnectionKey(
             store.id,
             store.marketplaceId
