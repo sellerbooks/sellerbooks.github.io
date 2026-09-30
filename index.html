@@ -19255,9 +19255,21 @@ async function integrateStoreAccount(storeId){
     const isSellerBooksWindowsApp =
         /SellerBooksAdmin\/1\.0/i.test(navigator.userAgent.replace(/\s+/g,""));
 
+    /*
+       ANDROID APK:
+       MainActivity sudah menangani URL OAuth marketplace secara native
+       dan membukanya dengan browser eksternal melalui ACTION_VIEW.
+       Jangan membuka marketplace-oauth-launcher.html dengan window.open()
+       di Android karena setSupportMultipleWindows(false) membuat window.open()
+       dapat menggantikan halaman SellerBooks saat init masih menunggu.
+       Akibatnya launcher akan berhenti di "Menyiapkan halaman otorisasi".
+    */
+    const isSellerBooksAndroidApp =
+        /SellerBooksAPK\/1\.0/i.test(navigator.userAgent.replace(/\s+/g,""));
+
     let oauthTab = null;
 
-    if(!isSellerBooksWindowsApp){
+    if(!isSellerBooksWindowsApp && !isSellerBooksAndroidApp){
         const popupWidth = 520;
         const popupHeight = 760;
         const screenLeft = typeof window.screenLeft === "number" ? window.screenLeft : window.screenX;
@@ -19354,6 +19366,14 @@ async function integrateStoreAccount(storeId){
             }else{
                 throw new Error("Bridge native SellerBooks Admin tidak tersedia. Silakan gunakan build SellerBooks Admin terbaru.");
             }
+        }else if(isSellerBooksAndroidApp){
+            /*
+               Handoff native Android:
+               MainActivity.shouldOverrideUrlLoading() akan menangkap URL
+               OAuth marketplace ini lalu membuka browser eksternal dengan
+               ACTION_VIEW. SellerBooks session tetap tinggal di WebView APK.
+            */
+            window.location.href = data.authorization_url;
         }else if(oauthTab && !oauthTab.closed){
             oauthTab.location.replace(data.authorization_url);
         }
