@@ -19243,39 +19243,52 @@ async function integrateStoreAccount(storeId){
         window.location.href
     ).href;
 
-    const popupWidth = 520;
-    const popupHeight = 760;
-    const screenLeft = typeof window.screenLeft === "number" ? window.screenLeft : window.screenX;
-    const screenTop = typeof window.screenTop === "number" ? window.screenTop : window.screenY;
-    const outerWidth = window.outerWidth || window.innerWidth;
-    const outerHeight = window.outerHeight || window.innerHeight;
+    /*
+       WINDOWS ADMIN:
+       Jangan membuka launcher di dalam WebView lalu mencoba memindahkannya
+       setelah await. WebView2 dapat mengembalikan WindowProxy kosong setelah
+       NewWindowRequested diambil alih native. Untuk aplikasi Windows, URL
+       OAuth final dikirim langsung ke host native melalui WebView2 message.
 
-    const popupLeft = Math.max(0, screenLeft + Math.round((outerWidth - popupWidth) / 2));
-    const popupTop = Math.max(0, screenTop + Math.round((outerHeight - popupHeight) / 2));
-
-    const oauthTab = window.open(
-        launcherUrl,
-        "SellerBooksMarketplaceOAuth",
-        [
-            "popup=yes",
-            "width=" + popupWidth,
-            "height=" + popupHeight,
-            "left=" + popupLeft,
-            "top=" + popupTop,
-            "resizable=yes",
-            "scrollbars=yes"
-        ].join(",")
-    );
-
+       Browser biasa tetap memakai popup launcher seperti sebelumnya.
+    */
     const isSellerBooksWindowsApp =
-        /SellerBooksAdmin\/1\.0/i.test(navigator.userAgent);
+        /SellerBooksAdmin\/1\.0/i.test(navigator.userAgent.replace(/\s+/g,""));
 
-    if(!oauthTab && !isSellerBooksWindowsApp){
-        sellerBooksAlert(
-            "Popup/tab baru diblokir browser. Silakan izinkan pop-up untuk SellerBooks lalu klik Integrasikan Akun lagi.",
-            "Integrasikan Akun"
+    let oauthTab = null;
+
+    if(!isSellerBooksWindowsApp){
+        const popupWidth = 520;
+        const popupHeight = 760;
+        const screenLeft = typeof window.screenLeft === "number" ? window.screenLeft : window.screenX;
+        const screenTop = typeof window.screenTop === "number" ? window.screenTop : window.screenY;
+        const outerWidth = window.outerWidth || window.innerWidth;
+        const outerHeight = window.outerHeight || window.innerHeight;
+
+        const popupLeft = Math.max(0, screenLeft + Math.round((outerWidth - popupWidth) / 2));
+        const popupTop = Math.max(0, screenTop + Math.round((outerHeight - popupHeight) / 2));
+
+        oauthTab = window.open(
+            launcherUrl,
+            "SellerBooksMarketplaceOAuth",
+            [
+                "popup=yes",
+                "width=" + popupWidth,
+                "height=" + popupHeight,
+                "left=" + popupLeft,
+                "top=" + popupTop,
+                "resizable=yes",
+                "scrollbars=yes"
+            ].join(",")
         );
-        return;
+
+        if(!oauthTab){
+            sellerBooksAlert(
+                "Popup/tab baru diblokir browser. Silakan izinkan pop-up untuk SellerBooks lalu klik Integrasikan Akun lagi.",
+                "Integrasikan Akun"
+            );
+            return;
+        }
     }
 
     try{
@@ -19325,15 +19338,24 @@ async function integrateStoreAccount(storeId){
 
            Browser eksternal tidak perlu mengetahui access token SellerBooks.
         */
-        if(oauthTab && !oauthTab.closed){
-            oauthTab.location.replace(data.authorization_url);
-        }else{
+        if(isSellerBooksWindowsApp){
             /*
-               Fallback untuk environment yang tidak mengembalikan WindowProxy.
-               Native WebView wrapper dapat menangani navigasi HTTPS ini
-               melalui browser eksternal sesuai konfigurasi aplikasinya.
+               Handoff native Windows:
+               - token SellerBooks TIDAK dikirim ke Chrome.
+               - hanya authorization_url hasil backend yang dikirim.
+               - MainWindow WPF akan membuka URL tersebut dengan browser default.
             */
-            window.location.href = data.authorization_url;
+            if(window.chrome?.webview?.postMessage){
+                window.chrome.webview.postMessage(JSON.stringify({
+                    type:"sellerbooks.oauth.launch",
+                    marketplace:String(marketplace.name || ""),
+                    authorization_url:String(data.authorization_url)
+                }));
+            }else{
+                throw new Error("Bridge native SellerBooks Admin tidak tersedia. Silakan gunakan build SellerBooks Admin terbaru.");
+            }
+        }else if(oauthTab && !oauthTab.closed){
+            oauthTab.location.replace(data.authorization_url);
         }
 
     }catch(error){
