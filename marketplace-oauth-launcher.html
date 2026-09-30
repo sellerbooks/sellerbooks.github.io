@@ -174,7 +174,17 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
     }, 500);
   });
 
-  start();
+  // Dalam session-bridge baru, OAuth INIT sudah dijalankan oleh
+  // halaman SellerBooks asal. Launcher hanya menjadi halaman sementara
+  // sampai parent mengarahkannya ke authorization_url.
+  const handoff = new URLSearchParams(location.search).get("handoff");
+  if(handoff === "pending"){
+    document.getElementById("title").textContent="Menyiapkan halaman otorisasi";
+    document.getElementById("message").textContent="Menghubungkan ke halaman login resmi marketplace...";
+  }else{
+    // Kompatibilitas untuk alur launcher lama.
+    start();
+  }
 })();
 </script>
 </body>
