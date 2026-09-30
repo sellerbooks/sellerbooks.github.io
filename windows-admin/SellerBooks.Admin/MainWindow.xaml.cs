@@ -108,6 +108,7 @@ public partial class MainWindow : Window
         web.WebResourceRequested += Web_WebResourceRequested;
         web.NavigationCompleted += Web_NavigationCompleted;
         web.NewWindowRequested += Web_NewWindowRequested;
+        web.WebMessageReceived += Web_WebMessageReceived;
         web.DownloadStarting += Web_DownloadStarting;
         web.ProcessFailed += Web_ProcessFailed;
     }
@@ -127,6 +128,82 @@ public partial class MainWindow : Window
             ShowBrowser();
         else
             ShowOffline();
+    }
+
+    private void Web_WebMessageReceived(
+        object? sender,
+        CoreWebView2WebMessageReceivedEventArgs e)
+    {
+        /*
+           Hanya halaman resmi SellerBooks yang boleh meminta native host
+           membuka browser eksternal.
+        */
+        var source = e.Source ?? string.Empty;
+        if (!source.StartsWith(AppUrl, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        string message;
+        try
+        {
+            message = e.TryGetWebMessageAsString();
+        }
+        catch
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(message))
+            return;
+
+        try
+        {
+            using var document = System.Text.Json.JsonDocument.Parse(message);
+            var root = document.RootElement;
+
+            if (!root.TryGetProperty("type", out var typeElement) ||
+                !string.Equals(
+                    typeElement.GetString(),
+                    "sellerbooks.oauth.launch",
+                    StringComparison.Ordinal))
+                return;
+
+            if (!root.TryGetProperty("authorization_url", out var urlElement))
+                return;
+
+            var rawUrl = urlElement.GetString();
+            if (string.IsNullOrWhiteSpace(rawUrl))
+                return;
+
+            if (!Uri.TryCreate(rawUrl, UriKind.Absolute, out var authorizationUri) ||
+                !string.Equals(
+                    authorizationUri.Scheme,
+                    Uri.UriSchemeHttps,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                MessageBox.Show(
+                    this,
+                    "URL otorisasi marketplace tidak valid.",
+                    "Integrasikan Akun",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = authorizationUri.AbsoluteUri,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                this,
+                "Halaman login marketplace tidak dapat dibuka.\\n\\n" + ex.Message,
+                "Integrasikan Akun",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
     }
 
     private void Web_NewWindowRequested(
