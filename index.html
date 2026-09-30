@@ -19141,7 +19141,7 @@ async function disconnectStoreAccount(storeId){
     }
 }
 
-function integrateStoreAccount(storeId){
+async function integrateStoreAccount(storeId){
 
     const store = stores.find(function(item){
         return String(item.id) === String(storeId);
@@ -19162,17 +19162,84 @@ function integrateStoreAccount(storeId){
     }
 
     /*
-       UNIVERSAL MARKETPLACE OAUTH
-       Semua marketplace memakai satu launcher dan satu alur UI.
-       Launcher memilih konektor OAuth berdasarkan nama marketplace.
-       Backend tetap memakai adapter resmi masing-masing marketplace.
+       UNIVERSAL MARKETPLACE OAUTH - SESSION BRIDGE
+       ------------------------------------------------
+       OAuth INIT sekarang dijalankan DI WEBVIEW/halaman SellerBooks
+       yang sedang login, bukan di browser tujuan.
+
+       Browser eksternal hanya menerima authorization_url dari backend
+       dan menangani login/consent marketplace.
+
+       Dengan pola ini:
+       - Chrome tidak perlu login SellerBooks.
+       - WebView Windows tetap menjadi sumber session SellerBooks.
+       - APK Android tetap menjadi sumber session SellerBooks.
+       - Semua marketplace memakai lifecycle init -> browser -> callback
+         yang sama; adapter OAuth provider tetap berbeda di backend.
+    */
+    const providerMap = {
+        tiktok:  "sellerbooks-tiktok-oauth",
+        shopee:  "sellerbooks-shopee-oauth",
+        lazada:  "sellerbooks-lazada-oauth"
+    };
+
+    const marketplaceKey = String(marketplace.name || "")
+        .toLowerCase()
+        .replace(/\\s+/g,"")
+        .replace(/shop$/,"shop");
+
+    let endpoint = "";
+
+    if(marketplaceKey.includes("tiktok")){
+        endpoint = providerMap.tiktok;
+    }else if(marketplaceKey.includes("shopee")){
+        endpoint = providerMap.shopee;
+    }else if(marketplaceKey.includes("lazada")){
+        endpoint = providerMap.lazada;
+    }
+
+    /*
+       Marketplace yang backend OAuth-nya belum aktif tetap memakai
+       launcher lama agar tidak mengubah provider yang belum approved.
+       Begitu konektornya aktif, cukup tambahkan endpoint ke providerMap.
+    */
+    if(!endpoint){
+        const launcherUrl = new URL(
+            "marketplace-oauth-launcher.html" +
+            "?v=20260930-bridge-fallback" +
+            "&store_id=" + encodeURIComponent(String(store.id)) +
+            "&marketplace_id=" + encodeURIComponent(String(store.marketplaceId || "")) +
+            "&marketplace_name=" + encodeURIComponent(String(marketplace.name || "")),
+            window.location.href
+        ).href;
+
+        const fallbackPopup = window.open(
+            launcherUrl,
+            "SellerBooksMarketplaceOAuth",
+            "popup=yes,width=520,height=760,resizable=yes,scrollbars=yes"
+        );
+
+        if(!fallbackPopup){
+            sellerBooksAlert(
+                "Popup/tab baru diblokir browser. Silakan izinkan pop-up untuk SellerBooks lalu klik Integrasikan Akun lagi.",
+                "Integrasikan Akun"
+            );
+        }
+        return;
+    }
+
+    /*
+       WAJIB buka window secara sinkron dari klik user.
+       Setelah itu kita boleh menunggu auth.getSession() dan backend init.
+       Popup sementara tetap berada pada launcher/loading page.
     */
     const launcherUrl = new URL(
         "marketplace-oauth-launcher.html" +
-        "?v=20260928-2" +
+        "?v=20260930-session-bridge" +
         "&store_id=" + encodeURIComponent(String(store.id)) +
         "&marketplace_id=" + encodeURIComponent(String(store.marketplaceId || "")) +
-        "&marketplace_name=" + encodeURIComponent(String(marketplace.name || "")),
+        "&marketplace_name=" + encodeURIComponent(String(marketplace.name || "")) +
+        "&handoff=pending",
         window.location.href
     ).href;
 
@@ -19186,11 +19253,9 @@ function integrateStoreAccount(storeId){
     const popupLeft = Math.max(0, screenLeft + Math.round((outerWidth - popupWidth) / 2));
     const popupTop = Math.max(0, screenTop + Math.round((outerHeight - popupHeight) / 2));
 
-    const popupName = "SellerBooksMarketplaceOAuth";
-
     const oauthTab = window.open(
         launcherUrl,
-        popupName,
+        "SellerBooksMarketplaceOAuth",
         [
             "popup=yes",
             "width=" + popupWidth,
@@ -19203,16 +19268,91 @@ function integrateStoreAccount(storeId){
     );
 
     const isSellerBooksWindowsApp =
-        /SellerBooksAdmin\/1\.0/i.test(navigator.userAgent);
+        /SellerBooksAdmin\\/1\\.0/i.test(navigator.userAgent);
 
     if(!oauthTab && !isSellerBooksWindowsApp){
         sellerBooksAlert(
             "Popup/tab baru diblokir browser. Silakan izinkan pop-up untuk SellerBooks lalu klik Integrasikan Akun lagi.",
             "Integrasikan Akun"
         );
+        return;
+    }
+
+    try{
+        /*
+           Session SellerBooks diambil dari client Supabase yang hidup
+           di halaman asal. TIDAK membaca localStorage Chrome.
+        */
+        const sessionResult = await sellerBooksSupabase.auth.getSession();
+        const session = sessionResult?.data?.session;
+
+        if(!session?.access_token){
+            throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
+        }
+
+        const response = await fetch(
+            SELLERBOOKS_SUPABASE_URL +
+            "/functions/v1/" + endpoint +
+            "?action=init",
+            {
+                method:"POST",
+                headers:{
+                    "apikey":SELLERBOOKS_SUPABASE_KEY,
+                    "Authorization":"Bearer " + session.access_token,
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify({
+                    store_id:String(store.id),
+                    marketplace_id:String(store.marketplaceId || ""),
+                    marketplace_name:String(marketplace.name || "")
+                })
+            }
+        );
+
+        const data = await response.json().catch(function(){ return {}; });
+
+        if(!response.ok || !data.authorization_url){
+            throw new Error(
+                data.error ||
+                ("OAuth " + String(marketplace.name || "Marketplace") + " tidak dapat dimulai.")
+            );
+        }
+
+        /*
+           Inilah handoff sebenarnya:
+           authorization_url sudah dibuat oleh backend menggunakan
+           session SellerBooks dari WEBVIEW.
+
+           Browser eksternal tidak perlu mengetahui access token SellerBooks.
+        */
+        if(oauthTab && !oauthTab.closed){
+            oauthTab.location.replace(data.authorization_url);
+        }else{
+            /*
+               Fallback untuk environment yang tidak mengembalikan WindowProxy.
+               Native WebView wrapper dapat menangani navigasi HTTPS ini
+               melalui browser eksternal sesuai konfigurasi aplikasinya.
+            */
+            window.location.href = data.authorization_url;
+        }
+
+    }catch(error){
+        console.error("Marketplace OAuth init gagal:",error);
+
+        try{
+            if(oauthTab && !oauthTab.closed){
+                oauthTab.close();
+            }
+        }catch(e){}
+
+        sellerBooksAlert(
+            "Integrasi " + String(marketplace.name || "Marketplace") +
+            " gagal dimulai.\\n\\n" +
+            (error?.message || "Terjadi kesalahan saat menyiapkan OAuth."),
+            "Integrasikan Akun"
+        );
     }
 }
-
 
 /* =====================================================
    HASIL OAUTH SHOPEE
