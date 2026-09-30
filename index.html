@@ -19435,6 +19435,7 @@ async function syncTikTokOrdersNow(storeId){
                 },
                 body:JSON.stringify({
                     connection_id:String(connection.id),
+                    store_id:String(store.id),
                     time_from:timeFrom,
                     time_to:now
                 })
