@@ -19921,17 +19921,14 @@ async function refreshStoreIntegrationStates(force){
                         sellerBooksIntegrationRealtimeSuppress.delete(
                             "__MARKETPLACE__|" + marketplaceId
                         );
-                    }else{
-                        sellerBooksAlert(
-                            "Akun " +
-                            sellerBooksIntegrationMarketplaceLabel(
-                                connection.marketplace_id,
-                                connection.marketplace
-                            ) +
-                            " berhasil terintegrasi ke SellerBooks.",
-                            "Integrasi Berhasil"
-                        );
                     }
+                    /*
+                       Perubahan status CONNECTED di background hanya
+                       memperbarui state/tombol akun toko.
+                       Popup "Integrasi Berhasil" hanya boleh muncul
+                       dari alur OAuth saat akun benar-benar pertama kali
+                       diintegrasikan, bukan saat Tarik Order / refresh.
+                    */
                 }
 
                 // 2. Status berubah dari CONNECTED menjadi tidak aktif.
@@ -20381,17 +20378,12 @@ function sellerBooksHandleIntegrationRealtimePayload(payload){
         return;
     }
 
-    const marketplaceLabel =
-        sellerBooksIntegrationMarketplaceLabel(
-            marketplaceId,
-            record.marketplace
-        );
-
-    sellerBooksAlert(
-        "Akun " + marketplaceLabel +
-        " berhasil terintegrasi ke SellerBooks.",
-        "Integrasi Berhasil"
-    );
+    /*
+       Realtime hanya menyinkronkan status koneksi.
+       Notifikasi "Integrasi Berhasil" ditampilkan oleh callback OAuth
+       ketika integrasi benar-benar dilakukan, bukan oleh perubahan
+       status CONNECTED saat refresh atau Tarik Order.
+    */
 }
 
 function sellerBooksStartIntegrationRealtime(){
