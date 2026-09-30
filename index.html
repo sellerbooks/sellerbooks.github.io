@@ -2133,24 +2133,12 @@ td{
     width:100%;
 }
 .store-actions{
-    display:flex;
-    flex-direction:column;
+    display:grid;
+    grid-template-columns:90px 55px 90px 40px;
     gap:7px;
     margin-top:18px;
     width:100%;
     min-width:0;
-}
-.store-actions-row{
-    display:grid;
-    gap:7px;
-    width:100%;
-    min-width:0;
-}
-.store-actions-row-top{
-    grid-template-columns:repeat(3,minmax(0,1fr));
-}
-.store-actions-row-bottom{
-    grid-template-columns:repeat(2,minmax(0,1fr));
 }
 .store-actions button{
     width:100%;
@@ -9454,59 +9442,6 @@ document.addEventListener(
 .product-page-button:disabled{opacity:.45;cursor:not-allowed;}
 .product-page-info{font-size:11px;color:var(--muted);margin-right:3px;}
 @media(max-width:650px){.product-pagination{align-items:stretch;flex-direction:column;}.product-pagination-controls{justify-content:flex-start;}}
-<style>
-/* =====================================================
-   AKUN TOKO - SUSUNAN TOMBOL
-   Baris 1: Integrasi / Tarik Order / Nonaktifkan
-   Baris 2: Edit / Hapus
-===================================================== */
-.store-actions{
-    display:flex !important;
-    flex-direction:column !important;
-    gap:7px !important;
-    margin-top:18px !important;
-    width:100% !important;
-    min-width:0 !important;
-}
-
-.store-actions-row{
-    display:grid !important;
-    gap:7px !important;
-    width:100% !important;
-    min-width:0 !important;
-}
-
-.store-actions-row-top{
-    grid-template-columns:repeat(auto-fit,minmax(0,1fr)) !important;
-}
-
-.store-actions-row-bottom{
-    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-}
-
-.store-actions-row button{
-    width:100% !important;
-    min-width:0 !important;
-    box-sizing:border-box !important;
-}
-
-@media(max-width:650px){
-    .store-actions{
-        display:flex !important;
-        flex-direction:column !important;
-        gap:7px !important;
-    }
-
-    .store-actions-row-top{
-        grid-template-columns:repeat(auto-fit,minmax(0,1fr)) !important;
-    }
-
-    .store-actions-row-bottom{
-        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-    }
-}
-</style>
-
 </style>
 
 </head>
@@ -20882,9 +20817,8 @@ function renderStores(skipIntegrationRefresh){
 
                 <div class="store-actions">
 
-                                        <div class="store-actions-row store-actions-row-top">
+                    ${integrationButtonHtml}
 
-                        ${integrationButtonHtml}
 
                     <button
                         class="
@@ -20902,11 +20836,6 @@ function renderStores(skipIntegrationRefresh){
 
                     </button>
 
-
-                    </div>
-
-
-                    <div class="store-actions-row store-actions-row-bottom">
 
                     <button
                         class="
@@ -20932,8 +20861,6 @@ function renderStores(skipIntegrationRefresh){
                         🗑
 
                     </button>
-
-                    </div>
 
                 </div>
 
