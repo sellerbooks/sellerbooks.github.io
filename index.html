@@ -14703,7 +14703,24 @@ function sellerBooksMarkCloudDirty(key){
 
 function sellerBooksStorageGetItem(key){
     const value=sellerBooksCloudState[key];
-    return value===undefined||value===null?null:String(value);
+    if(value===undefined||value===null)return null;
+
+    /*
+       Cloud data dapat menyimpan beberapa key sebagai JSON native
+       (khususnya sellerbooks_sales_imports sebagai ARRAY).
+       localStorage selalu mengembalikan STRING, sehingga nilai object/array
+       harus diserialisasi terlebih dahulu agar JSON.parse(...) di seluruh
+       mesin SellerBooks tetap bekerja sama seperti sebelumnya.
+    */
+    if(typeof value==="object"){
+        try{
+            return JSON.stringify(value);
+        }catch(error){
+            return null;
+        }
+    }
+
+    return String(value);
 }
 
 function sellerBooksStorageSetItem(key,value){
