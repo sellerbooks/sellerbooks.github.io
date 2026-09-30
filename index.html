@@ -7894,6 +7894,7 @@ function renderReportTransactionTable(){
                     <td>${escapeHtml(item.marketplace || "-")}</td>
                     <td>${escapeHtml(item.storeName || "-")}</td>
                     <td>${escapeHtml(String(item.orderId || "-"))}</td>
+                    <td>${escapeHtml(String(item.externalOrderId || item.tiktok_order_id || item.orderId || "-"))}</td>
                     <td>${escapeHtml(String(item.tiktok_product_id || item.product_id || "-"))}</td>
                     <td>${escapeHtml(String(item.tiktok_sku_id || item.sku_id || "-"))}</td>
                     <td>${escapeHtml(String(item.seller_sku || (String(item.marketplace || "").toLowerCase() === "tiktok shop" ? sku : "") || "-"))}</td>
@@ -12933,6 +12934,7 @@ document.addEventListener(
                         </th>
 
                         <th>Order</th>
+                        <th>Order ID Eksternal TikTok</th>
                         <th>Product ID TikTok</th>
                         <th>SKU ID TikTok</th>
                         <th>Seller SKU TikTok</th>
