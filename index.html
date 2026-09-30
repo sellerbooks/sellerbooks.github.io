@@ -5387,12 +5387,35 @@ function getAllReportTransactions(){
    FILTER TANGGAL
 ========================================================= */
 
+/* =========================================================
+   SELLERBOOKS TIMEZONE
+   Semua tanggal operasional SellerBooks wajib mengikuti WIB.
+   Jangan gunakan timezone browser untuk menentukan hari.
+========================================================= */
+const SELLERBOOKS_TIMEZONE = "Asia/Jakarta";
+
 function getIndonesiaDateString(value){
+    if(value === null || value === undefined || value === ""){
+        return null;
+    }
+
+    /*
+       DATE-ONLY (YYYY-MM-DD) adalah tanggal kalender, bukan timestamp.
+       Jangan kirim melalui new Date() karena browser di timezone tertentu
+       dapat menggesernya ke hari sebelumnya/berikutnya.
+    */
+    if(typeof value === "string"){
+        const dateOnly = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if(dateOnly){
+            return dateOnly[1] + "-" + dateOnly[2] + "-" + dateOnly[3];
+        }
+    }
+
     const date = value instanceof Date ? value : new Date(value);
     if(isNaN(date.getTime())){ return null; }
 
     const parts = new Intl.DateTimeFormat("en-CA",{
-        timeZone:"Asia/Jakarta",
+        timeZone:SELLERBOOKS_TIMEZONE,
         year:"numeric",
         month:"2-digit",
         day:"2-digit"
@@ -5409,6 +5432,10 @@ function getIndonesiaDateString(value){
     return map.year + "-" + map.month + "-" + map.day;
 }
 
+function getIndonesiaTodayKey(){
+    return getIndonesiaDateString(new Date());
+}
+
 function getIndonesiaTodayDate(){
     const todayString = getIndonesiaDateString(new Date());
     if(!todayString){ return null; }
@@ -5423,25 +5450,21 @@ function getLocalDateString(date){
 
 function getReportDateOnly(value){
     if(!value){ return null; }
-    if(value instanceof Date){
-        const dateString = getIndonesiaDateString(value);
-        return dateString ? new Date(dateString + "T00:00:00") : null;
-    }
 
-    const text = String(value).trim();
-    const isoDate = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    if(isoDate){
-        return new Date(Number(isoDate[1]), Number(isoDate[2])-1, Number(isoDate[3]));
-    }
-
-    const parsed = new Date(text);
-    if(isNaN(parsed.getTime())){ return null; }
-
-    /* Timestamp seperti 2026-09-10T20:21:00.000Z wajib
-       dikonversi ke WIB terlebih dahulu sebelum mengambil tanggal. */
-    const indonesiaDate = getIndonesiaDateString(parsed);
+    /*
+       Semua hasil dinormalisasi menjadi tanggal kalender WIB.
+       Object Date yang dikembalikan tetap memakai local midnight hanya
+       sebagai wadah tanggal; nilai kalendernya sudah ditentukan oleh WIB.
+    */
+    const indonesiaDate = getIndonesiaDateString(value);
     if(!indonesiaDate){ return null; }
-    return new Date(indonesiaDate + "T00:00:00");
+
+    const parts = indonesiaDate.split("-");
+    return new Date(
+        Number(parts[0]),
+        Number(parts[1]) - 1,
+        Number(parts[2])
+    );
 }
 
 function getReportInputDate(id){
@@ -28590,29 +28613,42 @@ document.addEventListener(
    ketika kalender berganti hari.
 ========================================= */
 function getSellerBooksDayKey(){
-    return getIndonesiaDateString(new Date());
+    return getIndonesiaTodayKey();
 }
 
 function prepareDailyViewState(){
     const todayKey = getSellerBooksDayKey();
+    let dashboardChanged = false;
+    let reportChanged = false;
+    let productAnalysisChanged = false;
 
     const dashboardDay = sellerBooksStorage.getItem("sellerbooks_dashboard_view_day");
     if(dashboardDay !== todayKey){
         sellerBooksStorage.setItem("sellerbooks_dashboard_view_day", todayKey);
         sellerBooksStorage.setItem("sellerbooks_dashboard_period", "today");
+        dashboardChanged = true;
     }
 
     const reportDay = sellerBooksStorage.getItem("sellerbooks_report_view_day");
     if(reportDay !== todayKey){
         sellerBooksStorage.setItem("sellerbooks_report_view_day", todayKey);
         sellerBooksStorage.setItem("sellerbooks_report_period", "today");
+        reportChanged = true;
     }
 
     const productAnalysisDay = sellerBooksStorage.getItem("sellerbooks_product_analysis_view_day");
     if(productAnalysisDay !== todayKey){
         sellerBooksStorage.setItem("sellerbooks_product_analysis_view_day", todayKey);
         sellerBooksStorage.setItem("sellerbooks_product_analysis_period", "today");
+        productAnalysisChanged = true;
     }
+
+    return {
+        todayKey: todayKey,
+        dashboardChanged: dashboardChanged,
+        reportChanged: reportChanged,
+        productAnalysisChanged: productAnalysisChanged
+    };
 }
 
 prepareDailyViewState();
@@ -28622,6 +28658,82 @@ prepareDailyViewState();
 ========================================= */
 
 let currentDashboardPeriod = "today";
+
+/*
+   Cek rollover hari berdasarkan WIB setiap menit.
+   Jadi ketika browser tetap terbuka melewati 00:00 WIB,
+   Dashboard tidak tetap memakai "Hari Kemarin".
+*/
+let sellerBooksLastWibDayKey = getSellerBooksDayKey();
+
+function sellerBooksCheckWibDayRollover(){
+    const todayKey = getSellerBooksDayKey();
+
+    if(!todayKey || todayKey === sellerBooksLastWibDayKey){
+        return;
+    }
+
+    sellerBooksLastWibDayKey = todayKey;
+
+    const state = prepareDailyViewState();
+
+    if(state.dashboardChanged){
+        currentDashboardPeriod = "today";
+
+        const dashboardPeriod =
+            document.getElementById("dashboardPeriod");
+
+        if(dashboardPeriod){
+            dashboardPeriod.value = "today";
+        }
+
+        dashboardCustomDateConfirmed = true;
+
+        if(typeof updateDashboardCustomDateUI === "function"){
+            updateDashboardCustomDateUI();
+        }
+
+        if(typeof updateDashboardByPeriod === "function"){
+            updateDashboardByPeriod();
+        }
+    }
+
+    if(state.reportChanged){
+        const reportPeriod =
+            document.getElementById("reportPeriod");
+
+        if(reportPeriod){
+            reportPeriod.value = "today";
+        }
+
+        if(typeof updateReportCustomDateUI === "function"){
+            updateReportCustomDateUI();
+        }
+
+        if(typeof renderReport === "function"){
+            renderReport();
+        }
+    }
+
+    if(state.productAnalysisChanged){
+        const productAnalysisPeriod =
+            document.getElementById("productAnalysisPeriod");
+
+        if(productAnalysisPeriod){
+            productAnalysisPeriod.value = "today";
+        }
+
+        if(typeof updateProductAnalysisCustomDateUI === "function"){
+            updateProductAnalysisCustomDateUI();
+        }
+
+        if(typeof renderProductAnalysis === "function"){
+            renderProductAnalysis();
+        }
+    }
+}
+
+setInterval(sellerBooksCheckWibDayRollover, 60 * 1000);
 
 
 async function sellerBooksManualRefreshDashboard(){
