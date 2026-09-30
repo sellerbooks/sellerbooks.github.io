@@ -19445,7 +19445,11 @@ async function syncTikTokOrdersNow(storeId){
         const data = await response.json().catch(function(){ return {}; });
 
         if(!response.ok || !data.ok){
-            throw new Error(data.error || "Sinkronisasi TikTok Shop gagal.");
+            let message = data.error || "Sinkronisasi TikTok Shop gagal.";
+            if(data.diagnostic){
+                message += "\n\nDIAGNOSTIC:\n" + JSON.stringify(data.diagnostic, null, 2);
+            }
+            throw new Error(message);
         }
 
         const result = Array.isArray(data.results)
