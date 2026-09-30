@@ -2133,12 +2133,24 @@ td{
     width:100%;
 }
 .store-actions{
-    display:grid;
-    grid-template-columns:90px 55px 90px 40px;
+    display:flex;
+    flex-direction:column;
     gap:7px;
     margin-top:18px;
     width:100%;
     min-width:0;
+}
+.store-actions-row{
+    display:grid;
+    gap:7px;
+    width:100%;
+    min-width:0;
+}
+.store-actions-row-top{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.store-actions-row-bottom{
+    grid-template-columns:repeat(2,minmax(0,1fr));
 }
 .store-actions button{
     width:100%;
@@ -20817,8 +20829,9 @@ function renderStores(skipIntegrationRefresh){
 
                 <div class="store-actions">
 
-                    ${integrationButtonHtml}
+                                        <div class="store-actions-row store-actions-row-top">
 
+                        ${integrationButtonHtml}
 
                     <button
                         class="
@@ -20836,6 +20849,11 @@ function renderStores(skipIntegrationRefresh){
 
                     </button>
 
+
+                    </div>
+
+
+                    <div class="store-actions-row store-actions-row-bottom">
 
                     <button
                         class="
@@ -20861,6 +20879,8 @@ function renderStores(skipIntegrationRefresh){
                         🗑
 
                     </button>
+
+                    </div>
 
                 </div>
 
