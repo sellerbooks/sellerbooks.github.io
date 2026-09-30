@@ -19185,7 +19185,7 @@ async function integrateStoreAccount(storeId){
 
     const marketplaceKey = String(marketplace.name || "")
         .toLowerCase()
-        .replace(/\\s+/g,"")
+        .replace(/\s+/g,"")
         .replace(/shop$/,"shop");
 
     let endpoint = "";
@@ -19268,7 +19268,7 @@ async function integrateStoreAccount(storeId){
     );
 
     const isSellerBooksWindowsApp =
-        /SellerBooksAdmin\\/1\\.0/i.test(navigator.userAgent);
+        /SellerBooksAdmin\/1\.0/i.test(navigator.userAgent);
 
     if(!oauthTab && !isSellerBooksWindowsApp){
         sellerBooksAlert(
