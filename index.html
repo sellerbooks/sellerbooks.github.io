@@ -7032,7 +7032,7 @@ function getReportTransactionFeePercent(transaction){
             ? Number(transaction.adminFeeSku)
             : NaN;
 
-    if(Number.isFinite(transactionSkuFee)){
+    if(Number.isFinite(transactionSkuFee) && transactionSkuFee > 0){
         return transactionSkuFee;
     }
 
@@ -7046,7 +7046,7 @@ function getReportTransactionFeePercent(transaction){
             ? Number(transaction.adminFeeSkuSnapshot)
             : NaN;
 
-    if(Number.isFinite(snapshotSkuFee)){
+    if(Number.isFinite(snapshotSkuFee) && snapshotSkuFee > 0){
         return snapshotSkuFee;
     }
 
@@ -7112,7 +7112,7 @@ function getReportTransactionFeePercent(transaction){
                     ? Number(masterProduct.adminFeePercent)
                     : NaN;
 
-            if(Number.isFinite(masterSkuFee)){
+            if(Number.isFinite(masterSkuFee) && masterSkuFee > 0){
                 return masterSkuFee;
             }
         }
@@ -7138,7 +7138,7 @@ function getReportTransactionFeePercent(transaction){
             ? Number(accountSnapshotValue)
             : NaN;
 
-    if(Number.isFinite(accountSnapshotFee)){
+    if(Number.isFinite(accountSnapshotFee) && accountSnapshotFee > 0){
         return accountSnapshotFee;
     }
 
