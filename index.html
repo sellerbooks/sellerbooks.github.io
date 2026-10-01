@@ -15308,7 +15308,7 @@ async function loginGoogle(){
 
             if(error){
                 console.error("Google Login gagal:",error);
-                sellerBooksAlert("❌ Login Google gagal.\\n\\n"+error.message);
+                sellerBooksAlert("❌ Login Google gagal.\n\n"+error.message);
                 return;
             }
 
@@ -15338,7 +15338,7 @@ async function loginGoogle(){
 
         if(error){
             console.error("Google Login gagal:",error);
-            sellerBooksAlert("❌ Login Google gagal.\\n\\n"+error.message);
+            sellerBooksAlert("❌ Login Google gagal.\n\n"+error.message);
         }
 
     }catch(error){
@@ -19509,7 +19509,7 @@ async function integrateStoreAccount(storeId){
 
         sellerBooksAlert(
             "Integrasi " + String(marketplace.name || "Marketplace") +
-            " gagal dimulai.\\n\\n" +
+            " gagal dimulai.\n\n" +
             (error?.message || "Terjadi kesalahan saat menyiapkan OAuth."),
             "Integrasikan Akun"
         );
@@ -19683,7 +19683,7 @@ async function syncShopeeOrdersNow(storeId){
         const timeTo = new Date(now).toISOString();
 
         sellerBooksAlert(
-            "Sedang mengambil order Shopee 7 hari terakhir...\\n\\n" +
+            "Sedang mengambil order Shopee 7 hari terakhir...\n\n" +
             "Data order akan disinkronkan melalui mesin Shopee SellerBooks.",
             "Sinkronisasi Shopee"
         );
@@ -19722,10 +19722,10 @@ async function syncShopeeOrdersNow(storeId){
 
         if(String(data.status || "").toUpperCase() === "SUCCESS"){
             sellerBooksAlert(
-                "Order Shopee berhasil ditarik.\\n\\n" +
-                "Order diproses: " + Number(data.fetched_count || 0) + "\\n" +
-                "Order baru: " + Number(data.upserted_count || 0) + "\\n" +
-                "Order diperbarui: " + Number(data.updated_count || 0) + "\\n" +
+                "Order Shopee berhasil ditarik.\n\n" +
+                "Order diproses: " + Number(data.fetched_count || 0) + "\n" +
+                "Order baru: " + Number(data.upserted_count || 0) + "\n" +
+                "Order diperbarui: " + Number(data.updated_count || 0) + "\n" +
                 "Order dilewati: " + Number(data.skipped_count || 0),
                 "Sinkronisasi Shopee Berhasil"
             );
@@ -19747,7 +19747,7 @@ async function syncShopeeOrdersNow(storeId){
     }catch(error){
         console.error("Tarik order Shopee gagal:",error);
         sellerBooksAlert(
-            "Tarik order Shopee gagal.\\n\\n" +
+            "Tarik order Shopee gagal.\n\n" +
             (error?.message || "Terjadi kesalahan saat sinkronisasi."),
             "Sinkronisasi Shopee"
         );
@@ -19804,7 +19804,7 @@ async function syncLazadaOrdersNow(storeId){
         const timeTo = now;
 
         sellerBooksAlert(
-            "Sedang mengambil order Lazada 7 hari terakhir...\\n\\n" +
+            "Sedang mengambil order Lazada 7 hari terakhir...\n\n" +
             "Data order akan disinkronkan melalui mesin Lazada SellerBooks.",
             "Sinkronisasi Lazada"
         );
@@ -19853,8 +19853,8 @@ async function syncLazadaOrdersNow(storeId){
 
         if(String(result.status || "").toUpperCase() === "NO_ORDERS"){
             sellerBooksAlert(
-                "Tidak ada order Lazada pada 7 hari terakhir.\\n\\n" +
-                "Order ditemukan: " + Number(result.orders_found || 0) + "\\n" +
+                "Tidak ada order Lazada pada 7 hari terakhir.\n\n" +
+                "Order ditemukan: " + Number(result.orders_found || 0) + "\n" +
                 "Transaksi: 0",
                 "Hasil Sinkronisasi Lazada"
             );
@@ -19863,8 +19863,8 @@ async function syncLazadaOrdersNow(storeId){
 
         if(String(result.status || "").toUpperCase() === "IMPORTED"){
             sellerBooksAlert(
-                "Order Lazada berhasil ditarik ke SellerBooks.\\n\\n" +
-                "Order ditemukan: " + Number(result.orders_found || 0) + "\\n" +
+                "Order Lazada berhasil ditarik ke SellerBooks.\n\n" +
+                "Order ditemukan: " + Number(result.orders_found || 0) + "\n" +
                 "Transaksi dikirim: " + Number(result.transactions_sent || 0),
                 "Sinkronisasi Lazada Berhasil"
             );
@@ -19886,7 +19886,7 @@ async function syncLazadaOrdersNow(storeId){
     }catch(error){
         console.error("Tarik order Lazada gagal:",error);
         sellerBooksAlert(
-            "Tarik order Lazada gagal.\\n\\n" +
+            "Tarik order Lazada gagal.\n\n" +
             (error?.message || "Terjadi kesalahan saat sinkronisasi."),
             "Sinkronisasi Lazada"
         );
