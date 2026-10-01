@@ -54,7 +54,8 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
     document.getElementById("comingBox").style.display="block";
     document.getElementById("comingText").textContent=
       "Integrasi " + (name||"marketplace") +
-      " sedang dipersiapkan. Fitur sinkronisasi API akan diproses setelah konektor/API resmi SellerBooks siap.";
+      " belum tersedia saat ini. Fitur sinkronisasi API akan segera hadir setelah konektor/API resmi SellerBooks siap. " +
+      "Sementara Anda bisa melakukan upload file orderan marketplace secara manual melalui Import Penjualan.";
   }
 
   function detectMarketplace(name){
@@ -104,8 +105,9 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
       if(!type)throw new Error("Marketplace tidak dikenali.");
 
       // Hanya TikTok Shop dan Lazada yang saat ini sudah aktif.
-      // Marketplace lainnya ditampilkan sebagai "Segera Hadir" sampai
-      // konektor/API resminya siap. Jangan tampilkan error teknis.
+      // Shopee, Blibli, Toco, Tokopedia, dan marketplace lain yang belum
+      // memiliki API resmi SellerBooks ditampilkan sebagai "Segera Hadir".
+      // Jangan tampilkan error teknis untuk marketplace yang belum tersedia.
       if(type!=="tiktok" && type!=="lazada"){
         showComingSoon(marketplaceName||type);
         return;
