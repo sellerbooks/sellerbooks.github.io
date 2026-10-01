@@ -139,17 +139,40 @@ public partial class MainWindow : Window
            membuka browser eksternal.
         */
         var source = e.Source ?? string.Empty;
-        if (!source.StartsWith(AppUrl, StringComparison.OrdinalIgnoreCase))
+
+        /*
+           WebView2 dapat mengirim Source dengan fragment/query yang berbeda.
+           Validasi host resmi SellerBooks, bukan string URL yang harus identik.
+        */
+        try
+        {
+            if (!Uri.TryCreate(source, UriKind.Absolute, out var sourceUri) ||
+                !string.Equals(
+                    sourceUri.Host,
+                    "sellerbooks.github.io",
+                    StringComparison.OrdinalIgnoreCase))
+                return;
+        }
+        catch
+        {
             return;
+        }
 
         string message;
         try
         {
             message = e.TryGetWebMessageAsString();
+
+            /*
+               Untuk kompatibilitas, bila payload dikirim sebagai JSON object
+               dan bukan JSON string, gunakan WebMessageAsJson.
+            */
+            if (string.IsNullOrWhiteSpace(message))
+                message = e.WebMessageAsJson;
         }
         catch
         {
-            return;
+            message = e.WebMessageAsJson;
         }
 
         if (string.IsNullOrWhiteSpace(message))
@@ -159,6 +182,17 @@ public partial class MainWindow : Window
         {
             using var document = System.Text.Json.JsonDocument.Parse(message);
             var root = document.RootElement;
+
+            // Jika JS mengirim string JSON, unwrap string tersebut.
+            if (root.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                var nested = root.GetString();
+                if (string.IsNullOrWhiteSpace(nested))
+                    return;
+
+                using var nestedDocument = System.Text.Json.JsonDocument.Parse(nested);
+                root = nestedDocument.RootElement.Clone();
+            }
 
             if (!root.TryGetProperty("type", out var typeElement) ||
                 !string.Equals(
@@ -194,6 +228,28 @@ public partial class MainWindow : Window
                 FileName = authorizationUri.AbsoluteUri,
                 UseShellExecute = true
             });
+
+            /*
+               ACK dikirim setelah Windows berhasil menyerahkan URL ke
+               browser default. JavaScript akan membatalkan fallback sehingga
+               tidak terjadi dua tab/browser.
+            */
+            try
+            {
+                web.PostWebMessageAsJson(
+                    System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        type = "sellerbooks.oauth.launched",
+                        marketplace = root.TryGetProperty("marketplace", out var marketplaceElement)
+                            ? marketplaceElement.GetString() ?? ""
+                            : ""
+                    }));
+            }
+            catch
+            {
+                // ACK hanya untuk koordinasi UI; kegagalan ACK tidak
+                // membatalkan browser yang sudah berhasil dibuka.
+            }
         }
         catch (Exception ex)
         {
