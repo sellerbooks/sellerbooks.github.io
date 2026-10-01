@@ -24533,36 +24533,39 @@ function restoreProductStockFromDeletedImports(deletedImports){
 
 function getReportTransactionSalesAmount(item){
 
+    if(!item){
+        return 0;
+    }
+
+    /*
+       SNAPSHOT HARIAN:
+       - Marketplace/API memiliki salesAmount yang sudah berasal dari
+         harga transaksi/order, sehingga nilai tersebut tetap dipakai.
+       - Untuk transaksi manual SellerBooks, transaksi hari ini boleh
+         membaca Master Produk terbaru.
+       - Setelah hari berganti, gunakan priceSnapshot yang disimpan
+         saat transaksi/import dibuat.
+       - Dengan demikian edit harga Master Produk tidak mengubah
+         penjualan hari-hari sebelumnya.
+    */
     if(
-        item &&
-        (item.marketplace === "TikTok" ||
-         item.marketplace === "Shopee" ||
-         item.marketplace === "Blibli" ||
-         item.marketplace === "Lazada")
+        item.marketplace === "TikTok" ||
+        item.marketplace === "TikTok Shop" ||
+        item.marketplace === "Shopee" ||
+        item.marketplace === "Blibli" ||
+        item.marketplace === "Lazada"
     ){
         return Number(item.salesAmount) || 0;
     }
 
-    const product =
-        getMasterProductBySku(
-            item && item.sku
-        );
+    const qty =
+        Number(item.qty) || 0;
 
-    if(!product){
+    if(qty <= 0){
         return 0;
     }
 
-    const qty =
-        Number(
-            item && item.qty
-        ) || 0;
-
-    const price =
-        Number(
-            product.price
-        ) || 0;
-
-    return price * qty;
+    return getReportTransactionPrice(item) * qty;
 
 }
 
