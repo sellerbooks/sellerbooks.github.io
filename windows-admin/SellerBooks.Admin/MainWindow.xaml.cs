@@ -229,27 +229,9 @@ public partial class MainWindow : Window
                 UseShellExecute = true
             });
 
-            /*
-               ACK dikirim setelah Windows berhasil menyerahkan URL ke
-               browser default. JavaScript akan membatalkan fallback sehingga
-               tidak terjadi dua tab/browser.
-            */
-            try
-            {
-                web.PostWebMessageAsJson(
-                    System.Text.Json.JsonSerializer.Serialize(new
-                    {
-                        type = "sellerbooks.oauth.launched",
-                        marketplace = root.TryGetProperty("marketplace", out var marketplaceElement)
-                            ? marketplaceElement.GetString() ?? ""
-                            : ""
-                    }));
-            }
-            catch
-            {
-                // ACK hanya untuk koordinasi UI; kegagalan ACK tidak
-                // membatalkan browser yang sudah berhasil dibuka.
-            }
+            // Tidak ada ACK/fallback ke WebView lagi.
+            // Halaman web hanya mengirim satu perintah launch ke native host,
+            // dan native host membuka browser default tepat satu kali.
         }
         catch (Exception ex)
         {
