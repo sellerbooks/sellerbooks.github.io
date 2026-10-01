@@ -19520,7 +19520,7 @@ async function syncTikTokOrdersNow(storeId){
             sellerBooksAlert(
                 "Order TikTok berhasil ditarik ke SellerBooks.\n\n" +
                 "Order ditemukan: " + Number(result.orders_found || 0) + "\n" +
-                "Transaksi SKU+QTY dikirim: " + Number(result.transactions_sent || 0) + "\n\n" +
+                "Total QTY SKU dikirim: " + Number(result.total_qty_sent ?? result.transactions_sent ?? 0) + "\n\n" +
                 "Mesin import SellerBooks sudah menerima data tersebut.",
                 "Sinkronisasi TikTok Berhasil"
             );
