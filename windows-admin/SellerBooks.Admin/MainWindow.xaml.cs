@@ -16,6 +16,7 @@ public partial class MainWindow : Window
     private readonly string _userDataFolder;
     private readonly DispatcherTimer _networkTimer;
     private bool _offline;
+    private OAuthWindow? _oauthWindow;
 
     public MainWindow()
     {
@@ -244,7 +245,7 @@ public partial class MainWindow : Window
                 }
             }
 
-            LaunchMarketplaceBrowser(launcherUrl);
+            LaunchMarketplaceOAuthWindow(launcherUrl);
 
             // Hanya satu launch.
             // Launcher akan mengganti URL dirinya dengan authorization_url,
@@ -261,40 +262,74 @@ public partial class MainWindow : Window
         }
     }
 
-    private static void LaunchMarketplaceBrowser(string launcherUrl)
+    private void LaunchMarketplaceOAuthWindow(string launcherUrl)
     {
-        /*
-           Chrome/Edge mendukung --new-window dan --window-size.
-           Launcher dibuka sebagai satu window kecil, lalu launcher melakukan
-           location.replace() ke URL OAuth marketplace. Dengan begitu tidak
-           ada launcher window -> tab kedua saat halaman marketplace dimuat.
-        */
-        var browserPath = GetDefaultChromiumBrowserPath();
-
-        if (!string.IsNullOrWhiteSpace(browserPath))
+        // OAuth marketplace sekarang dijalankan di WebView2 native berukuran
+        // kecil. Dengan begitu NewWindowRequested dari Lazada/TikTok dapat
+        // diarahkan kembali ke WebView yang sama, bukan menjadi tab Chrome baru.
+        try
         {
-            var psi = new ProcessStartInfo
+            if (_oauthWindow != null)
             {
-                FileName = browserPath,
-                UseShellExecute = false
+                try
+                {
+                    _oauthWindow.Activate();
+                    return;
+                }
+                catch
+                {
+                    _oauthWindow = null;
+                }
+            }
+
+            _oauthWindow = new OAuthWindow(
+                launcherUrl,
+                (success, detail) =>
+                {
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        _oauthWindow = null;
+
+                        if (success)
+                        {
+                            // Koneksi sudah difinalisasi oleh backend OAuth.
+                            // Muat ulang halaman Akun Toko agar status integrasi
+                            // langsung terlihat tanpa membuka browser baru.
+                            Browser.CoreWebView2?.Navigate(AppUrl + "#stores");
+                        }
+                        else if (!string.Equals(
+                                     detail,
+                                     "OAUTH_WINDOW_CLOSED",
+                                     StringComparison.OrdinalIgnoreCase))
+                        {
+                            MessageBox.Show(
+                                this,
+                                "Integrasi akun marketplace tidak berhasil."
+                                + (string.IsNullOrWhiteSpace(detail) ? "" : "\n\n" + detail),
+                                "Integrasikan Akun",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                        }
+                    }));
+                })
+            {
+                Owner = this
             };
 
-            psi.ArgumentList.Add("--new-window");
-            psi.ArgumentList.Add("--window-size=520,760");
-            psi.ArgumentList.Add(launcherUrl);
-
-            Process.Start(psi);
-            return;
+            _oauthWindow.Closed += (_, _) => _oauthWindow = null;
+            _oauthWindow.Show();
+            _oauthWindow.Activate();
         }
-
-        // Browser default non-Chromium: tetap aman, tetapi ukuran window
-        // diserahkan kepada browser karena tidak ada API Windows generik
-        // untuk mengatur ukuran window browser pihak ketiga.
-        Process.Start(new ProcessStartInfo
+        catch (Exception ex)
         {
-            FileName = launcherUrl,
-            UseShellExecute = true
-        });
+            _oauthWindow = null;
+            MessageBox.Show(
+                this,
+                "Jendela autentikasi marketplace tidak dapat dibuka.\n\n" + ex.Message,
+                "Integrasikan Akun",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
     }
 
     private static string? GetDefaultChromiumBrowserPath()
