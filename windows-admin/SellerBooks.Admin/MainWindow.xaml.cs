@@ -223,15 +223,32 @@ public partial class MainWindow : Window
                 return;
             }
 
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = authorizationUri.AbsoluteUri,
-                UseShellExecute = true
-            });
+            var launcherUrl = authorizationUri.AbsoluteUri;
 
-            // Tidak ada ACK/fallback ke WebView lagi.
-            // Halaman web hanya mengirim satu perintah launch ke native host,
-            // dan native host membuka browser default tepat satu kali.
+            if (root.TryGetProperty("launcher_url", out var launcherElement))
+            {
+                var rawLauncherUrl = launcherElement.GetString();
+
+                if (!string.IsNullOrWhiteSpace(rawLauncherUrl) &&
+                    Uri.TryCreate(rawLauncherUrl, UriKind.Absolute, out var parsedLauncherUri) &&
+                    string.Equals(
+                        parsedLauncherUri.Scheme,
+                        Uri.UriSchemeHttps,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(
+                        parsedLauncherUri.Host,
+                        "sellerbooks.github.io",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    launcherUrl = parsedLauncherUri.AbsoluteUri;
+                }
+            }
+
+            LaunchMarketplaceBrowser(launcherUrl);
+
+            // Hanya satu launch.
+            // Launcher akan mengganti URL dirinya dengan authorization_url,
+            // sehingga login resmi marketplace tetap berada di TAB/WINDOW yang sama.
         }
         catch (Exception ex)
         {
@@ -241,6 +258,92 @@ public partial class MainWindow : Window
                 "Integrasikan Akun",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
+        }
+    }
+
+    private static void LaunchMarketplaceBrowser(string launcherUrl)
+    {
+        /*
+           Chrome/Edge mendukung --new-window dan --window-size.
+           Launcher dibuka sebagai satu window kecil, lalu launcher melakukan
+           location.replace() ke URL OAuth marketplace. Dengan begitu tidak
+           ada launcher window -> tab kedua saat halaman marketplace dimuat.
+        */
+        var browserPath = GetDefaultChromiumBrowserPath();
+
+        if (!string.IsNullOrWhiteSpace(browserPath))
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = browserPath,
+                UseShellExecute = false
+            };
+
+            psi.ArgumentList.Add("--new-window");
+            psi.ArgumentList.Add("--window-size=520,760");
+            psi.ArgumentList.Add(launcherUrl);
+
+            Process.Start(psi);
+            return;
+        }
+
+        // Browser default non-Chromium: tetap aman, tetapi ukuran window
+        // diserahkan kepada browser karena tidak ada API Windows generik
+        // untuk mengatur ukuran window browser pihak ketiga.
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = launcherUrl,
+            UseShellExecute = true
+        });
+    }
+
+    private static string? GetDefaultChromiumBrowserPath()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(
+                @"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\https\UserChoice");
+
+            var progId = key?.GetValue("ProgId") as string;
+
+            if (string.IsNullOrWhiteSpace(progId))
+                return null;
+
+            var isChrome = progId.Contains("Chrome", StringComparison.OrdinalIgnoreCase);
+            var isEdge = progId.Contains("MSEdge", StringComparison.OrdinalIgnoreCase) ||
+                         progId.Contains("Edge", StringComparison.OrdinalIgnoreCase);
+
+            if (!isChrome && !isEdge)
+                return null;
+
+            var candidates = isChrome
+                ? new[]
+                {
+                    Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "Google", "Chrome", "Application", "chrome.exe"),
+                    Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                        "Google", "Chrome", "Application", "chrome.exe"),
+                    Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                        "Google", "Chrome", "Application", "chrome.exe")
+                }
+                : new[]
+                {
+                    Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                        "Microsoft", "Edge", "Application", "msedge.exe"),
+                    Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                        "Microsoft", "Edge", "Application", "msedge.exe")
+                };
+
+            return candidates.FirstOrDefault(File.Exists);
+        }
+        catch
+        {
+            return null;
         }
     }
 
