@@ -19435,54 +19435,18 @@ async function integrateStoreAccount(storeId){
             if(window.chrome?.webview?.postMessage){
                 /*
                    Windows:
-                   - Kirim authorization_url ke host native.
-                   - Jika host mengirim ACK, selesai.
-                   - Jika ACK tidak terlihat oleh WebView2, tetap lakukan
-                     fallback window.open agar browser tetap terbuka.
-                   - HASIL window.open tidak dianggap sebagai indikator gagal,
-                     karena WebView2 dapat mengembalikan null/WindowProxy kosong
-                     walaupun NewWindowRequested sudah membuka browser eksternal.
-                   - Jangan tampilkan popup error setelah percobaan pembukaan
-                     browser. Popup hanya boleh muncul dari catch apabila init
-                     OAuth/backend memang gagal.
+                   - Kirim authorization_url SATU KALI ke host native.
+                   - Host native membuka browser default SATU KALI.
+                   - Tidak ada fallback window.open() karena fallback tersebut
+                     dapat membuat browser membuka tab kedua.
+                   - Tidak menggunakan trik Alt+F4/Ctrl+W atau membunuh proses
+                     browser, agar tab/window lain milik pengguna tetap aman.
                 */
-                let nativeLaunchAck = false;
-
-                const ackHandler = function(event){
-                    try{
-                        const payload = event?.data;
-                        if(payload && payload.type === "sellerbooks.oauth.launched"){
-                            nativeLaunchAck = true;
-                            window.chrome.webview.removeEventListener("message", ackHandler);
-                        }
-                    }catch(_){}
-                };
-
-                window.chrome.webview.addEventListener("message", ackHandler);
-
                 window.chrome.webview.postMessage(JSON.stringify({
                     type:"sellerbooks.oauth.launch",
                     marketplace:String(marketplace.name || ""),
                     authorization_url:String(data.authorization_url)
                 }));
-
-                setTimeout(function(){
-                    try{
-                        window.chrome.webview.removeEventListener("message", ackHandler);
-                    }catch(_){}
-
-                    if(!nativeLaunchAck){
-                        try{
-                            window.open(
-                                String(data.authorization_url),
-                                "_blank",
-                                "noopener,noreferrer"
-                            );
-                        }catch(fallbackError){
-                            console.warn("Fallback OAuth Windows gagal:", fallbackError);
-                        }
-                    }
-                }, 1200);
             }else{
                 throw new Error("Bridge native SellerBooks Admin tidak tersedia. Silakan gunakan build SellerBooks Admin terbaru.");
             }
