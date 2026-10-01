@@ -16184,9 +16184,7 @@ function calculateProductAnalysisRows(){
             getMasterProductBySku(sku);
 
         const cost =
-            product
-                ? Number(product.cost) || 0
-                : 0;
+            getReportTransactionCost(item);
 
         const feePercent =
             getReportTransactionFeePercent(item);
@@ -16204,9 +16202,16 @@ function calculateProductAnalysisRows(){
     return Array.from(rows.values())
         .map(function(row){
 
+            /*
+               Harga Jual selalu merupakan harga transaksi aktual:
+               Total Penjualan / QTY.
+               Dengan begitu tampilan komputer, browser, dan APK
+               mengikuti hasil transaksi yang sama dan tidak membaca
+               harga Master Produk terbaru untuk transaksi lama.
+            */
             row.price =
-                row.product
-                    ? Number(row.product.price) || 0
+                Number(row.qty) > 0
+                    ? Number(row.sales) / Number(row.qty)
                     : 0;
 
             row.name =
@@ -16464,30 +16469,13 @@ function renderProductAnalysis(){
                     : "✓ UNTUNG";
 
             /*
-               Harga Jual khusus Shopee dan TikTok:
-               gunakan Total Penjualan / QTY.
-               Marketplace lain tetap memakai harga Master Produk.
+               Harga Jual = Total Penjualan / QTY.
+               Berlaku sama untuk semua marketplace.
             */
-            /*
-               Harga Jual khusus jika baris ini memang berasal
-               hanya dari Shopee atau TikTok.
-               Tidak bergantung pada nilai dropdown marketplace,
-               karena dropdown menyimpan marketplaceId, bukan nama.
-               Marketplace lain tetap memakai harga Master Produk.
-            */
-            const isShopeeTikTokOnly =
-                row.marketplaces &&
-                row.marketplaces.size === 1 &&
-                (row.marketplaces.has("shopee") ||
-                 row.marketplaces.has("tiktok") ||
-                 row.marketplaces.has("blibli") ||
-                     row.marketplaces.has("lazada"));
-
             const displayPrice =
-                isShopeeTikTokOnly &&
                 Number(row.qty) > 0
                     ? (Number(row.sales) / Number(row.qty))
-                    : row.price;
+                    : 0;
 
             const action =
                 row.product
