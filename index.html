@@ -2323,6 +2323,20 @@ td{
 
 }
 
+/* Tarik Order selalu berada di baris kedua, tepat di bawah Copot Integrasi. */
+.store-action-order-row{
+    grid-column:1;
+    width:100%;
+    min-width:0;
+    display:flex;
+    align-items:stretch;
+}
+
+.store-action-order-row .store-action-button{
+    width:100%;
+    min-width:0;
+}
+
 
 .store-actions button{
 
@@ -20786,14 +20800,16 @@ function renderStores(skipIntegrationRefresh){
                     ⛓ Copot Integrasi
                 </button>
                 ${isTikTokStore ? `
-                <button
-                    type="button"
-                    class="store-action-button store-integrate-button"
-                    onclick="syncTikTokOrdersNow('${store.id}')"
-                    title="Tarik order TikTok Shop dan hitung SKU + QTY"
-                >
-                    🔄 Tarik Order
-                </button>` : ""}
+                <div class="store-action-order-row">
+                    <button
+                        type="button"
+                        class="store-action-button store-integrate-button"
+                        onclick="syncTikTokOrdersNow('${store.id}')"
+                        title="Tarik order TikTok Shop dan hitung SKU + QTY"
+                    >
+                        🔄 Tarik Order
+                    </button>
+                </div>` : ""}
               `
             : `
                 <button
