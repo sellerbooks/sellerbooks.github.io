@@ -19428,24 +19428,26 @@ async function integrateStoreAccount(storeId){
         if(isSellerBooksWindowsApp){
             /*
                Handoff native Windows:
-               - token SellerBooks TIDAK dikirim ke Chrome.
-               - hanya authorization_url hasil backend yang dikirim.
-               - MainWindow WPF akan membuka URL tersebut dengan browser default.
+               - Jangan buka authorization_url langsung dari native host.
+               - Native host membuka SATU browser window kecil berisi
+                 marketplace-oauth-launcher.html.
+               - Launcher kemudian location.replace() ke authorization_url,
+                 sehingga login marketplace tetap berada pada TAB YANG SAMA.
+               - Tidak ada fallback window.open(), ACK timer, Alt+F4/Ctrl+W,
+                 atau pembunuhan proses browser.
             */
             if(window.chrome?.webview?.postMessage){
-                /*
-                   Windows:
-                   - Kirim authorization_url SATU KALI ke host native.
-                   - Host native membuka browser default SATU KALI.
-                   - Tidak ada fallback window.open() karena fallback tersebut
-                     dapat membuat browser membuka tab kedua.
-                   - Tidak menggunakan trik Alt+F4/Ctrl+W atau membunuh proses
-                     browser, agar tab/window lain milik pengguna tetap aman.
-                */
+                const launcherUrl =
+                    "https://sellerbooks.github.io/marketplace-oauth-launcher.html" +
+                    "?handoff=windows" +
+                    "&marketplace_name=" + encodeURIComponent(String(marketplace.name || "")) +
+                    "&authorization_url=" + encodeURIComponent(String(data.authorization_url));
+
                 window.chrome.webview.postMessage(JSON.stringify({
                     type:"sellerbooks.oauth.launch",
                     marketplace:String(marketplace.name || ""),
-                    authorization_url:String(data.authorization_url)
+                    authorization_url:String(data.authorization_url),
+                    launcher_url:launcherUrl
                 }));
             }else{
                 throw new Error("Bridge native SellerBooks Admin tidak tersedia. Silakan gunakan build SellerBooks Admin terbaru.");
