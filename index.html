@@ -19377,11 +19377,56 @@ async function integrateStoreAccount(storeId){
                - MainWindow WPF akan membuka URL tersebut dengan browser default.
             */
             if(window.chrome?.webview?.postMessage){
+                /*
+                   Kirim ke host Windows dan tunggu ACK. Jika host lama tidak
+                   mengenali bridge, fallback membuka URL OAuth lewat NewWindowRequested.
+                   Ini menjaga Lazada/TikTok tetap kompatibel dengan build lama.
+                */
+                let nativeLaunchAck = false;
+
+                const ackHandler = function(event){
+                    try{
+                        const payload = event?.data;
+                        if(payload && payload.type === "sellerbooks.oauth.launched"){
+                            nativeLaunchAck = true;
+                            window.chrome.webview.removeEventListener("message", ackHandler);
+                        }
+                    }catch(_){}
+                };
+
+                window.chrome.webview.addEventListener("message", ackHandler);
+
                 window.chrome.webview.postMessage(JSON.stringify({
                     type:"sellerbooks.oauth.launch",
                     marketplace:String(marketplace.name || ""),
                     authorization_url:String(data.authorization_url)
                 }));
+
+                setTimeout(function(){
+                    try{
+                        window.chrome.webview.removeEventListener("message", ackHandler);
+                    }catch(_){}
+
+                    if(!nativeLaunchAck){
+                        try{
+                            const fallbackTab = window.open(
+                                String(data.authorization_url),
+                                "_blank",
+                                "noopener,noreferrer"
+                            );
+                            if(!fallbackTab){
+                                throw new Error("Browser eksternal tidak dapat dibuka.");
+                            }
+                        }catch(fallbackError){
+                            sellerBooksAlert(
+                                "Browser untuk login " +
+                                String(marketplace.name || "marketplace") +
+                                " tidak dapat dibuka. Silakan klik Integrasikan Akun lagi.",
+                                "Integrasikan Akun"
+                            );
+                        }
+                    }
+                }, 1200);
             }else{
                 throw new Error("Bridge native SellerBooks Admin tidak tersedia. Silakan gunakan build SellerBooks Admin terbaru.");
             }
