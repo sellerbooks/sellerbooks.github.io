@@ -19633,6 +19633,267 @@ async function syncTikTokOrdersNow(storeId){
     }
 }
 
+
+/* =====================================================
+   TARIK ORDER SHOPEE
+   Mengikuti pola session -> Edge Function -> hasil sync.
+   Tidak menyentuh mesin TikTok.
+===================================================== */
+
+async function syncShopeeOrdersNow(storeId){
+    const store = stores.find(function(item){
+        return String(item.id) === String(storeId);
+    });
+
+    if(!store){
+        sellerBooksAlert("Akun toko Shopee tidak ditemukan.","Tarik Order Shopee");
+        return;
+    }
+
+    const marketplace = marketplaces.find(function(item){
+        return item.id === store.marketplaceId;
+    });
+
+    const isShopee = String(marketplace?.name || "")
+        .toLowerCase()
+        .replace(/\s+/g,"")
+        .includes("shopee");
+
+    if(!isShopee){
+        sellerBooksAlert("Akun toko ini bukan Shopee.","Tarik Order Shopee");
+        return;
+    }
+
+    const connection = getStoreIntegrationConnection(store);
+    if(!connection || String(connection.connection_status || "").toUpperCase() !== "CONNECTED"){
+        sellerBooksAlert("Akun Shopee belum terintegrasi.","Tarik Order Shopee");
+        return;
+    }
+
+    try{
+        const sessionResult = await sellerBooksSupabase.auth.getSession();
+        const session = sessionResult?.data?.session;
+
+        if(!session?.access_token){
+            throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
+        }
+
+        const now = Date.now();
+        const timeFrom = new Date(now - (7 * 24 * 60 * 60 * 1000)).toISOString();
+        const timeTo = new Date(now).toISOString();
+
+        sellerBooksAlert(
+            "Sedang mengambil order Shopee 7 hari terakhir...\\n\\n" +
+            "Data order akan disinkronkan melalui mesin Shopee SellerBooks.",
+            "Sinkronisasi Shopee"
+        );
+
+        const response = await fetch(
+            SELLERBOOKS_SUPABASE_URL +
+            "/functions/v1/sellerbooks-shopee-sync-orders",
+            {
+                method:"POST",
+                headers:{
+                    "apikey":SELLERBOOKS_SUPABASE_KEY,
+                    "Authorization":"Bearer " + session.access_token,
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify({
+                    connection_id:String(connection.id),
+                    store_id:String(store.id),
+                    time_from:timeFrom,
+                    time_to:timeTo
+                })
+            }
+        );
+
+        const data = await response.json().catch(function(){ return {}; });
+
+        if(!response.ok || !data.ok){
+            throw new Error(
+                data.error ||
+                "Sinkronisasi order Shopee gagal."
+            );
+        }
+
+        if(String(data.status || "").toUpperCase() === "ERROR"){
+            throw new Error(String(data.error || "Shopee API mengembalikan error."));
+        }
+
+        if(String(data.status || "").toUpperCase() === "SUCCESS"){
+            sellerBooksAlert(
+                "Order Shopee berhasil ditarik.\\n\\n" +
+                "Order diproses: " + Number(data.fetched_count || 0) + "\\n" +
+                "Order baru: " + Number(data.upserted_count || 0) + "\\n" +
+                "Order diperbarui: " + Number(data.updated_count || 0) + "\\n" +
+                "Order dilewati: " + Number(data.skipped_count || 0),
+                "Sinkronisasi Shopee Berhasil"
+            );
+
+            if(typeof loadStores === "function"){
+                setTimeout(function(){ loadStores(); },300);
+            }else if(typeof renderStores === "function"){
+                setTimeout(function(){ renderStores(true); },300);
+            }
+            return;
+        }
+
+        sellerBooksAlert(
+            "Sinkronisasi Shopee selesai dengan status: " +
+            String(data.status || "UNKNOWN"),
+            "Hasil Sinkronisasi Shopee"
+        );
+
+    }catch(error){
+        console.error("Tarik order Shopee gagal:",error);
+        sellerBooksAlert(
+            "Tarik order Shopee gagal.\\n\\n" +
+            (error?.message || "Terjadi kesalahan saat sinkronisasi."),
+            "Sinkronisasi Shopee"
+        );
+    }
+}
+
+
+/* =====================================================
+   TARIK ORDER LAZADA
+   Mengikuti pola session -> Edge Function -> hasil sync.
+   Tidak menyentuh mesin TikTok.
+===================================================== */
+
+async function syncLazadaOrdersNow(storeId){
+    const store = stores.find(function(item){
+        return String(item.id) === String(storeId);
+    });
+
+    if(!store){
+        sellerBooksAlert("Akun toko Lazada tidak ditemukan.","Tarik Order Lazada");
+        return;
+    }
+
+    const marketplace = marketplaces.find(function(item){
+        return item.id === store.marketplaceId;
+    });
+
+    const isLazada = String(marketplace?.name || "")
+        .toLowerCase()
+        .replace(/\s+/g,"")
+        .includes("lazada");
+
+    if(!isLazada){
+        sellerBooksAlert("Akun toko ini bukan Lazada.","Tarik Order Lazada");
+        return;
+    }
+
+    const connection = getStoreIntegrationConnection(store);
+    if(!connection || String(connection.connection_status || "").toUpperCase() !== "CONNECTED"){
+        sellerBooksAlert("Akun Lazada belum terintegrasi.","Tarik Order Lazada");
+        return;
+    }
+
+    try{
+        const sessionResult = await sellerBooksSupabase.auth.getSession();
+        const session = sessionResult?.data?.session;
+
+        if(!session?.access_token){
+            throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
+        }
+
+        const now = Math.floor(Date.now() / 1000);
+        const timeFrom = now - (7 * 24 * 60 * 60);
+        const timeTo = now;
+
+        sellerBooksAlert(
+            "Sedang mengambil order Lazada 7 hari terakhir...\\n\\n" +
+            "Data order akan disinkronkan melalui mesin Lazada SellerBooks.",
+            "Sinkronisasi Lazada"
+        );
+
+        const response = await fetch(
+            SELLERBOOKS_SUPABASE_URL +
+            "/functions/v1/sellerbooks-lazada-sync-orders",
+            {
+                method:"POST",
+                headers:{
+                    "apikey":SELLERBOOKS_SUPABASE_KEY,
+                    "Authorization":"Bearer " + session.access_token,
+                    "Content-Type":"application/json"
+                },
+                body:JSON.stringify({
+                    connection_id:String(connection.id),
+                    store_id:String(store.id),
+                    time_from:timeFrom,
+                    time_to:timeTo
+                })
+            }
+        );
+
+        const data = await response.json().catch(function(){ return {}; });
+
+        if(!response.ok || !data.ok){
+            throw new Error(
+                data.error ||
+                "Sinkronisasi order Lazada gagal."
+            );
+        }
+
+        const result = Array.isArray(data.results)
+            ? data.results.find(function(x){
+                return String(x.connection_id || "") === String(connection.id);
+            }) || data.results[0]
+            : null;
+
+        if(!result){
+            throw new Error("Koneksi Lazada tidak diproses oleh mesin sinkronisasi.");
+        }
+
+        if(String(result.status || "").toUpperCase() === "ERROR"){
+            throw new Error(String(result.error || "Lazada API mengembalikan error."));
+        }
+
+        if(String(result.status || "").toUpperCase() === "NO_ORDERS"){
+            sellerBooksAlert(
+                "Tidak ada order Lazada pada 7 hari terakhir.\\n\\n" +
+                "Order ditemukan: " + Number(result.orders_found || 0) + "\\n" +
+                "Transaksi: 0",
+                "Hasil Sinkronisasi Lazada"
+            );
+            return;
+        }
+
+        if(String(result.status || "").toUpperCase() === "IMPORTED"){
+            sellerBooksAlert(
+                "Order Lazada berhasil ditarik ke SellerBooks.\\n\\n" +
+                "Order ditemukan: " + Number(result.orders_found || 0) + "\\n" +
+                "Transaksi dikirim: " + Number(result.transactions_sent || 0),
+                "Sinkronisasi Lazada Berhasil"
+            );
+
+            if(typeof loadStores === "function"){
+                setTimeout(function(){ loadStores(); },300);
+            }else if(typeof renderStores === "function"){
+                setTimeout(function(){ renderStores(true); },300);
+            }
+            return;
+        }
+
+        sellerBooksAlert(
+            "Sinkronisasi Lazada selesai dengan status: " +
+            String(result.status || "UNKNOWN"),
+            "Hasil Sinkronisasi Lazada"
+        );
+
+    }catch(error){
+        console.error("Tarik order Lazada gagal:",error);
+        sellerBooksAlert(
+            "Tarik order Lazada gagal.\\n\\n" +
+            (error?.message || "Terjadi kesalahan saat sinkronisasi."),
+            "Sinkronisasi Lazada"
+        );
+    }
+}
+
+
 /* =====================================================
    HASIL OAUTH SHOPEE
 ===================================================== */
@@ -20786,8 +21047,59 @@ function renderStores(skipIntegrationRefresh){
               `
             : "";
 
-        const isTikTokStore =
-            String(marketplace.name || "").toLowerCase().replace(/\s+/g,"").includes("tiktok");
+        const marketplaceKey = String(marketplace.name || "")
+            .toLowerCase()
+            .replace(/\s+/g,"");
+
+        const isTikTokStore = marketplaceKey.includes("tiktok");
+        const isShopeeStore = marketplaceKey.includes("shopee");
+        const isLazadaStore = marketplaceKey.includes("lazada");
+
+        /*
+           TikTok tetap memakai mesin yang sudah berjalan.
+           Shopee + Lazada hanya ditambahkan sebagai adapter UI baru
+           menuju Edge Function masing-masing. Mekanisme TikTok TIDAK
+           diubah.
+        */
+        let orderSyncButtonHtml = "";
+
+        if(isTikTokStore){
+            orderSyncButtonHtml = `
+                <div class="store-action-order-row">
+                    <button
+                        type="button"
+                        class="store-action-button store-integrate-button"
+                        onclick="syncTikTokOrdersNow('${store.id}')"
+                        title="Tarik order TikTok Shop dan hitung SKU + QTY"
+                    >
+                        🔄 Tarik Order
+                    </button>
+                </div>`;
+        }else if(isShopeeStore){
+            orderSyncButtonHtml = `
+                <div class="store-action-order-row">
+                    <button
+                        type="button"
+                        class="store-action-button store-integrate-button"
+                        onclick="syncShopeeOrdersNow('${store.id}')"
+                        title="Tarik order Shopee"
+                    >
+                        🔄 Tarik Order
+                    </button>
+                </div>`;
+        }else if(isLazadaStore){
+            orderSyncButtonHtml = `
+                <div class="store-action-order-row">
+                    <button
+                        type="button"
+                        class="store-action-button store-integrate-button"
+                        onclick="syncLazadaOrdersNow('${store.id}')"
+                        title="Tarik order Lazada"
+                    >
+                        🔄 Tarik Order
+                    </button>
+                </div>`;
+        }
 
         const integrationButtonHtml = isIntegrated
             ? `
@@ -20799,17 +21111,7 @@ function renderStores(skipIntegrationRefresh){
                 >
                     ⛓ Copot Integrasi
                 </button>
-                ${isTikTokStore ? `
-                <div class="store-action-order-row">
-                    <button
-                        type="button"
-                        class="store-action-button store-integrate-button"
-                        onclick="syncTikTokOrdersNow('${store.id}')"
-                        title="Tarik order TikTok Shop dan hitung SKU + QTY"
-                    >
-                        🔄 Tarik Order
-                    </button>
-                </div>` : ""}
+                ${orderSyncButtonHtml}
               `
             : `
                 <button
