@@ -103,9 +103,10 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
       const type=detectMarketplace(marketplaceName);
       if(!type)throw new Error("Marketplace tidak dikenali.");
 
-      // Blibli, Toco, dan Tokopedia ditahan sementara sampai konektor/API resmi
-      // SellerBooks siap. Jangan tampilkan error teknis kepada pengguna.
-      if(type==="blibli" || type==="toco" || type==="tokopedia"){
+      // Hanya TikTok Shop dan Lazada yang saat ini sudah aktif.
+      // Marketplace lainnya ditampilkan sebagai "Segera Hadir" sampai
+      // konektor/API resminya siap. Jangan tampilkan error teknis.
+      if(type!=="tiktok" && type!=="lazada"){
         showComingSoon(marketplaceName||type);
         return;
       }
