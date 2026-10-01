@@ -19216,7 +19216,6 @@ async function integrateStoreAccount(storeId){
     */
     const providerMap = {
         tiktok:  "sellerbooks-tiktok-oauth",
-        shopee:  "sellerbooks-shopee-oauth",
         lazada:  "sellerbooks-lazada-oauth"
     };
 
@@ -19229,39 +19228,22 @@ async function integrateStoreAccount(storeId){
 
     if(marketplaceKey.includes("tiktok")){
         endpoint = providerMap.tiktok;
-    }else if(marketplaceKey.includes("shopee")){
-        endpoint = providerMap.shopee;
     }else if(marketplaceKey.includes("lazada")){
         endpoint = providerMap.lazada;
     }
 
     /*
-       Marketplace yang backend OAuth-nya belum aktif tetap memakai
-       launcher lama agar tidak mengubah provider yang belum approved.
-       Begitu konektornya aktif, cukup tambahkan endpoint ke providerMap.
+       Untuk sementara hanya TikTok Shop dan Lazada yang sudah aktif.
+       Marketplace lain JANGAN diteruskan ke OAuth backend karena
+       konektornya belum siap. Tampilkan popup "Segera Hadir" langsung
+       dari halaman SellerBooks agar tidak muncul error konfigurasi OAuth.
     */
     if(!endpoint){
-        const launcherUrl = new URL(
-            "marketplace-oauth-launcher.html" +
-            "?v=20260930-bridge-fallback" +
-            "&store_id=" + encodeURIComponent(String(store.id)) +
-            "&marketplace_id=" + encodeURIComponent(String(store.marketplaceId || "")) +
-            "&marketplace_name=" + encodeURIComponent(String(marketplace.name || "")),
-            window.location.href
-        ).href;
-
-        const fallbackPopup = window.open(
-            launcherUrl,
-            "SellerBooksMarketplaceOAuth",
-            "popup=yes,width=520,height=760,resizable=yes,scrollbars=yes"
+        sellerBooksAlert(
+            "Integrasi " + String(marketplace.name || "marketplace") +
+            " belum tersedia saat ini. Fitur sinkronisasi API akan segera hadir setelah konektor/API resmi SellerBooks siap.",
+            "Segera Hadir"
         );
-
-        if(!fallbackPopup){
-            sellerBooksAlert(
-                "Popup/tab baru diblokir browser. Silakan izinkan pop-up untuk SellerBooks lalu klik Integrasikan Akun lagi.",
-                "Integrasikan Akun"
-            );
-        }
         return;
     }
 
