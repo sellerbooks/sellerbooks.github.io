@@ -24629,7 +24629,11 @@ function getSalesAmount(row,data){
 
     }
 
-    if(data.marketplace === "TikTok"){
+    if(
+        data.marketplace === "TikTok" ||
+        data.marketplace === "TikTok Shop"
+    ){
+        /* TikTok file export: kolom SKU Subtotal After Discount. */
         return parseSalesNumber(row[15]);
     }
 
