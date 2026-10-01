@@ -11,7 +11,7 @@ body{display:flex;align-items:center;justify-content:center;min-height:100vh}
 .spinner{width:34px;height:34px;border:4px solid #e2e8f0;border-top-color:#0f172a;border-radius:50%;margin:0 auto 20px;animation:spin .8s linear infinite}
 h1{font-size:24px;margin:0 0 12px}
 p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
-.error{display:none}.error h1{color:#b91c1c}
+.error{display:none}.error h1{color:#b91c1c}.coming{display:none}.coming h1{color:#2563eb}.soon-icon{font-size:42px;margin-bottom:14px}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
@@ -24,6 +24,11 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
 <div class="box error" id="errorBox">
   <h1>Integrasi gagal dimulai</h1>
   <p id="errorText"></p>
+</div>
+<div class="box coming" id="comingBox">
+  <div class="soon-icon">🚀</div>
+  <h1>Segera Hadir</h1>
+  <p id="comingText">Integrasi marketplace ini sedang dipersiapkan.</p>
 </div>
 <script>
 (function(){
@@ -41,6 +46,15 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
     document.getElementById("loading").style.display="none";
     document.getElementById("errorBox").style.display="block";
     document.getElementById("errorText").textContent=message||"Integrasi marketplace tidak dapat dimulai.";
+  }
+
+  function showComingSoon(name){
+    document.getElementById("loading").style.display="none";
+    document.getElementById("errorBox").style.display="none";
+    document.getElementById("comingBox").style.display="block";
+    document.getElementById("comingText").textContent=
+      "Integrasi " + (name||"marketplace") +
+      " sedang dipersiapkan. Fitur sinkronisasi API akan diproses setelah konektor/API resmi SellerBooks siap.";
   }
 
   function detectMarketplace(name){
@@ -89,12 +103,17 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
       const type=detectMarketplace(marketplaceName);
       if(!type)throw new Error("Marketplace tidak dikenali.");
 
+      // Blibli, Toco, dan Tokopedia ditahan sementara sampai konektor/API resmi
+      // SellerBooks siap. Jangan tampilkan error teknis kepada pengguna.
+      if(type==="blibli" || type==="toco" || type==="tokopedia"){
+        showComingSoon(marketplaceName||type);
+        return;
+      }
+
       const provider=PROVIDERS[type];
       if(!provider){
-        throw new Error(
-          "OAuth " + (marketplaceName||type) +
-          " belum memiliki konektor API aktif. Struktur integrasi universal SellerBooks sudah siap; konektor marketplace ini perlu kredensial/API resmi sebelum dapat digunakan."
-        );
+        showComingSoon(marketplaceName||type);
+        return;
       }
 
       document.getElementById("title").textContent="Menghubungkan "+provider.label;
