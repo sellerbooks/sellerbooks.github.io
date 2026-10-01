@@ -15268,6 +15268,48 @@ function sellerBooksOpenApplication(){
 async function loginGoogle(){
     try{
 
+        /*
+           WINDOWS SELLERBOOKS OPERATOR/ADMIN:
+           Login Google harus tetap berlangsung di WebView yang sama.
+           Jangan biarkan client OAuth menyerahkan navigasi ke browser
+           eksternal, karena verifier PKCE tersimpan pada storage WebView.
+        */
+        const isSellerBooksWindowsApp =
+            /SellerBooks(Admin|Operator)\/1\.0/i.test(
+                navigator.userAgent.replace(/\s+/g,"")
+            );
+
+        if(isSellerBooksWindowsApp){
+            const {data,error}=await sellerBooksSupabase.auth.signInWithOAuth({
+                provider:"google",
+
+                options:{
+                    redirectTo:"https://sellerbooks.github.io/",
+                    skipBrowserRedirect:true,
+                    queryParams:{
+                        prompt:"select_account"
+                    }
+                }
+            });
+
+            if(error){
+                console.error("Google Login gagal:",error);
+                sellerBooksAlert("❌ Login Google gagal.\\n\\n"+error.message);
+                return;
+            }
+
+            if(data && data.url){
+                /*
+                   Navigasi langsung pada WebView aktif.
+                   Dengan cara ini PKCE verifier dibuat dan callback
+                   kembali ke storage WebView yang sama.
+                */
+                window.location.assign(data.url);
+            }
+
+            return;
+        }
+
         const {error}=await sellerBooksSupabase.auth.signInWithOAuth({
             provider:"google",
 
@@ -15282,7 +15324,7 @@ async function loginGoogle(){
 
         if(error){
             console.error("Google Login gagal:",error);
-            sellerBooksAlert("❌ Login Google gagal.\n\n"+error.message);
+            sellerBooksAlert("❌ Login Google gagal.\\n\\n"+error.message);
         }
 
     }catch(error){
