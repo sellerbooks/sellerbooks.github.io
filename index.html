@@ -19297,7 +19297,8 @@ async function integrateStoreAccount(storeId){
     if(!endpoint){
         sellerBooksAlert(
             "Integrasi " + String(marketplace.name || "marketplace") +
-            " belum tersedia saat ini. Fitur sinkronisasi API akan segera hadir setelah konektor/API resmi SellerBooks siap.",
+            " belum tersedia saat ini. Fitur sinkronisasi API akan segera hadir setelah konektor/API resmi SellerBooks siap. " +
+            "Sementara Anda bisa melakukan upload file orderan marketplace secara manual melalui Import Penjualan.",
             "Segera Hadir"
         );
         return;
