@@ -112,20 +112,17 @@ public partial class OAuthWindow : Window
             string? reason = null;
             string? connectionId = null;
 
-            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
-            foreach (var key in query.AllKeys)
+            var queryValues = ParseQuery(uri.Query);
+            foreach (var key in queryValues.Keys)
             {
-                if (string.IsNullOrWhiteSpace(key))
-                    continue;
-
                 if (key.StartsWith("sellerbooks_", StringComparison.OrdinalIgnoreCase) &&
                     key.EndsWith("_oauth", StringComparison.OrdinalIgnoreCase))
                 {
                     hasSellerBooksOAuthResult = true;
-                    var value = query[key] ?? "";
+                    var value = queryValues[key] ?? "";
                     success = string.Equals(value, "success", StringComparison.OrdinalIgnoreCase);
-                    reason = query["reason"];
-                    connectionId = query["connection_id"];
+                    reason = queryValues.TryGetValue("reason", out var reasonValue) ? reasonValue : null;
+                    connectionId = queryValues.TryGetValue("connection_id", out var connectionValue) ? connectionValue : null;
                     break;
                 }
             }
@@ -140,6 +137,28 @@ public partial class OAuthWindow : Window
         {
             // Biarkan navigasi normal jika URL bukan callback yang dikenali.
         }
+    }
+
+
+    private static Dictionary<string, string> ParseQuery(string query)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var raw = query.TrimStart('?');
+        if (string.IsNullOrWhiteSpace(raw))
+            return result;
+
+        foreach (var part in raw.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var pieces = part.Split('=', 2);
+            var key = Uri.UnescapeDataString(pieces[0].Replace("+", " "));
+            var value = pieces.Length > 1
+                ? Uri.UnescapeDataString(pieces[1].Replace("+", " "))
+                : "";
+            if (!string.IsNullOrWhiteSpace(key))
+                result[key] = value;
+        }
+
+        return result;
     }
 
     private void OAuth_NavigationCompleted(
