@@ -24567,37 +24567,96 @@ function getMasterProductBySku(sku){
         return null;
     }
 
-    let masterProducts = [];
+    /*
+       SUMBER MASTER PRODUK HARUS KONSISTEN SAAT IMPORT.
+       Sebelumnya fungsi ini hanya membaca sellerBooksStorage.
+       Pada kondisi startup/sync tertentu, storage dapat masih
+       memegang snapshot lama sementara variabel products sudah
+       memiliki Master Produk terbaru. Akibatnya costSnapshot
+       dapat tersimpan 0 walaupun dashboard sesaat kemudian
+       membaca HPP dari Master Produk yang benar.
+
+       Sekarang dua sumber dibandingkan. Jika sumber storage
+       memiliki field kosong/0 tetapi runtime products memiliki
+       nilai Master Produk yang valid, nilai runtime dipakai.
+       Ini khusus untuk snapshot saat transaksi dibuat; setelah
+       snapshot tersimpan, transaksi historis tidak dihitung ulang.
+    */
+
+    let storedProduct = null;
 
     try{
-
-        masterProducts =
+        const masterProducts =
             JSON.parse(
                 sellerBooksStorage.getItem(
                     "sellerbooks_products"
                 ) || "[]"
             );
 
+        if(Array.isArray(masterProducts)){
+            storedProduct =
+                masterProducts.find(function(product){
+                    return String(product?.sku || "")
+                        .trim()
+                        .toLowerCase() === normalizedSku;
+                }) || null;
+        }
     }catch(error){
-
-        masterProducts = [];
-
+        storedProduct = null;
     }
 
-    if(!Array.isArray(masterProducts)){
+    let runtimeProduct = null;
+
+    try{
+        if(Array.isArray(products)){
+            runtimeProduct =
+                products.find(function(product){
+                    return String(product?.sku || "")
+                        .trim()
+                        .toLowerCase() === normalizedSku;
+                }) || null;
+        }
+    }catch(error){
+        runtimeProduct = null;
+    }
+
+    if(!storedProduct && !runtimeProduct){
         return null;
     }
 
-    return masterProducts.find(function(product){
+    if(!storedProduct){
+        return {...runtimeProduct};
+    }
 
-        return String(
-            product.sku || ""
-        )
-        .trim()
-        .toLowerCase() === normalizedSku;
+    if(!runtimeProduct){
+        return {...storedProduct};
+    }
 
-    }) || null;
+    const merged = {...storedProduct};
 
+    /*
+       Untuk field yang menjadi snapshot historis, runtime yang
+       mempunyai nilai nyata mengalahkan nilai kosong/0 dari
+       cache lama. Nilai 0 tetap dipertahankan bila kedua sumber
+       memang sama-sama 0.
+    */
+    ["cost","price","adminFeePercent"].forEach(function(field){
+        const storedValue = Number(storedProduct[field]);
+        const runtimeValue = Number(runtimeProduct[field]);
+
+        if(
+            Number.isFinite(runtimeValue) &&
+            runtimeValue !== 0 &&
+            (
+                !Number.isFinite(storedValue) ||
+                storedValue === 0
+            )
+        ){
+            merged[field] = runtimeValue;
+        }
+    });
+
+    return merged;
 }
 
 
@@ -25477,6 +25536,12 @@ function saveSalesImportData(){
                     ? String(row[skuIndex] || "").trim()
                     : "";
 
+            /*
+               SNAPSHOT IMPORT — ambil Master Produk dari sumber
+               runtime + cloud/cache yang sudah diselaraskan.
+               Nilai ini dibekukan di transaksi dan tidak boleh
+               dihitung ulang dari Master Produk setelah hari berganti.
+            */
             const masterProductAtImport =
                 getMasterProductBySku(transactionSku);
 
