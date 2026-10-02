@@ -19484,7 +19484,7 @@ async function integrateStoreAccount(storeId){
 }
 
 
-let sellerBooksApiQueueWorkerRunning=false;
+let sellerBooksExcelDispatchRunning=false;
 
 async function sellerBooksGetQueueSession(){
     const sessionResult=await sellerBooksSupabase.auth.getSession();
@@ -19513,7 +19513,7 @@ function sellerBooksApiImportProfile(marketplace){
     return profiles[key]||null;
 }
 
-async function sellerBooksProcessApiQueueItem(queueItem,showResult){
+async function sellerBooksDispatchExcelToImportPenjualan(queueItem,showResult){
     if(!queueItem) return null;
     const marketplaceName=String(queueItem.marketplace||"").trim();
     const profile=sellerBooksApiImportProfile(marketplaceName);
@@ -19619,10 +19619,10 @@ async function sellerBooksProcessApiQueueItem(queueItem,showResult){
     return result;
 }
 
-async function sellerBooksProcessApiQueue(opts){
+async function sellerBooksDispatchExcelQueue(opts){
     opts=opts||{};
-    if(sellerBooksApiQueueWorkerRunning)return;
-    sellerBooksApiQueueWorkerRunning=true;
+    if(sellerBooksExcelDispatchRunning)return;
+    sellerBooksExcelDispatchRunning=true;
     try{
         const session=await sellerBooksGetQueueSession();
         const ownerId=String(session.user?.id||"");
@@ -19640,7 +19640,7 @@ async function sellerBooksProcessApiQueue(opts){
             const claimed=await claim.json();
             if(!Array.isArray(claimed)||!claimed[0])continue;
             try{
-                const result=await sellerBooksProcessApiQueueItem(claimed[0],!!opts.showResult);
+                const result=await sellerBooksDispatchExcelToImportPenjualan(claimed[0],!!opts.showResult);
                 if(result?.retry){
                     await sellerBooksQueueRequest("sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id),{
                         method:"PATCH",headers:{"Prefer":"return=minimal"},
@@ -19658,17 +19658,17 @@ async function sellerBooksProcessApiQueue(opts){
             }
         }
     }finally{
-        sellerBooksApiQueueWorkerRunning=false;
+        sellerBooksExcelDispatchRunning=false;
     }
 }
 
-function startSellerBooksApiQueueWorker(){
-    if(window.__sellerBooksApiQueueWorkerStarted)return;
-    window.__sellerBooksApiQueueWorkerStarted=true;
-    setTimeout(function(){sellerBooksProcessApiQueue({showResult:false}).catch(console.error);},5000);
-    setInterval(function(){sellerBooksProcessApiQueue({showResult:false}).catch(console.error);},30000);
+function startSellerBooksExcelDispatchWorker(){
+    if(window.__sellerBooksExcelDispatchStarted)return;
+    window.__sellerBooksExcelDispatchStarted=true;
+    setTimeout(function(){sellerBooksDispatchExcelQueue({showResult:false}).catch(console.error);},5000);
+    setInterval(function(){sellerBooksDispatchExcelQueue({showResult:false}).catch(console.error);},30000);
 }
-function startSellerBooksTikTokApiQueueWorker(){ startSellerBooksApiQueueWorker(); }
+function startSellerBooksTikTokApiQueueWorker(){ startSellerBooksExcelDispatchWorker(); }
 async function syncTikTokOrdersNow(storeId){
     const store=stores.find(function(item){
         return String(item.id)===String(storeId);
@@ -19791,7 +19791,7 @@ async function syncTikTokOrdersNow(storeId){
         }
 
         if(result.status==="RAW_FILE_READY"){
-            await sellerBooksProcessApiQueue({showResult:true});
+            await sellerBooksDispatchExcelQueue({showResult:true});
             return;
         }
 
@@ -19838,7 +19838,7 @@ async function syncShopeeOrdersNow(storeId){
         const data=await response.json().catch(()=>({}));
         if(!response.ok||!data.ok)throw new Error(data.error||"Pengambilan data Shopee gagal.");
         if(data.status==="NO_ORDERS"){sellerBooksAlert("Tidak ada order Shopee pada periode yang diperiksa.\n\nOrder ditemukan: "+Number(data.orders_found||0),"Hasil Tarik Order Shopee");return;}
-        if(data.status==="RAW_FILE_READY"){await sellerBooksProcessApiQueue({showResult:true});return;}
+        if(data.status==="RAW_FILE_READY"){await sellerBooksDispatchExcelQueue({showResult:true});return;}
         throw new Error("Status API Shopee: "+String(data.status||"UNKNOWN"));
     }catch(error){console.error("Tarik order Shopee gagal:",error);sellerBooksAlert("Tarik order Shopee gagal.\n\n"+(error?.message||"Terjadi kesalahan."),"Sinkronisasi Shopee");}
 }
@@ -19868,7 +19868,7 @@ async function syncLazadaOrdersNow(storeId){
         if(!result)throw new Error("Koneksi Lazada tidak menghasilkan file data.");
         if(result.status==="ERROR")throw new Error(String(result.error||"Lazada API mengembalikan error."));
         if(result.status==="NO_ORDERS"){sellerBooksAlert("Tidak ada order Lazada pada periode yang diperiksa.\n\nOrder ditemukan: "+Number(result.orders_found||0),"Hasil Tarik Order Lazada");return;}
-        if(result.status==="RAW_FILE_READY"){await sellerBooksProcessApiQueue({showResult:true});return;}
+        if(result.status==="RAW_FILE_READY"){await sellerBooksDispatchExcelQueue({showResult:true});return;}
         throw new Error("Status API Lazada: "+String(result.status||"UNKNOWN"));
     }catch(error){console.error("Tarik order Lazada gagal:",error);sellerBooksAlert("Tarik order Lazada gagal.\n\n"+(error?.message||"Terjadi kesalahan."),"Sinkronisasi Lazada");}
 }
