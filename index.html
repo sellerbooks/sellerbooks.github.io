@@ -7351,12 +7351,14 @@ function calculateReportFinancial(){
 
         if(product){
 
+            /*
+               HPP historis wajib mengikuti snapshot transaksi
+               yang dibuat saat Import Penjualan.
+               Master Produk terbaru tidak boleh mengubah
+               HPP transaksi yang sudah terjadi.
+            */
             totalHpp +=
-                (
-                    Number(
-                        product.cost
-                    ) || 0
-                ) *
+                getReportTransactionCost(item) *
                 qty;
 
         }
