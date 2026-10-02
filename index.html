@@ -7897,7 +7897,7 @@ function renderReportTransactionTable(){
         }
 
         if(!transactions.length){
-            body.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:35px;color:#64748b;">Belum ada data penjualan.</td></tr>`;
+            body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:35px;color:#64748b;">Belum ada data penjualan.</td></tr>`;
             if(pagination){ pagination.style.display = "none"; }
             return;
         }
@@ -7947,9 +7947,6 @@ function renderReportTransactionTable(){
                     <td>${escapeHtml(item.storeName || "-")}</td>
                     <td>${escapeHtml(String(item.orderId || "-"))}</td>
                     <td>${escapeHtml(String(item.externalOrderId || item.tiktok_order_id || item.orderId || "-"))}</td>
-                    <td>${escapeHtml(String(item.tiktok_product_id || item.product_id || "-"))}</td>
-                    <td>${escapeHtml(String(item.tiktok_sku_id || item.sku_id || "-"))}</td>
-                    <td>${escapeHtml(String(item.seller_sku || (String(item.marketplace || "").toLowerCase() === "tiktok shop" ? sku : "") || "-"))}</td>
                     <td>${escapeHtml(sku || "-")}</td>
                     <td>${Number(item.qty) || 0}</td>
                     <td>${formatRupiah(getReportTransactionSalesAmount(item))}</td>
@@ -8035,7 +8032,7 @@ function renderReportTransactionTable(){
 
     }catch(error){
         console.error("Gagal menampilkan Detail Penjualan:", error);
-        body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:35px;color:#dc2626;">Detail penjualan gagal ditampilkan. Silakan refresh halaman.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:35px;color:#dc2626;">Detail penjualan gagal ditampilkan. Silakan refresh halaman.</td></tr>`;
         if(pagination){ pagination.style.display = "none"; }
     }
 }
@@ -12910,7 +12907,7 @@ document.addEventListener(
                     <tr>
 
                         <td
-                            colspan="8"
+                            colspan="9"
                             style="
                                 text-align:center;
                                 padding:35px;
@@ -12987,9 +12984,6 @@ document.addEventListener(
 
                         <th>Order</th>
                         <th>Order ID</th>
-                        <th>Product ID</th>
-                        <th>SKU ID</th>
-                        <th>Seller SKU</th>
                         <th>SKU SellerBooks</th>
                         <th>QTY</th>
                         <th>Penjualan</th>
