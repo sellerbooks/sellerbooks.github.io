@@ -6228,10 +6228,13 @@ function renderReportSalesSummary(){
 
             if(product){
 
+                /*
+                   Gunakan HPP snapshot transaksi yang sudah dibuat
+                   oleh mesin Import Penjualan. Jangan mengambil
+                   Master Produk terbaru untuk transaksi historis.
+                */
                 const hppPerUnit =
-                    Number(
-                        product.cost
-                    ) || 0;
+                    getReportTransactionCost(item);
 
 
                 totalHpp +=
