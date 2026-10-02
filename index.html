@@ -19483,47 +19483,391 @@ async function integrateStoreAccount(storeId){
     }
 }
 
-async function syncTikTokOrdersNow(storeId){
-    const store = stores.find(function(item){
-        return String(item.id) === String(storeId);
+
+let sellerBooksTikTokQueueWorkerRunning=false;
+
+async function sellerBooksGetQueueSession(){
+    const sessionResult=await sellerBooksSupabase.auth.getSession();
+    const session=sessionResult?.data?.session;
+    if(!session?.access_token){
+        throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
+    }
+    return session;
+}
+
+async function sellerBooksQueueRequest(path,options){
+    const session=await sellerBooksGetQueueSession();
+    const headers=new Headers(options?.headers||{});
+    headers.set("apikey",SELLERBOOKS_SUPABASE_KEY);
+    headers.set("Authorization","Bearer "+session.access_token);
+    headers.set("Content-Type","application/json");
+
+    return fetch(
+        SELLERBOOKS_SUPABASE_URL+"/rest/v1/"+path,
+        {
+            ...(options||{}),
+            headers:headers
+        }
+    );
+}
+
+/*
+   API TikTok hanya menghasilkan file mentah berbentuk tabel Excel.
+   Fungsi ini memasukkan tabel tersebut ke currentSalesImport lalu
+   memanggil saveSalesImportData(), yaitu mesin Import Penjualan
+   yang sama dengan upload Excel manual.
+*/
+async function sellerBooksProcessTikTokApiQueueItem(queueItem,showResult){
+    if(!queueItem) return null;
+
+    const store=stores.find(function(item){
+        return String(item.id)===String(queueItem.store_id);
     });
 
     if(!store){
-        sellerBooksAlert("Akun toko TikTok tidak ditemukan.","Tarik Order TikTok");
+        return {
+            ok:false,
+            retry:true,
+            error:"Akun toko untuk file API belum tersedia di workspace."
+        };
+    }
+
+    const headers=Array.isArray(queueItem.headers)
+        ? queueItem.headers
+        : [];
+
+    const rows=Array.isArray(queueItem.rows)
+        ? queueItem.rows
+        : [];
+
+    if(!headers.length||!rows.length){
+        throw new Error("File mentah TikTok tidak berisi header/data transaksi.");
+    }
+
+    const marketplace=marketplaces.find(function(item){
+        const id=String(item?.id||"").trim().toLowerCase();
+        const name=String(item?.name||"").trim().toLowerCase();
+
+        return id==="tiktok" ||
+            name==="tiktok shop" ||
+            name==="tiktokshop";
+    });
+
+    currentSalesImport={
+        file:null,
+        fileName:String(queueItem.file_name||"AUTO-SYNC-TIKTOK.xlsx"),
+        fileType:"XLSX",
+        sheetName:"Orders",
+        rawData:[headers].concat(rows),
+        headerRowIndex:0,
+        headers:headers,
+        dataRows:rows,
+        skuColumn:"Seller SKU",
+        skuScore:100,
+        qtyColumn:"Quantity",
+        qtyScore:100,
+        marketplace:"TikTok",
+        marketplaceScore:100,
+        marketplaceId:
+            marketplace?.id ||
+            store.marketplaceId ||
+            "tiktok",
+        skuIndex:headers.indexOf("Seller SKU"),
+        qtyIndex:headers.indexOf("Quantity"),
+        priceColumn:"SKU Subtotal After Discount",
+        priceIndex:headers.indexOf("SKU Subtotal After Discount"),
+        columnsConfirmed:true,
+        confirmedAt:new Date().toISOString()
+    };
+
+    if(currentSalesImport.skuIndex<0){
+        throw new Error("Kolom Seller SKU tidak ditemukan pada file API.");
+    }
+
+    if(currentSalesImport.qtyIndex<0){
+        throw new Error("Kolom Quantity tidak ditemukan pada file API.");
+    }
+
+    /*
+       Gunakan akun toko yang sama dengan tombol Tarik Order.
+       Mesin saveSalesImportData tetap membaca store dari UI
+       seperti pada Import Penjualan manual.
+    */
+    const storeSelect=document.getElementById("salesStoreAccount");
+
+    if(storeSelect){
+        storeSelect.value=String(store.id);
+
+        /*
+           Jika option belum ada, tambahkan tanpa mengubah
+           mekanisme Import Penjualan.
+        */
+        if(storeSelect.value!==String(store.id)){
+            const option=document.createElement("option");
+            option.value=String(store.id);
+            option.textContent=String(store.name||store.id);
+            storeSelect.appendChild(option);
+            storeSelect.value=String(store.id);
+        }
+    }
+
+    const packingInput=document.getElementById("packingCostPerOrder");
+
+    if(packingInput){
+        const savedPackingCost=
+            sellerBooksStorage.getItem("sellerbooks_packing_unit_cost");
+
+        packingInput.value=
+            savedPackingCost!==null &&
+            savedPackingCost!==undefined &&
+            String(savedPackingCost)!==""
+                ? String(savedPackingCost)
+                : "0";
+    }
+
+    const record=saveSalesImportData();
+
+    const session=await sellerBooksGetQueueSession();
+
+    const result={
+        new_transactions:record ? Number(record.rowCount||0) : 0,
+        new_qty:record ? Number(record.totalQty||0) : 0,
+        new_packing_count:record ? Number(record.uniquePackingCount||0) : 0,
+        import_id:record?.id || null
+    };
+
+    await sellerBooksQueueRequest(
+        "sellerbooks_api_import_queue?id=eq."+encodeURIComponent(queueItem.id),
+        {
+            method:"PATCH",
+            headers:{
+                "Prefer":"return=minimal"
+            },
+            body:JSON.stringify({
+                status:"IMPORTED",
+                error_message:null,
+                processed_at:new Date().toISOString()
+            })
+        }
+    );
+
+    /*
+       Setelah mesin Import Penjualan selesai, gunakan refresh
+       yang sama dengan Import Manual.
+    */
+    if(typeof updateReports==="function"){
+        updateReports();
+    }
+
+    if(typeof renderProducts==="function"){
+        renderProducts();
+    }
+
+    if(typeof renderNotifications==="function"){
+        renderNotifications();
+    }
+
+    if(typeof loadStores==="function"){
+        setTimeout(function(){loadStores();},300);
+    }else if(typeof renderStores==="function"){
+        setTimeout(function(){renderStores(true);},300);
+    }
+
+    if(showResult){
+        if(result.new_transactions>0){
+            sellerBooksAlert(
+                "Order TikTok berhasil diproses oleh mesin Import Penjualan.\n\n"+
+                "Packing baru: "+
+                result.new_packing_count.toLocaleString("id-ID")+
+                "\nPCS baru: "+
+                result.new_qty.toLocaleString("id-ID")+
+                "\n\n"+
+                "Data lama/duplikat otomatis dilewati oleh mesin Import Penjualan.",
+                "Import TikTok Berhasil"
+            );
+        }else{
+            sellerBooksAlert(
+                "Order TikTok sudah ada di SellerBooks.\n\n"+
+                "Tidak ada transaksi baru yang ditambahkan.",
+                "TikTok Sudah Terimport"
+            );
+        }
+    }
+
+    return {
+        ok:true,
+        result:result
+    };
+}
+
+async function sellerBooksProcessTikTokApiQueue(options){
+    const opts=options||{};
+    if(sellerBooksTikTokQueueWorkerRunning)return;
+
+    sellerBooksTikTokQueueWorkerRunning=true;
+
+    try{
+        const r=await sellerBooksQueueRequest(
+            "sellerbooks_api_import_queue?status=eq.PENDING&marketplace=eq.TikTok%20Shop&order=created_at.asc&limit=5",
+            {method:"GET"}
+        );
+
+        if(!r.ok){
+            throw new Error("Gagal membaca antrean import API: "+r.status);
+        }
+
+        const items=await r.json();
+        const list=Array.isArray(items)?items:[];
+
+        for(const item of list){
+            const claim=await sellerBooksQueueRequest(
+                "sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id)+"&status=eq.PENDING",
+                {
+                    method:"PATCH",
+                    headers:{
+                        "Prefer":"return=representation"
+                    },
+                    body:JSON.stringify({
+                        status:"PROCESSING",
+                        processing_started_at:new Date().toISOString(),
+                        error_message:null
+                    })
+                }
+            );
+
+            if(!claim.ok)continue;
+
+            const claimed=await claim.json();
+            if(!Array.isArray(claimed)||!claimed[0])continue;
+
+            try{
+                await sellerBooksProcessTikTokApiQueueItem(
+                    claimed[0],
+                    !!opts.showResult
+                );
+            }catch(error){
+                const message=
+                    error?.message ||
+                    String(error);
+
+                await sellerBooksQueueRequest(
+                    "sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id),
+                    {
+                        method:"PATCH",
+                        headers:{
+                            "Prefer":"return=minimal"
+                        },
+                        body:JSON.stringify({
+                            status:"ERROR",
+                            error_message:message,
+                            processed_at:new Date().toISOString()
+                        })
+                    }
+                );
+
+                if(opts.showResult){
+                    throw error;
+                }
+
+                console.error(
+                    "SellerBooks TikTok API queue gagal:",
+                    error
+                );
+            }
+        }
+    }finally{
+        sellerBooksTikTokQueueWorkerRunning=false;
+    }
+}
+
+function startSellerBooksTikTokApiQueueWorker(){
+    if(window.__sellerBooksTikTokQueueWorkerStarted)return;
+
+    window.__sellerBooksTikTokQueueWorkerStarted=true;
+
+    /*
+       API otomatis hanya memasukkan file mentah ke antrean.
+       Browser SellerBooks menjalankan mesin Import Penjualan.
+    */
+    setTimeout(function(){
+        sellerBooksProcessTikTokApiQueue({
+            showResult:false
+        }).catch(function(error){
+            console.error(
+                "TikTok API queue worker:",
+                error
+            );
+        });
+    },5000);
+
+    setInterval(function(){
+        sellerBooksProcessTikTokApiQueue({
+            showResult:false
+        }).catch(function(error){
+            console.error(
+                "TikTok API queue worker:",
+                error
+            );
+        });
+    },30000);
+}
+
+async function syncTikTokOrdersNow(storeId){
+    const store=stores.find(function(item){
+        return String(item.id)===String(storeId);
+    });
+
+    if(!store){
+        sellerBooksAlert(
+            "Akun toko TikTok tidak ditemukan.",
+            "Tarik Order TikTok"
+        );
         return;
     }
 
-    const connection = getStoreIntegrationConnection(store);
-    if(!connection || String(connection.connection_status || "").toUpperCase() !== "CONNECTED"){
-        sellerBooksAlert("Akun TikTok belum terintegrasi.","Tarik Order TikTok");
+    const connection=getStoreIntegrationConnection(store);
+
+    if(
+        !connection ||
+        String(connection.connection_status||"").toUpperCase()!=="CONNECTED"
+    ){
+        sellerBooksAlert(
+            "Akun TikTok belum terintegrasi.",
+            "Tarik Order TikTok"
+        );
         return;
     }
 
     try{
-        const sessionResult = await sellerBooksSupabase.auth.getSession();
-        const session = sessionResult?.data?.session;
+        const sessionResult=
+            await sellerBooksSupabase.auth.getSession();
+
+        const session=sessionResult?.data?.session;
 
         if(!session?.access_token){
-            throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
+            throw new Error(
+                "Sesi SellerBooks tidak tersedia. Silakan login kembali."
+            );
         }
 
-        const now = Math.floor(Date.now()/1000);
-        const timeFrom = now - (7 * 24 * 60 * 60);
+        const now=Math.floor(Date.now()/1000);
+        const timeFrom=now-(7*24*60*60);
 
         sellerBooksAlert(
-            "Sedang mengambil order TikTok Shop 7 hari terakhir...\n\n" +
-            "Data yang ditarik: SKU + QTY + harga.",
-            "Sinkronisasi TikTok Shop"
+            "Sedang mengambil order TikTok Shop 7 hari terakhir...\n\n"+
+            "API hanya mengambil data mentah order.\n"+
+            "Setelah itu data akan diproses oleh mesin Import Penjualan yang sama seperti upload Excel manual.",
+            "Tarik Order TikTok"
         );
 
-        const response = await fetch(
-            SELLERBOOKS_SUPABASE_URL +
+        const response=await fetch(
+            SELLERBOOKS_SUPABASE_URL+
             "/functions/v1/sellerbooks-tiktok-sync-orders",
             {
                 method:"POST",
                 headers:{
                     "apikey":SELLERBOOKS_SUPABASE_KEY,
-                    "Authorization":"Bearer " + session.access_token,
+                    "Authorization":"Bearer "+session.access_token,
                     "Content-Type":"application/json"
                 },
                 body:JSON.stringify({
@@ -19535,71 +19879,87 @@ async function syncTikTokOrdersNow(storeId){
             }
         );
 
-        const data = await response.json().catch(function(){ return {}; });
+        const data=await response.json().catch(function(){
+            return {};
+        });
 
-        if(!response.ok || !data.ok){
-            let message = data.error || "Sinkronisasi TikTok Shop gagal.";
+        if(!response.ok||!data.ok){
+            let message=
+                data.error ||
+                "Pengambilan data TikTok Shop gagal.";
+
             if(data.diagnostic){
-                message += "\n\nDIAGNOSTIC:\n" + JSON.stringify(data.diagnostic, null, 2);
+                message+=
+                    "\n\nDIAGNOSTIC:\n"+
+                    JSON.stringify(
+                        data.diagnostic,
+                        null,
+                        2
+                    );
             }
+
             throw new Error(message);
         }
 
-        const result = Array.isArray(data.results)
+        const result=Array.isArray(data.results)
             ? data.results.find(function(x){
-                return String(x.connection_id || "") === String(connection.id);
-            }) || data.results[0]
+                return String(x.connection_id||"")===
+                    String(connection.id);
+            })||data.results[0]
             : null;
 
         if(!result){
-            throw new Error("Koneksi TikTok tidak diproses oleh mesin sinkronisasi.");
+            throw new Error(
+                "Koneksi TikTok tidak menghasilkan file data."
+            );
         }
 
-        if(result.status === "ERROR"){
-            throw new Error(String(result.error || "TikTok Shop API mengembalikan error."));
+        if(result.status==="ERROR"){
+            throw new Error(
+                String(
+                    result.error||
+                    "TikTok Shop API mengembalikan error."
+                )
+            );
         }
 
-        if(result.status === "NO_ORDERS"){
+        if(result.status==="NO_ORDERS"){
             sellerBooksAlert(
-                "Tidak ada order TikTok pada 7 hari terakhir.\n\n" +
-                "Order ditemukan: " + Number(result.orders_found || 0) + "\n" +
-                "Transaksi SKU+QTY: 0",
-                "Hasil Sinkronisasi TikTok"
+                "Tidak ada data order TikTok pada periode yang diperiksa.\n\n"+
+                "Order ditemukan: "+
+                Number(result.orders_found||0),
+                "Hasil Tarik Order TikTok"
             );
             return;
         }
 
-        if(result.status === "IMPORTED"){
-            sellerBooksAlert(
-                "Order TikTok berhasil ditarik ke SellerBooks.\n\n" +
-                "Order ditemukan: " + Number(result.orders_found || 0) + "\n" +
-                "Total QTY SKU dikirim: " + Number(result.total_qty_sent ?? result.transactions_sent ?? 0) + "\n\n" +
-                "Mesin import SellerBooks sudah menerima data tersebut.",
-                "Sinkronisasi TikTok Berhasil"
-            );
-
-            if(typeof loadStores === "function"){
-                setTimeout(function(){ loadStores(); },300);
-            }else if(typeof renderStores === "function"){
-                setTimeout(function(){ renderStores(true); },300);
-            }
+        if(result.status==="RAW_FILE_READY"){
+            await sellerBooksProcessTikTokApiQueue({
+                showResult:true
+            });
             return;
         }
 
         sellerBooksAlert(
-            "Sinkronisasi selesai dengan status: " + String(result.status || "UNKNOWN"),
-            "Hasil Sinkronisasi TikTok"
+            "Pengambilan data selesai dengan status: "+
+            String(result.status||"UNKNOWN"),
+            "Hasil Tarik Order TikTok"
         );
+
     }catch(error){
-        console.error("Tarik order TikTok gagal:",error);
+        console.error(
+            "Tarik order TikTok gagal:",
+            error
+        );
+
         sellerBooksAlert(
-            "Tarik order TikTok gagal.\n\n" +
-            (error?.message || "Terjadi kesalahan saat sinkronisasi."),
-            "Sinkronisasi TikTok"
+            "Tarik order TikTok gagal.\n\n"+
+            (error?.message||
+                "Terjadi kesalahan saat mengambil data."),
+            "Tarik Order TikTok"
         );
     }
 }
-
 
 /* =====================================================
    TARIK ORDER SHOPEE
