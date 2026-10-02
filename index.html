@@ -19484,14 +19484,12 @@ async function integrateStoreAccount(storeId){
 }
 
 
-let sellerBooksTikTokQueueWorkerRunning=false;
+let sellerBooksApiQueueWorkerRunning=false;
 
 async function sellerBooksGetQueueSession(){
     const sessionResult=await sellerBooksSupabase.auth.getSession();
     const session=sessionResult?.data?.session;
-    if(!session?.access_token){
-        throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
-    }
+    if(!session?.access_token) throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
     return session;
 }
 
@@ -19501,107 +19499,72 @@ async function sellerBooksQueueRequest(path,options){
     headers.set("apikey",SELLERBOOKS_SUPABASE_KEY);
     headers.set("Authorization","Bearer "+session.access_token);
     headers.set("Content-Type","application/json");
-
-    return fetch(
-        SELLERBOOKS_SUPABASE_URL+"/rest/v1/"+path,
-        {
-            ...(options||{}),
-            headers:headers
-        }
-    );
+    return fetch(SELLERBOOKS_SUPABASE_URL+"/rest/v1/"+path,{...(options||{}),headers});
 }
 
-/*
-   API TikTok hanya menghasilkan file mentah berbentuk tabel Excel.
-   Fungsi ini memasukkan tabel tersebut ke currentSalesImport lalu
-   memanggil saveSalesImportData(), yaitu mesin Import Penjualan
-   yang sama dengan upload Excel manual.
-*/
-async function sellerBooksProcessTikTokApiQueueItem(queueItem,showResult){
+function sellerBooksApiImportProfile(marketplace){
+    const key=String(marketplace||"").toLowerCase().replace(/\s+/g,"");
+    const profiles={
+        tiktok:{sku:"Seller SKU",qty:"Quantity",price:"SKU Subtotal After Discount"},
+        "tiktokshop":{sku:"Seller SKU",qty:"Quantity",price:"SKU Subtotal After Discount"},
+        shopee:{sku:"Nomor Referensi SKU",qty:"Jumlah Produk",price:"Subtotal Pesanan"},
+        lazada:{sku:"sellerSku",qty:"__LAZADA_QTY_PER_ROW__",price:"unitPrice"}
+    };
+    return profiles[key]||null;
+}
+
+async function sellerBooksProcessApiQueueItem(queueItem,showResult){
     if(!queueItem) return null;
+    const marketplaceName=String(queueItem.marketplace||"").trim();
+    const profile=sellerBooksApiImportProfile(marketplaceName);
+    if(!profile) return {ok:false,retry:false,error:"Marketplace API belum memiliki adapter Import Penjualan: "+marketplaceName};
 
-    const store=stores.find(function(item){
-        return String(item.id)===String(queueItem.store_id);
-    });
+    const store=stores.find(item=>String(item.id)===String(queueItem.store_id));
+    if(!store) return {ok:false,retry:true,error:"Akun toko untuk file API belum tersedia di workspace."};
 
-    if(!store){
-        return {
-            ok:false,
-            retry:true,
-            error:"Akun toko untuk file API belum tersedia di workspace."
-        };
-    }
-
-    const headers=Array.isArray(queueItem.headers)
-        ? queueItem.headers
-        : [];
-
-    const rows=Array.isArray(queueItem.rows)
-        ? queueItem.rows
-        : [];
-
-    if(!headers.length||!rows.length){
-        throw new Error("File mentah TikTok tidak berisi header/data transaksi.");
-    }
+    const headers=Array.isArray(queueItem.headers)?queueItem.headers:[];
+    const rows=Array.isArray(queueItem.rows)?queueItem.rows:[];
+    if(!headers.length||!rows.length) throw new Error("File mentah "+marketplaceName+" tidak berisi header/data transaksi.");
 
     const marketplace=marketplaces.find(function(item){
         const id=String(item?.id||"").trim().toLowerCase();
-        const name=String(item?.name||"").trim().toLowerCase();
-
-        return id==="tiktok" ||
-            name==="tiktok shop" ||
-            name==="tiktokshop";
+        const name=String(item?.name||"").trim().toLowerCase().replace(/\s+/g,"");
+        const target=marketplaceName.toLowerCase().replace(/\s+/g,"");
+        return id===target||name===target||id==="tiktok"&&target==="tiktokshop"||name==="tiktokshop"&&target==="tiktok";
     });
+
+    const skuIndex=profile.sku==="__LAZADA_QTY_PER_ROW__"?headers.indexOf("sellerSku"):headers.indexOf(profile.sku);
+    const qtyIndex=profile.qty==="__LAZADA_QTY_PER_ROW__"?-1:headers.indexOf(profile.qty);
+    if(skuIndex<0) throw new Error("Kolom SKU API "+marketplaceName+" tidak ditemukan.");
+    if(profile.qty!=="__LAZADA_QTY_PER_ROW__"&&qtyIndex<0) throw new Error("Kolom QTY API "+marketplaceName+" tidak ditemukan.");
 
     currentSalesImport={
         file:null,
-        fileName:String(queueItem.file_name||"AUTO-SYNC-TIKTOK.xlsx"),
+        fileName:String(queueItem.file_name||("AUTO-SYNC-"+marketplaceName+".xlsx")),
         fileType:"XLSX",
         sheetName:"Orders",
         rawData:[headers].concat(rows),
         headerRowIndex:0,
         headers:headers,
         dataRows:rows,
-        skuColumn:"Seller SKU",
+        skuColumn:profile.sku,
         skuScore:100,
-        qtyColumn:"Quantity",
+        qtyColumn:profile.qty,
         qtyScore:100,
-        marketplace:"TikTok",
+        marketplace:marketplaceName==="TikTok Shop"?"TikTok":marketplaceName,
         marketplaceScore:100,
-        marketplaceId:
-            marketplace?.id ||
-            store.marketplaceId ||
-            "tiktok",
-        skuIndex:headers.indexOf("Seller SKU"),
-        qtyIndex:headers.indexOf("Quantity"),
-        priceColumn:"SKU Subtotal After Discount",
-        priceIndex:headers.indexOf("SKU Subtotal After Discount"),
+        marketplaceId:marketplace?.id||store.marketplaceId||marketplaceName.toLowerCase().replace(/\s+/g,""),
+        skuIndex:skuIndex,
+        qtyIndex:qtyIndex,
+        priceColumn:profile.price,
+        priceIndex:headers.indexOf(profile.price),
         columnsConfirmed:true,
         confirmedAt:new Date().toISOString()
     };
 
-    if(currentSalesImport.skuIndex<0){
-        throw new Error("Kolom Seller SKU tidak ditemukan pada file API.");
-    }
-
-    if(currentSalesImport.qtyIndex<0){
-        throw new Error("Kolom Quantity tidak ditemukan pada file API.");
-    }
-
-    /*
-       Gunakan akun toko yang sama dengan tombol Tarik Order.
-       Mesin saveSalesImportData tetap membaca store dari UI
-       seperti pada Import Penjualan manual.
-    */
     const storeSelect=document.getElementById("salesStoreAccount");
-
     if(storeSelect){
         storeSelect.value=String(store.id);
-
-        /*
-           Jika option belum ada, tambahkan tanpa mengubah
-           mekanisme Import Penjualan.
-        */
         if(storeSelect.value!==String(store.id)){
             const option=document.createElement("option");
             option.value=String(store.id);
@@ -19610,208 +19573,102 @@ async function sellerBooksProcessTikTokApiQueueItem(queueItem,showResult){
             storeSelect.value=String(store.id);
         }
     }
-
     const packingInput=document.getElementById("packingCostPerOrder");
-
     if(packingInput){
-        const savedPackingCost=
-            sellerBooksStorage.getItem("sellerbooks_packing_unit_cost");
-
-        packingInput.value=
-            savedPackingCost!==null &&
-            savedPackingCost!==undefined &&
-            String(savedPackingCost)!==""
-                ? String(savedPackingCost)
-                : "0";
+        const savedPackingCost=sellerBooksStorage.getItem("sellerbooks_packing_unit_cost");
+        packingInput.value=savedPackingCost!==null&&savedPackingCost!==undefined&&String(savedPackingCost)!==""?String(savedPackingCost):"0";
     }
 
     const record=saveSalesImportData();
-
-    const session=await sellerBooksGetQueueSession();
-
     const result={
-        new_transactions:record ? Number(record.rowCount||0) : 0,
-        new_qty:record ? Number(record.totalQty||0) : 0,
-        new_packing_count:record ? Number(record.uniquePackingCount||0) : 0,
-        import_id:record?.id || null
+        new_transactions:record?Number(record.rowCount||0):0,
+        new_qty:record?Number(record.totalQty||0):0,
+        new_packing_count:record?Number(record.uniquePackingCount||0):0,
+        import_id:record?.id||null
     };
 
-    await sellerBooksQueueRequest(
-        "sellerbooks_api_import_queue?id=eq."+encodeURIComponent(queueItem.id),
-        {
-            method:"PATCH",
-            headers:{
-                "Prefer":"return=minimal"
-            },
-            body:JSON.stringify({
-                status:"IMPORTED",
-                error_message:null,
-                processed_at:new Date().toISOString()
-            })
-        }
-    );
+    await sellerBooksQueueRequest("sellerbooks_api_import_queue?id=eq."+encodeURIComponent(queueItem.id),{
+        method:"PATCH",headers:{"Prefer":"return=minimal"},
+        body:JSON.stringify({status:"IMPORTED",error_message:null,processed_at:new Date().toISOString()})
+    });
 
-    /*
-       Setelah mesin Import Penjualan selesai, gunakan refresh
-       yang sama dengan Import Manual.
-    */
-    if(typeof updateReports==="function"){
-        updateReports();
-    }
-
-    if(typeof renderProducts==="function"){
-        renderProducts();
-    }
-
-    if(typeof renderNotifications==="function"){
-        renderNotifications();
-    }
-
-    if(typeof loadStores==="function"){
-        setTimeout(function(){loadStores();},300);
-    }else if(typeof renderStores==="function"){
-        setTimeout(function(){renderStores(true);},300);
-    }
+    if(typeof updateReports==="function") updateReports();
+    if(typeof renderProducts==="function") renderProducts();
+    if(typeof renderNotifications==="function") renderNotifications();
+    if(typeof loadStores==="function") setTimeout(function(){loadStores();},300);
+    else if(typeof renderStores==="function") setTimeout(function(){renderStores(true);},300);
 
     if(showResult){
+        const title="Hasil Tarik Order "+marketplaceName;
         if(result.new_transactions>0){
             sellerBooksAlert(
-                "Order TikTok berhasil diproses oleh mesin Import Penjualan.\n\n"+
-                "Packing baru: "+
-                result.new_packing_count.toLocaleString("id-ID")+
-                "\nPCS baru: "+
-                result.new_qty.toLocaleString("id-ID")+
-                "\n\n"+
-                "Data lama/duplikat otomatis dilewati oleh mesin Import Penjualan.",
-                "Import TikTok Berhasil"
+                "Order "+marketplaceName+" berhasil diproses oleh mesin Import Penjualan.\n\n"+
+                "Packing baru: "+result.new_packing_count.toLocaleString("id-ID")+"\n"+
+                "PCS baru: "+result.new_qty.toLocaleString("id-ID")+"\n\n"+
+                "Perhitungan, HPP, admin, packing, snapshot dan laporan dikerjakan oleh mesin Import Penjualan SellerBooks.",
+                title
             );
         }else{
             sellerBooksAlert(
-                "Order TikTok sudah ada di SellerBooks.\n\n"+
-                "Tidak ada transaksi baru yang ditambahkan.",
-                "TikTok Sudah Terimport"
+                "Data "+marketplaceName+" sudah ada / tidak menghasilkan transaksi baru.\n\n"+
+                "Mesin Import Penjualan melewati data duplikat.",
+                title
             );
         }
     }
-
-    return {
-        ok:true,
-        result:result
-    };
+    return result;
 }
 
-async function sellerBooksProcessTikTokApiQueue(options){
-    const opts=options||{};
-    if(sellerBooksTikTokQueueWorkerRunning)return;
-
-    sellerBooksTikTokQueueWorkerRunning=true;
-
+async function sellerBooksProcessApiQueue(opts){
+    opts=opts||{};
+    if(sellerBooksApiQueueWorkerRunning)return;
+    sellerBooksApiQueueWorkerRunning=true;
     try{
-        const r=await sellerBooksQueueRequest(
-            "sellerbooks_api_import_queue?status=eq.PENDING&marketplace=eq.TikTok%20Shop&order=created_at.asc&limit=5",
-            {method:"GET"}
-        );
-
-        if(!r.ok){
-            throw new Error("Gagal membaca antrean import API: "+r.status);
-        }
-
-        const items=await r.json();
-        const list=Array.isArray(items)?items:[];
-
-        for(const item of list){
-            const claim=await sellerBooksQueueRequest(
-                "sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id)+"&status=eq.PENDING",
-                {
-                    method:"PATCH",
-                    headers:{
-                        "Prefer":"return=representation"
-                    },
-                    body:JSON.stringify({
-                        status:"PROCESSING",
-                        processing_started_at:new Date().toISOString(),
-                        error_message:null
-                    })
-                }
-            );
-
+        const session=await sellerBooksGetQueueSession();
+        const ownerId=String(session.user?.id||"");
+        const res=await sellerBooksQueueRequest("sellerbooks_api_import_queue?owner_user_id=eq."+encodeURIComponent(ownerId)+"&status=eq.PENDING&order=created_at.asc&limit=20",{
+            headers:{"Prefer":"return=representation"}
+        });
+        if(!res.ok)throw new Error("Gagal membaca antrean API: "+await res.text());
+        const items=await res.json();
+        for(const item of (Array.isArray(items)?items:[])){
+            const claim=await sellerBooksQueueRequest("sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id)+"&status=eq.PENDING",{
+                method:"PATCH",headers:{"Prefer":"return=representation"},
+                body:JSON.stringify({status:"PROCESSING",processing_started_at:new Date().toISOString(),error_message:null})
+            });
             if(!claim.ok)continue;
-
             const claimed=await claim.json();
             if(!Array.isArray(claimed)||!claimed[0])continue;
-
             try{
-                await sellerBooksProcessTikTokApiQueueItem(
-                    claimed[0],
-                    !!opts.showResult
-                );
-            }catch(error){
-                const message=
-                    error?.message ||
-                    String(error);
-
-                await sellerBooksQueueRequest(
-                    "sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id),
-                    {
-                        method:"PATCH",
-                        headers:{
-                            "Prefer":"return=minimal"
-                        },
-                        body:JSON.stringify({
-                            status:"ERROR",
-                            error_message:message,
-                            processed_at:new Date().toISOString()
-                        })
-                    }
-                );
-
-                if(opts.showResult){
-                    throw error;
+                const result=await sellerBooksProcessApiQueueItem(claimed[0],!!opts.showResult);
+                if(result?.retry){
+                    await sellerBooksQueueRequest("sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id),{
+                        method:"PATCH",headers:{"Prefer":"return=minimal"},
+                        body:JSON.stringify({status:"PENDING",processing_started_at:null,error_message:result.error||"Retry"})
+                    });
                 }
-
-                console.error(
-                    "SellerBooks TikTok API queue gagal:",
-                    error
-                );
+            }catch(error){
+                const message=error?.message||String(error);
+                await sellerBooksQueueRequest("sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id),{
+                    method:"PATCH",headers:{"Prefer":"return=minimal"},
+                    body:JSON.stringify({status:"ERROR",error_message:message,processed_at:new Date().toISOString()})
+                });
+                if(opts.showResult)throw error;
+                console.error("SellerBooks API queue gagal:",error);
             }
         }
     }finally{
-        sellerBooksTikTokQueueWorkerRunning=false;
+        sellerBooksApiQueueWorkerRunning=false;
     }
 }
 
-function startSellerBooksTikTokApiQueueWorker(){
-    if(window.__sellerBooksTikTokQueueWorkerStarted)return;
-
-    window.__sellerBooksTikTokQueueWorkerStarted=true;
-
-    /*
-       API otomatis hanya memasukkan file mentah ke antrean.
-       Browser SellerBooks menjalankan mesin Import Penjualan.
-    */
-    setTimeout(function(){
-        sellerBooksProcessTikTokApiQueue({
-            showResult:false
-        }).catch(function(error){
-            console.error(
-                "TikTok API queue worker:",
-                error
-            );
-        });
-    },5000);
-
-    setInterval(function(){
-        sellerBooksProcessTikTokApiQueue({
-            showResult:false
-        }).catch(function(error){
-            console.error(
-                "TikTok API queue worker:",
-                error
-            );
-        });
-    },30000);
+function startSellerBooksApiQueueWorker(){
+    if(window.__sellerBooksApiQueueWorkerStarted)return;
+    window.__sellerBooksApiQueueWorkerStarted=true;
+    setTimeout(function(){sellerBooksProcessApiQueue({showResult:false}).catch(console.error);},5000);
+    setInterval(function(){sellerBooksProcessApiQueue({showResult:false}).catch(console.error);},30000);
 }
-
+function startSellerBooksTikTokApiQueueWorker(){ startSellerBooksApiQueueWorker(); }
 async function syncTikTokOrdersNow(storeId){
     const store=stores.find(function(item){
         return String(item.id)===String(storeId);
@@ -19968,119 +19825,25 @@ async function syncTikTokOrdersNow(storeId){
 ===================================================== */
 
 async function syncShopeeOrdersNow(storeId){
-    const store = stores.find(function(item){
-        return String(item.id) === String(storeId);
-    });
-
-    if(!store){
-        sellerBooksAlert("Akun toko Shopee tidak ditemukan.","Tarik Order Shopee");
-        return;
-    }
-
-    const marketplace = marketplaces.find(function(item){
-        return item.id === store.marketplaceId;
-    });
-
-    const isShopee = String(marketplace?.name || "")
-        .toLowerCase()
-        .replace(/\s+/g,"")
-        .includes("shopee");
-
-    if(!isShopee){
-        sellerBooksAlert("Akun toko ini bukan Shopee.","Tarik Order Shopee");
-        return;
-    }
-
-    const connection = getStoreIntegrationConnection(store);
-    if(!connection || String(connection.connection_status || "").toUpperCase() !== "CONNECTED"){
-        sellerBooksAlert("Akun Shopee belum terintegrasi.","Tarik Order Shopee");
-        return;
-    }
-
+    const store=stores.find(item=>String(item.id)===String(storeId));
+    if(!store){sellerBooksAlert("Akun toko Shopee tidak ditemukan.","Tarik Order Shopee");return;}
+    const marketplace=marketplaces.find(item=>item.id===store.marketplaceId);
+    if(!String(marketplace?.name||"").toLowerCase().replace(/\s+/g,"").includes("shopee")){sellerBooksAlert("Akun toko ini bukan Shopee.","Tarik Order Shopee");return;}
+    const connection=getStoreIntegrationConnection(store);
+    if(!connection||String(connection.connection_status||"").toUpperCase()!=="CONNECTED"){sellerBooksAlert("Akun Shopee belum terintegrasi.","Tarik Order Shopee");return;}
     try{
-        const sessionResult = await sellerBooksSupabase.auth.getSession();
-        const session = sessionResult?.data?.session;
-
-        if(!session?.access_token){
-            throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
-        }
-
-        const now = Date.now();
-        const timeFrom = new Date(now - (7 * 24 * 60 * 60 * 1000)).toISOString();
-        const timeTo = new Date(now).toISOString();
-
-        sellerBooksAlert(
-            "Sedang mengambil order Shopee 7 hari terakhir...\n\n" +
-            "Data order akan disinkronkan melalui mesin Shopee SellerBooks.",
-            "Sinkronisasi Shopee"
-        );
-
-        const response = await fetch(
-            SELLERBOOKS_SUPABASE_URL +
-            "/functions/v1/sellerbooks-shopee-sync-orders",
-            {
-                method:"POST",
-                headers:{
-                    "apikey":SELLERBOOKS_SUPABASE_KEY,
-                    "Authorization":"Bearer " + session.access_token,
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify({
-                    connection_id:String(connection.id),
-                    store_id:String(store.id),
-                    time_from:timeFrom,
-                    time_to:timeTo
-                })
-            }
-        );
-
-        const data = await response.json().catch(function(){ return {}; });
-
-        if(!response.ok || !data.ok){
-            throw new Error(
-                data.error ||
-                "Sinkronisasi order Shopee gagal."
-            );
-        }
-
-        if(String(data.status || "").toUpperCase() === "ERROR"){
-            throw new Error(String(data.error || "Shopee API mengembalikan error."));
-        }
-
-        if(String(data.status || "").toUpperCase() === "SUCCESS"){
-            sellerBooksAlert(
-                "Order Shopee berhasil ditarik.\n\n" +
-                "Order diproses: " + Number(data.fetched_count || 0) + "\n" +
-                "Order baru: " + Number(data.upserted_count || 0) + "\n" +
-                "Order diperbarui: " + Number(data.updated_count || 0) + "\n" +
-                "Order dilewati: " + Number(data.skipped_count || 0),
-                "Sinkronisasi Shopee Berhasil"
-            );
-
-            if(typeof loadStores === "function"){
-                setTimeout(function(){ loadStores(); },300);
-            }else if(typeof renderStores === "function"){
-                setTimeout(function(){ renderStores(true); },300);
-            }
-            return;
-        }
-
-        sellerBooksAlert(
-            "Sinkronisasi Shopee selesai dengan status: " +
-            String(data.status || "UNKNOWN"),
-            "Hasil Sinkronisasi Shopee"
-        );
-
-    }catch(error){
-        console.error("Tarik order Shopee gagal:",error);
-        sellerBooksAlert(
-            "Tarik order Shopee gagal.\n\n" +
-            (error?.message || "Terjadi kesalahan saat sinkronisasi."),
-            "Sinkronisasi Shopee"
-        );
-    }
+        const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
+        if(!session?.access_token)throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
+        const now=Date.now(),timeFrom=new Date(now-7*86400000).toISOString(),timeTo=new Date(now).toISOString();
+        sellerBooksAlert("Sedang mengambil order Shopee 7 hari terakhir...\n\nAPI hanya mengambil data mentah.\nSetelah itu data masuk ke mesin Import Penjualan yang sama seperti upload Excel manual.","Sinkronisasi Shopee");
+        const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-sync-orders",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id),time_from:timeFrom,time_to:timeTo})});
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok||!data.ok)throw new Error(data.error||"Pengambilan data Shopee gagal.");
+        if(data.status==="NO_ORDERS"){sellerBooksAlert("Tidak ada order Shopee pada periode yang diperiksa.\n\nOrder ditemukan: "+Number(data.orders_found||0),"Hasil Tarik Order Shopee");return;}
+        if(data.status==="RAW_FILE_READY"){await sellerBooksProcessApiQueue({showResult:true});return;}
+        throw new Error("Status API Shopee: "+String(data.status||"UNKNOWN"));
+    }catch(error){console.error("Tarik order Shopee gagal:",error);sellerBooksAlert("Tarik order Shopee gagal.\n\n"+(error?.message||"Terjadi kesalahan."),"Sinkronisasi Shopee");}
 }
-
 
 /* =====================================================
    TARIK ORDER LAZADA
@@ -20089,137 +19852,28 @@ async function syncShopeeOrdersNow(storeId){
 ===================================================== */
 
 async function syncLazadaOrdersNow(storeId){
-    const store = stores.find(function(item){
-        return String(item.id) === String(storeId);
-    });
-
-    if(!store){
-        sellerBooksAlert("Akun toko Lazada tidak ditemukan.","Tarik Order Lazada");
-        return;
-    }
-
-    const marketplace = marketplaces.find(function(item){
-        return item.id === store.marketplaceId;
-    });
-
-    const isLazada = String(marketplace?.name || "")
-        .toLowerCase()
-        .replace(/\s+/g,"")
-        .includes("lazada");
-
-    if(!isLazada){
-        sellerBooksAlert("Akun toko ini bukan Lazada.","Tarik Order Lazada");
-        return;
-    }
-
-    const connection = getStoreIntegrationConnection(store);
-    if(!connection || String(connection.connection_status || "").toUpperCase() !== "CONNECTED"){
-        sellerBooksAlert("Akun Lazada belum terintegrasi.","Tarik Order Lazada");
-        return;
-    }
-
+    const store=stores.find(item=>String(item.id)===String(storeId));
+    if(!store){sellerBooksAlert("Akun toko Lazada tidak ditemukan.","Tarik Order Lazada");return;}
+    const marketplace=marketplaces.find(item=>item.id===store.marketplaceId);
+    if(!String(marketplace?.name||"").toLowerCase().replace(/\s+/g,"").includes("lazada")){sellerBooksAlert("Akun toko ini bukan Lazada.","Tarik Order Lazada");return;}
+    const connection=getStoreIntegrationConnection(store);
+    if(!connection||String(connection.connection_status||"").toUpperCase()!=="CONNECTED"){sellerBooksAlert("Akun Lazada belum terintegrasi.","Tarik Order Lazada");return;}
     try{
-        const sessionResult = await sellerBooksSupabase.auth.getSession();
-        const session = sessionResult?.data?.session;
-
-        if(!session?.access_token){
-            throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
-        }
-
-        const now = Math.floor(Date.now() / 1000);
-        const timeFrom = now - (7 * 24 * 60 * 60);
-        const timeTo = now;
-
-        sellerBooksAlert(
-            "Sedang mengambil order Lazada 7 hari terakhir...\n\n" +
-            "Data order akan disinkronkan melalui mesin Lazada SellerBooks.",
-            "Sinkronisasi Lazada"
-        );
-
-        const response = await fetch(
-            SELLERBOOKS_SUPABASE_URL +
-            "/functions/v1/sellerbooks-lazada-sync-orders",
-            {
-                method:"POST",
-                headers:{
-                    "apikey":SELLERBOOKS_SUPABASE_KEY,
-                    "Authorization":"Bearer " + session.access_token,
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify({
-                    connection_id:String(connection.id),
-                    store_id:String(store.id),
-                    time_from:timeFrom,
-                    time_to:timeTo
-                })
-            }
-        );
-
-        const data = await response.json().catch(function(){ return {}; });
-
-        if(!response.ok || !data.ok){
-            throw new Error(
-                data.error ||
-                "Sinkronisasi order Lazada gagal."
-            );
-        }
-
-        const result = Array.isArray(data.results)
-            ? data.results.find(function(x){
-                return String(x.connection_id || "") === String(connection.id);
-            }) || data.results[0]
-            : null;
-
-        if(!result){
-            throw new Error("Koneksi Lazada tidak diproses oleh mesin sinkronisasi.");
-        }
-
-        if(String(result.status || "").toUpperCase() === "ERROR"){
-            throw new Error(String(result.error || "Lazada API mengembalikan error."));
-        }
-
-        if(String(result.status || "").toUpperCase() === "NO_ORDERS"){
-            sellerBooksAlert(
-                "Tidak ada order Lazada pada 7 hari terakhir.\n\n" +
-                "Order ditemukan: " + Number(result.orders_found || 0) + "\n" +
-                "Transaksi: 0",
-                "Hasil Sinkronisasi Lazada"
-            );
-            return;
-        }
-
-        if(String(result.status || "").toUpperCase() === "IMPORTED"){
-            sellerBooksAlert(
-                "Order Lazada berhasil ditarik ke SellerBooks.\n\n" +
-                "Order ditemukan: " + Number(result.orders_found || 0) + "\n" +
-                "Transaksi dikirim: " + Number(result.transactions_sent || 0),
-                "Sinkronisasi Lazada Berhasil"
-            );
-
-            if(typeof loadStores === "function"){
-                setTimeout(function(){ loadStores(); },300);
-            }else if(typeof renderStores === "function"){
-                setTimeout(function(){ renderStores(true); },300);
-            }
-            return;
-        }
-
-        sellerBooksAlert(
-            "Sinkronisasi Lazada selesai dengan status: " +
-            String(result.status || "UNKNOWN"),
-            "Hasil Sinkronisasi Lazada"
-        );
-
-    }catch(error){
-        console.error("Tarik order Lazada gagal:",error);
-        sellerBooksAlert(
-            "Tarik order Lazada gagal.\n\n" +
-            (error?.message || "Terjadi kesalahan saat sinkronisasi."),
-            "Sinkronisasi Lazada"
-        );
-    }
+        const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
+        if(!session?.access_token)throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
+        const now=Math.floor(Date.now()/1000),timeFrom=now-7*86400,timeTo=now;
+        sellerBooksAlert("Sedang mengambil order Lazada 7 hari terakhir...\n\nAPI hanya mengambil data mentah.\nSetelah itu data masuk ke mesin Import Penjualan yang sama seperti upload Excel manual.","Sinkronisasi Lazada");
+        const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-lazada-sync-orders",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id),time_from:timeFrom,time_to:timeTo})});
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok||!data.ok)throw new Error(data.error||"Pengambilan data Lazada gagal.");
+        const result=Array.isArray(data.results)?data.results.find(x=>String(x.connection_id||"")===String(connection.id))||data.results[0]:null;
+        if(!result)throw new Error("Koneksi Lazada tidak menghasilkan file data.");
+        if(result.status==="ERROR")throw new Error(String(result.error||"Lazada API mengembalikan error."));
+        if(result.status==="NO_ORDERS"){sellerBooksAlert("Tidak ada order Lazada pada periode yang diperiksa.\n\nOrder ditemukan: "+Number(result.orders_found||0),"Hasil Tarik Order Lazada");return;}
+        if(result.status==="RAW_FILE_READY"){await sellerBooksProcessApiQueue({showResult:true});return;}
+        throw new Error("Status API Lazada: "+String(result.status||"UNKNOWN"));
+    }catch(error){console.error("Tarik order Lazada gagal:",error);sellerBooksAlert("Tarik order Lazada gagal.\n\n"+(error?.message||"Terjadi kesalahan."),"Sinkronisasi Lazada");}
 }
-
 
 /* =====================================================
    HASIL OAUTH SHOPEE
