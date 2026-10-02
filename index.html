@@ -19791,9 +19791,7 @@ async function syncTikTokOrdersNow(storeId){
         }
 
         if(result.status==="RAW_FILE_READY"){
-            await sellerBooksProcessTikTokApiQueue({
-                showResult:true
-            });
+            await sellerBooksProcessApiQueue({showResult:true});
             return;
         }
 
