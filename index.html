@@ -417,6 +417,55 @@ body{
     transform:translateY(-1px);
 }
 
+/* Banner mode demo */
+#sellerBooksDemoBanner{
+    position:fixed;
+    top:14px;
+    right:18px;
+    z-index:99999;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px 8px 13px;
+    border:1px solid #bfdbfe;
+    border-radius:999px;
+    background:#eff6ff;
+    color:#1d4ed8;
+    box-shadow:0 8px 24px rgba(15,23,42,.12);
+    font-size:12px;
+    font-weight:800;
+}
+#sellerBooksDemoBanner button{
+    border:0;
+    border-radius:999px;
+    padding:6px 10px;
+    background:#2563eb;
+    color:#fff;
+    font-size:11px;
+    font-weight:700;
+    cursor:pointer;
+}
+#sellerBooksDemoBanner button:hover{
+    background:#1d4ed8;
+}
+body.sellerbooks-demo-mode #dashboard button{
+    display:none !important;
+}
+body.sellerbooks-demo-mode #dashboard .sb-piutang-dashboard-button{
+    display:none !important;
+}
+@media(max-width:600px){
+    #sellerBooksDemoBanner{
+        top:8px;
+        right:8px;
+        font-size:10px;
+    }
+    #sellerBooksDemoBanner button{
+        font-size:10px;
+        padding:5px 8px;
+    }
+}
+
 .login-form-area{
 
     display:flex;
