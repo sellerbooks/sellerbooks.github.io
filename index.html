@@ -15459,6 +15459,47 @@ function sellerBooksApplyDemoReadOnly(){
     if(period) period.disabled = false;
 }
 
+/*
+   DEMO READ-ONLY EVENT GUARD
+   Menjaga seluruh modul tetap dapat dilihat tanpa mengizinkan
+   perubahan data, termasuk tombol yang dibuat secara dinamis.
+*/
+document.addEventListener("click",function(event){
+    if(!sellerBooksIsDemoMode()) return;
+
+    const button = event.target.closest("button, a, [role=\"button\"]");
+    if(!button) return;
+
+    if(button.id === "sellerBooksDemoBanner" ||
+       button.closest("#sellerBooksDemoBanner")){
+        return;
+    }
+
+    const onclick = String(button.getAttribute("onclick") || "").toLowerCase();
+    const id = String(button.id || "").toLowerCase();
+    const label = String(button.textContent || "").trim().toLowerCase();
+
+    const mutating =
+        /save|simpan|edit|hapus|delete|remove|import|upload|tarik|integrat|connect|disconnect|aktifkan|nonaktifkan|reset|tambah|add|create|update|submit|confirm|konfirmasi|process|proses/.test(
+            onclick + " " + id + " " + label
+        );
+
+    if(mutating){
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        sellerBooksAlert("👁️ Mode Demo aktif. Data hanya dapat dilihat (Read Only).");
+        return false;
+    }
+},true);
+
+document.addEventListener("submit",function(event){
+    if(!sellerBooksIsDemoMode()) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    sellerBooksAlert("👁️ Mode Demo aktif. Form tidak dapat mengubah data.");
+    return false;
+},true);
+
 function sellerBooksEnterDemoMode(){
     try{
         sessionStorage.setItem("sellerbooks_demo_mode","1");
