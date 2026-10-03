@@ -5320,15 +5320,100 @@ document.addEventListener(
 
 <script>
 
+
+/* =========================================================
+   SELLERBOOKS TEMPORARY REPORT PROFILER
+   Profiling only. Does not alter report formulas/data flow.
+   Remove this block after performance diagnosis.
+========================================================= */
+(function(){
+    const profiler = {
+        active:false,
+        cycle:0,
+        reset:function(){
+            this.cycle += 1;
+            this.storageReadMs = 0;
+            this.jsonParseMs = 0;
+            this.mergeMs = 0;
+            this.filterMs = 0;
+            this.financialMs = 0;
+            this.renderMs = 0;
+            this.importCount = 0;
+            this.allTransactionCount = 0;
+            this.filteredTransactionCount = 0;
+            this.financialCalls = 0;
+            this.reportCalls = 0;
+            this.startedAt = performance.now();
+        },
+        log:function(){
+            if(!this.active) return;
+            const total = performance.now() - this.startedAt;
+            console.groupCollapsed(
+                "[SellerBooks Report Profiler] Cycle " + this.cycle
+            );
+            console.table({
+                "Periode": document.getElementById("reportPeriod")?.value || "",
+                "Marketplace": document.getElementById("reportMarketplace")?.value || "",
+                "Akun Toko": document.getElementById("reportStore")?.value || "",
+                "TOTAL cycle (ms)": Number(total.toFixed(2)),
+                "Storage read (ms)": Number(this.storageReadMs.toFixed(2)),
+                "JSON.parse (ms)": Number(this.jsonParseMs.toFixed(2)),
+                "Penggabungan transaksi (ms)": Number(this.mergeMs.toFixed(2)),
+                "Filter tanggal+marketplace+toko (ms)": Number(this.filterMs.toFixed(2)),
+                "Perhitungan finansial (ms)": Number(this.financialMs.toFixed(2)),
+                "Render updateReports (ms)": Number(this.renderMs.toFixed(2)),
+                "Jumlah import": this.importCount,
+                "Seluruh transaksi": this.allTransactionCount,
+                "Transaksi terfilter": this.filteredTransactionCount,
+                "Panggilan finansial": this.financialCalls,
+                "Panggilan updateReports": this.reportCalls
+            });
+            console.groupEnd();
+        }
+    };
+    window.sellerBooksReportProfiler = profiler;
+})();
+
+
 function getSalesImportsData(){
 
     try{
 
-        return JSON.parse(
+        const storageStart = performance.now();
+
+        const rawSalesImports =
             sellerBooksStorage.getItem(
                 "sellerbooks_sales_imports"
-            ) || "[]"
-        );
+            ) || "[]";
+
+        const storageElapsed =
+            performance.now() - storageStart;
+
+        if(
+            window.sellerBooksReportProfiler?.active
+        ){
+            window.sellerBooksReportProfiler.storageReadMs +=
+                storageElapsed;
+        }
+
+        const parseStart = performance.now();
+
+        const parsedSalesImports =
+            JSON.parse(
+                rawSalesImports
+            );
+
+        const parseElapsed =
+            performance.now() - parseStart;
+
+        if(
+            window.sellerBooksReportProfiler?.active
+        ){
+            window.sellerBooksReportProfiler.jsonParseMs +=
+                parseElapsed;
+        }
+
+        return parsedSalesImports;
 
     }catch(error){
 
@@ -5343,6 +5428,9 @@ function getSalesImportsData(){
 
 
 function getAllReportTransactions(){
+
+    const mergeStart =
+        performance.now();
 
     const imports =
         getSalesImportsData();
@@ -5392,6 +5480,17 @@ function getAllReportTransactions(){
         );
 
     });
+
+    if(
+        window.sellerBooksReportProfiler?.active
+    ){
+        window.sellerBooksReportProfiler.mergeMs +=
+            performance.now() - mergeStart;
+        window.sellerBooksReportProfiler.importCount +=
+            imports.length;
+        window.sellerBooksReportProfiler.allTransactionCount =
+            transactions.length;
+    }
 
     return transactions;
 }
@@ -5888,11 +5987,15 @@ function getFilteredReportTransactions(){
             : "";
 
 
+    const filterStart =
+        performance.now();
+
     const transactions =
         getAllReportTransactions();
 
 
-    return transactions.filter(
+    const filteredTransactions =
+        transactions.filter(
         function(transaction){
 
             /*
@@ -6029,6 +6132,17 @@ function getFilteredReportTransactions(){
 
         }
     );
+
+    if(
+        window.sellerBooksReportProfiler?.active
+    ){
+        window.sellerBooksReportProfiler.filterMs +=
+            performance.now() - filterStart;
+        window.sellerBooksReportProfiler.filteredTransactionCount =
+            filteredTransactions.length;
+    }
+
+    return filteredTransactions;
 }
 
 
@@ -7249,6 +7363,9 @@ function calculateReportPacking(transactions){
 
 function calculateReportFinancial(){
 
+    const financialStart =
+        performance.now();
+
     const transactions =
         getFilteredReportTransactions();
 
@@ -7448,6 +7565,14 @@ function calculateReportFinancial(){
             100
             : 0;
 
+
+    if(
+        window.sellerBooksReportProfiler?.active
+    ){
+        window.sellerBooksReportProfiler.financialMs +=
+            performance.now() - financialStart;
+        window.sellerBooksReportProfiler.financialCalls += 1;
+    }
 
     return {
 
@@ -8867,6 +8992,18 @@ async function downloadReportPDF(){
 
 function updateReports(){
 
+    const reportProfiler =
+        window.sellerBooksReportProfiler;
+
+    if(reportProfiler){
+        reportProfiler.reset();
+        reportProfiler.active = true;
+        reportProfiler.reportCalls += 1;
+    }
+
+    const renderStart =
+        performance.now();
+
     /* Satu error tidak boleh membuat semua tabel laporan kosong. */
     try{ renderReportSalesSummary(); }catch(error){ console.error("Laporan ringkasan:", error); }
     try{ renderUnmatchedSkuReport(); }catch(error){ console.error("Laporan SKU:", error); }
@@ -8874,6 +9011,13 @@ function updateReports(){
     try{ renderReportMarketplaceTable(); }catch(error){ console.error("Laporan marketplace:", error); }
     try{ renderReportStoreTable(); }catch(error){ console.error("Laporan akun toko:", error); }
     try{ renderReportTransactionTable(); }catch(error){ console.error("Detail transaksi:", error); }
+
+    if(reportProfiler){
+        reportProfiler.renderMs =
+            performance.now() - renderStart;
+        reportProfiler.log();
+        reportProfiler.active = false;
+    }
 
 }
 
