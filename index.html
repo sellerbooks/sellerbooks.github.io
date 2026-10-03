@@ -15392,16 +15392,7 @@ function sellerBooksGetDemoProducts(){
 function sellerBooksApplyDemoReadOnly(){
     document.body.classList.add("sellerbooks-demo-mode");
 
-    document.querySelectorAll("#sidebar .menu-item").forEach(function(menu){
-        const onclick = menu.getAttribute("onclick") || "";
-        if(!onclick.includes("showView('dashboard'")){
-            menu.style.display = "none";
-        }
-    });
-
-    document.querySelectorAll("#sidebar .menu-title").forEach(function(title){
-        title.style.display = "none";
-    });
+    /* Semua menu dan seluruh kartu/modul tetap terlihat pada Demo. */
 
     const sidebarOwner = document.querySelector("#sidebar .user-name");
     if(sidebarOwner){
@@ -15419,18 +15410,53 @@ function sellerBooksApplyDemoReadOnly(){
     }
 
     /*
-       Dashboard tetap bisa memakai filter periode, tetapi semua
-       tombol aksi/modifikasi disembunyikan agar demo benar-benar
-       read-only.
+       Semua halaman dapat dibuka, tetapi kontrol yang mengubah data
+       dibuat read-only. Filter, pencarian, dan navigasi tetap aktif.
     */
-    document.querySelectorAll("#dashboard button").forEach(function(button){
-        button.style.display = "none";
+    const allowInput = function(element){
+        const id = String(element.id || "").toLowerCase();
+        const name = String(element.name || "").toLowerCase();
+        const cls = String(element.className || "").toLowerCase();
+        const text = id + " " + name + " " + cls;
+        return /search|filter|period|datefrom|dateto|marketplace|store|account|currency/.test(text);
+    };
+
+    document.querySelectorAll("#app input, #app textarea").forEach(function(element){
+        if(!allowInput(element)){
+            element.readOnly = true;
+            element.setAttribute("aria-readonly","true");
+        }
+    });
+
+    document.querySelectorAll("#app select").forEach(function(element){
+        if(!allowInput(element)){
+            element.disabled = true;
+            element.setAttribute("aria-disabled","true");
+        }
+    });
+
+    document.querySelectorAll("#app button").forEach(function(button){
+        const onclick = String(button.getAttribute("onclick") || "").toLowerCase();
+        const id = String(button.id || "").toLowerCase();
+        const label = String(button.textContent || "").trim().toLowerCase();
+
+        /*
+           Tombol navigasi/filter tetap aktif. Tombol yang berpotensi
+           mengubah data akan diblokir oleh event guard di bawah.
+        */
+        if(
+            /save|simpan|edit|hapus|delete|remove|import|upload|tarik|integrat|connect|disconnect|aktifkan|nonaktifkan|reset|tambah|add|create|update|submit/.test(
+                onclick + " " + id + " " + label
+            )
+        ){
+            button.setAttribute("data-demo-blocked","1");
+            button.setAttribute("aria-disabled","true");
+            button.title = "Mode Demo — Read Only";
+        }
     });
 
     const period = document.getElementById("dashboardPeriod");
-    if(period){
-        period.disabled = false;
-    }
+    if(period) period.disabled = false;
 }
 
 function sellerBooksEnterDemoMode(){
@@ -17199,13 +17225,9 @@ function fixProductFromAnalysis(id){
 function showView(viewId, button, saveHistory = true){
 
     /*
-       Demo hanya boleh membuka Dashboard.
-       Semua halaman pengelolaan/analisis lain dikunci read-only.
+       Mode Demo boleh membuka seluruh halaman SellerBooks.
+       Pembatasan hanya pada aksi yang mengubah data.
     */
-    if(sellerBooksIsDemoMode() && viewId !== "dashboard"){
-        viewId = "dashboard";
-        button = null;
-    }
 
     /* =========================================
        TUTUP SEMUA HALAMAN
