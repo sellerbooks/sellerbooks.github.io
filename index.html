@@ -17198,6 +17198,15 @@ function fixProductFromAnalysis(id){
 
 function showView(viewId, button, saveHistory = true){
 
+    /*
+       Demo hanya boleh membuka Dashboard.
+       Semua halaman pengelolaan/analisis lain dikunci read-only.
+    */
+    if(sellerBooksIsDemoMode() && viewId !== "dashboard"){
+        viewId = "dashboard";
+        button = null;
+    }
+
     /* =========================================
        TUTUP SEMUA HALAMAN
     ========================================= */
