@@ -6829,12 +6829,16 @@ function getReportOtherCosts(){
 
     let costsData = [];
 
-    try{
-        costsData = JSON.parse(
-            sellerBooksStorage.getItem("sellerbooks_costs") || "[]"
-        );
-    }catch(error){
-        costsData = [];
+    if(sellerBooksIsDemoMode()){
+        costsData = sellerBooksGetDemoCosts();
+    }else{
+        try{
+            costsData = JSON.parse(
+                sellerBooksStorage.getItem("sellerbooks_costs") || "[]"
+            );
+        }catch(error){
+            costsData = [];
+        }
     }
 
     const period =
@@ -6909,12 +6913,16 @@ function getReportOtherCostsByScope(
 
     let costsData = [];
 
-    try{
-        costsData = JSON.parse(
-            sellerBooksStorage.getItem("sellerbooks_costs") || "[]"
-        );
-    }catch(error){
-        costsData = [];
+    if(sellerBooksIsDemoMode()){
+        costsData = sellerBooksGetDemoCosts();
+    }else{
+        try{
+            costsData = JSON.parse(
+                sellerBooksStorage.getItem("sellerbooks_costs") || "[]"
+            );
+        }catch(error){
+            costsData = [];
+        }
     }
 
     const period =
@@ -7356,28 +7364,34 @@ function calculateReportFinancial(){
 
     const masterProducts = [];
 
-    try{
+    if(sellerBooksIsDemoMode()){
+        sellerBooksGetDemoProducts().forEach(function(product){
+            masterProducts.push(product);
+        });
+    }else{
+        try{
 
-        const data =
-            JSON.parse(
-                sellerBooksStorage.getItem(
-                    "sellerbooks_products"
-                ) || "[]"
-            );
+            const data =
+                JSON.parse(
+                    sellerBooksStorage.getItem(
+                        "sellerbooks_products"
+                    ) || "[]"
+                );
 
-        if(
-            Array.isArray(data)
-        ){
+            if(
+                Array.isArray(data)
+            ){
 
-            data.forEach(function(product){
+                data.forEach(function(product){
 
-                masterProducts.push(product);
+                    masterProducts.push(product);
 
-            });
+                });
 
-        }
+            }
 
-    }catch(error){}
+        }catch(error){}
+    }
 
 
     const productMap =
@@ -15387,6 +15401,39 @@ function sellerBooksGetDemoStores(){
     return [
         {id:"demo-shopee-1",name:"Demo Shopee",marketplaceId:"shopee",status:"active"},
         {id:"demo-tiktok-1",name:"Demo TikTok Shop",marketplaceId:"tiktok",status:"active"}
+    ];
+}
+
+function sellerBooksGetDemoCosts(){
+    const today = getIndonesiaTodayKey();
+    return [
+        {
+            id:"DEMO-COST-001",
+            date:today,
+            category:"Iklan Marketplace",
+            description:"Promosi marketplace demo",
+            amount:150000,
+            marketplaceId:"shopee",
+            storeId:"demo-shopee-1"
+        },
+        {
+            id:"DEMO-COST-002",
+            date:today,
+            category:"Operasional",
+            description:"Biaya operasional toko demo",
+            amount:100000,
+            marketplaceId:"tiktok",
+            storeId:"demo-tiktok-1"
+        },
+        {
+            id:"DEMO-COST-003",
+            date:today,
+            category:"Transportasi",
+            description:"Biaya transportasi demo",
+            amount:75000,
+            marketplaceId:"",
+            storeId:""
+        }
     ];
 }
 
