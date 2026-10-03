@@ -22553,19 +22553,9 @@ function renderProducts(){
 
 
 
-    /* FILTER DATA
-       DEMO: gunakan 4 produk yang sama dengan SKU pada
-       Rincian Penjualan. Data demo tidak membaca storage bisnis.
-    */
-
-    const productSource =
-        sellerBooksIsDemoMode()
-            ? sellerBooksGetDemoProducts()
-            : products;
-
     let filteredProducts =
 
-        productSource.filter(function(product){
+        products.filter(function(product){
 
 
             const matchSearch =
