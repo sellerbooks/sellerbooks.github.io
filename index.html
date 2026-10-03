@@ -7083,6 +7083,11 @@ function getReportTransactionPrice(transaction){
         return 0;
     }
 
+    if(sellerBooksIsDemoMode()){
+        const demoPrice = Number(transaction.priceSnapshot);
+        return Number.isFinite(demoPrice) ? demoPrice : 0;
+    }
+
     if(!isReportTransactionToday(transaction) &&
        transaction.priceSnapshot !== undefined &&
        transaction.priceSnapshot !== null &&
@@ -7098,6 +7103,11 @@ function getReportTransactionPrice(transaction){
 }
 
 function getReportTransactionFeePercent(transaction){
+
+    if(sellerBooksIsDemoMode()){
+        const demoFee = Number(transaction.adminFeeSku);
+        return Number.isFinite(demoFee) ? demoFee : 0;
+    }
 
     /*
        SNAPSHOT HARIAN — ADMIN FEE
@@ -24953,6 +24963,13 @@ function getMasterProductBySku(sku){
 
     if(!normalizedSku){
         return null;
+    }
+
+    if(typeof sellerBooksIsDemoMode === "function" && sellerBooksIsDemoMode()){
+        const demoProduct = sellerBooksGetDemoProducts().find(function(product){
+            return String(product.sku || "").trim().toLowerCase() === normalizedSku;
+        });
+        return demoProduct ? {...demoProduct} : null;
     }
 
     /*
