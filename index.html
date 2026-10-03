@@ -15618,6 +15618,23 @@ async function loginGoogle(){
 }
 async function sellerBooksHandleAuthSession(){
 
+    /*
+       Mode Demo adalah akses publik read-only.
+       Jangan meminta session Supabase dan jangan membuat profile pengguna.
+    */
+    if(sellerBooksIsDemoMode()){
+        sellerBooksDemoMode = true;
+        sellerBooksShowOnly("app");
+        sellerBooksApplyDemoReadOnly();
+        if(typeof showView === "function"){
+            showView("dashboard",null,false);
+        }
+        if(typeof updateDashboardByPeriod === "function"){
+            updateDashboardByPeriod();
+        }
+        return;
+    }
+
     try{
 
         const {
