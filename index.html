@@ -15213,6 +15213,195 @@ function sellerBooksShowOnly(pageId){
         el.style.display=id===pageId?(id==="app"?"block":"flex"):"none";
     });
 }
+/*
+=========================================================
+SELLERBOOKS PUBLIC DEMO
+- Tidak membutuhkan login Google.
+- Tidak membaca/menulis data bisnis pengguna.
+- Hanya menampilkan Dashboard dengan data contoh.
+- Semua menu/modul demo dibuat read-only.
+=========================================================
+*/
+let sellerBooksDemoMode = false;
+
+function sellerBooksIsDemoMode(){
+    return sellerBooksDemoMode === true ||
+        sessionStorage.getItem("sellerbooks_demo_mode") === "1";
+}
+
+function sellerBooksGetDemoTransactions(){
+    const today = getIndonesiaTodayKey();
+
+    return [
+        {
+            id:"DEMO-001",
+            orderId:"DEMO-SHP-001",
+            packingId:"DEMO-SHP-001",
+            marketplaceId:"shopee",
+            marketplace:"Shopee",
+            storeId:"demo-shopee-1",
+            storeName:"Demo Shopee",
+            sku:"AMASA-LS",
+            qty:10,
+            salesAmount:1500000,
+            priceSnapshot:150000,
+            costSnapshot:70000,
+            adminFeeSku:18,
+            reportDate:today,
+            importedAt:new Date().toISOString()
+        },
+        {
+            id:"DEMO-002",
+            orderId:"DEMO-SHP-002",
+            packingId:"DEMO-SHP-002",
+            marketplaceId:"shopee",
+            marketplace:"Shopee",
+            storeId:"demo-shopee-1",
+            storeName:"Demo Shopee",
+            sku:"ARVEX-SG",
+            qty:5,
+            salesAmount:1250000,
+            priceSnapshot:250000,
+            costSnapshot:100000,
+            adminFeeSku:18,
+            reportDate:today,
+            importedAt:new Date().toISOString()
+        },
+        {
+            id:"DEMO-003",
+            orderId:"DEMO-TTK-001",
+            packingId:"DEMO-TTK-001",
+            marketplaceId:"tiktok",
+            marketplace:"TikTok",
+            storeId:"demo-tiktok-1",
+            storeName:"Demo TikTok Shop",
+            sku:"ARVEX-CV",
+            qty:15,
+            salesAmount:2250000,
+            priceSnapshot:150000,
+            costSnapshot:90000,
+            adminFeeSku:17.5,
+            reportDate:today,
+            importedAt:new Date().toISOString()
+        },
+        {
+            id:"DEMO-004",
+            orderId:"DEMO-TTK-002",
+            packingId:"DEMO-TTK-002",
+            marketplaceId:"tiktok",
+            marketplace:"TikTok",
+            storeId:"demo-tiktok-1",
+            storeName:"Demo TikTok Shop",
+            sku:"AMASA-DT",
+            qty:6,
+            salesAmount:1800000,
+            priceSnapshot:300000,
+            costSnapshot:120000,
+            adminFeeSku:17.5,
+            reportDate:today,
+            importedAt:new Date().toISOString()
+        }
+    ];
+}
+
+function sellerBooksGetDemoMarketplaces(){
+    return [
+        {id:"shopee",name:"Shopee",status:"active"},
+        {id:"tiktok",name:"TikTok",status:"active"}
+    ];
+}
+
+function sellerBooksGetDemoStores(){
+    return [
+        {id:"demo-shopee-1",name:"Demo Shopee",marketplaceId:"shopee",status:"active"},
+        {id:"demo-tiktok-1",name:"Demo TikTok Shop",marketplaceId:"tiktok",status:"active"}
+    ];
+}
+
+function sellerBooksGetDemoProducts(){
+    return [
+        {id:"demo-p1",sku:"AMASA-LS",name:"AMASA Linen Spray",cost:70000,adminFeePercent:18,status:"active"},
+        {id:"demo-p2",sku:"ARVEX-SG",name:"ARVEX Sarung Tangan",cost:100000,adminFeePercent:18,status:"active"},
+        {id:"demo-p3",sku:"ARVEX-CV",name:"ARVEX Cover Motor",cost:90000,adminFeePercent:17.5,status:"active"},
+        {id:"demo-p4",sku:"AMASA-DT",name:"AMASA Detergent",cost:120000,adminFeePercent:17.5,status:"active"}
+    ];
+}
+
+function sellerBooksApplyDemoReadOnly(){
+    document.body.classList.add("sellerbooks-demo-mode");
+
+    document.querySelectorAll("#sidebar .menu-item").forEach(function(menu){
+        const onclick = menu.getAttribute("onclick") || "";
+        if(!onclick.includes("showView('dashboard'")){
+            menu.style.display = "none";
+        }
+    });
+
+    document.querySelectorAll("#sidebar .menu-title").forEach(function(title){
+        title.style.display = "none";
+    });
+
+    const sidebarOwner = document.querySelector("#sidebar .user-name");
+    if(sidebarOwner){
+        sidebarOwner.textContent = "Demo SellerBooks";
+    }
+
+    let banner = document.getElementById("sellerBooksDemoBanner");
+    if(!banner){
+        banner = document.createElement("div");
+        banner.id = "sellerBooksDemoBanner";
+        banner.innerHTML =
+            '<span>👁️ MODE DEMO • READ ONLY</span>' +
+            '<button type="button" onclick="sellerBooksExitDemoMode()">Keluar Demo</button>';
+        document.body.appendChild(banner);
+    }
+
+    /*
+       Dashboard tetap bisa memakai filter periode, tetapi semua
+       tombol aksi/modifikasi disembunyikan agar demo benar-benar
+       read-only.
+    */
+    document.querySelectorAll("#dashboard button").forEach(function(button){
+        button.style.display = "none";
+    });
+
+    const period = document.getElementById("dashboardPeriod");
+    if(period){
+        period.disabled = false;
+    }
+}
+
+function sellerBooksEnterDemoMode(){
+    try{
+        sessionStorage.setItem("sellerbooks_demo_mode","1");
+    }catch(error){}
+    sellerBooksDemoMode = true;
+
+    /*
+       Demo tidak menyentuh session Supabase dan tidak mengubah
+       localStorage/data bisnis pengguna.
+    */
+    sellerBooksShowOnly("app");
+    sellerBooksApplyDemoReadOnly();
+
+    if(typeof showView === "function"){
+        showView("dashboard",null,false);
+    }
+
+    if(typeof updateDashboardByPeriod === "function"){
+        updateDashboardByPeriod();
+    }
+}
+
+function sellerBooksExitDemoMode(){
+    try{
+        sessionStorage.removeItem("sellerbooks_demo_mode");
+    }catch(error){}
+    sellerBooksDemoMode = false;
+    document.body.classList.remove("sellerbooks-demo-mode");
+    location.href = location.pathname + location.search;
+}
+
 function sellerBooksGetApprovalPage(){
     let page=document.getElementById("sellerbooksApprovalPage");
     if(page)return page;
