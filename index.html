@@ -5413,6 +5413,14 @@ function getSalesImportsData(){
 
 function getAllReportTransactions(){
 
+    /*
+       Demo memakai dataset contoh di memory/session saja.
+       Data bisnis pengguna tidak dibaca atau diubah.
+    */
+    if(sellerBooksIsDemoMode()){
+        return sellerBooksGetDemoTransactions();
+    }
+
     const imports =
         getSalesImportsData();
 
