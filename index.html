@@ -397,75 +397,6 @@ body{
 
 /* LOGIN FORM */
 
-/* Tombol demo publik - tidak membutuhkan login */
-.demo-button{
-    width:100%;
-    margin-top:12px;
-    padding:14px 18px;
-    border:1px solid #bfdbfe;
-    border-radius:12px;
-    background:#eff6ff;
-    color:#1d4ed8;
-    font-size:14px;
-    font-weight:700;
-    cursor:pointer;
-    transition:all .2s ease;
-}
-.demo-button:hover{
-    background:#dbeafe;
-    border-color:#93c5fd;
-    transform:translateY(-1px);
-}
-
-/* Banner mode demo */
-#sellerBooksDemoBanner{
-    position:fixed;
-    top:14px;
-    right:18px;
-    z-index:99999;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:8px 10px 8px 13px;
-    border:1px solid #bfdbfe;
-    border-radius:999px;
-    background:#eff6ff;
-    color:#1d4ed8;
-    box-shadow:0 8px 24px rgba(15,23,42,.12);
-    font-size:12px;
-    font-weight:800;
-}
-#sellerBooksDemoBanner button{
-    border:0;
-    border-radius:999px;
-    padding:6px 10px;
-    background:#2563eb;
-    color:#fff;
-    font-size:11px;
-    font-weight:700;
-    cursor:pointer;
-}
-#sellerBooksDemoBanner button:hover{
-    background:#1d4ed8;
-}
-body.sellerbooks-demo-mode #dashboard button{
-    display:none !important;
-}
-body.sellerbooks-demo-mode #dashboard .sb-piutang-dashboard-button{
-    display:none !important;
-}
-@media(max-width:600px){
-    #sellerBooksDemoBanner{
-        top:8px;
-        right:8px;
-        font-size:10px;
-    }
-    #sellerBooksDemoBanner button{
-        font-size:10px;
-        padding:5px 8px;
-    }
-}
-
 .login-form-area{
 
     display:flex;
@@ -5413,14 +5344,6 @@ function getSalesImportsData(){
 
 function getAllReportTransactions(){
 
-    /*
-       Demo memakai dataset contoh di memory/session saja.
-       Data bisnis pengguna tidak dibaca atau diubah.
-    */
-    if(sellerBooksIsDemoMode()){
-        return sellerBooksGetDemoTransactions();
-    }
-
     const imports =
         getSalesImportsData();
 
@@ -6829,16 +6752,12 @@ function getReportOtherCosts(){
 
     let costsData = [];
 
-    if(sellerBooksIsDemoMode()){
-        costsData = sellerBooksGetDemoCosts();
-    }else{
-        try{
-            costsData = JSON.parse(
-                sellerBooksStorage.getItem("sellerbooks_costs") || "[]"
-            );
-        }catch(error){
-            costsData = [];
-        }
+    try{
+        costsData = JSON.parse(
+            sellerBooksStorage.getItem("sellerbooks_costs") || "[]"
+        );
+    }catch(error){
+        costsData = [];
     }
 
     const period =
@@ -6913,16 +6832,12 @@ function getReportOtherCostsByScope(
 
     let costsData = [];
 
-    if(sellerBooksIsDemoMode()){
-        costsData = sellerBooksGetDemoCosts();
-    }else{
-        try{
-            costsData = JSON.parse(
-                sellerBooksStorage.getItem("sellerbooks_costs") || "[]"
-            );
-        }catch(error){
-            costsData = [];
-        }
+    try{
+        costsData = JSON.parse(
+            sellerBooksStorage.getItem("sellerbooks_costs") || "[]"
+        );
+    }catch(error){
+        costsData = [];
     }
 
     const period =
@@ -7066,11 +6981,6 @@ function getReportTransactionCost(transaction){
         return 0;
     }
 
-    if(sellerBooksIsDemoMode()){
-        const demoSnapshot = Number(transaction.costSnapshot);
-        return Number.isFinite(demoSnapshot) ? demoSnapshot : 0;
-    }
-
     if(!isReportTransactionToday(transaction) &&
        transaction.costSnapshot !== undefined &&
        transaction.costSnapshot !== null &&
@@ -7091,11 +7001,6 @@ function getReportTransactionPrice(transaction){
         return 0;
     }
 
-    if(sellerBooksIsDemoMode()){
-        const demoPrice = Number(transaction.priceSnapshot);
-        return Number.isFinite(demoPrice) ? demoPrice : 0;
-    }
-
     if(!isReportTransactionToday(transaction) &&
        transaction.priceSnapshot !== undefined &&
        transaction.priceSnapshot !== null &&
@@ -7111,11 +7016,6 @@ function getReportTransactionPrice(transaction){
 }
 
 function getReportTransactionFeePercent(transaction){
-
-    if(sellerBooksIsDemoMode()){
-        const demoFee = Number(transaction.adminFeeSku);
-        return Number.isFinite(demoFee) ? demoFee : 0;
-    }
 
     /*
        SNAPSHOT HARIAN — ADMIN FEE
@@ -7364,34 +7264,28 @@ function calculateReportFinancial(){
 
     const masterProducts = [];
 
-    if(sellerBooksIsDemoMode()){
-        sellerBooksGetDemoProducts().forEach(function(product){
-            masterProducts.push(product);
-        });
-    }else{
-        try{
+    try{
 
-            const data =
-                JSON.parse(
-                    sellerBooksStorage.getItem(
-                        "sellerbooks_products"
-                    ) || "[]"
-                );
+        const data =
+            JSON.parse(
+                sellerBooksStorage.getItem(
+                    "sellerbooks_products"
+                ) || "[]"
+            );
 
-            if(
-                Array.isArray(data)
-            ){
+        if(
+            Array.isArray(data)
+        ){
 
-                data.forEach(function(product){
+            data.forEach(function(product){
 
-                    masterProducts.push(product);
+                masterProducts.push(product);
 
-                });
+            });
 
-            }
+        }
 
-        }catch(error){}
-    }
+    }catch(error){}
 
 
     const productMap =
@@ -14704,15 +14598,9 @@ document.addEventListener(
 ===================================================== */
 
 
-/* =====================================================
-   LOGIN DEMO
-   NANTI DIGANTI SUPABASE AUTH
-===================================================== */
 
-/* =====================================================
-   LOGIN DEMO
-   NANTI DIGANTI SUPABASE AUTH
-===================================================== */
+
+
 
 /* =====================================================
    SELLERBOOKS SUPABASE AUTH
@@ -15291,295 +15179,6 @@ function sellerBooksShowOnly(pageId){
         el.style.display=id===pageId?(id==="app"?"block":"flex"):"none";
     });
 }
-/*
-=========================================================
-SELLERBOOKS PUBLIC DEMO
-- Tidak membutuhkan login Google.
-- Tidak membaca/menulis data bisnis pengguna.
-- Hanya menampilkan Dashboard dengan data contoh.
-- Semua menu/modul demo dibuat read-only.
-=========================================================
-*/
-let sellerBooksDemoMode = false;
-
-function sellerBooksIsDemoMode(){
-    return sellerBooksDemoMode === true ||
-        sessionStorage.getItem("sellerbooks_demo_mode") === "1";
-}
-
-function sellerBooksGetDemoTransactions(){
-    const today = getIndonesiaTodayKey();
-
-    return [
-        {
-            id:"DEMO-001",
-            orderId:"DEMO-SHP-001",
-            packingId:"DEMO-SHP-001",
-            marketplaceId:"shopee",
-            marketplace:"Shopee",
-            storeId:"demo-shopee-1",
-            storeName:"Demo Shopee",
-            sku:"AMASA-LS",
-            qty:10,
-            salesAmount:1500000,
-            priceSnapshot:150000,
-            costSnapshot:70000,
-            adminFeeSku:18,
-            reportDate:today,
-            importedAt:new Date().toISOString()
-        },
-        {
-            id:"DEMO-002",
-            orderId:"DEMO-SHP-002",
-            packingId:"DEMO-SHP-002",
-            marketplaceId:"shopee",
-            marketplace:"Shopee",
-            storeId:"demo-shopee-1",
-            storeName:"Demo Shopee",
-            sku:"ARVEX-SG",
-            qty:5,
-            salesAmount:1250000,
-            priceSnapshot:250000,
-            costSnapshot:100000,
-            adminFeeSku:18,
-            reportDate:today,
-            importedAt:new Date().toISOString()
-        },
-        {
-            id:"DEMO-003",
-            orderId:"DEMO-TTK-001",
-            packingId:"DEMO-TTK-001",
-            marketplaceId:"tiktok",
-            marketplace:"TikTok",
-            storeId:"demo-tiktok-1",
-            storeName:"Demo TikTok Shop",
-            sku:"ARVEX-CV",
-            qty:15,
-            salesAmount:2250000,
-            priceSnapshot:150000,
-            costSnapshot:90000,
-            adminFeeSku:17.5,
-            reportDate:today,
-            importedAt:new Date().toISOString()
-        },
-        {
-            id:"DEMO-004",
-            orderId:"DEMO-TTK-002",
-            packingId:"DEMO-TTK-002",
-            marketplaceId:"tiktok",
-            marketplace:"TikTok",
-            storeId:"demo-tiktok-1",
-            storeName:"Demo TikTok Shop",
-            sku:"AMASA-DT",
-            qty:6,
-            salesAmount:1800000,
-            priceSnapshot:300000,
-            costSnapshot:120000,
-            adminFeeSku:17.5,
-            reportDate:today,
-            importedAt:new Date().toISOString()
-        }
-    ];
-}
-
-function sellerBooksGetDemoMarketplaces(){
-    return [
-        {id:"shopee",name:"Shopee",status:"active"},
-        {id:"tiktok",name:"TikTok",status:"active"}
-    ];
-}
-
-function sellerBooksGetDemoStores(){
-    return [
-        {id:"demo-shopee-1",name:"Demo Shopee",marketplaceId:"shopee",status:"active"},
-        {id:"demo-tiktok-1",name:"Demo TikTok Shop",marketplaceId:"tiktok",status:"active"}
-    ];
-}
-
-function sellerBooksGetDemoCosts(){
-    const today = getIndonesiaTodayKey();
-    return [
-        {
-            id:"DEMO-COST-001",
-            date:today,
-            category:"Iklan Marketplace",
-            description:"Promosi marketplace demo",
-            amount:150000,
-            marketplaceId:"shopee",
-            storeId:"demo-shopee-1"
-        },
-        {
-            id:"DEMO-COST-002",
-            date:today,
-            category:"Operasional",
-            description:"Biaya operasional toko demo",
-            amount:100000,
-            marketplaceId:"tiktok",
-            storeId:"demo-tiktok-1"
-        },
-        {
-            id:"DEMO-COST-003",
-            date:today,
-            category:"Transportasi",
-            description:"Biaya transportasi demo",
-            amount:75000,
-            marketplaceId:"",
-            storeId:""
-        }
-    ];
-}
-
-function sellerBooksGetDemoProducts(){
-    return [
-        {id:"demo-p1",sku:"AMASA-LS",name:"AMASA Linen Spray",cost:70000,adminFeePercent:18,status:"active"},
-        {id:"demo-p2",sku:"ARVEX-SG",name:"ARVEX Sarung Tangan",cost:100000,adminFeePercent:18,status:"active"},
-        {id:"demo-p3",sku:"ARVEX-CV",name:"ARVEX Cover Motor",cost:90000,adminFeePercent:17.5,status:"active"},
-        {id:"demo-p4",sku:"AMASA-DT",name:"AMASA Detergent",cost:120000,adminFeePercent:17.5,status:"active"}
-    ];
-}
-
-function sellerBooksApplyDemoReadOnly(){
-    document.body.classList.add("sellerbooks-demo-mode");
-
-    /* Semua menu dan seluruh kartu/modul tetap terlihat pada Demo. */
-
-    const sidebarOwner = document.querySelector("#sidebar .user-name");
-    if(sidebarOwner){
-        sidebarOwner.textContent = "Demo SellerBooks";
-    }
-
-    let banner = document.getElementById("sellerBooksDemoBanner");
-    if(!banner){
-        banner = document.createElement("div");
-        banner.id = "sellerBooksDemoBanner";
-        banner.innerHTML =
-            '<span>👁️ MODE DEMO • READ ONLY</span>' +
-            '<button type="button" onclick="sellerBooksExitDemoMode()">Keluar Demo</button>';
-        document.body.appendChild(banner);
-    }
-
-    /*
-       Semua halaman dapat dibuka, tetapi kontrol yang mengubah data
-       dibuat read-only. Filter, pencarian, dan navigasi tetap aktif.
-    */
-    const allowInput = function(element){
-        const id = String(element.id || "").toLowerCase();
-        const name = String(element.name || "").toLowerCase();
-        const cls = String(element.className || "").toLowerCase();
-        const text = id + " " + name + " " + cls;
-        return /search|filter|period|datefrom|dateto|marketplace|store|account|currency/.test(text);
-    };
-
-    document.querySelectorAll("#app input, #app textarea").forEach(function(element){
-        if(!allowInput(element)){
-            element.readOnly = true;
-            element.setAttribute("aria-readonly","true");
-        }
-    });
-
-    document.querySelectorAll("#app select").forEach(function(element){
-        if(!allowInput(element)){
-            element.disabled = true;
-            element.setAttribute("aria-disabled","true");
-        }
-    });
-
-    document.querySelectorAll("#app button").forEach(function(button){
-        const onclick = String(button.getAttribute("onclick") || "").toLowerCase();
-        const id = String(button.id || "").toLowerCase();
-        const label = String(button.textContent || "").trim().toLowerCase();
-
-        /*
-           Tombol navigasi/filter tetap aktif. Tombol yang berpotensi
-           mengubah data akan diblokir oleh event guard di bawah.
-        */
-        if(
-            /save|simpan|edit|hapus|delete|remove|import|upload|tarik|integrat|connect|disconnect|aktifkan|nonaktifkan|reset|tambah|add|create|update|submit/.test(
-                onclick + " " + id + " " + label
-            )
-        ){
-            button.setAttribute("data-demo-blocked","1");
-            button.setAttribute("aria-disabled","true");
-            button.title = "Mode Demo — Read Only";
-        }
-    });
-
-    const period = document.getElementById("dashboardPeriod");
-    if(period) period.disabled = false;
-}
-
-/*
-   DEMO READ-ONLY EVENT GUARD
-   Menjaga seluruh modul tetap dapat dilihat tanpa mengizinkan
-   perubahan data, termasuk tombol yang dibuat secara dinamis.
-*/
-document.addEventListener("click",function(event){
-    if(!sellerBooksIsDemoMode()) return;
-
-    const button = event.target.closest("button, a, [role=\"button\"]");
-    if(!button) return;
-
-    if(button.id === "sellerBooksDemoBanner" ||
-       button.closest("#sellerBooksDemoBanner")){
-        return;
-    }
-
-    const onclick = String(button.getAttribute("onclick") || "").toLowerCase();
-    const id = String(button.id || "").toLowerCase();
-    const label = String(button.textContent || "").trim().toLowerCase();
-
-    const mutating =
-        /save|simpan|edit|hapus|delete|remove|import|upload|tarik|integrat|connect|disconnect|aktifkan|nonaktifkan|reset|tambah|add|create|update|submit|confirm|konfirmasi|process|proses/.test(
-            onclick + " " + id + " " + label
-        );
-
-    if(mutating){
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        sellerBooksAlert("👁️ Mode Demo aktif. Data hanya dapat dilihat (Read Only).");
-        return false;
-    }
-},true);
-
-document.addEventListener("submit",function(event){
-    if(!sellerBooksIsDemoMode()) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    sellerBooksAlert("👁️ Mode Demo aktif. Form tidak dapat mengubah data.");
-    return false;
-},true);
-
-function sellerBooksEnterDemoMode(){
-    try{
-        sessionStorage.setItem("sellerbooks_demo_mode","1");
-    }catch(error){}
-    sellerBooksDemoMode = true;
-
-    /*
-       Demo tidak menyentuh session Supabase dan tidak mengubah
-       localStorage/data bisnis pengguna.
-    */
-    sellerBooksShowOnly("app");
-    sellerBooksApplyDemoReadOnly();
-
-    if(typeof showView === "function"){
-        showView("dashboard",null,false);
-    }
-
-    if(typeof updateDashboardByPeriod === "function"){
-        updateDashboardByPeriod();
-    }
-}
-
-function sellerBooksExitDemoMode(){
-    try{
-        sessionStorage.removeItem("sellerbooks_demo_mode");
-    }catch(error){}
-    sellerBooksDemoMode = false;
-    document.body.classList.remove("sellerbooks-demo-mode");
-    location.href = location.pathname + location.search;
-}
-
 function sellerBooksGetApprovalPage(){
     let page=document.getElementById("sellerbooksApprovalPage");
     if(page)return page;
@@ -15746,23 +15345,6 @@ async function loginGoogle(){
     }
 }
 async function sellerBooksHandleAuthSession(){
-
-    /*
-       Mode Demo adalah akses publik read-only.
-       Jangan meminta session Supabase dan jangan membuat profile pengguna.
-    */
-    if(sellerBooksIsDemoMode()){
-        sellerBooksDemoMode = true;
-        sellerBooksShowOnly("app");
-        sellerBooksApplyDemoReadOnly();
-        if(typeof showView === "function"){
-            showView("dashboard",null,false);
-        }
-        if(typeof updateDashboardByPeriod === "function"){
-            updateDashboardByPeriod();
-        }
-        return;
-    }
 
     try{
 
@@ -17314,11 +16896,6 @@ function fixProductFromAnalysis(id){
 
 function showView(viewId, button, saveHistory = true){
 
-    /*
-       Mode Demo boleh membuka seluruh halaman SellerBooks.
-       Pembatasan hanya pada aksi yang mengubah data.
-    */
-
     /* =========================================
        TUTUP SEMUA HALAMAN
     ========================================= */
@@ -18109,31 +17686,26 @@ function renderMarketplacePerformance(){
     let marketplacesData = [];
     let storesData = [];
 
-    if(sellerBooksIsDemoMode()){
-        marketplacesData = sellerBooksGetDemoMarketplaces();
-        storesData = sellerBooksGetDemoStores();
-    }else{
-        try{
-            marketplacesData =
-                JSON.parse(
-                    sellerBooksStorage.getItem(
-                        "sellerbooks_marketplaces"
-                    ) || "[]"
-                );
-        }catch(error){
-            marketplacesData = [];
-        }
+    try{
+        marketplacesData =
+            JSON.parse(
+                sellerBooksStorage.getItem(
+                    "sellerbooks_marketplaces"
+                ) || "[]"
+            );
+    }catch(error){
+        marketplacesData = [];
+    }
 
-        try{
-            storesData =
-                JSON.parse(
-                    sellerBooksStorage.getItem(
-                        "sellerbooks_stores"
-                    ) || "[]"
-                );
-        }catch(error){
-            storesData = [];
-        }
+    try{
+        storesData =
+            JSON.parse(
+                sellerBooksStorage.getItem(
+                    "sellerbooks_stores"
+                ) || "[]"
+            );
+    }catch(error){
+        storesData = [];
     }
 
     const performanceBody =
@@ -18149,19 +17721,15 @@ function renderMarketplacePerformance(){
 
     let products = [];
 
-    if(sellerBooksIsDemoMode()){
-        products = sellerBooksGetDemoProducts();
-    }else{
-        try{
-            products =
-                JSON.parse(
-                    sellerBooksStorage.getItem(
-                        "sellerbooks_products"
-                    ) || "[]"
-                );
-        }catch(error){
-            products = [];
-        }
+    try{
+        products =
+            JSON.parse(
+                sellerBooksStorage.getItem(
+                    "sellerbooks_products"
+                ) || "[]"
+            );
+    }catch(error){
+        products = [];
     }
 
     const productMap =
@@ -25000,13 +24568,6 @@ function getMasterProductBySku(sku){
 
     if(!normalizedSku){
         return null;
-    }
-
-    if(typeof sellerBooksIsDemoMode === "function" && sellerBooksIsDemoMode()){
-        const demoProduct = sellerBooksGetDemoProducts().find(function(product){
-            return String(product.sku || "").trim().toLowerCase() === normalizedSku;
-        });
-        return demoProduct ? {...demoProduct} : null;
     }
 
     /*
