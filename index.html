@@ -17988,26 +17988,31 @@ function renderMarketplacePerformance(){
     let marketplacesData = [];
     let storesData = [];
 
-    try{
-        marketplacesData =
-            JSON.parse(
-                sellerBooksStorage.getItem(
-                    "sellerbooks_marketplaces"
-                ) || "[]"
-            );
-    }catch(error){
-        marketplacesData = [];
-    }
+    if(sellerBooksIsDemoMode()){
+        marketplacesData = sellerBooksGetDemoMarketplaces();
+        storesData = sellerBooksGetDemoStores();
+    }else{
+        try{
+            marketplacesData =
+                JSON.parse(
+                    sellerBooksStorage.getItem(
+                        "sellerbooks_marketplaces"
+                    ) || "[]"
+                );
+        }catch(error){
+            marketplacesData = [];
+        }
 
-    try{
-        storesData =
-            JSON.parse(
-                sellerBooksStorage.getItem(
-                    "sellerbooks_stores"
-                ) || "[]"
-            );
-    }catch(error){
-        storesData = [];
+        try{
+            storesData =
+                JSON.parse(
+                    sellerBooksStorage.getItem(
+                        "sellerbooks_stores"
+                    ) || "[]"
+                );
+        }catch(error){
+            storesData = [];
+        }
     }
 
     const performanceBody =
@@ -18023,15 +18028,19 @@ function renderMarketplacePerformance(){
 
     let products = [];
 
-    try{
-        products =
-            JSON.parse(
-                sellerBooksStorage.getItem(
-                    "sellerbooks_products"
-                ) || "[]"
-            );
-    }catch(error){
-        products = [];
+    if(sellerBooksIsDemoMode()){
+        products = sellerBooksGetDemoProducts();
+    }else{
+        try{
+            products =
+                JSON.parse(
+                    sellerBooksStorage.getItem(
+                        "sellerbooks_products"
+                    ) || "[]"
+                );
+        }catch(error){
+            products = [];
+        }
     }
 
     const productMap =
