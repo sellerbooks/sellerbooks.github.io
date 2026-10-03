@@ -7058,6 +7058,11 @@ function getReportTransactionCost(transaction){
         return 0;
     }
 
+    if(sellerBooksIsDemoMode()){
+        const demoSnapshot = Number(transaction.costSnapshot);
+        return Number.isFinite(demoSnapshot) ? demoSnapshot : 0;
+    }
+
     if(!isReportTransactionToday(transaction) &&
        transaction.costSnapshot !== undefined &&
        transaction.costSnapshot !== null &&
