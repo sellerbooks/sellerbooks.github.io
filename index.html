@@ -151,37 +151,6 @@ body{
 
 
 /* =====================================================
-   LOGIN / PUBLIC LANGUAGE SWITCH
-===================================================== */
-.public-language-switch{
-    display:flex;
-    align-items:center;
-    justify-content:flex-end;
-    gap:8px;
-    margin-bottom:14px;
-    font-size:11px;
-    color:#64748b;
-}
-.public-language-switch label{font-weight:700;}
-.public-language-switch select{
-    border:1px solid #dbe3ef;
-    background:#fff;
-    color:#0f172a;
-    border-radius:8px;
-    padding:6px 9px;
-    font-size:11px;
-    font-weight:700;
-    outline:none;
-}
-.owner-language-switch{
-    position:absolute;
-    top:18px;
-    right:20px;
-    margin:0;
-}
-.owner-setup-card{position:relative;}
-
-/* =====================================================
    LOGIN PAGE
 ===================================================== */
 
@@ -5092,11 +5061,6 @@ document.addEventListener(
     "DOMContentLoaded",
     function(){
         setTimeout(function(){
-            const language = typeof sellerBooksCurrentLanguage === "function" ? sellerBooksCurrentLanguage() : "id";
-            const loginSelect=document.getElementById("publicLanguageSelect");
-            const ownerSelect=document.getElementById("ownerLanguageSelect");
-            if(loginSelect)loginSelect.value=language;
-            if(ownerSelect)ownerSelect.value=language;
             if(typeof applySellerBooksLanguage === "function"){
                 applySellerBooksLanguage();
             }
@@ -9826,14 +9790,6 @@ document.addEventListener(
 
             <div class="login-box">
 
-                <div class="public-language-switch">
-                    <label for="publicLanguageSelect">Language</label>
-                    <select id="publicLanguageSelect" onchange="setSellerBooksPublicLanguage(this.value)">
-                        <option value="id">ID — Indonesia</option>
-                        <option value="en">EN — English</option>
-                    </select>
-                </div>
-
                 <h2>
                     Selamat Datang 👋
                 </h2>
@@ -9916,14 +9872,6 @@ document.addEventListener(
 <section id="ownerSetupPage">
 
     <div class="owner-setup-card">
-
-        <div class="public-language-switch owner-language-switch">
-            <label for="ownerLanguageSelect">Language</label>
-            <select id="ownerLanguageSelect" onchange="setSellerBooksPublicLanguage(this.value)">
-                <option value="id">ID — Indonesia</option>
-                <option value="en">EN — English</option>
-            </select>
-        </div>
 
         <div class="owner-setup-icon">
             👤
@@ -31288,28 +31236,6 @@ const DEFAULT_SELLERBOOKS_SETTINGS = {
     }
 };
 
-function setSellerBooksPublicLanguage(language){
-    language = language === "en" ? "en" : "id";
-    try{
-        const raw = sellerBooksStorage.getItem(SELLERBOOKS_SETTINGS_KEY) || "{}";
-        const current = JSON.parse(raw);
-        const next = {
-            ...(current && typeof current === "object" ? current : {}),
-            language: language
-        };
-        sellerBooksStorage.setItem(SELLERBOOKS_SETTINGS_KEY, JSON.stringify(next));
-    }catch(error){
-        console.warn("Gagal menyimpan pilihan bahasa publik SellerBooks:", error);
-    }
-    const loginSelect=document.getElementById("publicLanguageSelect");
-    const ownerSelect=document.getElementById("ownerLanguageSelect");
-    if(loginSelect)loginSelect.value=language;
-    if(ownerSelect)ownerSelect.value=language;
-    if(typeof applySellerBooksLanguage==="function"){
-        applySellerBooksLanguage();
-    }
-}
-
 function getSellerBooksSettings(){
     try{
         const saved =
@@ -31723,7 +31649,8 @@ const SELLERBOOKS_I18N = {
         "SGD — Singapore Dollar":"SGD — Singapore Dollar",
         "MYR — Malaysian Ringgit":"MYR — Malaysian Ringgit",
         "ID — Indonesia":"ID — Indonesia",
-        "EN — English":"EN — English"        "Language":"Bahasa",
+        "EN — English":"EN — English",
+        "Language":"Bahasa",
         "Marketplace Business Intelligence":"Kecerdasan Bisnis Marketplace",
 
     },
