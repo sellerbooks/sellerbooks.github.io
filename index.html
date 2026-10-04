@@ -11171,7 +11171,7 @@ document.addEventListener(
 
     <div id="productPagination" class="product-pagination">
         <div class="product-page-size">
-            <span>Tampilkan</span>
+            <span>${sellerBooksCurrentLanguage() === "en" ? "Show" : "Tampilkan"}</span>
             <select id="productPageSize" onchange="changeProductPageSize(this.value)" aria-label="Jumlah baris Master Produk">
                 <option value="20" selected>20</option>
                 <option value="40">40</option>
@@ -11179,7 +11179,7 @@ document.addEventListener(
                 <option value="80">80</option>
                 <option value="100">100</option>
             </select>
-            <span>baris</span>
+            <span>${sellerBooksCurrentLanguage() === "en" ? "rows" : "baris"}</span>
         </div>
         <div id="productPaginationControls" class="product-pagination-controls"></div>
     </div>
@@ -22381,7 +22381,7 @@ function renderProducts(){
         productCount.innerText =
 
             filteredProducts.length +
-            " Produk";
+            (sellerBooksCurrentLanguage() === "en" ? " Products" : " Produk");
 
     }
 
@@ -22433,15 +22433,16 @@ function renderProducts(){
 
                         <h3>
 
-                            Belum Ada Produk
+                            ${sellerBooksCurrentLanguage() === "en" ? "No Products Yet" : "Belum Ada Produk"}
 
                         </h3>
 
 
                         <p>
 
-                            Tambahkan produk secara manual
-                            atau import menggunakan Excel.
+                            ${sellerBooksCurrentLanguage() === "en"
+                                ? "Add products manually or import them using Excel."
+                                : "Tambahkan produk secara manual atau import menggunakan Excel."}
 
                         </p>
 
@@ -22467,13 +22468,11 @@ function renderProducts(){
     visibleProducts.forEach(function(product){
 
 
+        const productUiLanguage = sellerBooksCurrentLanguage();
         const statusText =
-
             product.status === "active"
-
-            ? "Aktif"
-
-            : "Tidak Aktif";
+            ? (productUiLanguage === "en" ? "Active" : "Aktif")
+            : (productUiLanguage === "en" ? "Inactive" : "Tidak Aktif");
 
 
         const statusClass =
@@ -22635,10 +22634,8 @@ function renderProducts(){
 
                             ${
                                 product.status === "active"
-
-                                ? "Nonaktifkan"
-
-                                : "Aktifkan"
+                                ? (sellerBooksCurrentLanguage() === "en" ? "Disable" : "Nonaktifkan")
+                                : (sellerBooksCurrentLanguage() === "en" ? "Enable" : "Aktifkan")
                             }
 
                         </button>
@@ -31774,6 +31771,16 @@ const SELLERBOOKS_I18N = {
         "0 Accounts Toko":"0 Store Accounts",
         "+ Tambah Accounts Toko":"+ Add Store Account",
         "Kelola seluruh produk, SKU, modal, dan data dasar produk bisnis Anda.":"Manage all products, SKUs, costs, and basic product data.",
+        "manage all product, SKU, cost, and data dasar product business your.":"Manage all products, SKUs, costs, and basic product data.",
+        "Produk":"Products",
+        "Kategori":"Category",
+        "Aksi":"Actions",
+        "Nonaktifkan":"Disable",
+        "Aktifkan":"Enable",
+        "Tampilkan":"Show",
+        "baris":"rows",
+        "1813 Produk":"1813 Products",
+        "All Statuses":"All Statuses",
         "0 Produk":"0 Products",
         "+ Tambah Produk":"+ Add Product",
         "🗑️ Hapus Terpilih (":"🗑️ Delete Selected (",
