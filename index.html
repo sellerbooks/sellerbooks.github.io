@@ -15373,7 +15373,13 @@ function sellerBooksRefreshRuntimeFromCloud(){
             renderSettingsLogo();
         }
     }catch(error){}
-}
+
+    /* Bahasa mengikuti settings milik user yang sedang login di Supabase. */
+    try{
+        if(typeof applySellerBooksLanguage==="function"){
+            applySellerBooksLanguage();
+        }
+    }catch(error){}
 
 let sellerBooksAuthUser=null;
 let sellerBooksProfile=null;
@@ -15449,6 +15455,7 @@ async function sellerBooksCheckApproval(showAlert){
             */
             await sellerBooksLoadCloudData();
             sellerBooksRefreshRuntimeFromCloud();
+            if(typeof applySellerBooksLanguage==="function")applySellerBooksLanguage();
             if(typeof initializeReports==="function")initializeReports();
             sellerBooksOpenApplication();
             sellerBooksRefreshActiveView();
@@ -15799,6 +15806,11 @@ function sellerBooksApplyRealtimeCloudData(data,updatedAt){
         sellerBooksCloudReady=true;
         sellerBooksSaveFastCache();
         sellerBooksRefreshAllViewsFromCloud();
+        try{
+            if(typeof applySellerBooksLanguage==="function"){
+                applySellerBooksLanguage();
+            }
+        }catch(error){}
     }catch(error){
         console.error("Refresh realtime data SellerBooks gagal:",error);
     }finally{
@@ -31340,6 +31352,18 @@ function saveSellerBooksSettings(){
     );
 
     /*
+       Bahasa dan seluruh Settings disimpan ke sellerbooks_user_data.data
+       melalui mekanisme cloud SellerBooks yang sama seperti data bisnis.
+       Queue tetap dipakai, lalu dipaksa persist segera agar perubahan bahasa
+       tersedia ketika akun dibuka dari perangkat/browser lain.
+    */
+    if(typeof sellerBooksPersistCloudDataNow==="function"){
+        sellerBooksPersistCloudDataNow().catch(function(error){
+            console.error("Sinkronisasi bahasa/pengaturan ke Supabase gagal:",error);
+        });
+    }
+
+    /*
        Sinkronkan biaya packing dengan konfigurasi
        packing yang sudah digunakan oleh import.
     */
@@ -32038,6 +32062,33 @@ const SELLERBOOKS_I18N = {
         "Tidak ada pembayaran untuk nama tersebut.":"No payments for this name.",
         "Belum ada piutang":"No receivables yet",
         "Belum ada pembayaran":"No payments yet",
+        "SellerBooks | Marketplace Business Intelligence":"SellerBooks | Marketplace Business Intelligence",
+        "Akun:":"Account:",
+        "Lihat Piutang →":"View Receivables →",
+        "Daftar Piutang":"Receivables List",
+        "Bayar Piutang":"Pay Receivable",
+        "Catat pembayaran piutang. Pembayaran akan mengurangi sisa piutang.":"Record a receivable payment. The payment will reduce the remaining receivable.",
+        "Raport Pembayaran Piutang":"Receivable Payment Report",
+        "Sisa Piutang Per Reseller":"Remaining Receivables by Reseller",
+        "Pastikan SellerBooks membaca kolom SKU dan QTY dengan benar sebelum melanjutkan.":"Make sure SellerBooks reads the SKU and QTY columns correctly before continuing.",
+        "Analisis laba setiap SKU untuk mendeteksi produk yang minus dan mengetahui produk mana yang perlu diperbaiki.":"Analyze profit for each SKU to detect loss-making products and identify which products need improvement.",
+        "Pilih periode, marketplace, dan akun toko untuk mengetahui produk minus secara lebih spesifik.":"Select a period, marketplace, and store account to identify loss-making products more precisely.",
+        "Hapus data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan akun toko.":"Delete sales import data specifically by date, marketplace, and store account.",
+        "Packing":"Packing",
+        "Kelola konfigurasi bisnis dan preferensi SellerBooks Anda.":"Manage your SellerBooks business configuration and preferences.",
+        "ℹ️ Pembulatan hanya memengaruhi tampilan angka, bukan data transaksi yang tersimpan.":"ℹ️ Rounding only affects displayed numbers, not stored transaction data.",
+        "⚠️ Restore akan mengganti data SellerBooks saat ini dengan isi file backup.":"⚠️ Restore will replace the current SellerBooks data with the contents of the backup file.",
+        "Tambahkan akun toko dari marketplace yang aktif untuk mulai mengelola bisnis.":"Add a store account from an active marketplace to start managing your business.",
+        "Tambahkan produk secara manual atau import menggunakan Excel.":"Add products manually or import them using Excel.",
+        "Default packing:":"Default packing:",
+        "Pastikan":"Make sure",
+        "Gagal menampilkan Performa Marketplace:":"Failed to display Marketplace Performance:",
+        "Gagal menampilkan Performa Akun Toko:":"Failed to display Store Account Performance:",
+        "Catat pembayaran piutang.":"Record receivable payment.",
+        "Pembayaran akan mengurangi sisa piutang.":"The payment will reduce the remaining receivable.",
+        "Jangan ubah logika perhitungan.":"Do not change the calculation logic.",
+        "Nilai":"Value",
+        "Terakhir":"Last",
         "Pantau penjualan, produk keluar, akun toko dan laba bisnis Anda dalam satu sistem.":"Monitor sales, products sold, store accounts, and business profit in one system.",
         "Setiap pengguna hanya dapat mengakses data bisnis yang memiliki izin untuknya.":"Each user can only access the business data they are authorized to access.",
         "Contoh: Adiimasa":"Example: Adiimasa",
