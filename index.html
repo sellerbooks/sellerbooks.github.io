@@ -12461,7 +12461,7 @@ document.addEventListener(
             <div style="flex:1;min-width:260px;">
                 <h3 style="margin:0 0 5px 0;">Hapus Laporan</h3>
                 <p style="margin:0;color:#64748b;font-size:13px;">
-                    Hapus data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.
+                    ${sellerBooksCurrentLanguage() === "en" ? "Delete" : "Hapus"} data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.
                 </p>
             </div>
 
@@ -17491,7 +17491,7 @@ function renderMarketplaces(){
 
 
     count.innerText =
-        marketplaces.length + " Marketplace";
+        marketplaces.length + (sellerBooksCurrentLanguage() === "en" ? " Marketplaces" : " Marketplace");
 
 
     grid.innerHTML = "";
@@ -17499,10 +17499,11 @@ function renderMarketplaces(){
 
     marketplaces.forEach(function(marketplace){
 
+        const uiLanguage = sellerBooksCurrentLanguage();
         const statusText =
             marketplace.status === "active"
-            ? "Aktif"
-            : "Tidak Aktif";
+            ? (uiLanguage === "en" ? "Active" : "Aktif")
+            : (uiLanguage === "en" ? "Inactive" : "Tidak Aktif");
 
 
         const statusClass =
@@ -17560,8 +17561,8 @@ function renderMarketplaces(){
 
                 ${
                     marketplace.status === "active"
-                    ? "Marketplace aktif dan siap digunakan"
-                    : "Marketplace belum digunakan"
+                    ? (sellerBooksCurrentLanguage() === "en" ? "Marketplace active and ready to use" : "Marketplace aktif dan siap digunakan")
+                    : (sellerBooksCurrentLanguage() === "en" ? "Marketplace not used yet" : "Marketplace belum digunakan")
                 }
 
 
@@ -17576,7 +17577,7 @@ function renderMarketplaces(){
                     onclick="goToStores('${marketplace.id}')"
                 >
 
-                    Kelola Toko
+                    ${sellerBooksCurrentLanguage() === "en" ? "Manage Store" : "Kelola Toko"}
 
                 </button>
 
@@ -17588,8 +17589,8 @@ function renderMarketplaces(){
 
                     ${
                         marketplace.status === "active"
-                        ? "Nonaktifkan"
-                        : "Aktifkan"
+                        ? (sellerBooksCurrentLanguage() === "en" ? "Disable" : "Nonaktifkan")
+                        : (sellerBooksCurrentLanguage() === "en" ? "Enable" : "Aktifkan")
                     }
 
                 </button>
@@ -30042,10 +30043,10 @@ if(lowStockProducts.length > 0){
 
             icon:"✅",
 
-            title:"Semua aman",
+            title: sellerBooksCurrentLanguage() === "en" ? "All clear" : "Semua aman",
 
             text:
-                "Tidak ada notifikasi penting untuk saat ini."
+                (sellerBooksCurrentLanguage() === "en" ? "No important notifications at this time." : "Tidak ada notifikasi penting untuk saat ini.")
 
         });
 
