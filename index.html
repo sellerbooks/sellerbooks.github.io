@@ -18193,42 +18193,30 @@ function renderMarketplacePerformance(){
                     ".stat-info"
                 );
 
-        const dashboardPeriodNames = {
-            today:"Hari Ini",
-            yesterday:"Kemarin",
-            week:"Minggu Ini",
-            lastWeek:"Minggu Lalu",
-            month:"Bulan Ini",
-            lastMonth:"Bulan Lalu",
-            last3Months:"3 Bulan Terakhir",
-            year:"Tahun Ini",
-            all:"Semua Periode"
-        };
-
-        const dashboardPeriodLabel =
-            dashboardPeriodNames[currentDashboardPeriod] ||
-            "Hari Ini";
-
+        const language = typeof sellerBooksCurrentLanguage === "function" ? sellerBooksCurrentLanguage() : "id";
+        const dashboardPeriodNames = language === "en"
+            ? {today:"Today",yesterday:"Yesterday",week:"This Week",lastWeek:"Last Week",month:"This Month",lastMonth:"Last Month",last3Months:"Last 3 Months",year:"This Year",all:"All Periods"}
+            : {today:"Hari Ini",yesterday:"Kemarin",week:"Minggu Ini",lastWeek:"Minggu Lalu",month:"Bulan Ini",lastMonth:"Bulan Lalu",last3Months:"3 Bulan Terakhir",year:"Tahun Ini",all:"Semua Periode"};
+        const dashboardPeriodLabel = dashboardPeriodNames[currentDashboardPeriod] || (language === "en" ? "Today" : "Hari Ini");
         if(salesInfo){
-            salesInfo.textContent =
-                transactions.length
-                    ? "Total semua marketplace • " + dashboardPeriodLabel
-                    : "Tidak ada penjualan • " + dashboardPeriodLabel;
+            salesInfo.textContent = transactions.length
+                ? (language === "en" ? "Total sales across all marketplaces • " + dashboardPeriodLabel : "Total semua marketplace • " + dashboardPeriodLabel)
+                : (language === "en" ? "No sales • " + dashboardPeriodLabel : "Tidak ada penjualan • " + dashboardPeriodLabel);
         }
-
         if(qtyInfo){
-            qtyInfo.textContent =
-                "Total produk semua marketplace • " + dashboardPeriodLabel;
+            qtyInfo.textContent = language === "en"
+                ? "Total products across all marketplaces • " + dashboardPeriodLabel
+                : "Total produk semua marketplace • " + dashboardPeriodLabel;
         }
-
         if(profitInfo){
-            profitInfo.textContent =
-                "Laba bersih semua marketplace • " + dashboardPeriodLabel;
+            profitInfo.textContent = language === "en"
+                ? "Net profit across all marketplaces • " + dashboardPeriodLabel
+                : "Laba bersih semua marketplace • " + dashboardPeriodLabel;
         }
-
         if(marginInfo){
-            marginInfo.textContent =
-                "Margin bersih semua marketplace • " + dashboardPeriodLabel;
+            marginInfo.textContent = language === "en"
+                ? "Net margin across all marketplaces • " + dashboardPeriodLabel
+                : "Margin bersih semua marketplace • " + dashboardPeriodLabel;
         }
 
     }
@@ -32109,36 +32097,33 @@ function sellerBooksTranslateTextNodes(root, language){
     while((node = walker.nextNode())) nodes.push(node);
 
     nodes.forEach(function(textNode){
-        const original =
-            SELLERBOOKS_LANGUAGE_ORIGINALS.has(textNode)
-                ? SELLERBOOKS_LANGUAGE_ORIGINALS.get(textNode)
-                : textNode.nodeValue;
-
-        if(!SELLERBOOKS_LANGUAGE_ORIGINALS.has(textNode)){
-            SELLERBOOKS_LANGUAGE_ORIGINALS.set(textNode, original);
+        const current = String(textNode.nodeValue || "");
+        const record = SELLERBOOKS_LANGUAGE_ORIGINALS.get(textNode);
+        let original = current;
+        if(record && typeof record === "object"){
+            original = record.translated === current ? record.original : current;
+        }else if(typeof record === "string"){
+            original = record === current ? record : current;
         }
-
         const core = String(original || "").trim();
         if(!core) return;
-
         const dictionary = SELLERBOOKS_I18N[language] || SELLERBOOKS_I18N.id;
         let translated = dictionary[core];
-
         if(translated === undefined && language === "en"){
             translated = sellerBooksTranslateUserText(core, language);
-            if(translated === core) return;
+            if(translated !== core) translated = sellerBooksTranslateUserText(translated, language);
         }
-
         if(translated === undefined) return;
-
         const leading = String(original).match(/^\s*/)?.[0] || "";
         const trailing = String(original).match(/\s*$/)?.[0] || "";
-        textNode.nodeValue = leading + translated + trailing;
+        const nextValue = leading + translated + trailing;
+        if(textNode.nodeValue !== nextValue) textNode.nodeValue = nextValue;
+        SELLERBOOKS_LANGUAGE_ORIGINALS.set(textNode,{original:original,translated:nextValue});
     });
 }
 
 const SELLERBOOKS_EN_FALLBACK = {
-"silakan":"please","terlebih dahulu":"first","tidak dapat":"cannot","tidak bisa":"cannot","tidak ditemukan":"not found","belum ditemukan":"not found yet","belum ada":"no","sudah":"already","akan":"will","harus":"must","wajib":"required","dapat":"can","dengan":"with","tanpa":"without","sesuai":"according to","berdasarkan":"based on","digunakan":"used","menggunakan":"using","menampilkan":"display","ditampilkan":"displayed","tersimpan":"saved","disimpan":"saved","menyimpan":"save","simpan":"save","berhasil":"successfully","gagal":"failed","kesalahan":"error","terjadi":"occurred","terjadi kesalahan":"an error occurred","perubahan":"changes","diperbarui":"updated","memuat":"loading","membaca":"reading","dibaca":"read","menghapus":"delete","dihapus":"deleted","penghapusan":"deletion","menambahkan":"add","tambahkan":"add","mengedit":"edit","diedit":"edited","pilih":"select","dipilih":"selected","memilih":"select","isi":"enter","masukkan":"enter","mengisi":"enter","kosong":"empty","kosongkan":"clear","lengkapi":"complete","baru":"new","lama":"old","semua":"all","setiap":"each","hanya":"only","jika":"if","apabila":"if","ketika":"when","saat":"when","sebelum":"before","setelah":"after","hingga":"until","sampai":"until","dalam":"in","pada":"on","dari":"from","ke":"to","untuk":"for","oleh":"by","dan":"and","atau":"or","yang":"that","ini":"this","itu":"that","tersebut":"the","juga":"also","lebih":"more","kurang":"less","tidak":"not","belum":"not yet","bukan":"not","ada":"exists","diperlukan":"required","dibutuhkan":"required","tersedia":"available","tidak tersedia":"not available","aktif":"active","tidak aktif":"inactive","menunggu":"waiting","berikutnya":"next","sebelumnya":"previous","kembali":"back","lanjutkan":"continue","batal":"cancel","konfirmasi":"confirm","tutup":"close","buka":"open","cari":"search","filter":"filter","reset":"reset","tanggal":"date","hari":"day","kemarin":"yesterday","minggu":"week","bulan":"month","tahun":"year","periode":"period","rentang":"range","nama":"name","nama produk":"product name","nama bisnis":"business name","nama toko":"store name","nama akun":"account name","pemilik":"owner","usaha":"business","akun":"account","akun toko":"store account","toko":"store","produk":"product","produk terjual":"products sold","penjualan":"sales","penjualan bersih":"net sales","laporan":"report","rincian":"details","biaya":"cost","biaya lain":"other costs","biaya admin":"admin fee","admin marketplace":"marketplace fee","admin sku":"SKU fee","modal":"cost","hpp":"COGS","harga jual":"selling price","harga":"price","stok":"stock","jumlah":"amount","jumlah data":"data count","jumlah baris":"rows","jumlah kolom":"columns","keterangan":"description","nominal":"amount","diskon":"discount","laba":"profit","laba bersih":"net profit","laba kotor":"gross profit","rugi":"loss","total":"total","piutang":"receivable","pembayaran":"payment","sudah dibayar":"paid","belum dibayar":"unpaid","pesanan":"orders","order":"order","nomor pesanan":"order number","nomor resi":"tracking number","resi":"tracking number","pengiriman":"shipment","pengambilan":"pickup","dikirim":"shipped","menunggu pengiriman":"awaiting shipment","menunggu pengambilan":"awaiting pickup","selesai":"completed","dibatalkan":"cancelled","pengembalian":"return","integrasi":"integration","integrasikan":"integrate","terintegrasi":"integrated","copot":"disconnect","sinkronisasi":"sync","sinkron":"sync","tarik order":"pull orders","ambil order":"pull orders","upload":"upload","download":"download","file":"file","kolom":"column","baris":"row","template":"template","pengaturan":"settings","bahasa":"language","mata uang":"currency","kurs":"exchange rate","pembulatan":"rounding","packing":"packing","default":"default","per order":"per order","per transaksi":"per transaction","hari ini":"today","hari kemarin":"yesterday","minggu ini":"this week","minggu lalu":"last week","bulan ini":"this month","bulan lalu":"last month","3 bulan terakhir":"last 3 months","tahun ini":"this year","pilih tanggal":"custom date","semua periode":"all periods","semua marketplace":"all marketplaces","semua akun toko":"all store accounts","semua status":"all statuses","tidak ada data":"no data","belum ada data":"no data yet","belum ada transaksi":"no transactions yet","tidak ada transaksi":"no transactions","belum ada produk":"no products yet","belum ada akun":"no accounts yet","belum ada marketplace":"no marketplaces yet","belum ada biaya":"no costs yet","belum ada piutang":"no receivables yet","belum ada pembayaran":"no payments yet","wajib diisi":"is required","harus diisi":"is required","harus dipilih":"must be selected","tidak boleh kosong":"cannot be empty","tidak boleh sama":"must be different","lebih dari":"greater than","kurang dari":"less than","maksimal":"maximum","minimal":"minimum","terdekat":"nearest","contoh":"example","catatan":"note","pesan":"message","notifikasi":"notification","status":"status","hasil":"result","ringkasan":"summary","performa":"performance","pergerakan":"movement","perbandingan":"comparison","daftar":"list","riwayat":"history","identitas":"identity","sesi":"session","login":"login","keluar":"sign out","masuk":"sign in","persetujuan":"approval","ditolak":"rejected","ditangguhkan":"suspended","akses":"access","koneksi":"connection","perangkat":"device",
+"silakan":"please","terlebih dahulu":"first","kelola":"manage","Anda":"your","bisnis":"business","satu":"one","sistem":"system","terjual":"sold","keluar":"sold","tidak dapat":"cannot","tidak bisa":"cannot","tidak ditemukan":"not found","belum ditemukan":"not found yet","belum ada":"no","sudah":"already","akan":"will","harus":"must","wajib":"required","dapat":"can","dengan":"with","tanpa":"without","sesuai":"according to","berdasarkan":"based on","digunakan":"used","menggunakan":"using","menampilkan":"display","ditampilkan":"displayed","tersimpan":"saved","disimpan":"saved","menyimpan":"save","simpan":"save","berhasil":"successfully","gagal":"failed","kesalahan":"error","terjadi":"occurred","terjadi kesalahan":"an error occurred","perubahan":"changes","diperbarui":"updated","memuat":"loading","membaca":"reading","dibaca":"read","menghapus":"delete","dihapus":"deleted","penghapusan":"deletion","menambahkan":"add","tambahkan":"add","mengedit":"edit","diedit":"edited","pilih":"select","dipilih":"selected","memilih":"select","isi":"enter","masukkan":"enter","mengisi":"enter","kosong":"empty","kosongkan":"clear","lengkapi":"complete","baru":"new","lama":"old","semua":"all","setiap":"each","hanya":"only","jika":"if","apabila":"if","ketika":"when","saat":"when","sebelum":"before","setelah":"after","hingga":"until","sampai":"until","dalam":"in","pada":"on","dari":"from","ke":"to","untuk":"for","oleh":"by","dan":"and","atau":"or","yang":"that","ini":"this","itu":"that","tersebut":"the","juga":"also","lebih":"more","kurang":"less","tidak":"not","belum":"not yet","bukan":"not","ada":"exists","diperlukan":"required","dibutuhkan":"required","tersedia":"available","tidak tersedia":"not available","aktif":"active","tidak aktif":"inactive","menunggu":"waiting","berikutnya":"next","sebelumnya":"previous","kembali":"back","lanjutkan":"continue","batal":"cancel","konfirmasi":"confirm","tutup":"close","buka":"open","cari":"search","filter":"filter","reset":"reset","tanggal":"date","hari":"day","kemarin":"yesterday","minggu":"week","bulan":"month","tahun":"year","periode":"period","rentang":"range","nama":"name","nama produk":"product name","nama bisnis":"business name","nama toko":"store name","nama akun":"account name","pemilik":"owner","usaha":"business","akun":"account","akun toko":"store account","toko":"store","produk":"product","produk terjual":"products sold","penjualan":"sales","penjualan bersih":"net sales","laporan":"report","rincian":"details","biaya":"cost","biaya lain":"other costs","biaya admin":"admin fee","admin marketplace":"marketplace fee","admin sku":"SKU fee","modal":"cost","hpp":"COGS","harga jual":"selling price","harga":"price","stok":"stock","jumlah":"amount","jumlah data":"data count","jumlah baris":"rows","jumlah kolom":"columns","keterangan":"description","nominal":"amount","diskon":"discount","laba":"profit","laba bersih":"net profit","laba kotor":"gross profit","rugi":"loss","total":"total","piutang":"receivable","pembayaran":"payment","sudah dibayar":"paid","belum dibayar":"unpaid","pesanan":"orders","order":"order","nomor pesanan":"order number","nomor resi":"tracking number","resi":"tracking number","pengiriman":"shipment","pengambilan":"pickup","dikirim":"shipped","menunggu pengiriman":"awaiting shipment","menunggu pengambilan":"awaiting pickup","selesai":"completed","dibatalkan":"cancelled","pengembalian":"return","integrasi":"integration","integrasikan":"integrate","terintegrasi":"integrated","copot":"disconnect","sinkronisasi":"sync","sinkron":"sync","tarik order":"pull orders","ambil order":"pull orders","upload":"upload","download":"download","file":"file","kolom":"column","baris":"row","template":"template","pengaturan":"settings","bahasa":"language","mata uang":"currency","kurs":"exchange rate","pembulatan":"rounding","packing":"packing","default":"default","per order":"per order","per transaksi":"per transaction","hari ini":"today","hari kemarin":"yesterday","minggu ini":"this week","minggu lalu":"last week","bulan ini":"this month","bulan lalu":"last month","3 bulan terakhir":"last 3 months","tahun ini":"this year","pilih tanggal":"custom date","semua periode":"all periods","semua marketplace":"all marketplaces","semua akun toko":"all store accounts","semua status":"all statuses","tidak ada data":"no data","belum ada data":"no data yet","belum ada transaksi":"no transactions yet","tidak ada transaksi":"no transactions","belum ada produk":"no products yet","belum ada akun":"no accounts yet","belum ada marketplace":"no marketplaces yet","belum ada biaya":"no costs yet","belum ada piutang":"no receivables yet","belum ada pembayaran":"no payments yet","wajib diisi":"is required","harus diisi":"is required","harus dipilih":"must be selected","tidak boleh kosong":"cannot be empty","tidak boleh sama":"must be different","lebih dari":"greater than","kurang dari":"less than","maksimal":"maximum","minimal":"minimum","terdekat":"nearest","contoh":"example","catatan":"note","pesan":"message","notifikasi":"notification","status":"status","hasil":"result","ringkasan":"summary","performa":"performance","pergerakan":"movement","perbandingan":"comparison","daftar":"list","riwayat":"history","identitas":"identity","sesi":"session","login":"login","keluar":"sign out","masuk":"sign in","persetujuan":"approval","ditolak":"rejected","ditangguhkan":"suspended","akses":"access","koneksi":"connection","perangkat":"device",
     "hapus":"delete",
     "permanen":"permanently",
     "data":"data",
@@ -32309,6 +32294,7 @@ function sellerBooksTranslateUserText(value, language){
 
     result = result.replace(/(\d+\s*-\s*\d+)\s+dari\s+(\d+)/gi, "$1 of $2");
     result = result.replace(/\bPeriode:\s*/gi, "Period: ");
+    result = result.replace(/Kelola all sales marketplace, product, store account, and profit bisnis Anda in satu sistem\.?/gi,"Manage all sales across marketplaces, products, store accounts, and business profit in one system.");
 
     Object.entries(SELLERBOOKS_EN_FALLBACK)
         .sort((a,b)=>b[0].length-a[0].length)
@@ -32347,7 +32333,7 @@ function sellerBooksStartLanguageObserver(){
         if(sellerBooksCurrentLanguage() !== "en") return;
         let needsTranslate = false;
         mutations.forEach(function(m){
-            if(m.type === "childList" && (m.addedNodes?.length || 0)) needsTranslate = true;
+            if((m.type === "childList" && (m.addedNodes?.length || 0)) || m.type === "characterData") needsTranslate = true;
         });
         if(!needsTranslate) return;
         sellerBooksI18nApplying = true;
