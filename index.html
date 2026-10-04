@@ -5060,14 +5060,7 @@ function initializeReports(){
 document.addEventListener(
     "DOMContentLoaded",
     function(){
-        setTimeout(function(){
-            if(typeof applySellerBooksLanguage === "function"){
-                applySellerBooksLanguage();
-            }
-        }, 300);
-
         initializeReports();
-
     }
 );
 
@@ -15075,9 +15068,7 @@ async function sellerBooksWarmStartFromCache(user){
         sellerBooksCloudReady=false;
 
         sellerBooksRefreshRuntimeFromCloud();
-        sellerBooksOpenApplication();
-        sellerBooksRefreshActiveView();
-        return true;
+        return false;
     }catch(error){console.warn("Fast cache SellerBooks gagal digunakan:",error);return false;}
 }
 
@@ -15374,12 +15365,7 @@ function sellerBooksRefreshRuntimeFromCloud(){
         }
     }catch(error){}
 
-    /* Bahasa mengikuti settings milik user yang sedang login di Supabase. */
-    try{
-        if(typeof applySellerBooksLanguage==="function"){
-            applySellerBooksLanguage();
-        }
-    }catch(error){}
+    /* Bahasa hanya diterapkan setelah data cloud selesai diverifikasi. */
 }
 
 let sellerBooksAuthUser=null;
@@ -15807,11 +15793,6 @@ function sellerBooksApplyRealtimeCloudData(data,updatedAt){
         sellerBooksCloudReady=true;
         sellerBooksSaveFastCache();
         sellerBooksRefreshAllViewsFromCloud();
-        try{
-            if(typeof applySellerBooksLanguage==="function"){
-                applySellerBooksLanguage();
-            }
-        }catch(error){}
     }catch(error){
         console.error("Refresh realtime data SellerBooks gagal:",error);
     }finally{
@@ -32380,6 +32361,7 @@ function sellerBooksStartLanguageObserver(){
 }
 
 function applySellerBooksLanguage(){
+    if(!sellerBooksAuthUser || !sellerBooksCloudReady || sellerBooksCloudLoading) return;
     if(sellerBooksI18nApplying) return;
     sellerBooksI18nApplying = true;
     try{
