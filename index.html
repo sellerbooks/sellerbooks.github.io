@@ -22680,7 +22680,7 @@ function renderProducts(){
     if(productPaginationControls){
         let controlsHtml = "";
 
-        controlsHtml += `<span class="product-page-info">${productStartIndex + 1}-${productEndIndex} dari ${filteredProducts.length}</span>`;
+        controlsHtml += `<span class="product-page-info">${productStartIndex + 1}-${productEndIndex} ${sellerBooksCurrentLanguage() === "en" ? "of" : "dari"} ${filteredProducts.length}</span>`;
 
         controlsHtml += `
             <button type="button" class="product-page-button" onclick="goToProductPage(${productPage - 1})" ${productPage <= 1 ? "disabled" : ""} aria-label="Halaman sebelumnya">‹</button>
