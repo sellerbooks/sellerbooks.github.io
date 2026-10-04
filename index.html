@@ -5038,6 +5038,11 @@ function initializeReports(){
 document.addEventListener(
     "DOMContentLoaded",
     function(){
+        setTimeout(function(){
+            if(typeof applySellerBooksLanguage === "function"){
+                applySellerBooksLanguage();
+            }
+        }, 300);
 
         initializeReports();
 
@@ -13399,7 +13404,43 @@ document.addEventListener(
                         </div>
                     </div>
 
-                    <!-- 4. BIAYA PACKING DEFAULT -->
+                    <!-- 4. BAHASA -->
+                    <div class="content-section settings-card">
+                        <div class="settings-card-header">
+                            <div class="settings-card-icon">🌐</div>
+                            <div>
+                                <h3>Bahasa</h3>
+                                <p>Pilih bahasa yang digunakan pada tampilan SellerBooks.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="settingsLanguage">Bahasa Tampilan</label>
+                            <select
+                                id="settingsLanguage"
+                                class="form-control"
+                                onchange="saveSellerBooksSettings()"
+                            >
+                                <option value="id">ID — Indonesia</option>
+                                <option value="en">EN — English</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-card-footer">
+                            <span class="settings-save-info" id="settingsLanguageInfo">
+                                Bahasa tersimpan di akun Anda.
+                            </span>
+                            <button
+                                type="button"
+                                class="primary-button"
+                                onclick="saveSellerBooksSettings()"
+                            >
+                                💾 Simpan Bahasa
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 5. BIAYA PACKING DEFAULT -->
                     <div class="content-section settings-card">
                         <div class="settings-card-header">
                             <div class="settings-card-icon">📦</div>
@@ -17142,6 +17183,10 @@ function showView(viewId, button, saveHistory = true){
         document.getElementById("topSubtitle").innerText =
             pageData[viewId].subtitle;
 
+    }
+
+    if(typeof applySellerBooksLanguage === "function"){
+        applySellerBooksLanguage();
     }
 
 
@@ -31153,6 +31198,7 @@ const SELLERBOOKS_SETTINGS_KEY = "sellerbooks_settings";
 const DEFAULT_SELLERBOOKS_SETTINGS = {
     businessName: "",
     logo: "",
+    language: "id",
     currency: "IDR",
     packingCost: 0,
     rounding: "none",
@@ -31207,6 +31253,11 @@ function saveSellerBooksSettings(){
             "settingsCurrency"
         )?.value || "IDR";
 
+    const language =
+        document.getElementById(
+            "settingsLanguage"
+        )?.value || "id";
+
     const packingCost =
         Math.max(
             0,
@@ -31250,6 +31301,7 @@ function saveSellerBooksSettings(){
     const settings = {
         ...current,
         businessName,
+        language,
         currency,
         packingCost,
         rounding,
@@ -31299,6 +31351,18 @@ function saveSellerBooksSettings(){
             "settingsCurrencyInfo"
         );
 
+    const languageInfo =
+        document.getElementById(
+            "settingsLanguageInfo"
+        );
+
+    if(languageInfo){
+        languageInfo.textContent =
+            language === "en"
+                ? "Language saved to your account."
+                : "Bahasa tersimpan di akun Anda.";
+    }
+
     if(currencyInfo){
         currencyInfo.textContent =
             "Kurs tersimpan. " +
@@ -31323,6 +31387,16 @@ function loadSellerBooksSettings(){
     if(businessName){
         businessName.value =
             settings.businessName || "";
+    }
+
+    const language =
+        document.getElementById(
+            "settingsLanguage"
+        );
+
+    if(language){
+        language.value =
+            settings.language || "id";
     }
 
     const currency =
@@ -31481,7 +31555,267 @@ function formatSellerBooksCurrency(value){
 
 }
 
+/* =====================================================
+   SELLERBOOKS - BAHASA ID / EN
+   Bahasa disimpan per akun melalui sellerBooksStorage.
+   Default tetap Bahasa Indonesia agar tidak mengubah
+   pengalaman pengguna lama.
+===================================================== */
+
+const SELLERBOOKS_LANGUAGE_ORIGINALS = new WeakMap();
+
+const SELLERBOOKS_I18N = {
+    "id": {
+        "Dashboard":"Dashboard",
+        "Marketplace":"Marketplace",
+        "Akun Toko":"Akun Toko",
+        "Master Produk":"Master Produk",
+        "Import Penjualan":"Import Penjualan",
+        "Biaya Lain":"Biaya Lain",
+        "Piutang":"Piutang",
+        "Rincian":"Rincian",
+        "Laporan":"Laporan",
+        "Pengaturan":"Pengaturan",
+        "Analisis":"Analisis",
+        "Sistem":"Sistem",
+        "Ringkasan bisnis marketplace Anda":"Ringkasan bisnis marketplace Anda",
+        "Kelola marketplace bisnis Anda":"Kelola marketplace bisnis Anda",
+        "Kelola seluruh akun toko":"Kelola seluruh akun toko",
+        "Kelola produk dan SKU":"Kelola produk dan SKU",
+        "Upload dan proses laporan penjualan":"Upload dan proses laporan penjualan",
+        "Kelola biaya tambahan bisnis":"Kelola biaya tambahan bisnis",
+        "Analisis bisnis marketplace Anda":"Analisis bisnis marketplace Anda",
+        "Analisis laba dan kerugian setiap produk":"Analisis laba dan kerugian setiap produk",
+        "Pengaturan SellerBooks":"Pengaturan SellerBooks",
+        "Hari Ini":"Hari Ini",
+        "Kemarin":"Kemarin",
+        "Minggu Ini":"Minggu Ini",
+        "Minggu Lalu":"Minggu Lalu",
+        "Bulan Ini":"Bulan Ini",
+        "Bulan Lalu":"Bulan Lalu",
+        "3 Bulan Terakhir":"3 Bulan Terakhir",
+        "Tahun Ini":"Tahun Ini",
+        "Pilih Tanggal":"Pilih Tanggal",
+        "Semua Periode":"Semua Periode",
+        "Nama Bisnis":"Nama Bisnis",
+        "Atur nama bisnis yang digunakan sebagai identitas usaha.":"Atur nama bisnis yang digunakan sebagai identitas usaha.",
+        "Logo Bisnis":"Logo Bisnis",
+        "Gunakan logo bisnis sebagai identitas visual SellerBooks.":"Gunakan logo bisnis sebagai identitas visual SellerBooks.",
+        "Pilih Logo":"Pilih Logo",
+        "Hapus Logo":"Hapus Logo",
+        "Mata Uang":"Mata Uang",
+        "Atur mata uang yang digunakan untuk tampilan nilai laporan.":"Atur mata uang yang digunakan untuk tampilan nilai laporan.",
+        "Atur Kurs Manual":"Atur Kurs Manual",
+        "Kurs yang digunakan untuk konversi dari IDR.":"Kurs yang digunakan untuk konversi dari IDR.",
+        "Bahasa":"Bahasa",
+        "Pilih bahasa yang digunakan pada tampilan SellerBooks.":"Pilih bahasa yang digunakan pada tampilan SellerBooks.",
+        "Bahasa Tampilan":"Bahasa Tampilan",
+        "Bahasa tersimpan di akun Anda.":"Bahasa tersimpan di akun Anda.",
+        "Simpan Bahasa":"Simpan Bahasa",
+        "Biaya Packing Default":"Biaya Packing Default",
+        "Nilai ini otomatis menjadi biaya packing per 1 order saat import penjualan.":"Nilai ini otomatis menjadi biaya packing per 1 order saat import penjualan.",
+        "Biaya Packing per Order":"Biaya Packing per Order",
+        "Belum ada perubahan.":"Belum ada perubahan.",
+        "Simpan":"Simpan",
+        "Simpan Kurs":"Simpan Kurs",
+        "IDR — Rupiah Indonesia":"IDR — Rupiah Indonesia",
+        "USD — US Dollar":"USD — US Dollar",
+        "SGD — Singapore Dollar":"SGD — Singapore Dollar",
+        "MYR — Malaysian Ringgit":"MYR — Malaysian Ringgit",
+        "ID — Indonesia":"ID — Indonesia",
+        "EN — English":"EN — English"
+    },
+    "en": {
+        "Dashboard":"Dashboard",
+        "Marketplace":"Marketplace",
+        "Akun Toko":"Store Accounts",
+        "Master Produk":"Product Master",
+        "Import Penjualan":"Sales Import",
+        "Biaya Lain":"Other Costs",
+        "Piutang":"Receivables",
+        "Rincian":"Details",
+        "Laporan":"Reports",
+        "Pengaturan":"Settings",
+        "Analisis":"Analysis",
+        "Sistem":"System",
+        "Ringkasan bisnis marketplace Anda":"Your marketplace business summary",
+        "Kelola marketplace bisnis Anda":"Manage your business marketplaces",
+        "Kelola seluruh akun toko":"Manage all store accounts",
+        "Kelola produk dan SKU":"Manage products and SKUs",
+        "Upload dan proses laporan penjualan":"Upload and process sales reports",
+        "Kelola biaya tambahan bisnis":"Manage additional business costs",
+        "Analisis bisnis marketplace Anda":"Analyze your marketplace business",
+        "Analisis laba dan kerugian setiap produk":"Analyze profit and loss for each product",
+        "Pengaturan SellerBooks":"SellerBooks settings",
+        "Hari Ini":"Today",
+        "Kemarin":"Yesterday",
+        "Minggu Ini":"This Week",
+        "Minggu Lalu":"Last Week",
+        "Bulan Ini":"This Month",
+        "Bulan Lalu":"Last Month",
+        "3 Bulan Terakhir":"Last 3 Months",
+        "Tahun Ini":"This Year",
+        "Pilih Tanggal":"Custom Date",
+        "Semua Periode":"All Periods",
+        "Nama Bisnis":"Business Name",
+        "Atur nama bisnis yang digunakan sebagai identitas usaha.":"Set the business name used as your business identity.",
+        "Logo Bisnis":"Business Logo",
+        "Gunakan logo bisnis sebagai identitas visual SellerBooks.":"Use your business logo as SellerBooks' visual identity.",
+        "Pilih Logo":"Choose Logo",
+        "Hapus Logo":"Remove Logo",
+        "Mata Uang":"Currency",
+        "Atur mata uang yang digunakan untuk tampilan nilai laporan.":"Set the currency used to display report values.",
+        "Atur Kurs Manual":"Manual Exchange Rates",
+        "Kurs yang digunakan untuk konversi dari IDR.":"Exchange rates used for conversion from IDR.",
+        "Bahasa":"Language",
+        "Pilih bahasa yang digunakan pada tampilan SellerBooks.":"Choose the language used throughout SellerBooks.",
+        "Bahasa Tampilan":"Display Language",
+        "Bahasa tersimpan di akun Anda.":"Language is saved to your account.",
+        "Simpan Bahasa":"Save Language",
+        "Biaya Packing Default":"Default Packing Cost",
+        "Nilai ini otomatis menjadi biaya packing per 1 order saat import penjualan.":"This value is automatically used as the packing cost per order during sales import.",
+        "Biaya Packing per Order":"Packing Cost per Order",
+        "Belum ada perubahan.":"No changes yet.",
+        "Simpan":"Save",
+        "Simpan Kurs":"Save Rates",
+        "IDR — Rupiah Indonesia":"IDR — Indonesian Rupiah",
+        "USD — US Dollar":"USD — US Dollar",
+        "SGD — Singapore Dollar":"SGD — Singapore Dollar",
+        "MYR — Malaysian Ringgit":"MYR — Malaysian Ringgit",
+        "ID — Indonesia":"ID — Indonesia",
+        "EN — English":"EN — English"
+    }
+};
+
+function sellerBooksCurrentLanguage(){
+    const settings = getSellerBooksSettings();
+    return settings.language === "en" ? "en" : "id";
+}
+
+function sellerBooksTranslateTextNodes(root, language){
+    if(!root) return;
+
+    const walker = document.createTreeWalker(
+        root,
+        NodeFilter.SHOW_TEXT,
+        {
+            acceptNode:function(node){
+                if(!node.parentElement) return NodeFilter.FILTER_REJECT;
+                const tag = node.parentElement.tagName;
+                if(tag === "SCRIPT" || tag === "STYLE") return NodeFilter.FILTER_REJECT;
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        }
+    );
+
+    const nodes = [];
+    let node;
+    while((node = walker.nextNode())) nodes.push(node);
+
+    nodes.forEach(function(textNode){
+        const original =
+            SELLERBOOKS_LANGUAGE_ORIGINALS.has(textNode)
+                ? SELLERBOOKS_LANGUAGE_ORIGINALS.get(textNode)
+                : textNode.nodeValue;
+
+        if(!SELLERBOOKS_LANGUAGE_ORIGINALS.has(textNode)){
+            SELLERBOOKS_LANGUAGE_ORIGINALS.set(textNode, original);
+        }
+
+        const core = String(original || "").trim();
+        if(!core) return;
+
+        const dictionary = SELLERBOOKS_I18N[language] || SELLERBOOKS_I18N.id;
+        const translated = dictionary[core];
+        if(translated === undefined) return;
+
+        const leading = String(original).match(/^\s*/)?.[0] || "";
+        const trailing = String(original).match(/\s*$/)?.[0] || "";
+        textNode.nodeValue = leading + translated + trailing;
+    });
+}
+
+function applySellerBooksLanguage(){
+    const language = sellerBooksCurrentLanguage();
+
+    sellerBooksTranslateTextNodes(
+        document.querySelector(".sidebar"),
+        language
+    );
+    sellerBooksTranslateTextNodes(
+        document.querySelector(".topbar"),
+        language
+    );
+    sellerBooksTranslateTextNodes(
+        document.getElementById("settings"),
+        language
+    );
+
+    const pageLanguageData = {
+        dashboard:{
+            id:["Dashboard","Ringkasan bisnis marketplace Anda"],
+            en:["Dashboard","Your marketplace business summary"]
+        },
+        marketplace:{
+            id:["Marketplace","Kelola marketplace bisnis Anda"],
+            en:["Marketplace","Manage your business marketplaces"]
+        },
+        stores:{
+            id:["Akun Toko","Kelola seluruh akun toko"],
+            en:["Store Accounts","Manage all store accounts"]
+        },
+        products:{
+            id:["Master Produk","Kelola produk dan SKU"],
+            en:["Product Master","Manage products and SKUs"]
+        },
+        import:{
+            id:["Import Penjualan","Upload dan proses laporan penjualan"],
+            en:["Sales Import","Upload and process sales reports"]
+        },
+        costs:{
+            id:["Biaya Lain","Kelola biaya tambahan bisnis"],
+            en:["Other Costs","Manage additional business costs"]
+        },
+        reports:{
+            id:["Laporan","Analisis bisnis marketplace Anda"],
+            en:["Reports","Analyze your marketplace business"]
+        },
+        productAnalysis:{
+            id:["Rincian","Analisis laba dan kerugian setiap produk"],
+            en:["Details","Analyze profit and loss for each product"]
+        },
+        settings:{
+            id:["Pengaturan","Pengaturan SellerBooks"],
+            en:["Settings","SellerBooks settings"]
+        }
+    };
+
+    const currentView =
+        document.querySelector(".view.active")?.id || "dashboard";
+
+    const page = pageLanguageData[currentView];
+    if(page){
+        const pair = page[language] || page.id;
+        const title = document.getElementById("topTitle");
+        const subtitle = document.getElementById("topSubtitle");
+        if(title) title.textContent = pair[0];
+        if(subtitle) subtitle.textContent = pair[1];
+    }
+
+    const languageSelect = document.getElementById("settingsLanguage");
+    if(languageSelect) languageSelect.value = language;
+
+    const languageInfo = document.getElementById("settingsLanguageInfo");
+    if(languageInfo){
+        languageInfo.textContent =
+            language === "en"
+                ? "Language is saved to your account."
+                : "Bahasa tersimpan di akun Anda.";
+    }
+}
+
 function applySellerBooksSettings(){
+    applySellerBooksLanguage();
     renderSettingsLogo();
 
     /*
