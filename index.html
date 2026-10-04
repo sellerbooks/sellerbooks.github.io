@@ -1944,7 +1944,7 @@ td{
 
 }
 /* =====================================================
-   AKUN TOKO
+   STORE ACCOUNTS
 ===================================================== */
 
 .store-toolbar{
@@ -4701,7 +4701,7 @@ function loadReportMarketplaceFilter(){
 
 
 /* =====================================================
-   LOAD AKUN TOKO SESUAI MARKETPLACE
+   LOAD STORE ACCOUNTS SESUAI MARKETPLACE
 ===================================================== */
 
 function loadReportStoreFilter(){
@@ -4737,7 +4737,7 @@ function loadReportStoreFilter(){
 
     storeSelect.innerHTML = `
         <option value="all">
-            Semua Akun Toko
+            Semua Accounts Toko
         </option>
     `;
 
@@ -4898,34 +4898,34 @@ function updateReportFilterInfo(
     const periodNames = {
 
         today:
-            "Hari Ini",
+            "Today",
 
         yesterday:
-            "Kemarin",
+            "Yesterday",
 
         week:
-            "Minggu Ini",
+            "This Week",
 
         lastWeek:
-            "Minggu Lalu",
+            "Last Week",
 
         month:
-            "Bulan Ini",
+            "This Month",
 
         lastMonth:
-            "Bulan Lalu",
+            "Last Month",
 
         last3Months:
-            "3 Bulan Terakhir",
+            "Last 3 Months",
 
         year:
-            "Tahun Ini",
+            "This Year",
 
         custom:
-            "Pilih Tanggal",
+            "Custom Date",
 
         all:
-            "Semua Periode"
+            "All Periods"
 
     };
 
@@ -4935,7 +4935,7 @@ function updateReportFilterInfo(
 
 
     let storeName =
-        "Semua Akun Toko";
+        "Semua Accounts Toko";
 
 
     try{
@@ -5006,7 +5006,7 @@ function updateReportFilterInfo(
     }catch(error){}
 
 
-    let periodLabel = periodNames[period] || "Bulan Ini";
+    let periodLabel = periodNames[period] || "This Month";
 
     if(period === "custom"){
         const from = getReportInputDate("reportDateFrom");
@@ -5374,7 +5374,7 @@ document.addEventListener(
             console.table({
                 "Periode": document.getElementById("reportPeriod")?.value || "",
                 "Marketplace": document.getElementById("reportMarketplace")?.value || "",
-                "Akun Toko": document.getElementById("reportStore")?.value || "",
+                "Store Accounts": document.getElementById("reportStore")?.value || "",
                 "TOTAL cycle (ms)": Number(total.toFixed(2)),
                 "Storage read (ms)": Number(this.storageReadMs.toFixed(2)),
                 "JSON.parse (ms)": Number(this.jsonParseMs.toFixed(2)),
@@ -5754,7 +5754,7 @@ function loadDeleteReportStoreFilter(){
     const currentStore = storeSelect.value || "all";
 
     storeSelect.innerHTML = `
-        <option value="all">Semua Akun Toko</option>
+        <option value="all">Semua Accounts Toko</option>
     `;
 
     let storesData = [];
@@ -5813,7 +5813,7 @@ async function deleteReportsByDateRange(){
         storeElement ? storeElement.value || "all" : "all";
 
     if(!fromValue || !toValue){
-        sellerBooksAlert("Silakan pilih Dari Tanggal dan Sampai Dengan terlebih dahulu.");
+        sellerBooksAlert("Silakan pilih From Date dan To Date terlebih dahulu.");
         return;
     }
 
@@ -5826,7 +5826,7 @@ async function deleteReportsByDateRange(){
     }
 
     if(from > to){
-        sellerBooksAlert("Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.");
+        sellerBooksAlert("From Date tidak boleh lebih besar dari To Date.");
         return;
     }
 
@@ -5853,7 +5853,7 @@ async function deleteReportsByDateRange(){
        dihapus:
        1. Rentang tanggal laporan
        2. Marketplace yang dipilih
-       3. Akun toko yang dipilih
+       3. Accounts toko yang dipilih
     */
     const deletedImports =
         imports.filter(function(record){
@@ -5893,7 +5893,7 @@ async function deleteReportsByDateRange(){
 
     if(deleted === 0){
         sellerBooksAlert(
-            "Tidak ada laporan yang cocok dengan tanggal, marketplace, dan akun toko yang dipilih."
+            "Tidak ada laporan yang cocok dengan tanggal, marketplace, dan accounts toko yang dipilih."
         );
         return;
     }
@@ -5918,14 +5918,14 @@ async function deleteReportsByDateRange(){
         storeElement.selectedOptions &&
         storeElement.selectedOptions[0]
             ? storeElement.selectedOptions[0].textContent
-            : "Semua Akun Toko";
+            : "Semua Accounts Toko";
 
     const confirmed =
         await sellerBooksConfirm(
             "HAPUS LAPORAN PERMANEN?\n\n" +
             "Rentang: " + fromText + " s/d " + toText + "\n" +
             "Marketplace: " + marketplaceSelectText + "\n" +
-            "Akun Toko: " + storeSelectText + "\n" +
+            "Store Accounts: " + storeSelectText + "\n" +
             "Jumlah data import: " + deleted +
             "\n\n" +
             "Hanya laporan yang sesuai dengan filter di atas yang akan dihapus.\n" +
@@ -6127,7 +6127,7 @@ function getFilteredReportTransactions(){
 }
 
             /*
-               FILTER AKUN TOKO
+               FILTER STORE ACCOUNTS
             */
             if(
                 storeId &&
@@ -6364,7 +6364,7 @@ function renderReportSalesSummary(){
 
                 /*
                    Gunakan HPP snapshot transaksi yang sudah dibuat
-                   oleh mesin Import Penjualan. Jangan mengambil
+                   oleh mesin Import Sales. Jangan mengambil
                    Master Produk terbaru untuk transaksi historis.
                 */
                 const hppPerUnit =
@@ -6938,7 +6938,7 @@ function getReportOtherCosts(){
             return;
         }
 
-        /* BIAYA WAJIB TERIKAT KE AKUN TOKO */
+        /* BIAYA WAJIB TERIKAT KE STORE ACCOUNTS */
         if(
             storeId !== "all" &&
             String(cost.storeId || "") !== String(storeId)
@@ -6956,7 +6956,7 @@ function getReportOtherCosts(){
 
 
 /* =========================================================
-   HITUNG BIAYA LAIN PER MARKETPLACE / AKUN TOKO
+   HITUNG BIAYA LAIN PER MARKETPLACE / STORE ACCOUNTS
 ========================================================= */
 
 function getReportOtherCostsByScope(
@@ -7032,12 +7032,12 @@ function getReportOtherCostsByScope(
 
 /* =========================================================
    HITUNG BIAYA ADMIN
-   BERDASARKAN AKUN TOKO
+   BERDASARKAN STORE ACCOUNTS
 ========================================================= */
 
 /* =========================================================
    HITUNG BIAYA ADMIN
-   BERDASARKAN AKUN TOKO
+   BERDASARKAN STORE ACCOUNTS
 ========================================================= */
 
 function getReportStoreFeePercent(storeId){
@@ -7077,8 +7077,8 @@ function getReportStoreFeePercent(storeId){
 
 /* =========================================================
    BIAYA ADMIN TRANSAKSI
-   Import baru menyimpan snapshot admin akun toko.
-   Data lama tetap fallback ke pengaturan akun toko.
+   Import baru menyimpan snapshot admin accounts toko.
+   Data lama tetap fallback ke pengaturan accounts toko.
 ========================================================= */
 
 function isReportTransactionToday(transaction){
@@ -7170,7 +7170,7 @@ function getReportTransactionFeePercent(transaction){
     /*
        TRANSAKSI LAMA:
        Prioritaskan snapshot yang sudah tersimpan.
-       adminFeePercent adalah snapshot Admin % Akun lama dan tetap
+       adminFeePercent adalah snapshot Admin % Accounts lama dan tetap
        dipertahankan untuk kompatibilitas transaksi sebelum field snapshot
        baru tersedia.
     */
@@ -7215,8 +7215,8 @@ function getReportTransactionFeePercent(transaction){
        1. Admin % SKU transaksi
        2. Snapshot Admin % SKU
        3. Admin % SKU Master Produk
-       4. Snapshot Admin % Akun
-       5. Admin % Akun Toko
+       4. Snapshot Admin % Accounts
+       5. Admin % Accounts Toko
     */
     const transactionSkuFee =
         transaction.adminFeeSku !== undefined &&
@@ -7490,7 +7490,7 @@ function calculateReportFinancial(){
 
             /*
                HPP historis wajib mengikuti snapshot transaksi
-               yang dibuat saat Import Penjualan.
+               yang dibuat saat Import Sales.
                Master Produk terbaru tidak boleh mengubah
                HPP transaksi yang sudah terjadi.
             */
@@ -7921,7 +7921,7 @@ function renderReportMarketplaceTable(){
     }
 }
 /* =========================================================
-   RINGKASAN AKUN TOKO
+   RINGKASAN STORE ACCOUNTS
 ========================================================= */
 
 function renderReportStoreTable(){
@@ -8006,7 +8006,7 @@ function renderReportStoreTable(){
         body.innerHTML = html || `<tr><td colspan="8" style="text-align:center;padding:35px;color:#64748b;">Belum ada data laporan.</td></tr>`;
 
     }catch(error){
-        console.error("Gagal menampilkan Performa Akun Toko:", error);
+        console.error("Gagal menampilkan Performa Accounts Toko:", error);
         body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:35px;color:#dc2626;">Data laporan gagal ditampilkan. Silakan refresh halaman.</td></tr>`;
     }
 }
@@ -8047,7 +8047,7 @@ function renderReportTransactionTable(){
         }
 
         if(!transactions.length){
-            body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:35px;color:#64748b;">Belum ada data penjualan.</td></tr>`;
+            body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:35px;color:#64748b;">No sales data.</td></tr>`;
             if(pagination){ pagination.style.display = "none"; }
             return;
         }
@@ -8181,7 +8181,7 @@ function renderReportTransactionTable(){
         }
 
     }catch(error){
-        console.error("Gagal menampilkan Detail Penjualan:", error);
+        console.error("Gagal menampilkan Detail Sales:", error);
         body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:35px;color:#dc2626;">Detail penjualan gagal ditampilkan. Silakan refresh halaman.</td></tr>`;
         if(pagination){ pagination.style.display = "none"; }
     }
@@ -8209,7 +8209,7 @@ function changeReportTransactionPageSize(value){
 
 /* =========================================================
    SELLERBOOKS - DOWNLOAD PDF LAPORAN
-   Mengikuti filter Periode + Marketplace + Akun Toko
+   Mengikuti filter Periode + Marketplace + Accounts Toko
 ========================================================= */
 
 let sellerBooksPdfLibrariesPromise = null;
@@ -8287,16 +8287,16 @@ function sellerBooksPdfGetPeriodLabel(){
         document.getElementById("reportPeriod")?.value || "today";
 
     const names = {
-        today:"Hari Ini",
-        yesterday:"Kemarin",
-        week:"Minggu Ini",
-        lastWeek:"Minggu Lalu",
-        month:"Bulan Ini",
-        lastMonth:"Bulan Lalu",
-        last3Months:"3 Bulan Terakhir",
-        year:"Tahun Ini",
-        custom:"Pilih Tanggal",
-        all:"Semua Periode"
+        today:"Today",
+        yesterday:"Yesterday",
+        week:"This Week",
+        lastWeek:"Last Week",
+        month:"This Month",
+        lastMonth:"Last Month",
+        last3Months:"Last 3 Months",
+        year:"This Year",
+        custom:"Custom Date",
+        all:"All Periods"
     };
 
     let label = names[period] || period;
@@ -8340,14 +8340,14 @@ function sellerBooksPdfGetStoreLabel(){
         document.getElementById("reportStore");
 
     if(!element){
-        return "Semua Akun Toko";
+        return "Semua Accounts Toko";
     }
 
     const option = element.options[element.selectedIndex];
 
     return option
-        ? String(option.textContent || option.value || "Semua Akun Toko").trim()
-        : "Semua Akun Toko";
+        ? String(option.textContent || option.value || "Semua Accounts Toko").trim()
+        : "Semua Accounts Toko";
 }
 
 function sellerBooksPdfFormatNumber(value){
@@ -8389,7 +8389,7 @@ async function downloadReportPDF(){
 
         /*
          * Ambil FILTER AKTIF SEBELUM refresh laporan.
-         * PDF tidak boleh mengambil SKU dari akun toko lain.
+         * PDF tidak boleh mengambil SKU dari accounts toko lain.
          */
         const pdfPeriod =
             document.getElementById("reportPeriod")?.value || "month";
@@ -8411,7 +8411,7 @@ async function downloadReportPDF(){
 
         /*
          * Gunakan filter laporan secara STRICT untuk PDF.
-         * Khusus akun toko: jika akun B dipilih, hanya transaksi
+         * Khusus accounts toko: jika accounts B dipilih, hanya transaksi
          * dengan storeId B yang boleh masuk. Jika tidak ada transaksi,
          * hasil harus benar-benar [] sehingga SKU juga kosong.
          */
@@ -8467,9 +8467,9 @@ async function downloadReportPDF(){
                 }
 
                 /*
-                 * FILTER AKUN TOKO WAJIB STRICT.
+                 * FILTER STORE ACCOUNTS WAJIB STRICT.
                  * Jangan pernah fallback ke storeName karena itu
-                 * bisa membuat data akun lain ikut terbawa.
+                 * bisa membuat data accounts lain ikut terbawa.
                  */
                 if(
                     pdfStoreId !== "all" &&
@@ -8504,7 +8504,7 @@ async function downloadReportPDF(){
             });
 
         /*
-         * Jika akun toko yang dipilih tidak mempunyai transaksi,
+         * Jika accounts toko yang dipilih tidak mempunyai transaksi,
          * paksa semua bagian rincian PDF kosong.
          */
         if(!transactions.length){
@@ -8667,20 +8667,20 @@ async function downloadReportPDF(){
         doc.setFontSize(10);
         doc.text("Periode: " + periodLabel,14,23);
         doc.text("Marketplace: " + marketplaceLabel,14,29);
-        doc.text("Akun Toko: " + storeLabel,14,35);
+        doc.text("Store Accounts: " + storeLabel,14,35);
 
         /* RINGKASAN KEUANGAN */
         const summaryRows = [
-            ["Total Penjualan", sellerBooksPdfFormatRupiah(financial.totalSales)],
-            ["Penjualan Bersih", sellerBooksPdfFormatRupiah(financial.netSales)],
+            ["Total Sales", sellerBooksPdfFormatRupiah(financial.totalSales)],
+            ["Sales Bersih", sellerBooksPdfFormatRupiah(financial.netSales)],
             ["Produk Terjual", sellerBooksPdfFormatNumber(financial.totalQty) + " PCS"],
             ["HPP", sellerBooksPdfFormatRupiah(financial.totalHpp)],
             ["Admin Marketplace", sellerBooksPdfFormatRupiah(financial.totalAdmin)],
             ["Packing", sellerBooksPdfFormatRupiah(financial.totalPacking)],
             ["Biaya Lain", sellerBooksPdfFormatRupiah(financial.otherCosts)],
             ["Laba Kotor", sellerBooksPdfFormatRupiah(financial.grossProfit)],
-            ["Laba Bersih", sellerBooksPdfFormatRupiah(financial.netProfit)],
-            ["Margin Bersih", Number(financial.margin || 0).toLocaleString("id-ID",{maximumFractionDigits:2}) + "%"]
+            ["Net Profit", sellerBooksPdfFormatRupiah(financial.netProfit)],
+            ["Net Margin", Number(financial.margin || 0).toLocaleString("id-ID",{maximumFractionDigits:2}) + "%"]
         ];
 
         doc.setFont("helvetica","bold");
@@ -8713,7 +8713,7 @@ async function downloadReportPDF(){
         /* SKU / PRODUK */
         doc.setFont("helvetica","bold");
         doc.setFontSize(12);
-        doc.text("Rincian Penjualan per SKU",14,y);
+        doc.text("Rincian Sales per SKU",14,y);
 
         y += 3;
 
@@ -8752,7 +8752,7 @@ async function downloadReportPDF(){
                 "Nama Produk",
                 "QTY",
                 "Harga Jual",
-                "Penjualan",
+                "Sales",
                 "HPP",
                 "Admin",
                 "Laba Produk",
@@ -8880,7 +8880,7 @@ async function downloadReportPDF(){
             head:[[
                 "Marketplace",
                 "QTY",
-                "Penjualan",
+                "Sales",
                 "Admin",
                 "HPP",
                 "Laba Produk"
@@ -8976,7 +8976,7 @@ async function downloadReportPDF(){
             "✅ PDF laporan berhasil dibuat.\n\n" +
             "Periode: " + periodLabel + "\n" +
             "Marketplace: " + marketplaceLabel + "\n" +
-            "Akun Toko: " + storeLabel
+            "Store Accounts: " + storeLabel
         );
 
     }catch(error){
@@ -9029,7 +9029,7 @@ function updateReports(){
     try{ renderUnmatchedSkuReport(); }catch(error){ console.error("Laporan SKU:", error); }
     try{ renderReportFinancial(); }catch(error){ console.error("Laporan keuangan:", error); }
     try{ renderReportMarketplaceTable(); }catch(error){ console.error("Laporan marketplace:", error); }
-    try{ renderReportStoreTable(); }catch(error){ console.error("Laporan akun toko:", error); }
+    try{ renderReportStoreTable(); }catch(error){ console.error("Laporan accounts toko:", error); }
     try{ renderReportTransactionTable(); }catch(error){ console.error("Detail transaksi:", error); }
 
     if(reportProfiler){
@@ -9056,7 +9056,7 @@ document.addEventListener(
             );
 
         /* DEFAULT LAPORAN: HARI INI
-           Jika kalender berganti hari, filter otomatis kembali ke Hari Ini. */
+           Jika kalender berganti hari, filter otomatis kembali ke Today. */
         if(period){
             const todayKey = getSellerBooksDayKey();
             const savedDay = sellerBooksStorage.getItem("sellerbooks_report_view_day");
@@ -9728,7 +9728,7 @@ document.addEventListener(
 
                     <p>
                         Pantau penjualan, produk keluar,
-                        akun toko dan laba bisnis Anda
+                        accounts toko dan laba bisnis Anda
                         dalam satu sistem.
                     </p>
 
@@ -9748,7 +9748,7 @@ document.addEventListener(
 
                             <div class="check">✓</div>
 
-                            Multi Akun Toko
+                            Multi Accounts Toko
 
                         </div>
 
@@ -9789,7 +9789,7 @@ document.addEventListener(
 
                 <p class="login-description">
 
-                    Masuk menggunakan akun Google
+                    Masuk menggunakan accounts Google
                     untuk mengakses SellerBooks.
 
                 </p>
@@ -9900,7 +9900,7 @@ document.addEventListener(
 
         <div class="owner-setup-note">
             Data ini akan digunakan sebagai identitas
-            pemilik akun SellerBooks Anda.
+            pemilik accounts SellerBooks Anda.
         </div>
 
     </div>
@@ -9946,7 +9946,7 @@ document.addEventListener(
 
 
             <div class="menu-title">
-                Menu Utama
+                Main Menu
             </div>
 
 
@@ -9981,7 +9981,7 @@ document.addEventListener(
 
                 <span class="menu-icon">🏬</span>
 
-                Akun Toko
+                Accounts Toko
 
             </button>
 
@@ -10011,7 +10011,7 @@ document.addEventListener(
 
                 <span class="menu-icon">📥</span>
 
-                Import Penjualan
+                Import Sales
 
             </button>
 
@@ -10184,43 +10184,43 @@ document.addEventListener(
 >
 
     <option value="today">
-        Hari Ini
+        Today
     </option>
 
     <option value="yesterday">
-        Kemarin
+        Yesterday
     </option>
 
     <option value="week">
-        Minggu Ini
+        This Week
     </option>
 
     <option value="lastWeek">
-        Minggu Lalu
+        Last Week
     </option>
 
     <option value="month">
-        Bulan Ini
+        This Month
     </option>
 
     <option value="lastMonth">
-        Bulan Lalu
+        Last Month
     </option>
 
     <option value="last3Months">
-        3 Bulan Terakhir
+        Last 3 Months
     </option>
 
     <option value="year">
-        Tahun Ini
+        This Year
     </option>
 
     <option value="custom">
-        Pilih Tanggal
+        Custom Date
     </option>
 
     <option value="all">
-        Semua Periode
+        All Periods
     </option>
 
 </select>
@@ -10231,7 +10231,7 @@ document.addEventListener(
                 >
                     <div class="dashboard-custom-date-grid">
                         <div>
-                            <label>Dari Tanggal</label>
+                            <label>From Date</label>
                             <input
                                 type="date"
                                 id="dashboardDateFrom"
@@ -10241,7 +10241,7 @@ document.addEventListener(
                         </div>
 
                         <div>
-                            <label>Sampai Dengan</label>
+                            <label>To Date</label>
                             <input
                                 type="date"
                                 id="dashboardDateTo"
@@ -10279,7 +10279,7 @@ document.addEventListener(
         class="top-button"
         id="notificationButton"
         onclick="toggleNotifications()"
-        title="Notifikasi"
+        title="Notifications"
     >
         🔔
 
@@ -10300,7 +10300,7 @@ document.addEventListener(
 
         <div class="notification-header">
 
-            <strong>Notifikasi</strong>
+            <strong>Notifications</strong>
 
             <button
                 onclick="closeNotifications()"
@@ -10352,7 +10352,7 @@ document.addEventListener(
 
                     <p>
                         Kelola seluruh penjualan marketplace,
-                        produk, akun toko, dan laba bisnis
+                        produk, accounts toko, dan laba bisnis
                         Anda dalam satu sistem.
                     </p>
 
@@ -10382,7 +10382,7 @@ document.addEventListener(
                         </div>
 
                         <div class="stat-info">
-                            Belum ada data penjualan
+                            No sales data
                         </div>
 
                     </div>
@@ -10446,7 +10446,7 @@ document.addEventListener(
                         <div class="stat-top">
 
                             <div class="stat-label">
-                                MARGIN BERSIH
+                                NET MARGIN
                             </div>
 
                             <div class="stat-icon">
@@ -10477,12 +10477,12 @@ document.addEventListener(
                     <div class="sb-piutang-dashboard-left">
                         <div class="sb-piutang-dashboard-icon">💳</div>
                         <div>
-                            <div class="sb-piutang-dashboard-label">TOTAL PIUTANG RESELLER</div>
+                            <div class="sb-piutang-dashboard-label">TOTAL RESELLER RECEIVABLES</div>
                             <div class="sb-piutang-dashboard-value" id="sbPiutangDashboardTotal">Rp0</div>
-                            <div class="sb-piutang-dashboard-info">Total piutang dikurangi pembayaran yang sudah masuk</div>
+                            <div class="sb-piutang-dashboard-info">Total receivables minus payments received</div>
                         </div>
                     </div>
-                    <button type="button" class="sb-piutang-dashboard-button" onclick="sbPiutangOpen()">Lihat Piutang →</button>
+                    <button type="button" class="sb-piutang-dashboard-button" onclick="sbPiutangOpen()">View Receivables →</button>
                 </div>
 
 
@@ -10496,8 +10496,8 @@ document.addEventListener(
                     <div class="dashboard-chart-card">
                         <div class="dashboard-chart-header">
                             <div>
-                                <h3>Grafik Penjualan</h3>
-                                <p id="dashboardSalesChartInfo">Pergerakan penjualan berdasarkan periode</p>
+                                <h3>Sales Chart</h3>
+                                <p id="dashboardSalesChartInfo">Sales movement by period</p>
                             </div>
                         </div>
                         <div class="dashboard-chart-area">
@@ -10507,7 +10507,7 @@ document.addEventListener(
                                 <span id="dashboardChartZero">Rp0</span>
                             </div>
                             <div id="dashboardSalesChart" class="dashboard-bar-chart">
-                                <div class="dashboard-chart-empty">Belum ada data penjualan</div>
+                                <div class="dashboard-chart-empty">No sales data</div>
                             </div>
                         </div>
                     </div>
@@ -10515,12 +10515,12 @@ document.addEventListener(
                     <div class="dashboard-chart-card">
                         <div class="dashboard-chart-header">
                             <div>
-                                <h3>Penjualan per Marketplace</h3>
-                                <p>Perbandingan omzet berdasarkan marketplace</p>
+                                <h3>Sales by Marketplace</h3>
+                                <p>Revenue comparison by marketplace</p>
                             </div>
                         </div>
                         <div id="dashboardMarketplaceChart" class="dashboard-marketplace-chart">
-                            <div class="dashboard-chart-empty">Belum ada data penjualan</div>
+                            <div class="dashboard-chart-empty">No sales data</div>
                         </div>
                     </div>
 
@@ -10539,7 +10539,7 @@ document.addEventListener(
                             </h3>
 
                             <p>
-                                Ringkasan seluruh marketplace
+                                Summary of all marketplaces
                             </p>
 
                         </div>
@@ -10589,11 +10589,11 @@ document.addEventListener(
 
                                     <th>Marketplace</th>
 
-                                    <th>Akun Toko</th>
+                                    <th>Store Accounts</th>
 
-                                    <th>Penjualan</th>
+                                    <th>Sales</th>
 
-                                    <th>Laba Bersih</th>
+                                    <th>Net Profit</th>
 
                                 </tr>
 
@@ -10848,7 +10848,7 @@ document.addEventListener(
 
 
             <!-- =====================================
-     AKUN TOKO
+     STORE ACCOUNTS
 ===================================== -->
 
 <section
@@ -10859,11 +10859,11 @@ document.addEventListener(
     <div class="page-header">
 
         <h2>
-            Akun Toko
+            Accounts Toko
         </h2>
 
         <p>
-            Kelola seluruh akun toko dari marketplace
+            Kelola seluruh accounts toko dari marketplace
             yang aktif di bisnis Anda.
         </p>
 
@@ -10877,7 +10877,7 @@ document.addEventListener(
         <div class="store-summary">
 
             <span id="storeCount">
-                0 Akun Toko
+                0 Accounts Toko
             </span>
 
         </div>
@@ -10887,7 +10887,7 @@ document.addEventListener(
             class="primary-button"
             onclick="openStoreModal()"
         >
-            + Tambah Akun Toko
+            + Tambah Accounts Toko
         </button>
 
     </div>
@@ -11201,7 +11201,7 @@ document.addEventListener(
     <div class="page-header">
 
         <h2>
-            Import Penjualan
+            Import Sales
         </h2>
 
         <p>
@@ -11255,7 +11255,7 @@ document.addEventListener(
 
         <h3>
 
-            Upload Laporan Penjualan
+            Upload Laporan Sales
 
         </h3>
 
@@ -11713,7 +11713,7 @@ document.addEventListener(
         </div>
 
 
-        <!-- MARKETPLACE & AKUN TOKO -->
+        <!-- MARKETPLACE & STORE ACCOUNTS -->
         <div class="column-selection-grid" style="margin-top:16px;">
             <div class="column-selection-card">
                 <label>🏪 Marketplace Terdeteksi</label>
@@ -11721,8 +11721,8 @@ document.addEventListener(
                 <small>SellerBooks menentukan marketplace dari struktur/header file.</small>
             </div>
             <div class="column-selection-card">
-                <label>👤 Pilih Akun Toko</label>
-                <select id="salesStoreAccount" class="form-control" onchange="updatePackingCalculation()"><option value="">-- Pilih Akun Toko --</option></select>
+                <label>👤 Pilih Accounts Toko</label>
+                <select id="salesStoreAccount" class="form-control" onchange="updatePackingCalculation()"><option value="">-- Pilih Accounts Toko --</option></select>
                 <small id="salesStoreAccountInfo">Akun toko wajib dipilih sebelum data disimpan.</small>
             </div>
         </div>
@@ -12006,7 +12006,7 @@ document.addEventListener(
                         </th>
 
                         <th>
-                            Akun Toko
+                            Accounts Toko
                         </th>
 
                         <th>
@@ -12069,7 +12069,7 @@ document.addEventListener(
         <div style="padding:20px 23px;">
             <h3 style="margin:0 0 6px;">Filter Rincian</h3>
             <p style="margin:0 0 18px;color:#64748b;font-size:12px;">
-                Pilih periode, marketplace, dan akun toko untuk mengetahui produk minus secara lebih spesifik.
+                Pilih periode, marketplace, dan accounts toko untuk mengetahui produk minus secara lebih spesifik.
             </p>
 
             <div class="product-analysis-filter-grid">
@@ -12080,16 +12080,16 @@ document.addEventListener(
                         class="form-control"
                         onchange="applyProductAnalysisFilters()"
                     >
-                        <option value="today">Hari Ini</option>
-                        <option value="yesterday">Kemarin</option>
-                        <option value="week">Minggu Ini</option>
-                        <option value="lastWeek">Minggu Lalu</option>
-                        <option value="month">Bulan Ini</option>
-                        <option value="lastMonth">Bulan Lalu</option>
-                        <option value="last3Months">3 Bulan Terakhir</option>
-                        <option value="year">Tahun Ini</option>
-                        <option value="custom">Pilih Tanggal</option>
-                        <option value="all">Semua Periode</option>
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="week">This Week</option>
+                        <option value="lastWeek">Last Week</option>
+                        <option value="month">This Month</option>
+                        <option value="lastMonth">Last Month</option>
+                        <option value="last3Months">Last 3 Months</option>
+                        <option value="year">This Year</option>
+                        <option value="custom">Custom Date</option>
+                        <option value="all">All Periods</option>
                     </select>
                 </div>
 
@@ -12105,13 +12105,13 @@ document.addEventListener(
                 </div>
 
                 <div>
-                    <label>Akun Toko</label>
+                    <label>Store Accounts</label>
                     <select
                         id="productAnalysisStore"
                         class="form-control"
                         onchange="applyProductAnalysisFilters()"
                     >
-                        <option value="all">Semua Akun Toko</option>
+                        <option value="all">Semua Accounts Toko</option>
                     </select>
                 </div>
 
@@ -12121,7 +12121,7 @@ document.addEventListener(
                 >
                     <div class="product-analysis-date-grid">
                         <div>
-                            <label>Dari Tanggal</label>
+                            <label>From Date</label>
                             <input
                                 type="date"
                                 id="productAnalysisDateFrom"
@@ -12131,7 +12131,7 @@ document.addEventListener(
                         </div>
 
                         <div>
-                            <label>Sampai Dengan</label>
+                            <label>To Date</label>
                             <input
                                 type="date"
                                 id="productAnalysisDateTo"
@@ -12147,7 +12147,7 @@ document.addEventListener(
                 id="productAnalysisFilterInfo"
                 style="margin-top:14px;padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;font-size:12px;color:#475569;"
             >
-                Periode: <strong>Bulan Ini</strong>
+                Periode: <strong>This Month</strong>
             </div>
         </div>
     </div>
@@ -12179,7 +12179,7 @@ document.addEventListener(
     <div class="content-section">
         <div class="section-header">
             <div>
-                <h3>Rincian Penjualan Per Produk</h3>
+                <h3>Rincian Sales Per Produk</h3>
                 <p>
                     Produk minus ditampilkan paling atas agar mudah diperbaiki.
                 </p>
@@ -12195,7 +12195,7 @@ document.addEventListener(
                         <th>Nama Produk</th>
                         <th>QTY</th>
                         <th>Harga Jual</th>
-                        <th>Total Penjualan</th>
+                        <th>Total Sales</th>
                         <th>HPP</th>
                         <th>Admin Marketplace</th>
                         <th>Laba Produk</th>
@@ -12217,7 +12217,7 @@ document.addEventListener(
                 <select
                     id="productAnalysisPageSize"
                     onchange="changeProductAnalysisPageSize(this.value)"
-                    aria-label="Jumlah baris Rincian Penjualan per Produk"
+                    aria-label="Jumlah baris Rincian Sales per Produk"
                 >
                     <option value="20" selected>20</option>
                     <option value="40">40</option>
@@ -12253,7 +12253,7 @@ document.addEventListener(
 
         <p>
             Analisis penjualan, biaya, dan laba
-            seluruh marketplace serta akun toko.
+            seluruh marketplace serta accounts toko.
         </p>
 
     </div>
@@ -12308,7 +12308,7 @@ document.addEventListener(
                         font-size:14px;
                     "
                 >
-                    Pilih periode, marketplace, dan akun toko.
+                    Pilih periode, marketplace, dan accounts toko.
                 </p>
 
             </div>
@@ -12346,26 +12346,26 @@ document.addEventListener(
                     class="form-control"
                     onchange="applyReportFilters()"
                 >
-                    <option value="today">Hari Ini</option>
-                    <option value="yesterday">Kemarin</option>
-                    <option value="week">Minggu Ini</option>
-                    <option value="lastWeek">Minggu Lalu</option>
-                    <option value="month">Bulan Ini</option>
-                    <option value="lastMonth">Bulan Lalu</option>
-                    <option value="last3Months">3 Bulan Terakhir</option>
-                    <option value="year">Tahun Ini</option>
-                    <option value="custom">Pilih Tanggal</option>
-                    <option value="all">Semua Periode</option>
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="week">This Week</option>
+                    <option value="lastWeek">Last Week</option>
+                    <option value="month">This Month</option>
+                    <option value="lastMonth">Last Month</option>
+                    <option value="last3Months">Last 3 Months</option>
+                    <option value="year">This Year</option>
+                    <option value="custom">Custom Date</option>
+                    <option value="all">All Periods</option>
                 </select>
 
                 <div id="reportCustomDateRange" style="display:none;margin-top:10px;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
                         <div>
-                            <label style="display:block;margin-bottom:6px;font-size:12px;color:#64748b;">Dari Tanggal</label>
+                            <label style="display:block;margin-bottom:6px;font-size:12px;color:#64748b;">From Date</label>
                             <input type="date" id="reportDateFrom" class="form-control" onchange="applyReportFilters()">
                         </div>
                         <div>
-                            <label style="display:block;margin-bottom:6px;font-size:12px;color:#64748b;">Sampai Dengan</label>
+                            <label style="display:block;margin-bottom:6px;font-size:12px;color:#64748b;">To Date</label>
                             <input type="date" id="reportDateTo" class="form-control" onchange="applyReportFilters()">
                         </div>
                     </div>
@@ -12404,7 +12404,7 @@ document.addEventListener(
             </div>
 
 
-            <!-- AKUN TOKO -->
+            <!-- STORE ACCOUNTS -->
             <div>
 
                 <label
@@ -12415,7 +12415,7 @@ document.addEventListener(
                         font-size:14px;
                     "
                 >
-                    Akun Toko
+                    Accounts Toko
                 </label>
 
                 <select
@@ -12425,7 +12425,7 @@ document.addEventListener(
                 >
 
                     <option value="all">
-                        Semua Akun Toko
+                        Semua Accounts Toko
                     </option>
 
                 </select>
@@ -12455,24 +12455,24 @@ document.addEventListener(
 
 
 
-        <!-- HAPUS LAPORAN BERDASARKAN TANGGAL + MARKETPLACE + AKUN TOKO -->
+        <!-- HAPUS LAPORAN BERDASARKAN TANGGAL + MARKETPLACE + STORE ACCOUNTS -->
     <div class="content-section" style="margin-top:16px;padding:16px;background:#fff7ed;border:1px solid #fed7aa;">
         <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;">
             <div style="flex:1;min-width:260px;">
                 <h3 style="margin:0 0 5px 0;">Hapus Laporan</h3>
                 <p style="margin:0;color:#64748b;font-size:13px;">
-                    Hapus data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan akun toko.
+                    Hapus data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.
                 </p>
             </div>
 
             <div id="deleteReportFiltersGrid" style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:10px;align-items:end;flex:1;min-width:700px;">
                 <div>
-                    <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;">Dari Tanggal</label>
+                    <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;">From Date</label>
                     <input type="date" id="deleteReportDateFrom" class="form-control">
                 </div>
 
                 <div>
-                    <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;">Sampai Dengan</label>
+                    <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;">To Date</label>
                     <input type="date" id="deleteReportDateTo" class="form-control">
                 </div>
 
@@ -12484,9 +12484,9 @@ document.addEventListener(
                 </div>
 
                 <div>
-                    <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;">Akun Toko</label>
+                    <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;">Store Accounts</label>
                     <select id="deleteReportStore" class="form-control">
-                        <option value="all">Semua Akun Toko</option>
+                        <option value="all">Semua Accounts Toko</option>
                     </select>
                 </div>
 
@@ -12497,8 +12497,8 @@ document.addEventListener(
         </div>
 
         <small style="display:block;margin-top:8px;color:#9a3412;">
-            Penghapusan hanya menyentuh laporan yang sesuai dengan tanggal + marketplace + akun toko yang dipilih.
-            Master Produk, Marketplace, Akun Toko, dan Biaya Lain tidak ikut dihapus.
+            Penghapusan hanya menyentuh laporan yang sesuai dengan tanggal + marketplace + accounts toko yang dipilih.
+            Master Produk, Marketplace, Accounts Toko, dan Biaya Lain tidak ikut dihapus.
             Stok Master Produk akan otomatis dikembalikan sesuai QTY yang sebelumnya dipotong oleh laporan yang dihapus.
         </small>
     </div>
@@ -12932,15 +12932,15 @@ document.addEventListener(
                         </th>
 
                         <th>
-                            Akun Toko
+                            Accounts Toko
                         </th>
 
                         <th>
-                            Penjualan
+                            Sales
                         </th>
 
                         <th>
-                            Penjualan Bersih
+                            Sales Bersih
                         </th>
 
                         <th>
@@ -12952,7 +12952,7 @@ document.addEventListener(
                         </th>
 
                         <th>
-                            Laba Bersih
+                            Net Profit
                         </th>
 
                         <th>
@@ -12994,7 +12994,7 @@ document.addEventListener(
 
 
     <!-- =====================================
-         RINGKASAN AKUN TOKO
+         RINGKASAN STORE ACCOUNTS
     ====================================== -->
     <div
         class="content-section"
@@ -13008,11 +13008,11 @@ document.addEventListener(
             <div>
 
                 <h3>
-                    Performa Akun Toko
+                    Performa Accounts Toko
                 </h3>
 
                 <p>
-                    Ringkasan performa masing-masing akun toko.
+                    Ringkasan performa masing-masing accounts toko.
                 </p>
 
             </div>
@@ -13038,15 +13038,15 @@ document.addEventListener(
                         </th>
 
                         <th>
-                            Akun Toko
+                            Accounts Toko
                         </th>
 
                         <th>
-                            Penjualan
+                            Sales
                         </th>
 
                         <th>
-                            Penjualan Bersih
+                            Sales Bersih
                         </th>
 
                         <th>
@@ -13058,7 +13058,7 @@ document.addEventListener(
                         </th>
 
                         <th>
-                            Laba Bersih
+                            Net Profit
                         </th>
 
                         <th>
@@ -13114,7 +13114,7 @@ document.addEventListener(
             <div>
 
                 <h3>
-                    Detail Penjualan
+                    Detail Sales
                 </h3>
 
                 <p>
@@ -13148,14 +13148,14 @@ document.addEventListener(
                         </th>
 
                         <th>
-                            Akun Toko
+                            Accounts Toko
                         </th>
 
                         <th>Order</th>
                         <th>Order ID</th>
                         <th>SKU SellerBooks</th>
                         <th>QTY</th>
-                        <th>Penjualan</th>
+                        <th>Sales</th>
                         <th>Status</th>
 
                     </tr>
@@ -13176,7 +13176,7 @@ document.addEventListener(
                                 color:#64748b;
                             "
                         >
-                            Belum ada data penjualan.
+                            No sales data.
 
                         </td>
 
@@ -13197,7 +13197,7 @@ document.addEventListener(
                 <select
                     id="reportTransactionPageSize"
                     onchange="changeReportTransactionPageSize(this.value)"
-                    aria-label="Jumlah baris Detail Penjualan"
+                    aria-label="Jumlah baris Detail Sales"
                 >
                     <option value="20" selected>20</option>
                     <option value="40">40</option>
@@ -13443,7 +13443,7 @@ document.addEventListener(
 
                         <div class="settings-card-footer">
                             <span class="settings-save-info" id="settingsLanguageInfo">
-                                Bahasa tersimpan di akun Anda.
+                                Bahasa tersimpan di accounts Anda.
                             </span>
                             <button
                                 type="button"
@@ -13592,7 +13592,7 @@ document.addEventListener(
 
             <h3 id="storeModalTitle">
 
-                Tambah Akun Toko
+                Tambah Accounts Toko
 
             </h3>
 
@@ -13645,7 +13645,7 @@ document.addEventListener(
 
                 <label>
 
-                    Nama Akun Toko
+                    Nama Accounts Toko
 
                 </label>
 
@@ -13721,7 +13721,7 @@ document.addEventListener(
         color:#64748b;
         line-height:1.5;
     ">
-        Isi sesuai biaya admin akun toko ini.
+        Isi sesuai biaya admin accounts toko ini.
     </small>
 
 </div>
@@ -13744,7 +13744,7 @@ document.addEventListener(
                     id="storeDescription"
                     class="form-control"
                     rows="3"
-                    placeholder="Contoh: Akun utama Shopee"
+                    placeholder="Contoh: Accounts utama Shopee"
                 ></textarea>
 
             </div>
@@ -13756,7 +13756,7 @@ document.addEventListener(
 
                 <label>
 
-                    Status Akun Toko
+                    Status Accounts Toko
 
                 </label>
 
@@ -13807,7 +13807,7 @@ document.addEventListener(
                 onclick="saveStore()"
             >
 
-                Simpan Akun Toko
+                Simpan Accounts Toko
 
             </button>
 
@@ -14631,12 +14631,12 @@ document.addEventListener(
             </div>
 
 
-            <!-- AKUN TOKO -->
+            <!-- STORE ACCOUNTS -->
 
             <div class="form-group">
 
                 <label>
-                    Akun Toko *
+                    Accounts Toko *
                 </label>
 
                 <select
@@ -14644,12 +14644,12 @@ document.addEventListener(
                     class="form-control"
                 >
                     <option value="">
-                        -- Pilih Akun Toko --
+                        -- Pilih Accounts Toko --
                     </option>
                 </select>
 
                 <small style="color:#64748b;">
-                    Hanya akun dari marketplace yang dipilih yang ditampilkan.
+                    Hanya accounts dari marketplace yang dipilih yang ditampilkan.
                 </small>
 
             </div>
@@ -15407,7 +15407,7 @@ async function sellerBooksLoadProfile(user){
 
     /*
        Jika user Auth sudah ada tetapi profile SellerBooks belum terbentuk
-       (misalnya akun dibuat sebelum trigger profile dipasang), buat profile
+       (misalnya accounts dibuat sebelum trigger profile dipasang), buat profile
        secara otomatis sebagai PENDING. Status tidak pernah diambil dari client.
     */
     const {error:insertError}=await sellerBooksSupabase.from("sellerbooks_profiles").insert({
@@ -15434,11 +15434,11 @@ async function sellerBooksCheckApproval(showAlert){
             if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
 
             /*
-               Setelah akun disetujui Core Adiimasa:
-               - Jika Nama Pemilik sudah tersimpan di profile akun ini -> masuk Dashboard.
+               Setelah accounts disetujui Core Adiimasa:
+               - Jika Nama Pemilik sudah tersimpan di profile accounts ini -> masuk Dashboard.
                - Jika belum ada -> tampilkan tingkat 2 untuk membuat Nama Pemilik.
                - localStorage TIDAK dipakai untuk menentukan apakah setup sudah selesai,
-                 agar identitas antar akun Google tidak tercampur.
+                 agar identitas antar accounts Google tidak tercampur.
             */
             await sellerBooksLoadCloudData();
             sellerBooksRefreshRuntimeFromCloud();
@@ -15451,8 +15451,8 @@ async function sellerBooksCheckApproval(showAlert){
         if(status==="rejected"){sellerBooksShowApproval("Permintaan akses SellerBooks Anda ditolak oleh Core Adiimasa. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.");return;}
         if(status==="suspended"){sellerBooksShowApproval("Akun SellerBooks Anda sedang ditangguhkan oleh Core Adiimasa. Silakan hubungi Core Adiimasa.");return;}
         sellerBooksShowApproval("Akun Anda sudah berhasil login. Silakan menunggu persetujuan dari Core Adiimasa sebelum menggunakan SellerBooks.");
-        if(showAlert)sellerBooksAlert("Status akun masih menunggu persetujuan Core Adiimasa.");
-    }catch(error){console.error(error);sellerBooksShowApproval("Tidak dapat membaca status akun saat ini. Periksa koneksi internet lalu coba lagi.");}
+        if(showAlert)sellerBooksAlert("Status accounts masih menunggu persetujuan Core Adiimasa.");
+    }catch(error){console.error(error);sellerBooksShowApproval("Tidak dapat membaca status accounts saat ini. Periksa koneksi internet lalu coba lagi.");}
 }
 function sellerBooksOpenApplication(){
     const ownerName = String(sellerBooksProfile?.owner_name || "").trim();
@@ -15670,7 +15670,7 @@ sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
 });
 /* =====================================================
    SELLERBOOKS REALTIME ACCOUNT GUARD
-   Hanya memantau perubahan status akun / penghapusan profile.
+   Hanya memantau perubahan status accounts / penghapusan profile.
    Tidak mengubah alur login atau data aplikasi.
 ===================================================== */
 let sellerBooksAccountRealtimeChannel=null;
@@ -15819,7 +15819,7 @@ function sellerBooksHandleRealtimeAccountAction(status){
     }else if(normalized==="rejected"){
         message="Akun SellerBooks Anda telah ditolak oleh Core Adiimasa. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
     }else if(normalized==="pending"){
-        message="Akses akun SellerBooks Anda saat ini tidak aktif. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
+        message="Akses accounts SellerBooks Anda saat ini tidak aktif. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
     }else if(normalized==="deleted"){
         message="Akun SellerBooks Anda telah dihapus oleh Core Adiimasa. Silakan hubungi Core Adiimasa untuk informasi lebih lanjut.";
     }
@@ -15836,7 +15836,7 @@ function sellerBooksHandleRealtimeAccountAction(status){
         sellerBooksProfile=null;
         sellerBooksStorage.removeItem("sellerbooks_owner_name");
         sellerBooksShowOnly("loginPage");
-        sellerBooksAlert("⚠️ Akses Akun Berubah\n\n"+message);
+        sellerBooksAlert("⚠️ Akses Accounts Berubah\n\n"+message);
         sellerBooksAccountRealtimeHandling=false;
     });
 }
@@ -15875,7 +15875,7 @@ function sellerBooksStartAccountRealtime(){
                 return;
             }
             if(status!=="SUBSCRIBED"){
-                console.warn("Realtime status akun:",status);
+                console.warn("Realtime status accounts:",status);
             }
         });
 }
@@ -15925,7 +15925,7 @@ function sellerBooksStartAccountPolling(){
             .maybeSingle()
             .then(function(result){
                 if(result.error){
-                    console.warn("Pengecekan status akun APK gagal:",result.error);
+                    console.warn("Pengecekan status accounts APK gagal:",result.error);
                     return;
                 }
 
@@ -15938,7 +15938,7 @@ function sellerBooksStartAccountPolling(){
                 if(status!=="approved")sellerBooksHandleRealtimeAccountAction(status);
             })
             .catch(function(error){
-                console.warn("Pengecekan status akun APK gagal:",error);
+                console.warn("Pengecekan status accounts APK gagal:",error);
             })
             .finally(function(){
                 sellerBooksAccountPollingBusy=false;
@@ -16003,8 +16003,8 @@ const pageData = {
     },
 
     stores:{
-        title:"Akun Toko",
-        subtitle:"Kelola seluruh akun toko"
+        title:"Store Accounts",
+        subtitle:"Kelola seluruh accounts toko"
     },
 
     products:{
@@ -16013,7 +16013,7 @@ const pageData = {
     },
 
     import:{
-        title:"Import Penjualan",
+        title:"Import Sales",
         subtitle:"Upload dan proses laporan penjualan"
     },
 
@@ -16299,7 +16299,7 @@ function loadProductAnalysisStoreFilter(){
         storeSelect.value || "all";
 
     storeSelect.innerHTML = `
-        <option value="all">Semua Akun Toko</option>
+        <option value="all">Semua Accounts Toko</option>
     `;
 
     let stores = [];
@@ -16458,7 +16458,7 @@ function calculateProductAnalysisRows(){
 
             /*
                Harga Jual selalu merupakan harga transaksi aktual:
-               Total Penjualan / QTY.
+               Total Sales / QTY.
                Dengan begitu tampilan komputer, browser, dan APK
                mengikuti hasil transaksi yang sama dan tidak membaca
                harga Master Produk terbaru untuk transaksi lama.
@@ -16475,7 +16475,7 @@ function calculateProductAnalysisRows(){
 
             /*
                Analisis produk:
-               Penjualan - Admin Marketplace - HPP.
+               Sales - Admin Marketplace - HPP.
                Packing tidak dibebankan ke SKU karena
                packing merupakan biaya per order/resi.
             */
@@ -16723,7 +16723,7 @@ function renderProductAnalysis(){
                     : "✓ UNTUNG";
 
             /*
-               Harga Jual = Total Penjualan / QTY.
+               Harga Jual = Total Sales / QTY.
                Berlaku sama untuk semua marketplace.
             */
             const displayPrice =
@@ -16969,21 +16969,21 @@ function updateProductAnalysisFilterInfo(){
         )?.value || "month";
 
     const names = {
-        today:"Hari Ini",
-        yesterday:"Kemarin",
-        week:"Minggu Ini",
-        lastWeek:"Minggu Lalu",
-        month:"Bulan Ini",
-        lastMonth:"Bulan Lalu",
-        last3Months:"3 Bulan Terakhir",
-        year:"Tahun Ini",
-        custom:"Pilih Tanggal",
-        all:"Semua Periode"
+        today:"Today",
+        yesterday:"Yesterday",
+        week:"This Week",
+        lastWeek:"Last Week",
+        month:"This Month",
+        lastMonth:"Last Month",
+        last3Months:"Last 3 Months",
+        year:"This Year",
+        custom:"Custom Date",
+        all:"All Periods"
     };
 
     let label =
         names[period] ||
-        "Bulan Ini";
+        "This Month";
 
     const marketplaceSelect =
         document.getElementById("productAnalysisMarketplace");
@@ -16997,7 +16997,7 @@ function updateProductAnalysisFilterInfo(){
 
     const storeLabel =
         storeSelect?.selectedOptions?.[0]?.textContent ||
-        "Semua Akun Toko";
+        "Semua Accounts Toko";
 
     if(period === "custom"){
 
@@ -17034,7 +17034,7 @@ function updateProductAnalysisFilterInfo(){
         label +
         "</strong> &nbsp;|&nbsp; Marketplace: <strong>" +
         escapeHtmlProductAnalysis(marketplaceLabel) +
-        "</strong> &nbsp;|&nbsp; Akun: <strong>" +
+        "</strong> &nbsp;|&nbsp; Accounts: <strong>" +
         escapeHtmlProductAnalysis(storeLabel) +
         "</strong>";
 }
@@ -17615,7 +17615,7 @@ function renderMarketplaces(){
     });
 renderMarketplacePerformance();
 
-/* UPDATE MODUL AKUN TOKO */
+/* UPDATE MODUL STORE ACCOUNTS */
 
 if(typeof renderStores === "function"){
 
@@ -17760,8 +17760,8 @@ function sellerBooksRenderDashboardCharts(transactions){
     const info = document.getElementById("dashboardSalesChartInfo");
     if(!salesChart || !marketplaceChart) return;
 
-    const periodNames = {today:"Hari Ini",yesterday:"Kemarin",week:"Minggu Ini",lastWeek:"Minggu Lalu",month:"Bulan Ini",lastMonth:"Bulan Lalu",last3Months:"3 Bulan Terakhir",year:"Tahun Ini",all:"Semua Periode"};
-    if(info) info.textContent = "Pergerakan penjualan • " + (periodNames[currentDashboardPeriod] || "Hari Ini");
+    const periodNames = {today:"Today",yesterday:"Yesterday",week:"This Week",lastWeek:"Last Week",month:"This Month",lastMonth:"Last Month",last3Months:"Last 3 Months",year:"This Year",all:"All Periods"};
+    if(info) info.textContent = "Sales movement • " + (periodNames[currentDashboardPeriod] || "Today");
 
     const buckets = new Map();
     const marketplaceTotals = new Map();
@@ -17795,8 +17795,8 @@ function sellerBooksRenderDashboardCharts(transactions){
 
     let bucketList = Array.from(buckets.values()).sort((a,b)=>a.key.localeCompare(b.key));
     if(bucketList.length === 0){
-        salesChart.innerHTML = '<div class="dashboard-chart-empty">Belum ada data penjualan pada periode ini</div>';
-        marketplaceChart.innerHTML = '<div class="dashboard-chart-empty">Belum ada data penjualan pada periode ini</div>';
+        salesChart.innerHTML = '<div class="dashboard-chart-empty">No sales data for this period</div>';
+        marketplaceChart.innerHTML = '<div class="dashboard-chart-empty">No sales data for this period</div>';
         ["dashboardChartMax","dashboardChartMid","dashboardChartZero"].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=sellerBooksDashboardFormatShortRupiah(0);});
         return;
     }
@@ -17820,8 +17820,8 @@ function sellerBooksRenderDashboardCharts(transactions){
     }).join("");
 
     // Default grafik selalu diarahkan ke batang biru/penjualan TERAKHIR
-    // pada periode yang sedang dipilih. Berlaku untuk Hari Ini, Kemarin,
-    // Minggu Ini, Minggu Lalu, Bulan, Tahun, Semua Periode, dan periode lain.
+    // pada periode yang sedang dipilih. Berlaku untuk Today, Yesterday,
+    // This Week, Last Week, Bulan, Tahun, All Periods, dan periode lain.
     let latestBucketIndex = -1;
     for(let i = bucketList.length - 1; i >= 0; i--){
         if(Number(bucketList[i].value) > 0){
@@ -17875,7 +17875,7 @@ function renderMarketplacePerformance(){
 
     /*
        DASHBOARD:
-       1. Kartu atas = TOTAL seluruh marketplace + seluruh akun toko.
+       1. Kartu atas = TOTAL seluruh marketplace + seluruh accounts toko.
        2. Tabel bawah = RINCIAN setiap marketplace.
        3. Harga jual dan HPP tetap berasal dari Master Produk.
        4. Marketplace yang belum memiliki transaksi tetap ditampilkan Rp0.
@@ -18196,12 +18196,12 @@ function renderMarketplacePerformance(){
         const language = typeof sellerBooksCurrentLanguage === "function" ? sellerBooksCurrentLanguage() : "id";
         const dashboardPeriodNames = language === "en"
             ? {today:"Today",yesterday:"Yesterday",week:"This Week",lastWeek:"Last Week",month:"This Month",lastMonth:"Last Month",last3Months:"Last 3 Months",year:"This Year",all:"All Periods"}
-            : {today:"Hari Ini",yesterday:"Kemarin",week:"Minggu Ini",lastWeek:"Minggu Lalu",month:"Bulan Ini",lastMonth:"Bulan Lalu",last3Months:"3 Bulan Terakhir",year:"Tahun Ini",all:"Semua Periode"};
-        const dashboardPeriodLabel = dashboardPeriodNames[currentDashboardPeriod] || (language === "en" ? "Today" : "Hari Ini");
+            : {today:"Today",yesterday:"Yesterday",week:"This Week",lastWeek:"Last Week",month:"This Month",lastMonth:"Last Month",last3Months:"Last 3 Months",year:"This Year",all:"All Periods"};
+        const dashboardPeriodLabel = dashboardPeriodNames[currentDashboardPeriod] || (language === "en" ? "Today" : "Today");
         if(salesInfo){
             salesInfo.textContent = transactions.length
                 ? (language === "en" ? "Total sales across all marketplaces • " + dashboardPeriodLabel : "Total semua marketplace • " + dashboardPeriodLabel)
-                : (language === "en" ? "No sales • " + dashboardPeriodLabel : "Tidak ada penjualan • " + dashboardPeriodLabel);
+                : (language === "en" ? "No sales • " + dashboardPeriodLabel : "No sales • " + dashboardPeriodLabel);
         }
         if(qtyInfo){
             qtyInfo.textContent = language === "en"
@@ -18611,7 +18611,7 @@ function renderMarketplacePerformance(){
                             <strong>
                                 ${row.accountCount}
                             </strong>
-                            Akun
+                            Accounts
                         </td>
 
                         <td>
@@ -18810,7 +18810,7 @@ async function deleteMarketplace(id){
     if(!await sellerBooksConfirm(
         "Hapus marketplace \"" +
         (marketplace.name || "Marketplace") +
-        "\"?\n\nData akun toko yang terhubung dengan marketplace ini juga akan dihapus."
+        "\"?\n\nData accounts toko yang terhubung dengan marketplace ini juga akan dihapus."
     )){
         return;
     }
@@ -18950,7 +18950,7 @@ function goToStores(id){
 
 
     /*
-       PINDAH KE HALAMAN AKUN TOKO
+       PINDAH KE HALAMAN STORE ACCOUNTS
     */
 
     showView("stores");
@@ -18983,7 +18983,7 @@ function goToStores(id){
 }
 
 /* =====================================================
-   AKUN TOKO DATABASE
+   STORE ACCOUNTS DATABASE
    SEMENTARA MENGGUNAKAN LOCAL STORAGE
 ===================================================== */
 
@@ -19333,13 +19333,13 @@ if(!window.sellerBooksStoreMarketplaceFilterOutsideHandler){
 
 
 /* =====================================================
-   INTEGRASI AKUN TOKO
+   INTEGRASI STORE ACCOUNTS
 ===================================================== */
 
 
 
 /* =====================================================
-   COPOT INTEGRASI AKUN TOKO
+   COPOT INTEGRASI STORE ACCOUNTS
 ===================================================== */
 
 async function disconnectStoreAccount(storeId){
@@ -19358,7 +19358,7 @@ async function disconnectStoreAccount(storeId){
     });
 
     if(!marketplace){
-        sellerBooksAlert("Marketplace akun toko tidak ditemukan.","Copot Integrasi");
+        sellerBooksAlert("Marketplace accounts toko tidak ditemukan.","Copot Integrasi");
         return;
     }
 
@@ -19371,7 +19371,7 @@ async function disconnectStoreAccount(storeId){
     }
 
     const confirmed = await sellerBooksConfirm(
-        "Copot integrasi " + marketplace.name + " dari akun toko \"" + store.name + "\"?\n\nSetelah dicopot, akun ini harus diotorisasi ulang jika ingin terhubung kembali.",
+        "Copot integrasi " + marketplace.name + " dari accounts toko \"" + store.name + "\"?\n\nSetelah dicopot, accounts ini harus diotorisasi ulang jika ingin terhubung kembali.",
         "Copot Integrasi"
     );
 
@@ -19431,7 +19431,7 @@ async function integrateStoreAccount(storeId){
     });
 
     if(!store){
-        sellerBooksAlert("Akun toko tidak ditemukan.","Integrasikan Akun");
+        sellerBooksAlert("Akun toko tidak ditemukan.","Integrasikan Accounts");
         return;
     }
 
@@ -19440,7 +19440,7 @@ async function integrateStoreAccount(storeId){
     });
 
     if(!marketplace){
-        sellerBooksAlert("Marketplace akun toko tidak ditemukan.","Integrasikan Akun");
+        sellerBooksAlert("Marketplace accounts toko tidak ditemukan.","Integrasikan Accounts");
         return;
     }
 
@@ -19488,7 +19488,7 @@ async function integrateStoreAccount(storeId){
         sellerBooksAlert(
             "Integrasi " + String(marketplace.name || "marketplace") +
             " belum tersedia saat ini. Fitur sinkronisasi API akan segera hadir setelah konektor/API resmi SellerBooks siap. " +
-            "Sementara Anda bisa melakukan upload file orderan marketplace secara manual melalui Import Penjualan.",
+            "Sementara Anda bisa melakukan upload file orderan marketplace secara manual melalui Import Sales.",
             "Segera Hadir"
         );
         return;
@@ -19562,8 +19562,8 @@ async function integrateStoreAccount(storeId){
 
         if(!oauthTab){
             sellerBooksAlert(
-                "Popup/tab baru diblokir browser. Silakan izinkan pop-up untuk SellerBooks lalu klik Integrasikan Akun lagi.",
-                "Integrasikan Akun"
+                "Popup/tab baru diblokir browser. Silakan izinkan pop-up untuk SellerBooks lalu klik Integrasikan Accounts lagi.",
+                "Integrasikan Accounts"
             );
             return;
         }
@@ -19668,7 +19668,7 @@ async function integrateStoreAccount(storeId){
             "Integrasi " + String(marketplace.name || "Marketplace") +
             " gagal dimulai.\n\n" +
             (error?.message || "Terjadi kesalahan saat menyiapkan OAuth."),
-            "Integrasikan Akun"
+            "Integrasikan Accounts"
         );
     }
 }
@@ -19703,11 +19703,11 @@ function sellerBooksApiImportProfile(marketplace){
     return profiles[key]||null;
 }
 
-async function sellerBooksDispatchExcelToImportPenjualan(queueItem,showResult){
+async function sellerBooksDispatchExcelToImportSales(queueItem,showResult){
     if(!queueItem) return null;
     const marketplaceName=String(queueItem.marketplace||"").trim();
     const profile=sellerBooksApiImportProfile(marketplaceName);
-    if(!profile) return {ok:false,retry:false,error:"Marketplace API belum memiliki adapter Import Penjualan: "+marketplaceName};
+    if(!profile) return {ok:false,retry:false,error:"Marketplace API belum memiliki adapter Import Sales: "+marketplaceName};
 
     const store=stores.find(item=>String(item.id)===String(queueItem.store_id));
     if(!store) return {ok:false,retry:true,error:"Akun toko untuk file API belum tersedia di workspace."};
@@ -19792,16 +19792,16 @@ async function sellerBooksDispatchExcelToImportPenjualan(queueItem,showResult){
         const title="Hasil Tarik Order "+marketplaceName;
         if(result.new_transactions>0){
             sellerBooksAlert(
-                "Order "+marketplaceName+" berhasil diproses oleh mesin Import Penjualan.\n\n"+
+                "Order "+marketplaceName+" berhasil diproses oleh mesin Import Sales.\n\n"+
                 "Packing baru: "+result.new_packing_count.toLocaleString("id-ID")+"\n"+
                 "PCS baru: "+result.new_qty.toLocaleString("id-ID")+"\n\n"+
-                "Perhitungan, HPP, admin, packing, snapshot dan laporan dikerjakan oleh mesin Import Penjualan SellerBooks.",
+                "Perhitungan, HPP, admin, packing, snapshot dan laporan dikerjakan oleh mesin Import Sales SellerBooks.",
                 title
             );
         }else{
             sellerBooksAlert(
                 "Data "+marketplaceName+" sudah ada / tidak menghasilkan transaksi baru.\n\n"+
-                "Mesin Import Penjualan melewati data duplikat.",
+                "Mesin Import Sales melewati data duplikat.",
                 title
             );
         }
@@ -19830,7 +19830,7 @@ async function sellerBooksDispatchExcelQueue(opts){
             const claimed=await claim.json();
             if(!Array.isArray(claimed)||!claimed[0])continue;
             try{
-                const result=await sellerBooksDispatchExcelToImportPenjualan(claimed[0],!!opts.showResult);
+                const result=await sellerBooksDispatchExcelToImportSales(claimed[0],!!opts.showResult);
                 if(result?.retry){
                     await sellerBooksQueueRequest("sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id),{
                         method:"PATCH",headers:{"Prefer":"return=minimal"},
@@ -19903,7 +19903,7 @@ async function syncTikTokOrdersNow(storeId){
         sellerBooksAlert(
             "Sedang mengambil order TikTok Shop 7 hari terakhir...\n\n"+
             "API hanya mengambil data mentah order.\n"+
-            "Setelah itu data akan diproses oleh mesin Import Penjualan yang sama seperti upload Excel manual.",
+            "Setelah itu data akan diproses oleh mesin Import Sales yang sama seperti upload Excel manual.",
             "Tarik Order TikTok"
         );
 
@@ -20023,7 +20023,7 @@ async function syncShopeeOrdersNow(storeId){
         const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
         if(!session?.access_token)throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
         const now=Date.now(),timeFrom=new Date(now-7*86400000).toISOString(),timeTo=new Date(now).toISOString();
-        sellerBooksAlert("Sedang mengambil order Shopee 7 hari terakhir...\n\nAPI hanya mengambil data mentah.\nSetelah itu data masuk ke mesin Import Penjualan yang sama seperti upload Excel manual.","Sinkronisasi Shopee");
+        sellerBooksAlert("Sedang mengambil order Shopee 7 hari terakhir...\n\nAPI hanya mengambil data mentah.\nSetelah itu data masuk ke mesin Import Sales yang sama seperti upload Excel manual.","Sinkronisasi Shopee");
         const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-sync-orders",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id),time_from:timeFrom,time_to:timeTo})});
         const data=await response.json().catch(()=>({}));
         if(!response.ok||!data.ok)throw new Error(data.error||"Pengambilan data Shopee gagal.");
@@ -20050,7 +20050,7 @@ async function syncLazadaOrdersNow(storeId){
         const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
         if(!session?.access_token)throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
         const now=Math.floor(Date.now()/1000),timeFrom=now-7*86400,timeTo=now;
-        sellerBooksAlert("Sedang mengambil order Lazada 7 hari terakhir...\n\nAPI hanya mengambil data mentah.\nSetelah itu data masuk ke mesin Import Penjualan yang sama seperti upload Excel manual.","Sinkronisasi Lazada");
+        sellerBooksAlert("Sedang mengambil order Lazada 7 hari terakhir...\n\nAPI hanya mengambil data mentah.\nSetelah itu data masuk ke mesin Import Sales yang sama seperti upload Excel manual.","Sinkronisasi Lazada");
         const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-lazada-sync-orders",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id),time_from:timeFrom,time_to:timeTo})});
         const data=await response.json().catch(()=>({}));
         if(!response.ok||!data.ok)throw new Error(data.error||"Pengambilan data Lazada gagal.");
@@ -20081,7 +20081,7 @@ function handleShopeeOAuthResult(){
 
         sellerBooksAlert(
             "Akun Shopee berhasil terhubung ke SellerBooks.",
-            "Integrasikan Akun"
+            "Integrasikan Accounts"
         );
 
         try{
@@ -20121,7 +20121,7 @@ function handleShopeeOAuthResult(){
     sellerBooksAlert(
         "Integrasi Shopee gagal.\n\n" +
         "Kode: " + reason,
-        "Integrasikan Akun"
+        "Integrasikan Accounts"
     );
 
     try{
@@ -20197,7 +20197,7 @@ if(!window.sellerBooksMarketplaceOAuthMessageHandler){
             sellerBooksAlert(
                 "Akun " + marketplaceLabel +
                 " berhasil terhubung ke SellerBooks.",
-                "Integrasikan Akun"
+                "Integrasikan Accounts"
             );
 
             if(data.connection_id){
@@ -20240,8 +20240,8 @@ if(!window.sellerBooksMarketplaceOAuthMessageHandler){
 
             sellerBooksAlert(
                 "Akun " + marketplaceLabel +
-                " ini sudah terhubung ke akun atau toko SellerBooks lain.",
-                "Integrasikan Akun"
+                " ini sudah terhubung ke accounts atau toko SellerBooks lain.",
+                "Integrasikan Accounts"
             );
 
         }else{
@@ -20249,7 +20249,7 @@ if(!window.sellerBooksMarketplaceOAuthMessageHandler){
             sellerBooksAlert(
                 "Integrasi " + marketplaceLabel +
                 " gagal.\n\nKode: " + reason,
-                "Integrasikan Akun"
+                "Integrasikan Accounts"
             );
 
         }
@@ -20317,7 +20317,7 @@ window.onMarketplaceOAuthReturn = function(marketplace, status, reason, connecti
 
         sellerBooksAlert(
             "Akun " + marketplaceLabel + " berhasil terhubung ke SellerBooks.",
-            "Integrasikan Akun"
+            "Integrasikan Accounts"
         );
 
         /*
@@ -20348,7 +20348,7 @@ window.onMarketplaceOAuthReturn = function(marketplace, status, reason, connecti
     sellerBooksAlert(
         "Integrasi " + errorLabel + " gagal." +
         (reason ? "\n\nKode: " + reason : ""),
-        "Integrasikan Akun"
+        "Integrasikan Accounts"
     );
 
     setTimeout(function(){
@@ -20358,7 +20358,7 @@ window.onMarketplaceOAuthReturn = function(marketplace, status, reason, connecti
 
 
 /* =====================================================
-   STATUS INTEGRASI AKUN TOKO
+   STATUS INTEGRASI STORE ACCOUNTS
 ===================================================== */
 
 let sellerBooksStoreConnections = new Map();
@@ -20480,9 +20480,9 @@ async function refreshStoreIntegrationStates(force){
                     }
                     /*
                        Perubahan status CONNECTED di background hanya
-                       memperbarui state/tombol akun toko.
+                       memperbarui state/tombol accounts toko.
                        Popup "Integrasi Berhasil" hanya boleh muncul
-                       dari alur OAuth saat akun benar-benar pertama kali
+                       dari alur OAuth saat accounts benar-benar pertama kali
                        diintegrasikan, bukan saat Tarik Order / refresh.
                     */
                 }
@@ -20503,7 +20503,7 @@ async function refreshStoreIntegrationStates(force){
 
                 if(previousStatus === "CONNECTED"){
                     // Row sudah hilang dari Supabase, sehingga renderStores()
-                    // di bawah akan otomatis menampilkan "Integrasikan Akun".
+                    // di bawah akan otomatis menampilkan "Integrasikan Accounts".
                 }
             });
         }
@@ -20511,12 +20511,12 @@ async function refreshStoreIntegrationStates(force){
         sellerBooksStoreConnectionsInitialized = true;
 
         // Setiap kali status koneksi selesai dibaca dari Supabase,
-        // render ulang kartu akun toko agar tombol mengikuti status terbaru.
+        // render ulang kartu accounts toko agar tombol mengikuti status terbaru.
         if(typeof renderStores === "function"){
             renderStores(true);
         }
     }catch(error){
-        console.warn("Status integrasi akun toko gagal dimuat:",error);
+        console.warn("Status integrasi accounts toko gagal dimuat:",error);
     }finally{
         sellerBooksStoreConnectionsLoading = false;
     }
@@ -20559,7 +20559,7 @@ function getStoreIntegrationConnection(store){
     if(!store) return null;
 
     /*
-       Akun toko menyimpan marketplaceId sebagai ID marketplace
+       Accounts toko menyimpan marketplaceId sebagai ID marketplace
        milik user, misalnya "marketplace_1790509307069".
        Tabel sellerbooks_api_connections memakai ID kanonik
        konektor, misalnya "tiktok".
@@ -20623,7 +20623,7 @@ function sellerBooksStopIntegrationStatusPolling(){
 
 
 /* =====================================================
-   REALTIME STATUS INTEGRASI AKUN TOKO
+   REALTIME STATUS INTEGRASI STORE ACCOUNTS
    Semua perangkat/tab yang sedang login menerima perubahan
    status koneksi tanpa perlu refresh.
 ===================================================== */
@@ -20914,7 +20914,7 @@ function sellerBooksHandleIntegrationRealtimePayload(payload){
         oldRecord.connection_status || ""
     ).toUpperCase();
 
-    // Notifikasi hanya ketika status benar-benar berubah menjadi CONNECTED.
+    // Notifications hanya ketika status benar-benar berubah menjadi CONNECTED.
     if(
         newStatus !== "CONNECTED" ||
         oldStatus === "CONNECTED"
@@ -20936,7 +20936,7 @@ function sellerBooksHandleIntegrationRealtimePayload(payload){
 
     /*
        Realtime hanya menyinkronkan status koneksi.
-       Notifikasi "Integrasi Berhasil" ditampilkan oleh callback OAuth
+       Notifications "Integrasi Berhasil" ditampilkan oleh callback OAuth
        ketika integrasi benar-benar dilakukan, bukan oleh perubahan
        status CONNECTED saat refresh atau Tarik Order.
     */
@@ -20991,7 +20991,7 @@ function sellerBooksStartIntegrationRealtime(){
                 function(payload){
                     // DELETE berarti koneksi benar-benar sudah dicopot.
                     // Paksa baca ulang sekarang agar semua browser/WebView
-                    // langsung menampilkan tombol "Integrasikan Akun".
+                    // langsung menampilkan tombol "Integrasikan Accounts".
                     sellerBooksStoreConnectionsUserId = "";
                     refreshStoreIntegrationStates(true);
                 }
@@ -21016,7 +21016,7 @@ function sellerBooksStartIntegrationRealtime(){
 
 
 /* =====================================================
-   RENDER AKUN TOKO
+   RENDER STORE ACCOUNTS
 ===================================================== */
 
 function renderStores(skipIntegrationRefresh){
@@ -21118,7 +21118,7 @@ function renderStores(skipIntegrationRefresh){
         count.innerText =
 
             visibleStores.length +
-            " Akun Toko";
+            " Accounts Toko";
 
     }
 
@@ -21145,14 +21145,14 @@ function renderStores(skipIntegrationRefresh){
 
                 <h3>
 
-                    Belum Ada Akun Toko
+                    Belum Ada Accounts Toko
 
                 </h3>
 
 
                 <p>
 
-                    Tambahkan akun toko dari marketplace
+                    Tambahkan accounts toko dari marketplace
                     yang aktif untuk mulai mengelola bisnis.
 
                 </p>
@@ -21276,7 +21276,7 @@ function renderStores(skipIntegrationRefresh){
                     type="button"
                     class="store-action-button store-disconnect-button"
                     onclick="disconnectStoreAccount('${store.id}')"
-                    title="Copot integrasi akun toko"
+                    title="Copot integrasi accounts toko"
                 >
                     ⛓ Copot Integrasi
                 </button>
@@ -21288,7 +21288,7 @@ function renderStores(skipIntegrationRefresh){
                     class="store-action-button store-integrate-button"
                     onclick="integrateStoreAccount('${store.id}')"
                 >
-                    🔗 Integrasikan Akun
+                    🔗 Integrasikan Accounts
                 </button>
               `;
 
@@ -21514,7 +21514,7 @@ function openStoreModal(){
         "storeModalTitle"
     ).innerText =
 
-        "Tambah Akun Toko";
+        "Tambah Accounts Toko";
 
 
     /*
@@ -21591,7 +21591,7 @@ function closeStoreModal(){
 
 
 /* =====================================================
-   SIMPAN AKUN TOKO
+   SIMPAN STORE ACCOUNTS
 ===================================================== */
 
 function saveStore(){
@@ -21660,7 +21660,7 @@ const feePercent =
     if(!name){
 
         sellerBooksAlert(
-            "Nama akun toko wajib diisi."
+            "Nama accounts toko wajib diisi."
         );
 
         return;
@@ -21826,7 +21826,7 @@ if(feePercent < 0 || feePercent > 100){
 
 
 /* =====================================================
-   EDIT AKUN TOKO
+   EDIT STORE ACCOUNTS
 ===================================================== */
 
 function editStore(id){
@@ -21853,7 +21853,7 @@ function editStore(id){
         "storeModalTitle"
     ).innerText =
 
-        "Edit Akun Toko";
+        "Edit Accounts Toko";
 
 
     renderStoreMarketplaceOptions();
@@ -21958,7 +21958,7 @@ async function deleteStore(id){
 
     const confirmation = await sellerBooksConfirm(
 
-        'Hapus akun toko "' +
+        'Hapus accounts toko "' +
 
         store.name +
 
@@ -25359,7 +25359,7 @@ function populateSalesStoreAccounts(){
     ========================================= */
 
     select.innerHTML =
-        '<option value="">-- Pilih Akun Toko --</option>';
+        '<option value="">-- Pilih Accounts Toko --</option>';
 
 
     /* =========================================
@@ -25452,7 +25452,7 @@ function populateSalesStoreAccounts(){
             }
 
             /* Jika ada marketplace duplikat, pilih yang memiliki
-               akun toko aktif agar dropdown Import tidak kosong. */
+               accounts toko aktif agar dropdown Import tidak kosong. */
             return stores.some(function(store){
                 return store.status === "active" &&
                     String(store.marketplaceId || "") === String(item.id || "");
@@ -25503,7 +25503,7 @@ function populateSalesStoreAccounts(){
 
 
     /* =========================================
-       CARI AKUN TOKO
+       CARI STORE ACCOUNTS
        SESUAI MARKETPLACE
     ========================================= */
 
@@ -25529,7 +25529,7 @@ function populateSalesStoreAccounts(){
 
 
     /* =========================================
-       MASUKKAN AKUN TOKO KE DROPDOWN
+       MASUKKAN STORE ACCOUNTS KE DROPDOWN
     ========================================= */
 
     list.forEach(function(store){
@@ -25558,7 +25558,7 @@ function populateSalesStoreAccounts(){
 
 
     /* =========================================
-       INFO AKUN TOKO
+       INFO STORE ACCOUNTS
     ========================================= */
 
     if(info){
@@ -25567,7 +25567,7 @@ function populateSalesStoreAccounts(){
 
             info.innerText =
                 list.length +
-                " akun toko aktif tersedia.";
+                " accounts toko aktif tersedia.";
 
             info.style.color =
                 "";
@@ -25575,7 +25575,7 @@ function populateSalesStoreAccounts(){
         }else{
 
             info.innerText =
-                "Belum ada akun toko aktif untuk marketplace ini.";
+                "Belum ada accounts toko aktif untuk marketplace ini.";
 
             info.style.color =
                 "#dc2626";
@@ -25590,7 +25590,7 @@ function buildSalesImportFingerprint(currentImport, storeId, transactions){
     /*
        IDENTITAS FILE/ISI IMPORT.
        Tidak bergantung pada nomor baris Excel atau waktu upload.
-       Jika isi transaksi yang sama pernah tersimpan pada akun toko
+       Jika isi transaksi yang sama pernah tersimpan pada accounts toko
        dan marketplace yang sama, import dianggap sudah pernah masuk.
     */
     const marketplace = String(
@@ -25788,7 +25788,7 @@ function saveSalesImportData(){
                     adminFeeSkuSnapshot,
 
                 /*
-                   Snapshot Admin % Akun saat import.
+                   Snapshot Admin % Accounts saat import.
                    Field adminFeePercent tetap dipertahankan untuk
                    kompatibilitas data lama.
                 */
@@ -25892,7 +25892,7 @@ function saveSalesImportData(){
     /* =====================================================
        CEK FILE/ISI IMPORT SUDAH PERNAH DISIMPAN
        Jika file yang sama sudah pernah masuk untuk marketplace
-       + akun toko yang sama, IMPORT DITOLAK TOTAL.
+       + accounts toko yang sama, IMPORT DITOLAK TOTAL.
        Tidak boleh ada nilai penjualan/QTY baru yang masuk.
     ===================================================== */
     const importFingerprint =
@@ -25957,7 +25957,7 @@ function saveSalesImportData(){
        UPDATE / MERGE IMPORT
        Import berikutnya tidak menggandakan transaksi lama.
        Kunci transaksi:
-       Marketplace + Akun Toko + Order ID + SKU.
+       Marketplace + Accounts Toko + Order ID + SKU.
        Jika Order ID kosong, gunakan Packing ID + SKU.
        Transaksi yang sudah ada tetap dipertahankan;
        hanya transaksi baru yang ditambahkan.
@@ -27460,7 +27460,7 @@ function resetSalesImport(){
     }
 
 
-    /* RESET AKUN TOKO */
+    /* RESET STORE ACCOUNTS */
     const storeSelect =
         document.getElementById(
             "salesStoreAccount"
@@ -27469,7 +27469,7 @@ function resetSalesImport(){
     if(storeSelect){
 
         storeSelect.innerHTML =
-            '<option value="">-- Pilih Akun Toko --</option>';
+            '<option value="">-- Pilih Accounts Toko --</option>';
 
         storeSelect.value = "";
 
@@ -28568,7 +28568,7 @@ function confirmSalesColumns(){
     if(!storeId){
 
         sellerBooksAlert(
-            "Silakan pilih akun toko terlebih dahulu sebelum menyimpan."
+            "Silakan pilih accounts toko terlebih dahulu sebelum menyimpan."
         );
 
         return;
@@ -28813,7 +28813,7 @@ document.addEventListener(
         renderMarketplaces();
 
 
-        /* AKUN TOKO */
+        /* STORE ACCOUNTS */
 
         if(typeof renderStores === "function"){
 
@@ -29180,7 +29180,7 @@ function updateSidebarOwner(){
 
     /*
        Nama di baris atas = Nama Pemilik yang disimpan pada
-       sellerbooks_profiles untuk akun Google yang sedang login.
+       sellerbooks_profiles untuk accounts Google yang sedang login.
     */
     const ownerName = String(
         sellerBooksProfile?.owner_name || ""
@@ -29242,7 +29242,7 @@ document.addEventListener(
 /* =========================================
    RESET OTOMATIS PERIODE HARIAN
    Data lama TETAP tersimpan untuk histori/delete.
-   Tampilan operasional otomatis kembali ke Hari Ini
+   Tampilan operasional otomatis kembali ke Today
    ketika kalender berganti hari.
 ========================================= */
 function getSellerBooksDayKey(){
@@ -29295,7 +29295,7 @@ let currentDashboardPeriod = "today";
 /*
    Cek rollover hari berdasarkan WIB setiap menit.
    Jadi ketika browser tetap terbuka melewati 00:00 WIB,
-   Dashboard tidak tetap memakai "Hari Kemarin".
+   Dashboard tidak tetap memakai "Hari Yesterday".
 */
 let sellerBooksLastWibDayKey = getSellerBooksDayKey();
 
@@ -29562,7 +29562,7 @@ function changeDashboardCustomDateRange(){
         const to = getReportDateOnly(toValue);
 
         if(from && to && from > to){
-            sellerBooksAlert("Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.");
+            sellerBooksAlert("From Date tidak boleh lebih besar dari To Date.");
             return;
         }
     }
@@ -29589,7 +29589,7 @@ function confirmDashboardCustomDateRange(){
         document.getElementById("dashboardDateTo")?.value || "";
 
     if(!fromValue || !toValue){
-        sellerBooksAlert("Silakan pilih Dari Tanggal dan Sampai Dengan terlebih dahulu.");
+        sellerBooksAlert("Silakan pilih From Date dan To Date terlebih dahulu.");
         return;
     }
 
@@ -29597,7 +29597,7 @@ function confirmDashboardCustomDateRange(){
     const to = getReportDateOnly(toValue);
 
     if(from && to && from > to){
-        sellerBooksAlert("Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.");
+        sellerBooksAlert("From Date tidak boleh lebih besar dari To Date.");
         return;
     }
 
@@ -29752,13 +29752,13 @@ function updateDashboardByPeriod(){
     DATA PENJUALAN AKAN DIHUBUNGKAN
     KE SINI
 
-    Saat engine Import Penjualan selesai,
+    Saat engine Import Sales selesai,
     dashboard akan mengambil transaksi:
 
-    Hari Ini
-    Minggu Ini
-    Bulan Ini
-    Tahun Ini
+    Today
+    This Week
+    This Month
+    This Year
 
     =========================================
     */
@@ -30313,7 +30313,7 @@ function getCostStoreName(id){
     const item = getCostStoresData().find(function(store){
         return String(store.id) === String(id);
     });
-    return item ? (item.name || "Akun Toko") : "Akun tidak ditemukan";
+    return item ? (item.name || "Store Accounts") : "Akun tidak ditemukan";
 }
 
 
@@ -30607,7 +30607,7 @@ function escapeCostHtml(value){
 
 
 /* =====================================================
-   MARKETPLACE & AKUN TOKO UNTUK BIAYA
+   MARKETPLACE & STORE ACCOUNTS UNTUK BIAYA
 ===================================================== */
 
 function getCostMarketplacesData(){
@@ -30696,7 +30696,7 @@ function loadCostStoreOptions(selectedId){
 
     storeSelect.innerHTML = `
         <option value="">
-            -- Pilih Akun Toko --
+            -- Pilih Accounts Toko --
         </option>
     `;
 
@@ -30712,7 +30712,7 @@ function loadCostStoreOptions(selectedId){
         .forEach(function(store){
             const option = document.createElement("option");
             option.value = store.id;
-            option.textContent = store.name || "Akun Toko";
+            option.textContent = store.name || "Store Accounts";
             storeSelect.appendChild(option);
         });
 
@@ -31325,7 +31325,7 @@ function saveSellerBooksSettings(){
        Bahasa dan seluruh Settings disimpan ke sellerbooks_user_data.data
        melalui mekanisme cloud SellerBooks yang sama seperti data bisnis.
        Queue tetap dipakai, lalu dipaksa persist segera agar perubahan bahasa
-       tersedia ketika akun dibuka dari perangkat/browser lain.
+       tersedia ketika accounts dibuka dari perangkat/browser lain.
     */
     if(typeof sellerBooksPersistCloudDataNow==="function"){
         sellerBooksPersistCloudDataNow().catch(function(error){
@@ -31380,7 +31380,7 @@ function saveSellerBooksSettings(){
         languageInfo.textContent =
             language === "en"
                 ? "Language saved to your account."
-                : "Bahasa tersimpan di akun Anda.";
+                : "Bahasa tersimpan di accounts Anda.";
     }
 
     if(currencyInfo){
@@ -31577,7 +31577,7 @@ function formatSellerBooksCurrency(value){
 
 /* =====================================================
    SELLERBOOKS - BAHASA ID / EN
-   Bahasa disimpan per akun melalui sellerBooksStorage.
+   Bahasa disimpan per accounts melalui sellerBooksStorage.
    Default tetap Bahasa Indonesia agar tidak mengubah
    pengalaman pengguna lama.
 ===================================================== */
@@ -31588,9 +31588,9 @@ const SELLERBOOKS_I18N = {
     "id": {
         "Dashboard":"Dashboard",
         "Marketplace":"Marketplace",
-        "Akun Toko":"Akun Toko",
+        "Store Accounts":"Store Accounts",
         "Master Produk":"Master Produk",
-        "Import Penjualan":"Import Penjualan",
+        "Import Sales":"Import Sales",
         "Biaya Lain":"Biaya Lain",
         "Piutang":"Piutang",
         "Rincian":"Rincian",
@@ -31600,23 +31600,23 @@ const SELLERBOOKS_I18N = {
         "Sistem":"Sistem",
         "Ringkasan bisnis marketplace Anda":"Ringkasan bisnis marketplace Anda",
         "Kelola marketplace bisnis Anda":"Kelola marketplace bisnis Anda",
-        "Kelola seluruh akun toko":"Kelola seluruh akun toko",
+        "Kelola seluruh accounts toko":"Kelola seluruh accounts toko",
         "Kelola produk dan SKU":"Kelola produk dan SKU",
         "Upload dan proses laporan penjualan":"Upload dan proses laporan penjualan",
         "Kelola biaya tambahan bisnis":"Kelola biaya tambahan bisnis",
         "Analisis bisnis marketplace Anda":"Analisis bisnis marketplace Anda",
         "Analisis laba dan kerugian setiap produk":"Analisis laba dan kerugian setiap produk",
         "Pengaturan SellerBooks":"Pengaturan SellerBooks",
-        "Hari Ini":"Hari Ini",
-        "Kemarin":"Kemarin",
-        "Minggu Ini":"Minggu Ini",
-        "Minggu Lalu":"Minggu Lalu",
-        "Bulan Ini":"Bulan Ini",
-        "Bulan Lalu":"Bulan Lalu",
-        "3 Bulan Terakhir":"3 Bulan Terakhir",
-        "Tahun Ini":"Tahun Ini",
-        "Pilih Tanggal":"Pilih Tanggal",
-        "Semua Periode":"Semua Periode",
+        "Today":"Today",
+        "Yesterday":"Yesterday",
+        "This Week":"This Week",
+        "Last Week":"Last Week",
+        "This Month":"This Month",
+        "Last Month":"Last Month",
+        "Last 3 Months":"Last 3 Months",
+        "This Year":"This Year",
+        "Custom Date":"Custom Date",
+        "All Periods":"All Periods",
         "Nama Bisnis":"Nama Bisnis",
         "Atur nama bisnis yang digunakan sebagai identitas usaha.":"Atur nama bisnis yang digunakan sebagai identitas usaha.",
         "Logo Bisnis":"Logo Bisnis",
@@ -31630,7 +31630,7 @@ const SELLERBOOKS_I18N = {
         "Bahasa":"Bahasa",
         "Pilih bahasa yang digunakan pada tampilan SellerBooks.":"Pilih bahasa yang digunakan pada tampilan SellerBooks.",
         "Bahasa Tampilan":"Bahasa Tampilan",
-        "Bahasa tersimpan di akun Anda.":"Bahasa tersimpan di akun Anda.",
+        "Bahasa tersimpan di accounts Anda.":"Bahasa tersimpan di accounts Anda.",
         "Simpan Bahasa":"Simpan Bahasa",
         "Biaya Packing Default":"Biaya Packing Default",
         "Nilai ini otomatis menjadi biaya packing per 1 order saat import penjualan.":"Nilai ini otomatis menjadi biaya packing per 1 order saat import penjualan.",
@@ -31651,9 +31651,9 @@ const SELLERBOOKS_I18N = {
     "en": {
         "Dashboard":"Dashboard",
         "Marketplace":"Marketplace",
-        "Akun Toko":"Store Accounts",
+        "Store Accounts":"Store Accounts",
         "Master Produk":"Product Master",
-        "Import Penjualan":"Sales Import",
+        "Import Sales":"Sales Import",
         "Biaya Lain":"Other Costs",
         "Piutang":"Receivables",
         "Rincian":"Details",
@@ -31663,23 +31663,23 @@ const SELLERBOOKS_I18N = {
         "Sistem":"System",
         "Ringkasan bisnis marketplace Anda":"Your marketplace business summary",
         "Kelola marketplace bisnis Anda":"Manage your business marketplaces",
-        "Kelola seluruh akun toko":"Manage all store accounts",
+        "Kelola seluruh accounts toko":"Manage all store accounts",
         "Kelola produk dan SKU":"Manage products and SKUs",
         "Upload dan proses laporan penjualan":"Upload and process sales reports",
         "Kelola biaya tambahan bisnis":"Manage additional business costs",
         "Analisis bisnis marketplace Anda":"Analyze your marketplace business",
         "Analisis laba dan kerugian setiap produk":"Analyze profit and loss for each product",
         "Pengaturan SellerBooks":"SellerBooks settings",
-        "Hari Ini":"Today",
-        "Kemarin":"Yesterday",
-        "Minggu Ini":"This Week",
-        "Minggu Lalu":"Last Week",
-        "Bulan Ini":"This Month",
-        "Bulan Lalu":"Last Month",
-        "3 Bulan Terakhir":"Last 3 Months",
-        "Tahun Ini":"This Year",
-        "Pilih Tanggal":"Custom Date",
-        "Semua Periode":"All Periods",
+        "Today":"Today",
+        "Yesterday":"Yesterday",
+        "This Week":"This Week",
+        "Last Week":"Last Week",
+        "This Month":"This Month",
+        "Last Month":"Last Month",
+        "Last 3 Months":"Last 3 Months",
+        "This Year":"This Year",
+        "Custom Date":"Custom Date",
+        "All Periods":"All Periods",
         "Nama Bisnis":"Business Name",
         "Atur nama bisnis yang digunakan sebagai identitas usaha.":"Set the business name used as your business identity.",
         "Logo Bisnis":"Business Logo",
@@ -31693,7 +31693,7 @@ const SELLERBOOKS_I18N = {
         "Bahasa":"Language",
         "Pilih bahasa yang digunakan pada tampilan SellerBooks.":"Choose the language used throughout SellerBooks.",
         "Bahasa Tampilan":"Display Language",
-        "Bahasa tersimpan di akun Anda.":"Language is saved to your account.",
+        "Bahasa tersimpan di accounts Anda.":"Language is saved to your account.",
         "Simpan Bahasa":"Save Language",
         "Biaya Packing Default":"Default Packing Cost",
         "Nilai ini otomatis menjadi biaya packing per 1 order saat import penjualan.":"This value is automatically used as the packing cost per order during sales import.",
@@ -31708,26 +31708,26 @@ const SELLERBOOKS_I18N = {
         "ID — Indonesia":"ID — Indonesia",
         "EN — English":"EN — English",
         "Semua Marketplace":"All Marketplaces",
-        "Semua Akun Toko":"All Store Accounts",
+        "Semua Accounts Toko":"All Store Accounts",
         "Semua Toko":"All Stores",
         "Data laporan gagal ditampilkan. Silakan refresh halaman.":"Report data could not be displayed. Please refresh the page.",
         "Belum ada data laporan.":"No report data yet.",
         "Tidak ada SKU yang belum ditemukan.":"No missing SKUs found.",
-        "Belum ada data penjualan.":"No sales data yet.",
-        "Belum ada data penjualan":"No sales data yet",
-        "Belum ada data penjualan pada periode ini":"No sales data for this period",
+        "No sales data.":"No sales data yet.",
+        "No sales data":"No sales data yet",
+        "No sales data for this period":"No sales data for this period",
         "Belum ada marketplace.":"No marketplaces yet.",
-        "Belum Ada Akun Toko":"No Store Accounts Yet",
+        "Belum Ada Accounts Toko":"No Store Accounts Yet",
         "Belum Ada Produk":"No Products Yet",
         "Belum ada master":"No master products yet",
         "Selamat Datang 👋":"Welcome 👋",
-        "Masuk menggunakan akun Google untuk mengakses SellerBooks.":"Sign in with your Google account to access SellerBooks.",
+        "Masuk menggunakan accounts Google untuk mengakses SellerBooks.":"Sign in with your Google account to access SellerBooks.",
         "Masuk dengan Google":"Sign in with Google",
         "Data bisnis Anda terlindungi":"Your business data is protected",
         "Lengkapi Data Pemilik":"Complete Owner Information",
         "Sebelum masuk ke SellerBooks, silakan masukkan nama pemilik atau nama usaha Anda.":"Before entering SellerBooks, please enter the owner or business name.",
         "💾 Simpan & Masuk SellerBooks":"💾 Save & Enter SellerBooks",
-        "Data ini akan digunakan sebagai identitas pemilik akun SellerBooks Anda.":"This data will be used as the identity of your SellerBooks account.",
+        "Data ini akan digunakan sebagai identitas pemilik accounts SellerBooks Anda.":"This data will be used as the identity of your SellerBooks account.",
         "Marketplace Intelligence":"Marketplace Intelligence",
         "Data Bisnis":"Business Data",
         "Selamat Datang di SellerBooks 👋":"Welcome to SellerBooks 👋",
@@ -31737,17 +31737,17 @@ const SELLERBOOKS_I18N = {
         "LABA BERSIH":"NET PROFIT",
         "Setelah seluruh biaya":"After all costs",
         "Performa keuntungan bisnis":"Business profit performance",
-        "TOTAL PIUTANG RESELLER":"TOTAL RESELLER RECEIVABLES",
-        "Total piutang dikurangi pembayaran yang sudah masuk":"Total receivables minus payments received",
-        "Grafik Penjualan":"Sales Chart",
-        "Pergerakan penjualan berdasarkan periode":"Sales movement by period",
-        "Penjualan per Marketplace":"Sales by Marketplace",
-        "Perbandingan omzet berdasarkan marketplace":"Revenue comparison by marketplace",
+        "TOTAL RESELLER RECEIVABLES":"TOTAL RESELLER RECEIVABLES",
+        "Total receivables minus payments received":"Total receivables minus payments received",
+        "Sales Chart":"Sales Chart",
+        "Sales movement by period":"Sales movement by period",
+        "Sales by Marketplace":"Sales by Marketplace",
+        "Revenue comparison by marketplace":"Revenue comparison by marketplace",
         "Performa Marketplace":"Marketplace Performance",
-        "Ringkasan seluruh marketplace":"Summary of all marketplaces",
+        "Summary of all marketplaces":"Summary of all marketplaces",
         "Lihat Marketplace →":"View Marketplaces →",
-        "Penjualan":"Sales",
-        "Laba Bersih":"Net Profit",
+        "Sales":"Sales",
+        "Net Profit":"Net Profit",
         "Catat dan pantau total piutang secara terpisah dari laba bisnis.":"Record and monitor receivables separately from business profit.",
         "Tambah Piutang":"Add Receivable",
         "Setiap data baru akan menambah total piutang.":"Each new entry will increase total receivables.",
@@ -31771,9 +31771,9 @@ const SELLERBOOKS_I18N = {
         "Kelola marketplace yang digunakan oleh bisnis Anda.":"Manage the marketplaces used by your business.",
         "0 Marketplace":"0 Marketplaces",
         "+ Tambah Marketplace":"+ Add Marketplace",
-        "Kelola seluruh akun toko dari marketplace yang aktif di bisnis Anda.":"Manage all store accounts from your active marketplaces.",
-        "0 Akun Toko":"0 Store Accounts",
-        "+ Tambah Akun Toko":"+ Add Store Account",
+        "Kelola seluruh accounts toko dari marketplace yang aktif di bisnis Anda.":"Manage all store accounts from your active marketplaces.",
+        "0 Accounts Toko":"0 Store Accounts",
+        "+ Tambah Accounts Toko":"+ Add Store Account",
         "Kelola seluruh produk, SKU, modal, dan data dasar produk bisnis Anda.":"Manage all products, SKUs, costs, and basic product data.",
         "0 Produk":"0 Products",
         "+ Tambah Produk":"+ Add Product",
@@ -31785,7 +31785,7 @@ const SELLERBOOKS_I18N = {
         "Harga Jual":"Selling Price",
         "Stok":"Stock",
         "Status":"Status",
-        "Upload Laporan Penjualan":"Upload Sales Report",
+        "Upload Laporan Sales":"Upload Sales Report",
         "Klik di sini untuk memilih file":"Click here to choose a file",
         "+ Pilih File":"+ Choose File",
         "Menunggu Analisis":"Waiting for Analysis",
@@ -31806,8 +31806,8 @@ const SELLERBOOKS_I18N = {
         "Pilih kolom yang berisi jumlah produk terjual.":"Select the column containing the quantity sold.",
         "🏪 Marketplace Terdeteksi":"🏪 Detected Marketplace",
         "SellerBooks menentukan marketplace dari struktur/header file.":"SellerBooks determines the marketplace from the file structure/header.",
-        "👤 Pilih Akun Toko":"👤 Select Store Account",
-        "-- Pilih Akun Toko --":"-- Select Store Account --",
+        "👤 Pilih Accounts Toko":"👤 Select Store Account",
+        "-- Pilih Accounts Toko --":"-- Select Store Account --",
         "Akun toko wajib dipilih sebelum data disimpan.":"A store account must be selected before saving data.",
         "📦 Biaya Packing / 1 Order":"📦 Packing Cost / Order",
         "Nominal dapat diubah dan disimpan untuk import berikutnya.":"The amount can be changed and saved for the next import.",
@@ -31832,16 +31832,16 @@ const SELLERBOOKS_I18N = {
         "Produk Untung":"Profitable Products",
         "Produk Minus":"Loss-Making Products",
         "Total Laba Produk":"Total Product Profit",
-        "Rincian Penjualan Per Produk":"Sales Details by Product",
+        "Rincian Sales Per Produk":"Sales Details by Product",
         "Produk minus ditampilkan paling atas agar mudah diperbaiki.":"Loss-making products are shown first for easier review.",
-        "Total Penjualan":"Total Sales",
+        "Total Sales":"Total Sales",
         "Admin Marketplace":"Marketplace Fees",
         "Laba Produk":"Product Profit",
         "Laporan Bisnis":"Business Reports",
-        "Analisis penjualan, biaya, dan laba seluruh marketplace serta akun toko.":"Analyze sales, costs, and profit across all marketplaces and store accounts.",
+        "Analisis penjualan, biaya, dan laba seluruh marketplace serta accounts toko.":"Analyze sales, costs, and profit across all marketplaces and store accounts.",
         "📄 Download PDF Laporan":"📄 Download PDF Report",
         "Filter Laporan":"Report Filter",
-        "Pilih periode, marketplace, dan akun toko.":"Select the period, marketplace, and store account.",
+        "Pilih periode, marketplace, dan accounts toko.":"Select the period, marketplace, and store account.",
         "Menampilkan semua data penjualan.":"Showing all sales data.",
         "Hapus Laporan":"Delete Report",
         "🗑️ Hapus Laporan":"🗑️ Delete Report",
@@ -31862,11 +31862,11 @@ const SELLERBOOKS_I18N = {
         "Daftar SKU transaksi yang belum memiliki pasangan pada Master Produk.":"List of transaction SKUs that do not have a matching Product Master entry.",
         "Total QTY":"Total QTY",
         "Ringkasan performa berdasarkan marketplace.":"Performance summary by marketplace.",
-        "Penjualan Bersih":"Net Sales",
+        "Sales Bersih":"Net Sales",
         "Produk Terjual":"Products Sold",
-        "Performa Akun Toko":"Store Account Performance",
-        "Ringkasan performa masing-masing akun toko.":"Performance summary for each store account.",
-        "Detail Penjualan":"Sales Details",
+        "Performa Accounts Toko":"Store Account Performance",
+        "Ringkasan performa masing-masing accounts toko.":"Performance summary for each store account.",
+        "Detail Sales":"Sales Details",
         "Daftar transaksi berdasarkan filter yang dipilih.":"Transactions based on the selected filters.",
         "Order":"Order",
         "Order ID":"Order ID",
@@ -31885,7 +31885,7 @@ const SELLERBOOKS_I18N = {
         "Kurs tersimpan digunakan untuk konversi.":"Saved rates are used for conversion.",
         "💾 Simpan Kurs":"💾 Save Rates",
         "Pilih bahasa yang digunakan pada tampilan SellerBooks.":"Choose the language used throughout SellerBooks.",
-        "Bahasa tersimpan di akun Anda.":"Language is saved to your account.",
+        "Bahasa tersimpan di accounts Anda.":"Language is saved to your account.",
         "💾 Simpan Bahasa":"💾 Save Language",
         "Biaya Packing Default":"Default Packing Cost",
         "Nilai ini otomatis menjadi biaya packing per 1 order saat import penjualan.":"This value is automatically used as the packing cost per order during sales import.",
@@ -31899,14 +31899,14 @@ const SELLERBOOKS_I18N = {
         "Simpan seluruh data SellerBooks ke file atau pulihkan dari file backup.":"Save all SellerBooks data to a file or restore from a backup.",
         "⬇️ Backup Data":"⬇️ Backup Data",
         "⬆️ Restore Data":"⬆️ Restore Data",
-        "Tambah Akun Toko":"Add Store Account",
+        "Tambah Accounts Toko":"Add Store Account",
         "Pilih Marketplace":"Select Marketplace",
-        "Nama Akun Toko":"Store Account Name",
+        "Nama Accounts Toko":"Store Account Name",
         "Kode Toko":"Store Code",
         "Biaya Admin Marketplace (%)":"Marketplace Fee (%)",
-        "Isi sesuai biaya admin akun toko ini.":"Enter the marketplace fee for this store account.",
-        "Status Akun Toko":"Store Account Status",
-        "Simpan Akun Toko":"Save Store Account",
+        "Isi sesuai biaya admin accounts toko ini.":"Enter the marketplace fee for this store account.",
+        "Status Accounts Toko":"Store Account Status",
+        "Simpan Accounts Toko":"Save Store Account",
         "Edit Piutang":"Edit Receivable",
         "Simpan Perubahan":"Save Changes",
         "Tambah Produk":"Add Product",
@@ -31927,8 +31927,8 @@ const SELLERBOOKS_I18N = {
         "Marketplace *":"Marketplace *",
         "-- Pilih Marketplace --":"-- Select Marketplace --",
         "Pilih marketplace tempat biaya ini terjadi.":"Select the marketplace where this cost occurred.",
-        "Akun Toko *":"Store Account *",
-        "Hanya akun dari marketplace yang dipilih yang ditampilkan.":"Only accounts from the selected marketplace are shown.",
+        "Store Accounts *":"Store Account *",
+        "Hanya accounts dari marketplace yang dipilih yang ditampilkan.":"Only accounts from the selected marketplace are shown.",
         "Kategori Biaya *":"Cost Category *",
         "-- Pilih Kategori --":"-- Select Category --",
         "Keterangan *":"Description *",
@@ -31945,7 +31945,7 @@ const SELLERBOOKS_I18N = {
         "✓ Sudah terintegrasi sukses":"✓ Successfully integrated",
         "🔄 Tarik Order":"🔄 Pull Orders",
         "⛓ Copot Integrasi":"⛓ Disconnect Integration",
-        "🔗 Integrasikan Akun":"🔗 Integrate Account",
+        "🔗 Integrasikan Accounts":"🔗 Integrate Account",
         "KODE TOKO":"STORE CODE",
         "MARKETPLACE":"MARKETPLACE",
         "BIAYA ADMIN":"ADMIN FEE",
@@ -31966,8 +31966,8 @@ const SELLERBOOKS_I18N = {
         "Filter":"Filter",
         "Reset":"Reset",
         "Semua":"All",
-        "Dari Tanggal":"From Date",
-        "Sampai Dengan":"To Date",
+        "From Date":"From Date",
+        "To Date":"To Date",
         "Nama":"Name",
         "Email":"Email",
         "Catatan":"Notes",
@@ -32012,11 +32012,11 @@ const SELLERBOOKS_I18N = {
         "Marketplace Business Intelligence":"Marketplace Business Intelligence",
         "Kelola Marketplace Lebih Cerdas.":"Manage Marketplaces Smarter.",
         "Multi Marketplace":"Multi Marketplace",
-        "Multi Akun Toko":"Multi Store Accounts",
+        "Multi Accounts Toko":"Multi Store Accounts",
         "Analisis Laba Bisnis":"Business Profit Analysis",
         "MBI — Semua Angka Bisnis, Dalam Satu Kendali.":"MBI — All Business Numbers, In One Control Center.",
         "Detail penjualan gagal ditampilkan. Silakan refresh halaman.":"Sales details could not be displayed. Please refresh the page.",
-        "Gagal menampilkan Performa Akun Toko":"Failed to display Store Account Performance",
+        "Gagal menampilkan Performa Accounts Toko":"Failed to display Store Account Performance",
         "Nama":"Name",
         "Akun":"Account",
         "Marketplace:":"Marketplace:",
@@ -32025,7 +32025,7 @@ const SELLERBOOKS_I18N = {
         "Catatan":"Notes",
         "Belum ada data untuk periode ini.":"No data for this period.",
         "Belum ada data marketplace.":"No marketplace data yet.",
-        "Belum ada akun toko.":"No store accounts yet.",
+        "Belum ada accounts toko.":"No store accounts yet.",
         "Belum ada produk.":"No products yet.",
         "Belum ada biaya.":"No costs yet.",
         "Tidak ada piutang untuk nama tersebut.":"No receivables for this name.",
@@ -32034,7 +32034,7 @@ const SELLERBOOKS_I18N = {
         "Belum ada pembayaran":"No payments yet",
         "SellerBooks | Marketplace Business Intelligence":"SellerBooks | Marketplace Business Intelligence",
         "Akun:":"Account:",
-        "Lihat Piutang →":"View Receivables →",
+        "View Receivables →":"View Receivables →",
         "Daftar Piutang":"Receivables List",
         "Bayar Piutang":"Pay Receivable",
         "Catat pembayaran piutang. Pembayaran akan mengurangi sisa piutang.":"Record a receivable payment. The payment will reduce the remaining receivable.",
@@ -32042,27 +32042,27 @@ const SELLERBOOKS_I18N = {
         "Sisa Piutang Per Reseller":"Remaining Receivables by Reseller",
         "Pastikan SellerBooks membaca kolom SKU dan QTY dengan benar sebelum melanjutkan.":"Make sure SellerBooks reads the SKU and QTY columns correctly before continuing.",
         "Analisis laba setiap SKU untuk mendeteksi produk yang minus dan mengetahui produk mana yang perlu diperbaiki.":"Analyze profit for each SKU to detect loss-making products and identify which products need improvement.",
-        "Pilih periode, marketplace, dan akun toko untuk mengetahui produk minus secara lebih spesifik.":"Select a period, marketplace, and store account to identify loss-making products more precisely.",
-        "Hapus data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan akun toko.":"Delete sales import data specifically by date, marketplace, and store account.",
+        "Pilih periode, marketplace, dan accounts toko untuk mengetahui produk minus secara lebih spesifik.":"Select a period, marketplace, and store account to identify loss-making products more precisely.",
+        "Hapus data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.":"Delete sales import data specifically by date, marketplace, and store account.",
         "Packing":"Packing",
         "Kelola konfigurasi bisnis dan preferensi SellerBooks Anda.":"Manage your SellerBooks business configuration and preferences.",
         "ℹ️ Pembulatan hanya memengaruhi tampilan angka, bukan data transaksi yang tersimpan.":"ℹ️ Rounding only affects displayed numbers, not stored transaction data.",
         "⚠️ Restore akan mengganti data SellerBooks saat ini dengan isi file backup.":"⚠️ Restore will replace the current SellerBooks data with the contents of the backup file.",
-        "Tambahkan akun toko dari marketplace yang aktif untuk mulai mengelola bisnis.":"Add a store account from an active marketplace to start managing your business.",
+        "Tambahkan accounts toko dari marketplace yang aktif untuk mulai mengelola bisnis.":"Add a store account from an active marketplace to start managing your business.",
         "Tambahkan produk secara manual atau import menggunakan Excel.":"Add products manually or import them using Excel.",
         "Default packing:":"Default packing:",
         "Pastikan":"Make sure",
         "Gagal menampilkan Performa Marketplace:":"Failed to display Marketplace Performance:",
-        "Gagal menampilkan Performa Akun Toko:":"Failed to display Store Account Performance:",
+        "Gagal menampilkan Performa Accounts Toko:":"Failed to display Store Account Performance:",
         "Catat pembayaran piutang.":"Record receivable payment.",
         "Pembayaran akan mengurangi sisa piutang.":"The payment will reduce the remaining receivable.",
         "Jangan ubah logika perhitungan.":"Do not change the calculation logic.",
         "Nilai":"Value",
         "Terakhir":"Last",
-        "Pantau penjualan, produk keluar, akun toko dan laba bisnis Anda dalam satu sistem.":"Monitor sales, products sold, store accounts, and business profit in one system.",
+        "Pantau penjualan, produk keluar, accounts toko dan laba bisnis Anda dalam satu sistem.":"Monitor sales, products sold, store accounts, and business profit in one system.",
         "Setiap pengguna hanya dapat mengakses data bisnis yang memiliki izin untuknya.":"Each user can only access the business data they are authorized to access.",
         "Contoh: Adiimasa":"Example: Adiimasa",
-        "Status akun masih menunggu persetujuan Core Adiimasa.":"Your account is still waiting for Core Adiimasa approval.",
+        "Status accounts masih menunggu persetujuan Core Adiimasa.":"Your account is still waiting for Core Adiimasa approval.",
         "Akun berhasil login, tetapi profile SellerBooks belum terbentuk. Silakan coba lagi beberapa saat lagi.":"You signed in successfully, but your SellerBooks profile has not been created yet. Please try again shortly.",
         "Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu.":"Please enter the Owner Name or Business Name first.",
         "Nama Pemilik berhasil direset.":"Owner Name reset successfully.",
@@ -32123,7 +32123,7 @@ function sellerBooksTranslateTextNodes(root, language){
 }
 
 const SELLERBOOKS_EN_FALLBACK = {
-"silakan":"please","terlebih dahulu":"first","kelola":"manage","Anda":"your","bisnis":"business","satu":"one","sistem":"system","terjual":"sold","keluar":"sold","tidak dapat":"cannot","tidak bisa":"cannot","tidak ditemukan":"not found","belum ditemukan":"not found yet","belum ada":"no","sudah":"already","akan":"will","harus":"must","wajib":"required","dapat":"can","dengan":"with","tanpa":"without","sesuai":"according to","berdasarkan":"based on","digunakan":"used","menggunakan":"using","menampilkan":"display","ditampilkan":"displayed","tersimpan":"saved","disimpan":"saved","menyimpan":"save","simpan":"save","berhasil":"successfully","gagal":"failed","kesalahan":"error","terjadi":"occurred","terjadi kesalahan":"an error occurred","perubahan":"changes","diperbarui":"updated","memuat":"loading","membaca":"reading","dibaca":"read","menghapus":"delete","dihapus":"deleted","penghapusan":"deletion","menambahkan":"add","tambahkan":"add","mengedit":"edit","diedit":"edited","pilih":"select","dipilih":"selected","memilih":"select","isi":"enter","masukkan":"enter","mengisi":"enter","kosong":"empty","kosongkan":"clear","lengkapi":"complete","baru":"new","lama":"old","semua":"all","setiap":"each","hanya":"only","jika":"if","apabila":"if","ketika":"when","saat":"when","sebelum":"before","setelah":"after","hingga":"until","sampai":"until","dalam":"in","pada":"on","dari":"from","ke":"to","untuk":"for","oleh":"by","dan":"and","atau":"or","yang":"that","ini":"this","itu":"that","tersebut":"the","juga":"also","lebih":"more","kurang":"less","tidak":"not","belum":"not yet","bukan":"not","ada":"exists","diperlukan":"required","dibutuhkan":"required","tersedia":"available","tidak tersedia":"not available","aktif":"active","tidak aktif":"inactive","menunggu":"waiting","berikutnya":"next","sebelumnya":"previous","kembali":"back","lanjutkan":"continue","batal":"cancel","konfirmasi":"confirm","tutup":"close","buka":"open","cari":"search","filter":"filter","reset":"reset","tanggal":"date","hari":"day","kemarin":"yesterday","minggu":"week","bulan":"month","tahun":"year","periode":"period","rentang":"range","nama":"name","nama produk":"product name","nama bisnis":"business name","nama toko":"store name","nama akun":"account name","pemilik":"owner","usaha":"business","akun":"account","akun toko":"store account","toko":"store","produk":"product","produk terjual":"products sold","penjualan":"sales","penjualan bersih":"net sales","laporan":"report","rincian":"details","biaya":"cost","biaya lain":"other costs","biaya admin":"admin fee","admin marketplace":"marketplace fee","admin sku":"SKU fee","modal":"cost","hpp":"COGS","harga jual":"selling price","harga":"price","stok":"stock","jumlah":"amount","jumlah data":"data count","jumlah baris":"rows","jumlah kolom":"columns","keterangan":"description","nominal":"amount","diskon":"discount","laba":"profit","laba bersih":"net profit","laba kotor":"gross profit","rugi":"loss","total":"total","piutang":"receivable","pembayaran":"payment","sudah dibayar":"paid","belum dibayar":"unpaid","pesanan":"orders","order":"order","nomor pesanan":"order number","nomor resi":"tracking number","resi":"tracking number","pengiriman":"shipment","pengambilan":"pickup","dikirim":"shipped","menunggu pengiriman":"awaiting shipment","menunggu pengambilan":"awaiting pickup","selesai":"completed","dibatalkan":"cancelled","pengembalian":"return","integrasi":"integration","integrasikan":"integrate","terintegrasi":"integrated","copot":"disconnect","sinkronisasi":"sync","sinkron":"sync","tarik order":"pull orders","ambil order":"pull orders","upload":"upload","download":"download","file":"file","kolom":"column","baris":"row","template":"template","pengaturan":"settings","bahasa":"language","mata uang":"currency","kurs":"exchange rate","pembulatan":"rounding","packing":"packing","default":"default","per order":"per order","per transaksi":"per transaction","hari ini":"today","hari kemarin":"yesterday","minggu ini":"this week","minggu lalu":"last week","bulan ini":"this month","bulan lalu":"last month","3 bulan terakhir":"last 3 months","tahun ini":"this year","pilih tanggal":"custom date","semua periode":"all periods","semua marketplace":"all marketplaces","semua akun toko":"all store accounts","semua status":"all statuses","tidak ada data":"no data","belum ada data":"no data yet","belum ada transaksi":"no transactions yet","tidak ada transaksi":"no transactions","belum ada produk":"no products yet","belum ada akun":"no accounts yet","belum ada marketplace":"no marketplaces yet","belum ada biaya":"no costs yet","belum ada piutang":"no receivables yet","belum ada pembayaran":"no payments yet","wajib diisi":"is required","harus diisi":"is required","harus dipilih":"must be selected","tidak boleh kosong":"cannot be empty","tidak boleh sama":"must be different","lebih dari":"greater than","kurang dari":"less than","maksimal":"maximum","minimal":"minimum","terdekat":"nearest","contoh":"example","catatan":"note","pesan":"message","notifikasi":"notification","status":"status","hasil":"result","ringkasan":"summary","performa":"performance","pergerakan":"movement","perbandingan":"comparison","daftar":"list","riwayat":"history","identitas":"identity","sesi":"session","login":"login","keluar":"sign out","masuk":"sign in","persetujuan":"approval","ditolak":"rejected","ditangguhkan":"suspended","akses":"access","koneksi":"connection","perangkat":"device",
+"silakan":"please","terlebih dahulu":"first","kelola":"manage","Anda":"your","bisnis":"business","satu":"one","sistem":"system","terjual":"sold","keluar":"sold","tidak dapat":"cannot","tidak bisa":"cannot","tidak ditemukan":"not found","belum ditemukan":"not found yet","belum ada":"no","sudah":"already","akan":"will","harus":"must","wajib":"required","dapat":"can","dengan":"with","tanpa":"without","sesuai":"according to","berdasarkan":"based on","digunakan":"used","menggunakan":"using","menampilkan":"display","ditampilkan":"displayed","tersimpan":"saved","disimpan":"saved","menyimpan":"save","simpan":"save","berhasil":"successfully","gagal":"failed","kesalahan":"error","terjadi":"occurred","terjadi kesalahan":"an error occurred","perubahan":"changes","diperbarui":"updated","memuat":"loading","membaca":"reading","dibaca":"read","menghapus":"delete","dihapus":"deleted","penghapusan":"deletion","menambahkan":"add","tambahkan":"add","mengedit":"edit","diedit":"edited","pilih":"select","dipilih":"selected","memilih":"select","isi":"enter","masukkan":"enter","mengisi":"enter","kosong":"empty","kosongkan":"clear","lengkapi":"complete","baru":"new","lama":"old","semua":"all","setiap":"each","hanya":"only","jika":"if","apabila":"if","ketika":"when","saat":"when","sebelum":"before","setelah":"after","hingga":"until","sampai":"until","dalam":"in","pada":"on","dari":"from","ke":"to","untuk":"for","oleh":"by","dan":"and","atau":"or","yang":"that","ini":"this","itu":"that","tersebut":"the","juga":"also","lebih":"more","kurang":"less","tidak":"not","belum":"not yet","bukan":"not","ada":"exists","diperlukan":"required","dibutuhkan":"required","tersedia":"available","tidak tersedia":"not available","aktif":"active","tidak aktif":"inactive","menunggu":"waiting","berikutnya":"next","sebelumnya":"previous","kembali":"back","lanjutkan":"continue","batal":"cancel","konfirmasi":"confirm","tutup":"close","buka":"open","cari":"search","filter":"filter","reset":"reset","tanggal":"date","hari":"day","kemarin":"yesterday","minggu":"week","bulan":"month","tahun":"year","periode":"period","rentang":"range","nama":"name","nama produk":"product name","nama bisnis":"business name","nama toko":"store name","nama accounts":"account name","pemilik":"owner","usaha":"business","akun":"account","akun toko":"store account","toko":"store","produk":"product","produk terjual":"products sold","penjualan":"sales","penjualan bersih":"net sales","laporan":"report","rincian":"details","biaya":"cost","biaya lain":"other costs","biaya admin":"admin fee","admin marketplace":"marketplace fee","admin sku":"SKU fee","modal":"cost","hpp":"COGS","harga jual":"selling price","harga":"price","stok":"stock","jumlah":"amount","jumlah data":"data count","jumlah baris":"rows","jumlah kolom":"columns","keterangan":"description","nominal":"amount","diskon":"discount","laba":"profit","laba bersih":"net profit","laba kotor":"gross profit","rugi":"loss","total":"total","piutang":"receivable","pembayaran":"payment","sudah dibayar":"paid","belum dibayar":"unpaid","pesanan":"orders","order":"order","nomor pesanan":"order number","nomor resi":"tracking number","resi":"tracking number","pengiriman":"shipment","pengambilan":"pickup","dikirim":"shipped","menunggu pengiriman":"awaiting shipment","menunggu pengambilan":"awaiting pickup","selesai":"completed","dibatalkan":"cancelled","pengembalian":"return","integrasi":"integration","integrasikan":"integrate","terintegrasi":"integrated","copot":"disconnect","sinkronisasi":"sync","sinkron":"sync","tarik order":"pull orders","ambil order":"pull orders","upload":"upload","download":"download","file":"file","kolom":"column","baris":"row","template":"template","pengaturan":"settings","bahasa":"language","mata uang":"currency","kurs":"exchange rate","pembulatan":"rounding","packing":"packing","default":"default","per order":"per order","per transaksi":"per transaction","hari ini":"today","hari kemarin":"yesterday","minggu ini":"this week","minggu lalu":"last week","bulan ini":"this month","bulan lalu":"last month","3 bulan terakhir":"last 3 months","tahun ini":"this year","pilih tanggal":"custom date","semua periode":"all periods","semua marketplace":"all marketplaces","semua accounts toko":"all store accounts","semua status":"all statuses","tidak ada data":"no data","belum ada data":"no data yet","belum ada transaksi":"no transactions yet","tidak ada transaksi":"no transactions","belum ada produk":"no products yet","belum ada accounts":"no accounts yet","belum ada marketplace":"no marketplaces yet","belum ada biaya":"no costs yet","belum ada piutang":"no receivables yet","belum ada pembayaran":"no payments yet","wajib diisi":"is required","harus diisi":"is required","harus dipilih":"must be selected","tidak boleh kosong":"cannot be empty","tidak boleh sama":"must be different","lebih dari":"greater than","kurang dari":"less than","maksimal":"maximum","minimal":"minimum","terdekat":"nearest","contoh":"example","catatan":"note","pesan":"message","notifikasi":"notification","status":"status","hasil":"result","ringkasan":"summary","performa":"performance","pergerakan":"movement","perbandingan":"comparison","daftar":"list","riwayat":"history","identitas":"identity","sesi":"session","login":"login","keluar":"sign out","masuk":"sign in","persetujuan":"approval","ditolak":"rejected","ditangguhkan":"suspended","akses":"access","koneksi":"connection","perangkat":"device",
     "hapus":"delete",
     "permanen":"permanently",
     "data":"data",
@@ -32140,7 +32140,7 @@ const SELLERBOOKS_EN_FALLBACK = {
     "laporan sku":"SKU report",
     "laporan keuangan":"Financial report",
     "laporan marketplace":"Marketplace report",
-    "laporan akun toko":"Store account report",
+    "laporan accounts toko":"Store account report",
     "sku belum ada":"SKU not found",
     "sku belum ada di master produk":"SKU not found in Product Master",
     "tidak dikenali":"Unrecognized",
@@ -32149,7 +32149,7 @@ const SELLERBOOKS_EN_FALLBACK = {
     "harus antara":"must be between",
     "terdaftar":"registered",
     "aktifkan":"activate",
-    "integrasikan akun":"integrate account",
+    "integrasikan accounts":"integrate account",
     "integrasi berhasil":"integration successful",
     "integrasi gagal":"integration failed",
     "belum tersedia":"not available",
@@ -32204,7 +32204,7 @@ const SELLERBOOKS_EN_FALLBACK = {
     "nama pemilik":"owner name",
     "akun gmail":"Gmail account",
     "tetap tersimpan":"remains saved",
-    "status akun":"account status",
+    "status accounts":"account status",
     "tidak dapat digunakan":"cannot be used",
     "telah ditangguhkan":"has been suspended",
     "telah ditolak":"has been rejected",
@@ -32241,23 +32241,23 @@ const SELLERBOOKS_EN_FALLBACK = {
     "mengganti":"replace",
     "isi file":"file contents",
     "isi sesuai":"enter according to",
-    "status akun toko":"store account status",
+    "status accounts toko":"store account status",
     "toko ini":"this store",
     "dari marketplace":"from the marketplace",
-    "hanya akun":"only accounts",
+    "hanya accounts":"only accounts",
     "kategori biaya":"cost category",
     "lainnya":"other",
     "nominal biaya":"cost amount",
     "simpan biaya":"save cost",
     "simpan marketplace":"save marketplace",
     "simpan produk":"save product",
-    "simpan akun toko":"save store account",
+    "simpan accounts toko":"save store account",
     "simpan pembayaran":"save payment",
     "edit":"edit",
     "tambah":"add",
     "pilih marketplace":"select marketplace",
     "pilih kategori":"select category",
-    "pilih akun toko":"select store account",
+    "pilih accounts toko":"select store account",
     "pilih kolom sku":"select SKU column",
     "pilih kolom qty":"select QTY column",
     "belum dapat dikenali":"cannot be identified yet",
@@ -32370,7 +32370,7 @@ function applySellerBooksLanguage(){
             en:["Marketplace","Manage your business marketplaces"]
         },
         stores:{
-            id:["Akun Toko","Kelola seluruh akun toko"],
+            id:["Store Accounts","Kelola seluruh accounts toko"],
             en:["Store Accounts","Manage all store accounts"]
         },
         products:{
@@ -32378,7 +32378,7 @@ function applySellerBooksLanguage(){
             en:["Product Master","Manage products and SKUs"]
         },
         import:{
-            id:["Import Penjualan","Upload dan proses laporan penjualan"],
+            id:["Import Sales","Upload dan proses laporan penjualan"],
             en:["Sales Import","Upload and process sales reports"]
         },
         costs:{
@@ -32419,7 +32419,7 @@ function applySellerBooksLanguage(){
         languageInfo.textContent =
             language === "en"
                 ? "Language is saved to your account."
-                : "Bahasa tersimpan di akun Anda.";
+                : "Bahasa tersimpan di accounts Anda.";
     }
     }finally{
         sellerBooksI18nApplying = false;
