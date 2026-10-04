@@ -19147,7 +19147,7 @@ function renderStoreMarketplaceFilter(){
 
         <option value="all">
 
-            Semua Marketplace
+            ${sellerBooksCurrentLanguage() === "en" ? "All Marketplaces" : "Semua Marketplace"}
 
         </option>
 
@@ -21390,7 +21390,7 @@ function renderStores(skipIntegrationRefresh){
                     </div>
 <div class="store-info-item">
 
-    BIAYA ADMIN
+    ${sellerBooksCurrentLanguage() === "en" ? "ADMIN FEE" : "BIAYA ADMIN"}
 
     <strong>
         ${
