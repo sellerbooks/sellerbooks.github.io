@@ -31978,14 +31978,37 @@ const SELLERBOOKS_I18N = {
         "Berikutnya":"Next",
         "Sebelumnya":"Previous",
         "Halaman":"Page",
-        "baris":"rows",
-        "dari":"of",
-        "terakhir":"last",
-        "maksimal":"maximum",
-        "hingga":"up to",
-        "hari":"days",
-        "bulan":"months",
-        "tahun":"years"
+        "tahun":"years",
+        "Nama Pemilik / Nama Usaha":"Owner Name / Business Name",
+        "Maksimal rentang tanggal 3 bulan terakhir sampai hari ini.":"Maximum date range is the last 3 months through today.",
+        "HPP / Modal":"COGS / Cost",
+        "Admin % SKU":"SKU Fee %",
+        "Nama File":"File Name",
+        "Nominal":"Amount",
+        "Maksimal rentang tanggal 3 bulan terakhir.":"Maximum date range is the last 3 months.",
+        "Marketplace Business Intelligence":"Marketplace Business Intelligence",
+        "Kelola Marketplace Lebih Cerdas.":"Manage Marketplaces Smarter.",
+        "Multi Marketplace":"Multi Marketplace",
+        "Multi Akun Toko":"Multi Store Accounts",
+        "Analisis Laba Bisnis":"Business Profit Analysis",
+        "MBI — Semua Angka Bisnis, Dalam Satu Kendali.":"MBI — All Business Numbers, In One Control Center.",
+        "Detail penjualan gagal ditampilkan. Silakan refresh halaman.":"Sales details could not be displayed. Please refresh the page.",
+        "Gagal menampilkan Performa Akun Toko":"Failed to display Store Account Performance",
+        "Nama":"Name",
+        "Akun":"Account",
+        "Marketplace:":"Marketplace:",
+        "Total":"Total",
+        "Data":"Data",
+        "Catatan":"Notes",
+        "Belum ada data untuk periode ini.":"No data for this period.",
+        "Belum ada data marketplace.":"No marketplace data yet.",
+        "Belum ada akun toko.":"No store accounts yet.",
+        "Belum ada produk.":"No products yet.",
+        "Belum ada biaya.":"No costs yet.",
+        "Tidak ada piutang untuk nama tersebut.":"No receivables for this name.",
+        "Tidak ada pembayaran untuk nama tersebut.":"No payments for this name.",
+        "Belum ada piutang":"No receivables yet",
+        "Belum ada pembayaran":"No payments yet"
     }
 };
 
@@ -32028,7 +32051,24 @@ function sellerBooksTranslateTextNodes(root, language){
         if(!core) return;
 
         const dictionary = SELLERBOOKS_I18N[language] || SELLERBOOKS_I18N.id;
-        const translated = dictionary[core];
+        let translated = dictionary[core];
+
+        /*
+           Handle dynamic table/pagination strings that contain runtime
+           numbers or marketplace/account names, e.g. "1-20 dari 100".
+        */
+        if(translated === undefined && language === "en"){
+            translated = core
+                .replace(/\bdari\b/gi, "of")
+                .replace(/\bNama Pemilik \/ Nama Usaha\b/gi, "Owner Name / Business Name")
+                .replace(/\bAkun\b/g, "Account")
+                .replace(/\bKeterangan\b/g, "Description")
+                .replace(/\bJumlah\b/g, "Amount")
+                .replace(/\bNominal\b/g, "Amount")
+                .replace(/\bTanggal\b/g, "Date");
+            if(translated === core) return;
+        }
+
         if(translated === undefined) return;
 
         const leading = String(original).match(/^\s*/)?.[0] || "";
