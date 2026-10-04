@@ -4637,7 +4637,7 @@ function loadReportMarketplaceFilter(){
 
     select.innerHTML = `
         <option value="all">
-            Semua Marketplace
+            ${sellerBooksCurrentLanguage() === "en" ? "All Marketplaces" : "Semua Marketplace"}
         </option>
     `;
 
@@ -4737,7 +4737,7 @@ function loadReportStoreFilter(){
 
     storeSelect.innerHTML = `
         <option value="all">
-            Semua Accounts Toko
+            ${sellerBooksCurrentLanguage() === "en" ? "All Store Accounts" : "Semua Accounts Toko"}
         </option>
     `;
 
@@ -7502,7 +7502,7 @@ function calculateReportFinancial(){
 
 
         /*
-           BIAYA ADMIN TOKO
+           ${sellerBooksCurrentLanguage() === "en" ? "ADMIN FEE" : "BIAYA ADMIN"} TOKO
         */
 
         const feePercent =
@@ -21117,9 +21117,8 @@ function renderStores(skipIntegrationRefresh){
     if(count){
 
         count.innerText =
-
             visibleStores.length +
-            " Accounts Toko";
+            (sellerBooksCurrentLanguage() === "en" ? " Store Accounts" : " Accounts Toko");
 
     }
 
@@ -21146,15 +21145,16 @@ function renderStores(skipIntegrationRefresh){
 
                 <h3>
 
-                    Belum Ada Accounts Toko
+                    ${sellerBooksCurrentLanguage() === "en" ? "No Store Accounts Yet" : "Belum Ada Accounts Toko"}
 
                 </h3>
 
 
                 <p>
 
-                    Tambahkan accounts toko dari marketplace
-                    yang aktif untuk mulai mengelola bisnis.
+                    ${sellerBooksCurrentLanguage() === "en"
+                        ? "Add a store account from an active marketplace to start managing your business."
+                        : "Tambahkan accounts toko dari marketplace yang aktif untuk mulai mengelola bisnis."}
 
                 </p>
 
@@ -21188,13 +21188,11 @@ function renderStores(skipIntegrationRefresh){
         if(!marketplace) return;
 
 
+        const storeUiLanguage = sellerBooksCurrentLanguage();
         const statusText =
-
             store.status === "active"
-
-            ? "Aktif"
-
-            : "Tidak Aktif";
+            ? (storeUiLanguage === "en" ? "Active" : "Aktif")
+            : (storeUiLanguage === "en" ? "Inactive" : "Tidak Aktif");
 
 
         const statusClass =
@@ -21212,7 +21210,7 @@ function renderStores(skipIntegrationRefresh){
         const integrationStatusHtml = isIntegrated
             ? `
                 <div class="store-integration-success">
-                    ✓ Sudah terintegrasi sukses
+                    ✓ ${sellerBooksCurrentLanguage() === "en" ? "Successfully integrated" : "Sudah terintegrasi sukses"}
                 </div>
               `
             : "";
@@ -21242,7 +21240,7 @@ function renderStores(skipIntegrationRefresh){
                         onclick="syncTikTokOrdersNow('${store.id}')"
                         title="Tarik order TikTok Shop dan hitung SKU + QTY"
                     >
-                        🔄 Tarik Order
+                        🔄 ${sellerBooksCurrentLanguage() === "en" ? "Pull Orders" : "Tarik Order"}
                     </button>
                 </div>`;
         }else if(isShopeeStore){
@@ -21279,7 +21277,7 @@ function renderStores(skipIntegrationRefresh){
                     onclick="disconnectStoreAccount('${store.id}')"
                     title="Copot integrasi accounts toko"
                 >
-                    ⛓ Copot Integrasi
+                    ⛓ ${sellerBooksCurrentLanguage() === "en" ? "Disconnect Integration" : "Copot Integrasi"}
                 </button>
                 ${orderSyncButtonHtml}
               `
@@ -21289,7 +21287,7 @@ function renderStores(skipIntegrationRefresh){
                     class="store-action-button store-integrate-button"
                     onclick="integrateStoreAccount('${store.id}')"
                 >
-                    🔗 Integrasikan Accounts
+                    🔗 ${sellerBooksCurrentLanguage() === "en" ? "Integrate Account" : "Integrasikan Accounts"}
                 </button>
               `;
 
@@ -21351,7 +21349,7 @@ function renderStores(skipIntegrationRefresh){
                     ${
                         store.description
                         ? store.description
-                        : "Belum ada keterangan toko."
+                        : (sellerBooksCurrentLanguage() === "en" ? "No store description." : "Belum ada keterangan toko.")
                     }
 
                 </div>
@@ -21363,7 +21361,7 @@ function renderStores(skipIntegrationRefresh){
 
                     <div class="store-info-item">
 
-                        KODE TOKO
+                        ${sellerBooksCurrentLanguage() === "en" ? "STORE CODE" : "KODE TOKO"}
 
                         <strong>
 
@@ -21427,8 +21425,8 @@ function renderStores(skipIntegrationRefresh){
 
                         ${
                             store.status === "active"
-                            ? "Nonaktifkan"
-                            : "Aktifkan"
+                            ? (sellerBooksCurrentLanguage() === "en" ? "Disable" : "Nonaktifkan")
+                            : (sellerBooksCurrentLanguage() === "en" ? "Enable" : "Aktifkan")
                         }
 
                     </button>
@@ -21442,7 +21440,7 @@ function renderStores(skipIntegrationRefresh){
                         onclick="editStore('${store.id}')"
                     >
 
-                        ✏️ Edit
+                        ✏️ ${sellerBooksCurrentLanguage() === "en" ? "Edit" : "Edit"}
 
                     </button>
 
