@@ -151,6 +151,37 @@ body{
 
 
 /* =====================================================
+   LOGIN / PUBLIC LANGUAGE SWITCH
+===================================================== */
+.public-language-switch{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    margin-bottom:14px;
+    font-size:11px;
+    color:#64748b;
+}
+.public-language-switch label{font-weight:700;}
+.public-language-switch select{
+    border:1px solid #dbe3ef;
+    background:#fff;
+    color:#0f172a;
+    border-radius:8px;
+    padding:6px 9px;
+    font-size:11px;
+    font-weight:700;
+    outline:none;
+}
+.owner-language-switch{
+    position:absolute;
+    top:18px;
+    right:20px;
+    margin:0;
+}
+.owner-setup-card{position:relative;}
+
+/* =====================================================
    LOGIN PAGE
 ===================================================== */
 
@@ -5061,6 +5092,11 @@ document.addEventListener(
     "DOMContentLoaded",
     function(){
         setTimeout(function(){
+            const language = typeof sellerBooksCurrentLanguage === "function" ? sellerBooksCurrentLanguage() : "id";
+            const loginSelect=document.getElementById("publicLanguageSelect");
+            const ownerSelect=document.getElementById("ownerLanguageSelect");
+            if(loginSelect)loginSelect.value=language;
+            if(ownerSelect)ownerSelect.value=language;
             if(typeof applySellerBooksLanguage === "function"){
                 applySellerBooksLanguage();
             }
@@ -9790,6 +9826,14 @@ document.addEventListener(
 
             <div class="login-box">
 
+                <div class="public-language-switch">
+                    <label for="publicLanguageSelect">Language</label>
+                    <select id="publicLanguageSelect" onchange="setSellerBooksPublicLanguage(this.value)">
+                        <option value="id">ID — Indonesia</option>
+                        <option value="en">EN — English</option>
+                    </select>
+                </div>
+
                 <h2>
                     Selamat Datang 👋
                 </h2>
@@ -9872,6 +9916,14 @@ document.addEventListener(
 <section id="ownerSetupPage">
 
     <div class="owner-setup-card">
+
+        <div class="public-language-switch owner-language-switch">
+            <label for="ownerLanguageSelect">Language</label>
+            <select id="ownerLanguageSelect" onchange="setSellerBooksPublicLanguage(this.value)">
+                <option value="id">ID — Indonesia</option>
+                <option value="en">EN — English</option>
+            </select>
+        </div>
 
         <div class="owner-setup-icon">
             👤
@@ -15392,7 +15444,11 @@ function sellerBooksGetApprovalPage(){
     page=document.createElement("section"); page.id="sellerbooksApprovalPage";
     page.style.cssText="min-height:100vh;display:none;align-items:center;justify-content:center;padding:20px;background:#f8fafc;";
     page.innerHTML=`<div style="width:100%;max-width:560px;background:#fff;border-radius:24px;padding:40px 30px;text-align:center;box-shadow:0 20px 60px rgba(15,23,42,.12);border:1px solid #e2e8f0"><div style="font-size:54px;margin-bottom:14px">⏳</div><h2 style="margin-bottom:10px;color:#0f172a">Menunggu Persetujuan Core Adiimasa</h2><p id="sellerbooksApprovalEmail" style="color:#2563eb;font-weight:700;margin-bottom:16px;word-break:break-word"></p><p id="sellerbooksApprovalText" style="color:#64748b;line-height:1.7;margin-bottom:24px">Akun Anda sudah berhasil login. Silakan menunggu persetujuan dari Core Adiimasa sebelum menggunakan SellerBooks.</p><button type="button" onclick="sellerBooksCheckApproval(true)" style="border:0;background:#2563eb;color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;cursor:pointer">🔄 Cek Status Persetujuan</button><button type="button" onclick="sellerBooksLogout()" style="display:block;margin:14px auto 0;border:0;background:transparent;color:#64748b;padding:8px 16px;cursor:pointer">Keluar</button></div>`;
-    document.body.appendChild(page); return page;
+    document.body.appendChild(page);
+    if(typeof applySellerBooksLanguage==="function"){
+        applySellerBooksLanguage();
+    }
+    return page;
 }
 function sellerBooksShowApproval(message){
     const page=sellerBooksGetApprovalPage();
@@ -31232,6 +31288,28 @@ const DEFAULT_SELLERBOOKS_SETTINGS = {
     }
 };
 
+function setSellerBooksPublicLanguage(language){
+    language = language === "en" ? "en" : "id";
+    try{
+        const raw = sellerBooksStorage.getItem(SELLERBOOKS_SETTINGS_KEY) || "{}";
+        const current = JSON.parse(raw);
+        const next = {
+            ...(current && typeof current === "object" ? current : {}),
+            language: language
+        };
+        sellerBooksStorage.setItem(SELLERBOOKS_SETTINGS_KEY, JSON.stringify(next));
+    }catch(error){
+        console.warn("Gagal menyimpan pilihan bahasa publik SellerBooks:", error);
+    }
+    const loginSelect=document.getElementById("publicLanguageSelect");
+    const ownerSelect=document.getElementById("ownerLanguageSelect");
+    if(loginSelect)loginSelect.value=language;
+    if(ownerSelect)ownerSelect.value=language;
+    if(typeof applySellerBooksLanguage==="function"){
+        applySellerBooksLanguage();
+    }
+}
+
 function getSellerBooksSettings(){
     try{
         const saved =
@@ -32030,7 +32108,16 @@ const SELLERBOOKS_I18N = {
         "Tidak ada piutang untuk nama tersebut.":"No receivables for this name.",
         "Tidak ada pembayaran untuk nama tersebut.":"No payments for this name.",
         "Belum ada piutang":"No receivables yet",
-        "Belum ada pembayaran":"No payments yet"
+        "Belum ada pembayaran":"No payments yet",
+        "Pantau penjualan, produk keluar, akun toko dan laba bisnis Anda dalam satu sistem.":"Monitor sales, products sold, store accounts, and business profit in one system.",
+        "Setiap pengguna hanya dapat mengakses data bisnis yang memiliki izin untuknya.":"Each user can only access the business data they are authorized to access.",
+        "Contoh: Adiimasa":"Example: Adiimasa",
+        "Status akun masih menunggu persetujuan Core Adiimasa.":"Your account is still waiting for Core Adiimasa approval.",
+        "Akun berhasil login, tetapi profile SellerBooks belum terbentuk. Silakan coba lagi beberapa saat lagi.":"You signed in successfully, but your SellerBooks profile has not been created yet. Please try again shortly.",
+        "Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu.":"Please enter the Owner Name or Business Name first.",
+        "Nama Pemilik berhasil direset.":"Owner Name reset successfully.",
+        "Gagal mereset Nama Pemilik:":"Failed to reset Owner Name:",
+        "Nama Pemilik gagal disimpan ke server.":"Owner Name could not be saved to the server."
     }
 };
 
