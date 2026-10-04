@@ -4582,20 +4582,42 @@ td{
     }
 
     window.sellerBooksAlert = function(message, title){
-        sellerBooksShowDialog(message, {
-            title:title || "SellerBooks",
-            confirm:false
-        });
+        const language = typeof sellerBooksCurrentLanguage === "function" ? sellerBooksCurrentLanguage() : "id";
+        sellerBooksShowDialog(
+            typeof sellerBooksTranslateUserText === "function" ? sellerBooksTranslateUserText(message, language) : message,
+            {
+                title: typeof sellerBooksTranslateUserText === "function" ? sellerBooksTranslateUserText(title || "SellerBooks", language) : (title || "SellerBooks"),
+                confirm:false
+            }
+        );
     };
 
     window.sellerBooksConfirm = function(message, title){
-        return sellerBooksShowDialog(message, {
-            title:title || "Konfirmasi",
-            confirm:true
-        });
+        const language = typeof sellerBooksCurrentLanguage === "function" ? sellerBooksCurrentLanguage() : "id";
+        return sellerBooksShowDialog(
+            typeof sellerBooksTranslateUserText === "function" ? sellerBooksTranslateUserText(message, language) : message,
+            {
+                title: typeof sellerBooksTranslateUserText === "function" ? sellerBooksTranslateUserText(title || "Konfirmasi", language) : (title || "Konfirmasi"),
+                confirm:true
+            }
+        );
     };
 })();
 
+
+/* Translate legacy native browser dialogs in English mode too. */
+(function(){
+    const nativeAlert = window.alert.bind(window);
+    const nativeConfirm = window.confirm.bind(window);
+    window.alert = function(message){
+        const language = typeof sellerBooksCurrentLanguage === "function" ? sellerBooksCurrentLanguage() : "id";
+        return nativeAlert(typeof sellerBooksTranslateUserText === "function" ? sellerBooksTranslateUserText(message, language) : message);
+    };
+    window.confirm = function(message){
+        const language = typeof sellerBooksCurrentLanguage === "function" ? sellerBooksCurrentLanguage() : "id";
+        return nativeConfirm(typeof sellerBooksTranslateUserText === "function" ? sellerBooksTranslateUserText(message, language) : message);
+    };
+})();
 
 function loadReportMarketplaceFilter(){
 
@@ -32053,19 +32075,8 @@ function sellerBooksTranslateTextNodes(root, language){
         const dictionary = SELLERBOOKS_I18N[language] || SELLERBOOKS_I18N.id;
         let translated = dictionary[core];
 
-        /*
-           Handle dynamic table/pagination strings that contain runtime
-           numbers or marketplace/account names, e.g. "1-20 dari 100".
-        */
         if(translated === undefined && language === "en"){
-            translated = core
-                .replace(/\bdari\b/gi, "of")
-                .replace(/\bNama Pemilik \/ Nama Usaha\b/gi, "Owner Name / Business Name")
-                .replace(/\bAkun\b/g, "Account")
-                .replace(/\bKeterangan\b/g, "Description")
-                .replace(/\bJumlah\b/g, "Amount")
-                .replace(/\bNominal\b/g, "Amount")
-                .replace(/\bTanggal\b/g, "Date");
+            translated = sellerBooksTranslateUserText(core, language);
             if(translated === core) return;
         }
 
@@ -32077,6 +32088,30 @@ function sellerBooksTranslateTextNodes(root, language){
     });
 }
 
+const SELLERBOOKS_EN_FALLBACK = {
+"silakan":"please","terlebih dahulu":"first","tidak dapat":"cannot","tidak bisa":"cannot","tidak ditemukan":"not found","belum ditemukan":"not found yet","belum ada":"no","sudah":"already","akan":"will","harus":"must","wajib":"required","dapat":"can","dengan":"with","tanpa":"without","sesuai":"according to","berdasarkan":"based on","digunakan":"used","menggunakan":"using","menampilkan":"display","ditampilkan":"displayed","tersimpan":"saved","disimpan":"saved","menyimpan":"save","simpan":"save","berhasil":"successfully","gagal":"failed","kesalahan":"error","terjadi":"occurred","terjadi kesalahan":"an error occurred","perubahan":"changes","diperbarui":"updated","memuat":"loading","membaca":"reading","dibaca":"read","menghapus":"delete","dihapus":"deleted","penghapusan":"deletion","menambahkan":"add","tambahkan":"add","mengedit":"edit","diedit":"edited","pilih":"select","dipilih":"selected","memilih":"select","isi":"enter","masukkan":"enter","mengisi":"enter","kosong":"empty","kosongkan":"clear","lengkapi":"complete","baru":"new","lama":"old","semua":"all","setiap":"each","hanya":"only","jika":"if","apabila":"if","ketika":"when","saat":"when","sebelum":"before","setelah":"after","hingga":"until","sampai":"until","dalam":"in","pada":"on","dari":"from","ke":"to","untuk":"for","oleh":"by","dan":"and","atau":"or","yang":"that","ini":"this","itu":"that","tersebut":"the","juga":"also","lebih":"more","kurang":"less","tidak":"not","belum":"not yet","bukan":"not","ada":"exists","diperlukan":"required","dibutuhkan":"required","tersedia":"available","tidak tersedia":"not available","aktif":"active","tidak aktif":"inactive","menunggu":"waiting","berikutnya":"next","sebelumnya":"previous","kembali":"back","lanjutkan":"continue","batal":"cancel","konfirmasi":"confirm","tutup":"close","buka":"open","cari":"search","filter":"filter","reset":"reset","tanggal":"date","hari":"day","kemarin":"yesterday","minggu":"week","bulan":"month","tahun":"year","periode":"period","rentang":"range","nama":"name","nama produk":"product name","nama bisnis":"business name","nama toko":"store name","nama akun":"account name","pemilik":"owner","usaha":"business","akun":"account","akun toko":"store account","toko":"store","produk":"product","produk terjual":"products sold","penjualan":"sales","penjualan bersih":"net sales","laporan":"report","rincian":"details","biaya":"cost","biaya lain":"other costs","biaya admin":"admin fee","admin marketplace":"marketplace fee","admin sku":"SKU fee","modal":"cost","hpp":"COGS","harga jual":"selling price","harga":"price","stok":"stock","jumlah":"amount","jumlah data":"data count","jumlah baris":"rows","jumlah kolom":"columns","keterangan":"description","nominal":"amount","diskon":"discount","laba":"profit","laba bersih":"net profit","laba kotor":"gross profit","rugi":"loss","total":"total","piutang":"receivable","pembayaran":"payment","sudah dibayar":"paid","belum dibayar":"unpaid","pesanan":"orders","order":"order","nomor pesanan":"order number","nomor resi":"tracking number","resi":"tracking number","pengiriman":"shipment","pengambilan":"pickup","dikirim":"shipped","menunggu pengiriman":"awaiting shipment","menunggu pengambilan":"awaiting pickup","selesai":"completed","dibatalkan":"cancelled","pengembalian":"return","integrasi":"integration","integrasikan":"integrate","terintegrasi":"integrated","copot":"disconnect","sinkronisasi":"sync","sinkron":"sync","tarik order":"pull orders","ambil order":"pull orders","upload":"upload","download":"download","file":"file","kolom":"column","baris":"row","template":"template","pengaturan":"settings","bahasa":"language","mata uang":"currency","kurs":"exchange rate","pembulatan":"rounding","packing":"packing","default":"default","per order":"per order","per transaksi":"per transaction","hari ini":"today","hari kemarin":"yesterday","minggu ini":"this week","minggu lalu":"last week","bulan ini":"this month","bulan lalu":"last month","3 bulan terakhir":"last 3 months","tahun ini":"this year","pilih tanggal":"custom date","semua periode":"all periods","semua marketplace":"all marketplaces","semua akun toko":"all store accounts","semua status":"all statuses","tidak ada data":"no data","belum ada data":"no data yet","belum ada transaksi":"no transactions yet","tidak ada transaksi":"no transactions","belum ada produk":"no products yet","belum ada akun":"no accounts yet","belum ada marketplace":"no marketplaces yet","belum ada biaya":"no costs yet","belum ada piutang":"no receivables yet","belum ada pembayaran":"no payments yet","wajib diisi":"is required","harus diisi":"is required","harus dipilih":"must be selected","tidak boleh kosong":"cannot be empty","tidak boleh sama":"must be different","lebih dari":"greater than","kurang dari":"less than","maksimal":"maximum","minimal":"minimum","terdekat":"nearest","contoh":"example","catatan":"note","pesan":"message","notifikasi":"notification","status":"status","hasil":"result","ringkasan":"summary","performa":"performance","pergerakan":"movement","perbandingan":"comparison","daftar":"list","riwayat":"history","identitas":"identity","sesi":"session","login":"login","keluar":"sign out","masuk":"sign in","persetujuan":"approval","ditolak":"rejected","ditangguhkan":"suspended","akses":"access","koneksi":"connection","perangkat":"device"
+};
+
+function sellerBooksTranslateUserText(value, language){
+    const text = String(value ?? "");
+    if(language !== "en" || !text) return text;
+    const dictionary = SELLERBOOKS_I18N.en || {};
+    const trimmed = text.trim();
+    if(dictionary[trimmed] !== undefined){
+        return text.replace(trimmed, dictionary[trimmed]);
+    }
+    let result = text;
+    Object.entries(SELLERBOOKS_EN_FALLBACK)
+        .sort((a,b)=>b[0].length-a[0].length)
+        .forEach(function(pair){
+            const source = pair[0];
+            const target = pair[1];
+            const escaped = source.replace(/[.*+?^$()|[\]\\]/g, "\\function sellerBooksTranslateAttributes(root, language){");
+            result = result.replace(new RegExp("\\b" + escaped + "\\b","gi"), target);
+        });
+    return result;
+}
+
 function sellerBooksTranslateAttributes(root, language){
     if(!root) return;
     const dictionary = SELLERBOOKS_I18N[language] || SELLERBOOKS_I18N.id;
@@ -32085,8 +32120,9 @@ function sellerBooksTranslateAttributes(root, language){
             const value = el.getAttribute(attr);
             if(!value) return;
             const key = value.trim();
-            if(dictionary[key] !== undefined){
-                el.setAttribute(attr, dictionary[key]);
+            const translated = sellerBooksTranslateUserText(key, language);
+            if(translated !== key){
+                el.setAttribute(attr, translated);
             }
         });
     });
