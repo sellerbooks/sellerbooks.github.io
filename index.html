@@ -30376,13 +30376,13 @@ function sellerBooksNotificationText(key, count){
         id:{
             header:"Notifikasi",
             safeTitle:"Semua aman",
-            safeText:sellerBooksNotificationText("safeText"),
+            safeText:"Tidak ada notifikasi penting untuk saat ini.",
             productsEmptyTitle:"Master Produk masih kosong",
-            productsEmptyText:sellerBooksNotificationText("productsEmptyText"),
+            productsEmptyText:"Tambahkan produk terlebih dahulu agar data penjualan dapat dihitung.",
             identityTitle:"Identitas belum diatur",
-            identityText:sellerBooksNotificationText("identityText"),
+            identityText:"Silakan lengkapi nama pemilik SellerBooks.",
             importTitle:"Import penjualan belum selesai",
-            importText:sellerBooksNotificationText("importText"),
+            importText:"SKU dan QTY dari file penjualan perlu dikonfirmasi.",
             lowStockTitle:function(n){return n+" produk stok menipis";},
             lowStockText:"Ada produk dengan stok 5 atau kurang. Segera lakukan pengisian ulang."
         },
@@ -30453,7 +30453,7 @@ function getSellerBooksNotifications(){
             title:sellerBooksNotificationText("productsEmptyTitle"),
 
             text:
-                "Tambahkan produk terlebih dahulu agar data penjualan dapat dihitung."
+                sellerBooksNotificationText("productsEmptyText")
 
         });
 
@@ -30479,7 +30479,7 @@ function getSellerBooksNotifications(){
             title:sellerBooksNotificationText("identityTitle"),
 
             text:
-                "Silakan lengkapi nama pemilik SellerBooks."
+                sellerBooksNotificationText("identityText")
 
         });
 
@@ -30508,7 +30508,7 @@ function getSellerBooksNotifications(){
                 title:sellerBooksNotificationText("importTitle"),
 
                 text:
-                    "SKU dan QTY dari file penjualan perlu dikonfirmasi."
+                    sellerBooksNotificationText("importText")
 
             });
 
@@ -30552,7 +30552,7 @@ if(lowStockProducts.length > 0){
             title:sellerBooksNotificationText("safeTitle"),
 
             text:
-                "Tidak ada notifikasi penting untuk saat ini."
+                sellerBooksNotificationText("safeText")
 
         });
 
