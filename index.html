@@ -17402,6 +17402,9 @@ function showView(viewId, button, saveHistory = true){
     if(viewId === "reports" && typeof sellerBooksApplyReportsLanguage === "function"){
         sellerBooksApplyReportsLanguage();
     }
+    if(viewId === "settings" && typeof sellerBooksApplySettingsLanguage === "function"){
+        sellerBooksApplySettingsLanguage();
+    }
 
 
     /* =========================================
@@ -32865,6 +32868,9 @@ function sellerBooksSyncLanguageControl(){
     if(typeof sellerBooksApplyReportsLanguage === "function"){
         sellerBooksApplyReportsLanguage();
     }
+    if(typeof sellerBooksApplySettingsLanguage === "function"){
+        sellerBooksApplySettingsLanguage();
+    }
 
     const info = document.getElementById("settingsLanguageInfo");
     if(info){
@@ -32956,6 +32962,178 @@ async function sellerBooksSaveLanguage(value){
         sellerBooksSyncLanguageControl();
         return false;
     }
+}
+
+function sellerBooksSettingsText(key){
+    const language = sellerBooksCurrentLanguage();
+    const translations = {
+        id:{
+            pageTitle:"Pengaturan", pageSubtitle:"Kelola konfigurasi bisnis dan preferensi SellerBooks Anda.",
+            languageTitle:"Bahasa", languageDesc:"Pilih bahasa SellerBooks. Pilihan ini tersimpan pada akun Anda dan digunakan di semua perangkat.",
+            languageLabel:"Bahasa Tampilan", languageSaved:"Bahasa tersimpan pada akun Anda.", saveLanguage:"💾 Simpan Bahasa",
+            businessTitle:"Nama Bisnis", businessDesc:"Atur nama bisnis yang digunakan sebagai identitas usaha.",
+            businessLabel:"Nama Bisnis", businessPlaceholder:"Contoh: PT Adiimasa Distribusi Indonesia", noChanges:"Belum ada perubahan.", save:"💾 Simpan",
+            logoTitle:"Logo Bisnis", logoDesc:"Gunakan logo bisnis sebagai identitas visual SellerBooks.", chooseLogo:"📁 Pilih Logo", removeLogo:"Hapus Logo",
+            logoFormats:"PNG, JPG atau WEBP. Maksimal 1 MB.",
+            currencyTitle:"Mata Uang", currencyDesc:"Atur mata uang yang digunakan untuk tampilan nilai laporan.", currencyLabel:"Mata Uang",
+            idr:"IDR — Rupiah Indonesia", usd:"USD — US Dollar", sgd:"SGD — Singapore Dollar", myr:"MYR — Malaysian Ringgit",
+            manualRate:"Atur Kurs Manual", rateDesc:"Kurs yang digunakan untuk konversi dari IDR.",
+            usdRate:"1 USD = Rp", sgdRate:"1 SGD = Rp", myrRate:"1 MYR = Rp",
+            ratePlaceholderUSD:"Contoh: 16500", ratePlaceholderSGD:"Contoh: 12900", ratePlaceholderMYR:"Contoh: 3900",
+            rateNote:"💱 Masukkan nilai rupiah untuk 1 unit mata uang asing. Contoh: jika 1 USD = Rp16.500, isi 16500. Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.",
+            rateSaved:"Kurs tersimpan digunakan untuk konversi.", saveRate:"💾 Simpan Kurs",
+            currencyNote:"ℹ️ Semua data disimpan dalam IDR sebagai nilai dasar. Saat mata uang diganti, seluruh nominal otomatis dikonversi ke kurs tampilan.",
+            packingTitle:"Biaya Packing Default", packingDesc:"Nilai ini otomatis menjadi biaya packing per 1 order saat import penjualan.",
+            packingLabel:"Biaya Packing per Order", packingPlaceholder:"Contoh: 850", packingSaved:"Nilai tersimpan digunakan sebagai default import.",
+            roundingTitle:"Pembulatan", roundingDesc:"Atur pembulatan nilai uang yang ditampilkan di SellerBooks.", roundingLabel:"Pembulatan Nilai",
+            roundingNone:"Tanpa Pembulatan", rounding10:"Ke Rp10 terdekat", rounding100:"Ke Rp100 terdekat", rounding1000:"Ke Rp1.000 terdekat",
+            roundingNote:"ℹ️ Pembulatan hanya memengaruhi tampilan angka, bukan data transaksi yang tersimpan.",
+            backupTitle:"Backup & Restore Data", backupDesc:"Simpan seluruh data SellerBooks ke file atau pulihkan dari file backup.",
+            backup:"⬇️ Backup Data", restore:"⬆️ Restore Data", restoreWarning:"⚠️ Restore akan mengganti data SellerBooks saat ini dengan isi file backup.",
+            saved:"Pengaturan berhasil disimpan.", packingInfo:"Default packing:", rateInfo:"Kurs tersimpan.",
+            logoTooLarge:"Ukuran logo maksimal 1 MB.", logoFormat:"Format logo harus PNG, JPG, atau WEBP.",
+            sessionNotReady:"❌ Sesi SellerBooks belum siap. Silakan login kembali.", logoSaved:"✅ Logo bisnis berhasil disimpan.",
+            logoSaveFailed:"❌ Logo gagal disimpan.", logoReadFailed:"❌ Logo gagal dibaca.", removeLogoConfirm:"Hapus logo bisnis yang tersimpan?",
+            removeLogoFailed:"❌ Logo gagal dihapus.", restoreConfirm:"Restore akan mengganti seluruh data SellerBooks saat ini dengan data dari file backup. Lanjutkan?",
+            invalidBackup:"Format backup tidak valid.", restoreSuccess:"✅ Restore berhasil. SellerBooks akan dimuat ulang.",
+            restoreInvalid:"❌ File backup tidak valid atau rusak.", restoreReadFailed:"File backup gagal dibaca.",
+            savingLanguage:"Menyimpan Bahasa Indonesia...", languageSavedCloud:"Bahasa Indonesia tersimpan pada akun Anda.",
+            languageSaveFailed:"Bahasa gagal disimpan. Silakan coba lagi."
+        },
+        en:{
+            pageTitle:"Settings", pageSubtitle:"Manage your SellerBooks business configuration and preferences.",
+            languageTitle:"Language", languageDesc:"Choose the SellerBooks language. This choice is saved to your account and used across all devices.",
+            languageLabel:"Display Language", languageSaved:"Language is saved to your account.", saveLanguage:"💾 Save Language",
+            businessTitle:"Business Name", businessDesc:"Set the business name used as your business identity.",
+            businessLabel:"Business Name", businessPlaceholder:"Example: PT Adiimasa Distribusi Indonesia", noChanges:"No changes yet.", save:"💾 Save",
+            logoTitle:"Business Logo", logoDesc:"Use your business logo as the SellerBooks visual identity.", chooseLogo:"📁 Choose Logo", removeLogo:"Remove Logo",
+            logoFormats:"PNG, JPG, or WEBP. Maximum 1 MB.",
+            currencyTitle:"Currency", currencyDesc:"Set the currency used to display report values.", currencyLabel:"Currency",
+            idr:"IDR — Indonesian Rupiah", usd:"USD — US Dollar", sgd:"SGD — Singapore Dollar", myr:"MYR — Malaysian Ringgit",
+            manualRate:"Set Manual Exchange Rates", rateDesc:"Exchange rates used to convert from IDR.",
+            usdRate:"1 USD = Rp", sgdRate:"1 SGD = Rp", myrRate:"1 MYR = Rp",
+            ratePlaceholderUSD:"Example: 16500", ratePlaceholderSGD:"Example: 12900", ratePlaceholderMYR:"Example: 3900",
+            rateNote:"💱 Enter the rupiah value for 1 unit of foreign currency. Example: if 1 USD = Rp16,500, enter 16500. Exchange-rate changes will be used for all displayed amounts.",
+            rateSaved:"Saved rates are used for conversion.", saveRate:"💾 Save Exchange Rates",
+            currencyNote:"ℹ️ All data is stored in IDR as the base value. When the currency changes, all displayed amounts are automatically converted using the selected rates.",
+            packingTitle:"Default Packing Cost", packingDesc:"This value automatically becomes the packing cost per order when importing sales.",
+            packingLabel:"Packing Cost per Order", packingPlaceholder:"Example: 850", packingSaved:"The saved value is used as the import default.",
+            roundingTitle:"Rounding", roundingDesc:"Set how monetary values are rounded when displayed in SellerBooks.", roundingLabel:"Rounding Value",
+            roundingNone:"No Rounding", rounding10:"Round to nearest Rp10", rounding100:"Round to nearest Rp100", rounding1000:"Round to nearest Rp1,000",
+            roundingNote:"ℹ️ Rounding only affects displayed values, not stored transaction data.",
+            backupTitle:"Data Backup & Restore", backupDesc:"Save all SellerBooks data to a file or restore it from a backup file.",
+            backup:"⬇️ Backup Data", restore:"⬆️ Restore Data", restoreWarning:"⚠️ Restore will replace the current SellerBooks data with the contents of the backup file.",
+            saved:"Settings saved successfully.", packingInfo:"Default packing:", rateInfo:"Rates saved.",
+            logoTooLarge:"Logo size must not exceed 1 MB.", logoFormat:"Logo format must be PNG, JPG, or WEBP.",
+            sessionNotReady:"❌ SellerBooks session is not ready. Please log in again.", logoSaved:"✅ Business logo saved successfully.",
+            logoSaveFailed:"❌ Failed to save the business logo.", logoReadFailed:"❌ Failed to read the logo.", removeLogoConfirm:"Remove the saved business logo?",
+            removeLogoFailed:"❌ Failed to remove the business logo.", restoreConfirm:"Restore will replace all current SellerBooks data with data from the backup file. Continue?",
+            invalidBackup:"Invalid backup format.", restoreSuccess:"✅ Restore successful. SellerBooks will reload.",
+            restoreInvalid:"❌ The backup file is invalid or corrupted.", restoreReadFailed:"Failed to read the backup file.",
+            savingLanguage:"Saving English...", languageSavedCloud:"English saved to your account.",
+            languageSaveFailed:"Language could not be saved. Please try again."
+        }
+    };
+    return translations[language]?.[key] ?? translations.id[key] ?? key;
+}
+
+function sellerBooksApplySettingsLanguage(){
+    const view = document.getElementById("settings");
+    if(!view) return;
+
+    const t = sellerBooksSettingsText;
+    const set = (selector,key) => {
+        const el=view.querySelector(selector);
+        if(el) el.textContent=t(key);
+    };
+    const setAttr = (selector,attr,key) => {
+        const el=view.querySelector(selector);
+        if(el) el.setAttribute(attr,t(key));
+    };
+
+    set(".page-header h2","pageTitle");
+    set(".page-header p","pageSubtitle");
+
+    const cards=view.querySelectorAll(".settings-card");
+    if(cards[0]){
+        const h=cards[0].querySelector(".settings-card-header h3"), p=cards[0].querySelector(".settings-card-header p");
+        if(h)h.textContent=t("languageTitle"); if(p)p.textContent=t("languageDesc");
+        const label=cards[0].querySelector("label"); if(label)label.textContent=t("languageLabel");
+        const info=document.getElementById("settingsLanguageInfo");
+        if(info && !/^(Saving|Menyimpan)/i.test(info.textContent||"")) info.textContent=t("languageSaved");
+        const btn=cards[0].querySelector("button"); if(btn)btn.textContent=t("saveLanguage");
+        const lang=document.getElementById("settingsLanguage");
+        if(lang){ const id=lang.querySelector('option[value="id"]'),en=lang.querySelector('option[value="en"]'); if(id)id.textContent="Bahasa Indonesia"; if(en)en.textContent="English"; }
+    }
+
+    if(cards[1]){
+        const h=cards[1].querySelector(".settings-card-header h3"),p=cards[1].querySelector(".settings-card-header p");
+        if(h)h.textContent=t("businessTitle"); if(p)p.textContent=t("businessDesc");
+        const label=cards[1].querySelector("label"); if(label)label.textContent=t("businessLabel");
+        const input=document.getElementById("settingsBusinessName"); if(input)input.placeholder=t("businessPlaceholder");
+        const info=document.getElementById("settingsBusinessNameInfo"); if(info && info.textContent==="Belum ada perubahan.")info.textContent=t("noChanges");
+        const btn=cards[1].querySelector("button"); if(btn)btn.textContent=t("save");
+    }
+
+    if(cards[2]){
+        const h=cards[2].querySelector(".settings-card-header h3"),p=cards[2].querySelector(".settings-card-header p");
+        if(h)h.textContent=t("logoTitle"); if(p)p.textContent=t("logoDesc");
+        const buttons=cards[2].querySelectorAll("button"); if(buttons[0])buttons[0].textContent=t("chooseLogo"); if(buttons[1])buttons[1].textContent=t("removeLogo");
+        const small=cards[2].querySelector("small"); if(small)small.textContent=t("logoFormats");
+    }
+
+    if(cards[3]){
+        const h=cards[3].querySelector(".settings-card-header h3"),p=cards[3].querySelector(".settings-card-header p");
+        if(h)h.textContent=t("currencyTitle"); if(p)p.textContent=t("currencyDesc");
+        const label=cards[3].querySelector("label"); if(label)label.textContent=t("currencyLabel");
+        const cur=document.getElementById("settingsCurrency");
+        if(cur){
+            const map={IDR:"idr",USD:"usd",SGD:"sgd",MYR:"myr"};
+            Array.from(cur.options).forEach(o=>{if(map[o.value])o.textContent=t(map[o.value]);});
+        }
+        const title=cards[3].querySelector(".settings-exchange-rate-title strong"),desc=cards[3].querySelector(".settings-exchange-rate-title span");
+        if(title)title.textContent=t("manualRate"); if(desc)desc.textContent=t("rateDesc");
+        const rateLabels=cards[3].querySelectorAll(".settings-exchange-rate-grid label");
+        [t("usdRate"),t("sgdRate"),t("myrRate")].forEach((v,i)=>{if(rateLabels[i])rateLabels[i].textContent=v;});
+        const rateInputs=[["settingsRateUSD","ratePlaceholderUSD"],["settingsRateSGD","ratePlaceholderSGD"],["settingsRateMYR","ratePlaceholderMYR"]];
+        rateInputs.forEach(([id,key])=>{const el=document.getElementById(id);if(el)el.placeholder=t(key);});
+        const notes=cards[3].querySelectorAll(".settings-note");
+        if(notes[0])notes[0].innerHTML=t("rateNote");
+        if(notes[1])notes[1].textContent=t("currencyNote");
+        const info=document.getElementById("settingsCurrencyInfo"); if(info)info.textContent=t("rateSaved");
+        const btn=cards[3].querySelector(".settings-card-footer button"); if(btn)btn.textContent=t("saveRate");
+    }
+
+    if(cards[4]){
+        const h=cards[4].querySelector(".settings-card-header h3"),p=cards[4].querySelector(".settings-card-header p");
+        if(h)h.textContent=t("packingTitle"); if(p)p.textContent=t("packingDesc");
+        const label=cards[4].querySelector("label"); if(label)label.textContent=t("packingLabel");
+        const input=document.getElementById("settingsPackingCost"); if(input)input.placeholder=t("packingPlaceholder");
+        const info=document.getElementById("settingsPackingInfo"); if(info && !/^Default packing:|^Biaya packing:/i.test(info.textContent||""))info.textContent=t("packingSaved");
+        const btn=cards[4].querySelector("button"); if(btn)btn.textContent=t("save");
+    }
+
+    if(cards[5]){
+        const h=cards[5].querySelector(".settings-card-header h3"),p=cards[5].querySelector(".settings-card-header p");
+        if(h)h.textContent=t("roundingTitle"); if(p)p.textContent=t("roundingDesc");
+        const label=cards[5].querySelector("label"); if(label)label.textContent=t("roundingLabel");
+        const sel=document.getElementById("settingsRounding");
+        if(sel){
+            const map={none:"roundingNone",10:"rounding10",100:"rounding100",1000:"rounding1000"};
+            Array.from(sel.options).forEach(o=>{if(map[o.value])o.textContent=t(map[o.value]);});
+        }
+        const note=cards[5].querySelector(".settings-note"); if(note)note.textContent=t("roundingNote");
+    }
+
+    if(cards[6]){
+        const h=cards[6].querySelector(".settings-card-header h3"),p=cards[6].querySelector(".settings-card-header p");
+        if(h)h.textContent=t("backupTitle"); if(p)p.textContent=t("backupDesc");
+        const buttons=cards[6].querySelectorAll("button"); if(buttons[0])buttons[0].textContent=t("backup"); if(buttons[1])buttons[1].textContent=t("restore");
+        const note=cards[6].querySelector(".settings-note"); if(note)note.textContent=t("restoreWarning");
+    }
+
+    const topTitle=document.getElementById("topTitle"),topSubtitle=document.getElementById("topSubtitle");
+    if(topTitle && view.classList.contains("active")){topTitle.textContent=t("pageTitle");topSubtitle.textContent=t("pageSubtitle");}
 }
 
 function sellerBooksEnsureDefaultLanguage(){
@@ -33101,6 +33279,8 @@ function saveSellerBooksSettings(){
 
     applySellerBooksSettings();
 
+    sellerBooksApplySettingsLanguage();
+
     const nameInfo =
         document.getElementById(
             "settingsBusinessNameInfo"
@@ -33108,7 +33288,7 @@ function saveSellerBooksSettings(){
 
     if(nameInfo){
         nameInfo.textContent =
-            "Pengaturan berhasil disimpan.";
+            sellerBooksSettingsText("saved");
     }
 
     const packingInfo =
@@ -33118,8 +33298,8 @@ function saveSellerBooksSettings(){
 
     if(packingInfo){
         packingInfo.textContent =
-            "Default packing: " +
-            formatRupiah(packingCost) +
+            sellerBooksSettingsText("packingInfo") +
+            " " + formatRupiah(packingCost) +
             " / order.";
     }
 
@@ -33130,13 +33310,10 @@ function saveSellerBooksSettings(){
 
     if(currencyInfo){
         currencyInfo.textContent =
-            "Kurs tersimpan. " +
-            "1 USD = Rp" +
-            Number(exchangeRates.USD).toLocaleString("id-ID") +
-            " • 1 SGD = Rp" +
-            Number(exchangeRates.SGD).toLocaleString("id-ID") +
-            " • 1 MYR = Rp" +
-            Number(exchangeRates.MYR).toLocaleString("id-ID");
+            sellerBooksSettingsText("rateInfo") + " " +
+            "1 USD = Rp" + Number(exchangeRates.USD).toLocaleString("id-ID") +
+            " • 1 SGD = Rp" + Number(exchangeRates.SGD).toLocaleString("id-ID") +
+            " • 1 MYR = Rp" + Number(exchangeRates.MYR).toLocaleString("id-ID");
     }
 }
 
@@ -33224,10 +33401,8 @@ function loadSellerBooksSettings(){
 
     if(packingInfo){
         packingInfo.textContent =
-            "Default packing: " +
-            formatRupiah(
-                Number(settings.packingCost) || 0
-            ) +
+            sellerBooksSettingsText("packingInfo") + " " +
+            formatRupiah(Number(settings.packingCost) || 0) +
             " / order.";
     }
 
@@ -33409,9 +33584,7 @@ function handleSettingsLogoUpload(input){
     }
 
     if(file.size > 1024 * 1024){
-        sellerBooksAlert(
-            "Ukuran logo maksimal 1 MB."
-        );
+        sellerBooksAlert(sellerBooksSettingsText("logoTooLarge"));
         input.value = "";
         return;
     }
@@ -33423,15 +33596,13 @@ function handleSettingsLogoUpload(input){
             "image/webp"
         ].includes(file.type)
     ){
-        sellerBooksAlert(
-            "Format logo harus PNG, JPG, atau WEBP."
-        );
+        sellerBooksAlert(sellerBooksSettingsText("logoFormat"));
         input.value = "";
         return;
     }
 
     if(!sellerBooksAuthUser || !sellerBooksCloudReady){
-        sellerBooksAlert("❌ Sesi SellerBooks belum siap. Silakan login kembali.");
+        sellerBooksAlert(sellerBooksSettingsText("sessionNotReady"));
         input.value = "";
         return;
     }
@@ -33457,9 +33628,7 @@ function handleSettingsLogoUpload(input){
             renderSettingsLogo();
             input.value = "";
 
-            sellerBooksAlert(
-                "✅ Logo bisnis berhasil disimpan ke Supabase."
-            );
+            sellerBooksAlert(sellerBooksSettingsText("logoSaved"));
         }catch(error){
             console.error(
                 "Gagal menyimpan logo bisnis ke Supabase:",
@@ -33467,15 +33636,14 @@ function handleSettingsLogoUpload(input){
             );
             input.value = "";
             sellerBooksAlert(
-                "❌ Logo gagal disimpan ke Supabase.\n\n" +
-                error.message
+                sellerBooksSettingsText("logoSaveFailed") + "\n\n" + error.message
             );
         }
     };
 
     reader.onerror = function(){
         input.value = "";
-        sellerBooksAlert("❌ Logo gagal dibaca.");
+        sellerBooksAlert(sellerBooksSettingsText("logoReadFailed"));
     };
 
     reader.readAsDataURL(file);
@@ -33483,7 +33651,7 @@ function handleSettingsLogoUpload(input){
 async function removeSettingsLogo(){
     const confirmed =
         await sellerBooksConfirm(
-            "Hapus logo bisnis yang tersimpan?"
+            sellerBooksSettingsText("removeLogoConfirm")
         );
 
     if(!confirmed){
@@ -33518,7 +33686,7 @@ async function removeSettingsLogo(){
             error
         );
         sellerBooksAlert(
-            "❌ Logo gagal dihapus dari Supabase.\n\n"+
+            sellerBooksSettingsText("removeLogoFailed") + "\n\n" +
             error.message
         );
     }
@@ -33597,7 +33765,7 @@ async function restoreSellerBooksData(input){
 
     const confirmed =
         await sellerBooksConfirm(
-            "Restore akan mengganti seluruh data SellerBooks saat ini dengan data dari file backup. Lanjutkan?"
+            sellerBooksSettingsText("restoreConfirm")
         );
 
     if(!confirmed){
@@ -33622,7 +33790,7 @@ async function restoreSellerBooksData(input){
                 typeof backup.data !== "object"
             ){
                 throw new Error(
-                    "Format backup tidak valid."
+                    sellerBooksSettingsText("invalidBackup")
                 );
             }
 
@@ -33655,7 +33823,7 @@ async function restoreSellerBooksData(input){
             });
 
             sellerBooksAlert(
-                "✅ Restore berhasil. SellerBooks akan dimuat ulang."
+                sellerBooksSettingsText("restoreSuccess")
             );
 
             location.reload();
@@ -33667,7 +33835,7 @@ async function restoreSellerBooksData(input){
             );
 
             sellerBooksAlert(
-                "❌ File backup tidak valid atau rusak."
+                sellerBooksSettingsText("restoreInvalid")
             );
         }finally{
             input.value = "";
@@ -33677,7 +33845,7 @@ async function restoreSellerBooksData(input){
     reader.onerror = function(){
         input.value = "";
         sellerBooksAlert(
-            "File backup gagal dibaca."
+            sellerBooksSettingsText("restoreReadFailed")
         );
     };
 
