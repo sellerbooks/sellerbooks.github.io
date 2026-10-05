@@ -15306,7 +15306,8 @@ async function sellerBooksLoadCloudData(){
     }
 
     if(shouldMigrateLegacy ||
-       sellerBooksCloudState["sellerbooks_settings"]!==existingCloudData["sellerbooks_settings"]){
+       sellerBooksCloudState["sellerbooks_settings"]!==existingCloudData["sellerbooks_settings"] ||
+       sellerBooksCloudState[SELLERBOOKS_LANGUAGE_KEY]!==existingCloudData[SELLERBOOKS_LANGUAGE_KEY]){
         await sellerBooksPersistCloudDataNow();
     }
 
@@ -31286,7 +31287,6 @@ function sellerBooksEnsureDefaultLanguage(){
             SELLERBOOKS_LANGUAGE_KEY,
             SELLERBOOKS_DEFAULT_LANGUAGE
         );
-        sellerBooksPersistCloudDataNow();
     }
 
     sellerBooksSyncLanguageControl();
