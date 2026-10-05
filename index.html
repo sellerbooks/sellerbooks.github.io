@@ -12470,7 +12470,7 @@ document.addEventListener(
             <div style="flex:1;min-width:260px;">
                 <h3 style="margin:0 0 5px 0;">Hapus Laporan</h3>
                 <p style="margin:0;color:#64748b;font-size:13px;">
-                    ${sellerBooksCurrentLanguage() === "en" ? "Delete" : "Hapus"} data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.
+                    <span id="deleteReportDescriptionText">Hapus data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.</span>
                 </p>
             </div>
 
@@ -13327,7 +13327,7 @@ document.addEventListener(
                                     class="settings-remove-button"
                                     onclick="removeSettingsLogo()"
                                 >
-                                    ${sellerBooksCurrentLanguage() === "en" ? "Delete" : "Hapus"} Logo
+                                    <span id="settingsDeleteLogoText">Hapus Logo</span>
                                 </button>
 
                                 <small>
@@ -32259,7 +32259,29 @@ const SELLERBOOKS_I18N = {
         "Contoh: Biaya iklan TikTok bulan ini":"Contoh: Biaya iklan TikTok bulan ini",
         "Catatan tambahan...":"Catatan tambahan...",
         "Refresh Dashboard":"Refresh Dashboard",
-    },
+
+        "Reset Identitas":"Reset Identitas",
+        "0 PCS":"0 PCS",
+        "SellerBooks Smart File Analyzer":"SellerBooks Smart File Analyzer",
+        "Rp 0":"Rp 0",
+        "1 USD = Rp":"1 USD = Rp",
+        "1 SGD = Rp":"1 SGD = Rp",
+        "1 MYR = Rp":"1 MYR = Rp",
+        ". Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.":". Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.",
+        "© 2026 All Rights Reserved by":"© 2026 Hak Cipta Dilindungi oleh",
+        "Contoh: 500000":"Contoh: 500000",
+        "Contoh: 1500":"Contoh: 1500",
+        "Contoh: 16500":"Contoh: 16500",
+        "Contoh: 12900":"Contoh: 12900",
+        "Contoh: 3900":"Contoh: 3900",
+        "Contoh: 850":"Contoh: 850",
+        "Contoh: Adimasa Official Store":"Contoh: Adimasa Official Store",
+        "Contoh: SHOPEE-001":"Contoh: SHOPEE-001",
+        "Contoh: 50000":"Contoh: 50000",
+        "Contoh: 25000":"Contoh: 25000",
+        "Contoh: 100":"Contoh: 100",
+        "Contoh: 15":"Contoh: 15",
+        "Contoh: Shopee":"Contoh: Shopee",    },
     "en": {
         "Dashboard":"Dashboard",
         "Marketplace":"Marketplace",
@@ -32727,6 +32749,15 @@ const SELLERBOOKS_I18N = {
         "Contoh: Biaya iklan TikTok bulan ini":"Example: TikTok advertising cost this month",
         "Catatan tambahan...":"Additional notes...",
         "Refresh Dashboard":"Refresh Dashboard",
+        "Reset Identitas":"Reset Identity",
+        "0 PCS":"0 PCS",
+        "SellerBooks Smart File Analyzer":"SellerBooks Smart File Analyzer",
+        "Rp 0":"Rp 0",
+        "1 USD = Rp":"1 USD = Rp",
+        "1 SGD = Rp":"1 SGD = Rp",
+        "1 MYR = Rp":"1 MYR = Rp",
+        ". Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.":". The exchange rate will be used for all displayed amounts.",
+        "© 2026 All Rights Reserved by":"© 2026 All Rights Reserved by",
     }
 };
 
@@ -33072,6 +33103,19 @@ function applySellerBooksLanguage(){
 
     const languageSelect = document.getElementById("settingsLanguage");
     if(languageSelect) languageSelect.value = language;
+
+    const deleteLogoText = document.getElementById("settingsDeleteLogoText");
+    if(deleteLogoText){
+        deleteLogoText.textContent = language === "en" ? "Delete Logo" : "Hapus Logo";
+    }
+
+    const deleteReportDescriptionText = document.getElementById("deleteReportDescriptionText");
+    if(deleteReportDescriptionText){
+        deleteReportDescriptionText.textContent =
+            language === "en"
+                ? "Delete sales import data specifically by date, marketplace, and store account."
+                : "Hapus data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.";
+    }
 
     const languageInfo = document.getElementById("settingsLanguageInfo");
     if(languageInfo){
