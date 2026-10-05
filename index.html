@@ -16291,7 +16291,7 @@ function loadProductAnalysisMarketplaceFilter(){
         select.value || "all";
 
     select.innerHTML = `
-        <option value="all">Semua Marketplace</option>
+        <option value="all">${sellerBooksDetailsText("allMarketplaces")}</option>
     `;
 
     let marketplaces = [];
@@ -16344,7 +16344,7 @@ function loadProductAnalysisStoreFilter(){
         storeSelect.value || "all";
 
     storeSelect.innerHTML = `
-        <option value="all">Semua Akun Toko</option>
+        <option value="all">${sellerBooksDetailsText("allStoreAccounts")}</option>
     `;
 
     let stores = [];
@@ -16548,6 +16548,99 @@ function formatProductAnalysisCurrency(value){
     return formatRupiah(value);
 }
 
+function sellerBooksDetailsText(key){
+    const language = sellerBooksCurrentLanguage();
+    const translations = {
+        id:{
+            pageTitle:"Rincian",pageSubtitle:"Analisis laba dan kerugian setiap produk",
+            sectionTitle:"Rincian Produk",sectionSubtitle:"Analisis laba setiap SKU untuk mendeteksi produk yang minus dan mengetahui produk mana yang perlu diperbaiki.",
+            filterTitle:"Filter Rincian",filterSubtitle:"Pilih periode, marketplace, dan akun toko untuk mengetahui produk minus secara lebih spesifik.",
+            period:"Periode",marketplace:"Marketplace",storeAccount:"Akun Toko",
+            today:"Hari Ini",yesterday:"Kemarin",week:"Minggu Ini",lastWeek:"Minggu Lalu",month:"Bulan Ini",lastMonth:"Bulan Lalu",last3Months:"3 Bulan Terakhir",year:"Tahun Ini",custom:"Pilih Tanggal",all:"Semua Periode",
+            allMarketplaces:"Semua Marketplace",allStoreAccounts:"Semua Akun Toko",fromDate:"Dari Tanggal",toDate:"Sampai Dengan",
+            filterPeriod:"Periode",filterMarketplace:"Marketplace",filterStore:"Akun",
+            totalProducts:"Total Produk",profitProducts:"Produk Untung",lossProducts:"Produk Minus",totalProfit:"Total Laba Produk",
+            salesPerProduct:"Rincian Penjualan Per Produk",salesPerProductSubtitle:"Produk minus ditampilkan paling atas agar mudah diperbaiki.",
+            no:"No",sku:"SKU",productName:"Nama Produk",qty:"QTY",sellingPrice:"Harga Jual",totalSales:"Total Penjualan",hpp:"HPP",marketplaceAdmin:"Admin Marketplace",productProfit:"Laba Produk",status:"Status",actions:"Aksi",
+            loss:"⚠️ MINUS",profit:"✓ UNTUNG",fix:"✏️ Perbaiki",noMaster:"Belum ada master",noTransactions:"Belum ada transaksi pada periode yang dipilih.",
+            show:"Tampilkan",rows:"baris",previous:"Halaman sebelumnya",next:"Halaman berikutnya",nextButton:"Next ›",dateSeparator:"s/d",dateEllipsis:"...",rangeInvalid:"Tanggal awal tidak boleh lebih besar dari tanggal akhir.",rangeTitle:"Validasi Tanggal"
+        },
+        en:{
+            pageTitle:"Details",pageSubtitle:"Profit and loss analysis for each product",
+            sectionTitle:"Product Details",sectionSubtitle:"Analyze profit for each SKU to identify loss-making products and determine which products need improvement.",
+            filterTitle:"Details Filter",filterSubtitle:"Select a period, marketplace, and store account to identify loss-making products more specifically.",
+            period:"Period",marketplace:"Marketplace",storeAccount:"Store Account",
+            today:"Today",yesterday:"Yesterday",week:"This Week",lastWeek:"Last Week",month:"This Month",lastMonth:"Last Month",last3Months:"Last 3 Months",year:"This Year",custom:"Custom Date",all:"All Periods",
+            allMarketplaces:"All Marketplaces",allStoreAccounts:"All Store Accounts",fromDate:"From Date",toDate:"To Date",
+            filterPeriod:"Period",filterMarketplace:"Marketplace",filterStore:"Store Account",
+            totalProducts:"Total Products",profitProducts:"Profitable Products",lossProducts:"Loss-Making Products",totalProfit:"Total Product Profit",
+            salesPerProduct:"Sales Details by Product",salesPerProductSubtitle:"Loss-making products are shown first so they can be improved easily.",
+            no:"No.",sku:"SKU",productName:"Product Name",qty:"QTY",sellingPrice:"Selling Price",totalSales:"Total Sales",hpp:"COGS",marketplaceAdmin:"Marketplace Admin Fee",productProfit:"Product Profit",status:"Status",actions:"Actions",
+            loss:"⚠️ LOSS",profit:"✓ PROFIT",fix:"✏️ Fix",noMaster:"No master product",noTransactions:"No transactions for the selected period.",
+            show:"Show",rows:"rows",previous:"Previous page",next:"Next page",nextButton:"Next ›",dateSeparator:"to",dateEllipsis:"...",rangeInvalid:"The start date cannot be later than the end date.",rangeTitle:"Date Validation"
+        }
+    };
+    return translations[language]?.[key] ?? translations.id[key] ?? key;
+}
+
+function sellerBooksApplyDetailsLanguage(){
+    const view=document.getElementById("productAnalysis");
+    if(!view)return;
+    const t=sellerBooksDetailsText;
+    const header=view.querySelector(".page-header");
+    if(header){
+        const h=header.querySelector("h2"), p=header.querySelector("p");
+        if(h)h.textContent=t("sectionTitle");
+        if(p)p.textContent=t("sectionSubtitle");
+    }
+    const filter=view.querySelector(".product-analysis-filter-card");
+    if(filter){
+        const h=filter.querySelector("h3"), p=filter.querySelector("p");
+        if(h)h.textContent=t("filterTitle");
+        if(p)p.textContent=t("filterSubtitle");
+        const labels=filter.querySelectorAll(".product-analysis-filter-grid > div > label");
+        if(labels[0])labels[0].textContent=t("period");
+        if(labels[1])labels[1].textContent=t("marketplace");
+        if(labels[2])labels[2].textContent=t("storeAccount");
+        const dateLabels=filter.querySelectorAll("#productAnalysisCustomDateRange label");
+        if(dateLabels[0])dateLabels[0].textContent=t("fromDate");
+        if(dateLabels[1])dateLabels[1].textContent=t("toDate");
+        const period=document.getElementById("productAnalysisPeriod");
+        if(period){
+            const keys={today:"today",yesterday:"yesterday",week:"week",lastWeek:"lastWeek",month:"month",lastMonth:"lastMonth",last3Months:"last3Months",year:"year",custom:"custom",all:"all"};
+            Array.from(period.options).forEach(o=>{if(keys[o.value])o.textContent=t(keys[o.value]);});
+        }
+        const m=document.querySelector("#productAnalysisMarketplace option[value='all']");
+        const s=document.querySelector("#productAnalysisStore option[value='all']");
+        if(m)m.textContent=t("allMarketplaces");
+        if(s)s.textContent=t("allStoreAccounts");
+    }
+    const summary=view.querySelectorAll(".product-analysis-summary-card span");
+    [t("totalProducts"),t("profitProducts"),t("lossProducts"),t("totalProfit")].forEach((v,i)=>{if(summary[i])summary[i].textContent=v;});
+    const section=view.querySelector(".content-section:not(.product-analysis-filter-card)");
+    if(section){
+        const h=section.querySelector(".section-header h3"),p=section.querySelector(".section-header p");
+        if(h)h.textContent=t("salesPerProduct");
+        if(p)p.textContent=t("salesPerProductSubtitle");
+        const th=section.querySelectorAll("thead th");
+        [t("no"),t("sku"),t("productName"),t("qty"),t("sellingPrice"),t("totalSales"),t("hpp"),t("marketplaceAdmin"),t("productProfit"),t("status"),t("actions")]
+          .forEach((v,i)=>{if(th[i])th[i].textContent=v;});
+        const ps=document.getElementById("productAnalysisPageSize");
+        if(ps){
+            const spans=ps.parentElement?.querySelectorAll("span")||[];
+            if(spans[0])spans[0].textContent=t("show");
+            if(spans[1])spans[1].textContent=t("rows");
+            ps.setAttribute("aria-label",t("show")+" "+t("rows"));
+        }
+    }
+    const topTitle=document.getElementById("topTitle"),topSubtitle=document.getElementById("topSubtitle");
+    if(topTitle&&view.classList.contains("active")){
+        topTitle.textContent=t("pageTitle");
+        topSubtitle.textContent=t("pageSubtitle");
+    }
+    updateProductAnalysisFilterInfo();
+}
+
 /* =========================================================
    RINCIAN PENJUALAN PER PRODUK - PAGINATION
    Default 20 baris, pilihan 20/40/50/80/100
@@ -16689,7 +16782,7 @@ function renderProductAnalysis(){
         body.innerHTML = `
             <tr class="analysis-empty-row">
                 <td colspan="11">
-                    Belum ada transaksi pada periode yang dipilih.
+                    ${sellerBooksDetailsText("noTransactions")}
                 </td>
             </tr>
         `;
@@ -16764,8 +16857,8 @@ function renderProductAnalysis(){
 
             const statusText =
                 row.isLoss
-                    ? "⚠️ MINUS"
-                    : "✓ UNTUNG";
+                    ? sellerBooksDetailsText("loss")
+                    : sellerBooksDetailsText("profit");
 
             /*
                Harga Jual = Total Penjualan / QTY.
@@ -16789,7 +16882,7 @@ function renderProductAnalysis(){
                     `
                     : `
                         <span style="font-size:11px;color:#dc2626;">
-                            Belum ada master
+                            ${sellerBooksDetailsText("noMaster")}
                         </span>
                     `;
 
@@ -16830,7 +16923,7 @@ function renderProductAnalysis(){
 
         controlsHtml += `
             <span class="report-transaction-page-info">
-                ${startIndex + 1}-${endIndex} dari ${rows.length}
+                ${startIndex + 1}-${endIndex} ${sellerBooksDetailsText("dateSeparator")} ${rows.length}
             </span>
         `;
 
@@ -16840,7 +16933,7 @@ function renderProductAnalysis(){
                 class="report-transaction-page-button"
                 onclick="goToProductAnalysisPage(${productAnalysisPage - 1})"
                 ${productAnalysisPage <= 1 ? "disabled" : ""}
-                aria-label="Halaman sebelumnya"
+                aria-label="${sellerBooksDetailsText("previous")}"
             >
                 ‹
             </button>
@@ -16932,7 +17025,7 @@ function renderProductAnalysis(){
                 class="report-transaction-page-button"
                 onclick="goToProductAnalysisPage(${productAnalysisPage + 1})"
                 ${productAnalysisPage >= totalPages ? "disabled" : ""}
-                aria-label="Halaman berikutnya"
+                aria-label="${sellerBooksDetailsText("next")}"
             >
                 Next ›
             </button>
@@ -17014,21 +17107,21 @@ function updateProductAnalysisFilterInfo(){
         )?.value || "month";
 
     const names = {
-        today:"Hari Ini",
-        yesterday:"Kemarin",
-        week:"Minggu Ini",
-        lastWeek:"Minggu Lalu",
-        month:"Bulan Ini",
-        lastMonth:"Bulan Lalu",
-        last3Months:"3 Bulan Terakhir",
-        year:"Tahun Ini",
-        custom:"Pilih Tanggal",
-        all:"Semua Periode"
+        today:sellerBooksDetailsText("today"),
+        yesterday:sellerBooksDetailsText("yesterday"),
+        week:sellerBooksDetailsText("week"),
+        lastWeek:sellerBooksDetailsText("lastWeek"),
+        month:sellerBooksDetailsText("month"),
+        lastMonth:sellerBooksDetailsText("lastMonth"),
+        last3Months:sellerBooksDetailsText("last3Months"),
+        year:sellerBooksDetailsText("year"),
+        custom:sellerBooksDetailsText("custom"),
+        all:sellerBooksDetailsText("all")
     };
 
     let label =
         names[period] ||
-        "Bulan Ini";
+        sellerBooksDetailsText("month");
 
     const marketplaceSelect =
         document.getElementById("productAnalysisMarketplace");
@@ -17038,11 +17131,11 @@ function updateProductAnalysisFilterInfo(){
 
     const marketplaceLabel =
         marketplaceSelect?.selectedOptions?.[0]?.textContent ||
-        "Semua Marketplace";
+        sellerBooksDetailsText("allMarketplaces");
 
     const storeLabel =
         storeSelect?.selectedOptions?.[0]?.textContent ||
-        "Semua Akun Toko";
+        sellerBooksDetailsText("allStoreAccounts");
 
     if(period === "custom"){
 
@@ -17064,7 +17157,7 @@ function updateProductAnalysisFilterInfo(){
                         ? from.split("-").reverse().join("/")
                         : "..."
                 ) +
-                " s/d " +
+                " " + sellerBooksDetailsText("dateSeparator") + " " +
                 (
                     to
                         ? to.split("-").reverse().join("/")
@@ -17075,11 +17168,11 @@ function updateProductAnalysisFilterInfo(){
     }
 
     info.innerHTML =
-        "Periode: <strong>" +
+        sellerBooksDetailsText("filterPeriod") + ": <strong>" +
         label +
-        "</strong> &nbsp;|&nbsp; Marketplace: <strong>" +
+        "</strong> &nbsp;|&nbsp; " + sellerBooksDetailsText("filterMarketplace") + ": <strong>" +
         escapeHtmlProductAnalysis(marketplaceLabel) +
-        "</strong> &nbsp;|&nbsp; Akun: <strong>" +
+        "</strong> &nbsp;|&nbsp; " + sellerBooksDetailsText("filterStore") + ": <strong>" +
         escapeHtmlProductAnalysis(storeLabel) +
         "</strong>";
 }
@@ -17093,8 +17186,17 @@ function applyProductAnalysisFilters(){
     }
 
     updateProductAnalysisDateUI();
+    const dateFrom = document.getElementById("productAnalysisDateFrom")?.value || "";
+    const dateTo = document.getElementById("productAnalysisDateTo")?.value || "";
+    if(period?.value === "custom" && dateFrom && dateTo && dateFrom > dateTo){
+        if(typeof sellerBooksAlert === "function"){
+            sellerBooksAlert(sellerBooksDetailsText("rangeInvalid"),sellerBooksDetailsText("rangeTitle"));
+        }
+        return false;
+    }
     updateProductAnalysisFilterInfo();
     renderProductAnalysis();
+    return false;
 }
 
 function initializeProductAnalysis(){
@@ -17290,6 +17392,9 @@ function showView(viewId, button, saveHistory = true){
     }
     if(viewId === "costs" && typeof sellerBooksApplyCostLanguage === "function"){
         sellerBooksApplyCostLanguage();
+    }
+    if(viewId === "productAnalysis" && typeof sellerBooksApplyDetailsLanguage === "function"){
+        sellerBooksApplyDetailsLanguage();
     }
 
 
@@ -32146,6 +32251,9 @@ function sellerBooksSyncLanguageControl(){
 
     if(typeof sellerBooksApplyProductLanguage === "function"){
         sellerBooksApplyProductLanguage();
+    }
+    if(typeof sellerBooksApplyDetailsLanguage === "function"){
+        sellerBooksApplyDetailsLanguage();
     }
 
     const info = document.getElementById("settingsLanguageInfo");
