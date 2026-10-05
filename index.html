@@ -19392,8 +19392,12 @@ async function disconnectStoreAccount(storeId){
         return String(item.id) === String(storeId);
     });
 
+    const isEN = sellerBooksCurrentLanguage() === "en";
     if(!store){
-        sellerBooksAlert("Akun toko tidak ditemukan.","Copot Integrasi");
+        sellerBooksAlert(
+            isEN ? "Store account not found." : "Akun toko tidak ditemukan.",
+            isEN ? "Disconnect Integration" : "Copot Integrasi"
+        );
         return;
     }
 
@@ -19402,7 +19406,10 @@ async function disconnectStoreAccount(storeId){
     });
 
     if(!marketplace){
-        sellerBooksAlert("Marketplace accounts toko tidak ditemukan.","Copot Integrasi");
+        sellerBooksAlert(
+            isEN ? "Store account marketplace not found." : "Marketplace accounts toko tidak ditemukan.",
+            isEN ? "Disconnect Integration" : "Copot Integrasi"
+        );
         return;
     }
 
@@ -19414,9 +19421,13 @@ async function disconnectStoreAccount(storeId){
         return;
     }
 
+    const confirmMessage = isEN
+        ? "Disconnect " + marketplace.name + " integration from store account \"" + store.name + "\"?\n\nAfter disconnecting, this account must be authorized again if you want to reconnect it."
+        : "Copot integrasi " + marketplace.name + " dari accounts toko \"" + store.name + "\"?\n\nSetelah dicopot, accounts ini harus diotorisasi ulang jika ingin terhubung kembali.";
+
     const confirmed = await sellerBooksConfirm(
-        "Copot integrasi " + marketplace.name + " dari accounts toko \"" + store.name + "\"?\n\nSetelah dicopot, accounts ini harus diotorisasi ulang jika ingin terhubung kembali.",
-        "Copot Integrasi"
+        confirmMessage,
+        isEN ? "Disconnect Integration" : "Copot Integrasi"
     );
 
     if(!confirmed) return;
@@ -19448,22 +19459,27 @@ async function disconnectStoreAccount(storeId){
         if(error) throw error;
 
         if(!data?.ok){
-            throw new Error("Koneksi tidak berhasil dicopot.");
+            throw new Error(isEN ? "The integration could not be disconnected." : "Koneksi tidak berhasil dicopot.");
         }
 
         sellerBooksStoreConnectionsUserId = "";
         await refreshStoreIntegrationStates(true);
 
         sellerBooksAlert(
-            "Integrasi " + marketplace.name + " berhasil dicopot.",
-            "Copot Integrasi"
+            isEN
+                ? marketplace.name + " integration was successfully disconnected."
+                : "Integrasi " + marketplace.name + " berhasil dicopot.",
+            isEN ? "Disconnect Integration" : "Copot Integrasi"
         );
     }catch(error){
-        console.error("Copot integrasi gagal:",error);
+        console.error("Disconnect integration failed:",error);
         sellerBooksAlert(
-            "Integrasi gagal dicopot.\n\n" +
-            (error?.message || "Terjadi kesalahan pada server."),
-            "Copot Integrasi"
+            isEN
+                ? "The integration could not be disconnected.\n\n" +
+                  (error?.message || "A server error occurred.")
+                : "Integrasi gagal dicopot.\n\n" +
+                  (error?.message || "Terjadi kesalahan pada server."),
+            isEN ? "Disconnect Integration" : "Copot Integrasi"
         );
     }
 }
