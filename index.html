@@ -33071,7 +33071,13 @@ function sellerBooksApplySettingsLanguage(){
         if(h)h.textContent=t("businessTitle"); if(p)p.textContent=t("businessDesc");
         const label=cards[1].querySelector("label"); if(label)label.textContent=t("businessLabel");
         const input=document.getElementById("settingsBusinessName"); if(input)input.placeholder=t("businessPlaceholder");
-        const info=document.getElementById("settingsBusinessNameInfo"); if(info && info.textContent==="Belum ada perubahan.")info.textContent=t("noChanges");
+        const info=document.getElementById("settingsBusinessNameInfo");
+        if(info){
+            const raw=String(info.textContent||"").trim();
+            if(raw==="Belum ada perubahan." || raw==="No changes yet." || raw==="Pengaturan berhasil disimpan." || raw==="Settings saved successfully."){
+                info.textContent = raw==="Pengaturan berhasil disimpan." || raw==="Settings saved successfully." ? t("saved") : t("noChanges");
+            }
+        }
         const btn=cards[1].querySelector("button"); if(btn)btn.textContent=t("save");
     }
 
@@ -33100,7 +33106,15 @@ function sellerBooksApplySettingsLanguage(){
         const notes=cards[3].querySelectorAll(".settings-note");
         if(notes[0])notes[0].innerHTML=t("rateNote");
         if(notes[1])notes[1].textContent=t("currencyNote");
-        const info=document.getElementById("settingsCurrencyInfo"); if(info)info.textContent=t("rateSaved");
+        const info=document.getElementById("settingsCurrencyInfo");
+        if(info){
+            const settings=getSellerBooksSettings();
+            const rates=settings.exchangeRates||{};
+            info.textContent=t("rateInfo")+" " +
+                "1 USD = Rp"+Number(rates.USD||16500).toLocaleString("id-ID") +
+                " • 1 SGD = Rp"+Number(rates.SGD||12900).toLocaleString("id-ID") +
+                " • 1 MYR = Rp"+Number(rates.MYR||3900).toLocaleString("id-ID");
+        }
         const btn=cards[3].querySelector(".settings-card-footer button"); if(btn)btn.textContent=t("saveRate");
     }
 
@@ -33109,7 +33123,12 @@ function sellerBooksApplySettingsLanguage(){
         if(h)h.textContent=t("packingTitle"); if(p)p.textContent=t("packingDesc");
         const label=cards[4].querySelector("label"); if(label)label.textContent=t("packingLabel");
         const input=document.getElementById("settingsPackingCost"); if(input)input.placeholder=t("packingPlaceholder");
-        const info=document.getElementById("settingsPackingInfo"); if(info && !/^Default packing:|^Biaya packing:/i.test(info.textContent||""))info.textContent=t("packingSaved");
+        const info=document.getElementById("settingsPackingInfo");
+        if(info){
+            const settings=getSellerBooksSettings();
+            const amount=formatRupiah(Number(settings.packingCost)||0);
+            info.textContent=t("packingInfo")+" "+amount+" / order.";
+        }
         const btn=cards[4].querySelector("button"); if(btn)btn.textContent=t("save");
     }
 
