@@ -19529,11 +19529,13 @@ async function integrateStoreAccount(storeId){
        dari halaman SellerBooks agar tidak muncul error konfigurasi OAuth.
     */
     if(!endpoint){
+        const isEN = sellerBooksCurrentLanguage() === "en";
+        const marketplaceName = String(marketplace.name || "marketplace");
         sellerBooksAlert(
-            "Integrasi " + String(marketplace.name || "marketplace") +
-            " belum tersedia saat ini. Fitur sinkronisasi API akan segera hadir setelah konektor/API resmi SellerBooks siap. " +
-            "Sementara Anda bisa melakukan upload file orderan marketplace secara manual melalui Import Sales.",
-            "Segera Hadir"
+            isEN
+                ? "Integration for " + marketplaceName + " is not available yet. API synchronization will be available soon after the official SellerBooks connector/API is ready. For now, you can manually upload marketplace order files through Sales Import."
+                : "Integrasi " + marketplaceName + " belum tersedia saat ini. Fitur sinkronisasi API akan segera hadir setelah konektor/API resmi SellerBooks siap. Sementara Anda bisa melakukan upload file orderan marketplace secara manual melalui Import Sales.",
+            isEN ? "Coming Soon" : "Segera Hadir"
         );
         return;
     }
