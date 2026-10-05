@@ -5981,7 +5981,7 @@ async function deleteReportsByDateRange(){
         storeElement ? storeElement.value || "all" : "all";
 
     if(!fromValue || !toValue){
-        sellerBooksAlert("${sellerBooksReportsText("deleteMissing")}");
+        sellerBooksAlert("sellerBooksReportsText("deleteMissing")");
         return;
     }
 
@@ -5989,12 +5989,12 @@ async function deleteReportsByDateRange(){
     const to = getReportDateOnly(toValue);
 
     if(!from || !to){
-        sellerBooksAlert("${sellerBooksReportsText("invalidRange")}");
+        sellerBooksAlert("sellerBooksReportsText("invalidRange")");
         return;
     }
 
     if(from > to){
-        sellerBooksAlert("${sellerBooksReportsText("invalidOrder")}");
+        sellerBooksAlert("sellerBooksReportsText("invalidOrder")");
         return;
     }
 
@@ -6009,7 +6009,7 @@ async function deleteReportsByDateRange(){
 
     if(from < minDate || to > today){
         sellerBooksAlert(
-            "${sellerBooksReportsText("maxDeleteRange")}"
+            "sellerBooksReportsText("maxDeleteRange")"
         );
         return;
     }
@@ -6061,7 +6061,7 @@ async function deleteReportsByDateRange(){
 
     if(deleted === 0){
         sellerBooksAlert(
-            "${sellerBooksReportsText("noDeleteMatch")}"
+            "sellerBooksReportsText("noDeleteMatch")"
         );
         return;
     }
@@ -6090,15 +6090,13 @@ async function deleteReportsByDateRange(){
 
     const confirmed =
         await sellerBooksConfirm(
-            "HAPUS LAPORAN PERMANEN?\n\n" +
-            "Rentang: " + fromText + " s/d " + toText + "\n" +
-            "Marketplace: " + marketplaceSelectText + "\n" +
-            "Akun Toko: " + storeSelectText + "\n" +
-            "Jumlah data import: " + deleted +
-            "\n\n" +
-            "Hanya laporan yang sesuai dengan filter di atas yang akan dihapus.\n" +
-            "Stok produk akan DIKEMBALIKAN sesuai jumlah stok yang sebelumnya dipotong oleh laporan tersebut.\n\n" +
-            "Data yang dihapus tidak dapat dikembalikan."
+            sellerBooksReportsText("deleteConfirm") + "\n\n" +
+            sellerBooksReportsText("range") + ": " + fromText + " " + sellerBooksReportsText("dateSeparator") + " " + toText + "\n" +
+            sellerBooksReportsText("selectedMarketplace") + ": " + marketplaceSelectText + "\n" +
+            sellerBooksReportsText("selectedStore") + ": " + storeSelectText + "\n" +
+            sellerBooksReportsText("importCount") + ": " + deleted +
+            "\n\n" + sellerBooksReportsText("onlyFiltered") + "\n" +
+            sellerBooksReportsText("restore") + "\n\n" + sellerBooksReportsText("irreversible")
         );
 
     if(!confirmed){
@@ -6122,15 +6120,11 @@ async function deleteReportsByDateRange(){
     updateReports();
 
     sellerBooksAlert(
-        "Laporan berhasil dihapus.\n" +
-        deleted + " data import telah dihapus." +
-        (
-            stockRestoreResult.restoredQty > 0
-                ? "\n\nStok dikembalikan: " +
-                  stockRestoreResult.restoredQty +
-                  " pcs."
-                : "\n\nTidak ada stok yang perlu dikembalikan."
-        )
+        sellerBooksReportsText("deleteSuccess") + "\n" +
+        deleted + " " + sellerBooksReportsText("deletedImports") +
+        (stockRestoreResult.restoredQty > 0
+            ? "\n\n" + sellerBooksReportsText("restored") + ": " + stockRestoreResult.restoredQty + " pcs."
+            : "\n\n" + sellerBooksReportsText("noRestore"))
     );
 }
 
