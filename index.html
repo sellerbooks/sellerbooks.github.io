@@ -22615,9 +22615,9 @@ function renderProducts(){
 
             product.status === "active"
 
-            ? "Aktif"
+            ? sellerBooksProductText("active")
 
-            : "Tidak Aktif";
+            : sellerBooksProductText("inactive");
 
 
         const statusClass =
@@ -22780,9 +22780,9 @@ function renderProducts(){
                             ${
                                 product.status === "active"
 
-                                ? "Nonaktifkan"
+                                ? sellerBooksProductText("disable")
 
-                                : "Aktifkan"
+                                : sellerBooksProductText("enable")
                             }
 
                         </button>
@@ -22830,7 +22830,7 @@ function renderProducts(){
         controlsHtml += `<span class="product-page-info">${sellerBooksProductText("range").replace("{start}",productStartIndex + 1).replace("{end}",productEndIndex).replace("{total}",filteredProducts.length)}</span>`;
 
         controlsHtml += `
-            <button type="button" class="product-page-button" onclick="goToProductPage(${productPage - 1})" ${productPage <= 1 ? "disabled" : ""} aria-label="Halaman sebelumnya">‹</button>
+            <button type="button" class="product-page-button" onclick="goToProductPage(${productPage - 1})" ${productPage <= 1 ? "disabled" : ""} aria-label="${sellerBooksProductText("previous")}">‹</button>
         `;
 
         const maxButtons = 7;
