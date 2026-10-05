@@ -29392,6 +29392,35 @@ async function logoutSellerBooks(){
    RESET IDENTITAS
 ========================================= */
 
+function sellerBooksResetIdentityText(key){
+    const language = sellerBooksCurrentLanguage();
+    const translations = {
+        id:{
+            mobile:"⚠️ Reset Identitas hanya dapat dilakukan melalui komputer/laptop.",
+            confirm:"Reset Nama Pemilik?\n\nNama Pemilik akan dikosongkan dan Anda akan kembali ke halaman pengisian Nama Pemilik.\n\nAkun Gmail dan status persetujuan Core Adiimasa tetap tersimpan.",
+            session:"Sesi login tidak ditemukan. Silakan login kembali.",
+            success:"✅ Nama Pemilik berhasil direset.\n\nAkun Gmail dan persetujuan Core Adiimasa tetap tersimpan.\n\nSilakan masukkan Nama Pemilik yang baru.",
+            failed:"❌ Nama Pemilik gagal direset.",
+            confirmTitle:"Konfirmasi Reset Identitas",
+            successTitle:"Reset Identitas Berhasil",
+            failedTitle:"Reset Identitas Gagal",
+            sessionTitle:"Sesi Tidak Ditemukan"
+        },
+        en:{
+            mobile:"⚠️ Reset Identity is only available on a desktop or laptop.",
+            confirm:"Reset Owner Name?\n\nThe Owner Name will be cleared and you will return to the Owner Name setup page.\n\nYour Gmail account and Core Adiimasa approval status will remain unchanged.",
+            session:"Login session not found. Please log in again.",
+            success:"✅ Owner Name was successfully reset.\n\nYour Gmail account and Core Adiimasa approval remain unchanged.\n\nPlease enter a new Owner Name.",
+            failed:"❌ Failed to reset the Owner Name.",
+            confirmTitle:"Reset Identity Confirmation",
+            successTitle:"Identity Reset Successful",
+            failedTitle:"Identity Reset Failed",
+            sessionTitle:"Session Not Found"
+        }
+    };
+    return translations[language]?.[key] ?? translations.id[key] ?? key;
+}
+
 async function resetIdentity(){
     /* =========================================
        PENGAMAN RESET IDENTITAS
@@ -29405,17 +29434,15 @@ async function resetIdentity(){
     if(mobileDevice){
 
         sellerBooksAlert(
-            "⚠️ Reset Identitas hanya dapat dilakukan melalui komputer/laptop."
+            sellerBooksResetIdentityText("mobile"),
+            sellerBooksResetIdentityText("failedTitle")
         );
 
         return;
     }
     const confirmReset = await sellerBooksConfirm(
-        "Reset Nama Pemilik?\n\n" +
-        "Nama Pemilik akan dikosongkan dan Anda " +
-        "akan kembali ke halaman pengisian Nama Pemilik.\n\n" +
-        "Akun Gmail dan status persetujuan Core Adiimasa " +
-        "tetap tersimpan."
+        sellerBooksResetIdentityText("confirm"),
+        sellerBooksResetIdentityText("confirmTitle")
     );
 
     if(!confirmReset){
@@ -29428,8 +29455,8 @@ async function resetIdentity(){
     if(!sellerBooksAuthUser){
 
         sellerBooksAlert(
-            "Sesi login tidak ditemukan. " +
-            "Silakan login kembali."
+            sellerBooksResetIdentityText("session"),
+            sellerBooksResetIdentityText("sessionTitle")
         );
 
         sellerBooksShowOnly(
@@ -29523,10 +29550,8 @@ async function resetIdentity(){
         }
 
         sellerBooksAlert(
-            "✅ Nama Pemilik berhasil direset.\n\n" +
-            "Akun Gmail dan persetujuan Core Adiimasa " +
-            "tetap tersimpan.\n\n" +
-            "Silakan masukkan Nama Pemilik yang baru."
+            sellerBooksResetIdentityText("success"),
+            sellerBooksResetIdentityText("successTitle")
         );
 
     }catch(error){
@@ -29537,8 +29562,8 @@ async function resetIdentity(){
         );
 
         sellerBooksAlert(
-            "❌ Nama Pemilik gagal direset.\n\n" +
-            error.message
+            sellerBooksResetIdentityText("failed") + "\n\n" + error.message,
+            sellerBooksResetIdentityText("failedTitle")
         );
     }
 }
