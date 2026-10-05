@@ -24112,7 +24112,7 @@ function sellerBooksSalesImportText(key){
         fileName:"Nama File", format:"Format", rowCount:"Jumlah Baris", columnCount:"Jumlah Kolom",
         skuRecognition:"SKU Recognition", qtyRecognition:"QTY Recognition", sellingPriceRecognition:"Harga Jual Recognition",
         notFound:"Belum ditemukan", waiting:"Menunggu analisis", skuNotRecognized:"Kolom SKU belum dikenali", qtyNotRecognized:"Kolom QTY belum dikenali",
-        autoDetected:"Terdeteksi otomatis • ", lazadaQty:"sellerSku • hitung kemunculan", lazadaQtyInfo:"Khusus Lazada • QTY = jumlah kemunculan sellerSku",
+        autoDetected:"Terdeteksi otomatis • ", matchSuffix:"% kecocokan", lazadaQty:"sellerSku • hitung kemunculan", lazadaQtyInfo:"Khusus Lazada • QTY = jumlah kemunculan sellerSku",
         shopeeQty:"1 pcs / baris", shopeeQtyInfo:"Khusus Shopee • file tidak memiliki kolom Jumlah, setiap baris SKU = 1 pcs",
         lazadaPrice:"unitPrice • Kolom AV", lazadaPriceInfo:"Khusus Lazada • Harga Jual = unitPrice kolom AV",
         foundColumns:"Kolom yang Ditemukan", cancel:"✕ Batalkan", continueImport:"Lanjutkan Import →",
@@ -24149,7 +24149,7 @@ function sellerBooksSalesImportText(key){
         fileName:"File Name", format:"Format", rowCount:"Rows", columnCount:"Columns",
         skuRecognition:"SKU Recognition", qtyRecognition:"QTY Recognition", sellingPriceRecognition:"Selling Price Recognition",
         notFound:"Not found", waiting:"Waiting for analysis", skuNotRecognized:"SKU column not recognized", qtyNotRecognized:"QTY column not recognized",
-        autoDetected:"Automatically detected • ", lazadaQty:"sellerSku • count occurrences", lazadaQtyInfo:"Lazada only • QTY = number of sellerSku occurrences",
+        autoDetected:"Automatically detected • ", matchSuffix:"% match", lazadaQty:"sellerSku • count occurrences", lazadaQtyInfo:"Lazada only • QTY = number of sellerSku occurrences",
         shopeeQty:"1 pc / row", shopeeQtyInfo:"Shopee only • file has no Quantity column, each SKU row = 1 pc",
         lazadaPrice:"unitPrice • Column AV", lazadaPriceInfo:"Lazada only • Selling Price = unitPrice in column AV",
         foundColumns:"Detected Columns", cancel:"✕ Cancel", continueImport:"Continue Import →",
@@ -27286,9 +27286,8 @@ async function analyzeSalesFile(input){
 
             sellerBooksAlert(
 
-                sellerBooksSalesImportText("unreadable")
-
-                "Pastikan file tidak rusak."
+                sellerBooksSalesImportText("unreadable") +
+                (sellerBooksCurrentLanguage()==="en" ? "\n\nMake sure the file is not corrupted." : "\n\nPastikan file tidak rusak.")
 
             );
 
@@ -27330,7 +27329,7 @@ function renderSalesAnalysis(){
         currentSalesImport;
 
     const marketplaceElement=document.getElementById("detectedMarketplaceName");
-    if(marketplaceElement) marketplaceElement.value=data.marketplace?data.marketplace+" ✓":"Tidak dikenali";
+    if(marketplaceElement) marketplaceElement.value=data.marketplace?data.marketplace+" ✓":sellerBooksSalesImportText("notDetected");
 
 
 
@@ -27423,7 +27422,7 @@ function renderSalesAnalysis(){
 
             data.skuScore +
 
-            "% kecocokan";
+            sellerBooksSalesImportText("matchSuffix");
 
 
     }
@@ -27498,7 +27497,7 @@ function renderSalesAnalysis(){
 
             data.qtyScore +
 
-            "% kecocokan";
+            sellerBooksSalesImportText("matchSuffix");
 
 
     }
@@ -27717,7 +27716,7 @@ function resetSalesImport(){
     if(skuSelect){
 
         skuSelect.innerHTML =
-            '<option value="">-- Pilih Kolom SKU --</option>';
+            '<option value="">'+sellerBooksSalesImportText("chooseSku")+'</option>';
 
         skuSelect.value = "";
 
@@ -27733,7 +27732,7 @@ function resetSalesImport(){
     if(qtySelect){
 
         qtySelect.innerHTML =
-            '<option value="">-- Pilih Kolom QTY --</option>';
+            '<option value="">'+sellerBooksSalesImportText("chooseQty")+'</option>';
 
         qtySelect.value = "";
 
@@ -27748,7 +27747,7 @@ function resetSalesImport(){
 
     if(marketplace){
         marketplace.value =
-            "Belum terdeteksi";
+            sellerBooksSalesImportText("notDetected");
     }
 
 
@@ -27761,7 +27760,7 @@ function resetSalesImport(){
     if(storeSelect){
 
         storeSelect.innerHTML =
-            '<option value="">-- Pilih Akun Toko --</option>';
+            '<option value="">'+sellerBooksSalesImportText("chooseStore")+'</option>';
 
         storeSelect.value = "";
 
@@ -28481,7 +28480,7 @@ function renderPreviewTable(
                 currentSalesImport.marketplace === "Shopee" &&
                 qtyColumn === "__SHOPEE_QTY_PER_ROW__"
             )
-                ? "QTY • 1 pcs/baris"
+                ? (sellerBooksCurrentLanguage()==="en" ? "QTY • 1 pc/row" : "QTY • 1 pcs/baris")
                 : (qtyColumn || "QTY");
 
 
