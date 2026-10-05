@@ -15426,8 +15426,6 @@ async function sellerBooksLoadProfile(user){
 }
 async function sellerBooksCheckApproval(showAlert){
     if(!sellerBooksAuthUser)return;
-    if(sellerBooksAuthCheckInProgress)return;
-    sellerBooksAuthCheckInProgress = true;
     try{
         sellerBooksProfile=await sellerBooksLoadProfile(sellerBooksAuthUser);
         if(!sellerBooksProfile){ sellerBooksShowApproval("Akun berhasil login, tetapi profile SellerBooks belum terbentuk. Silakan coba lagi beberapa saat lagi."); return; }
@@ -15455,9 +15453,6 @@ async function sellerBooksCheckApproval(showAlert){
         sellerBooksShowApproval("Akun Anda sudah berhasil login. Silakan menunggu persetujuan dari Core Adiimasa sebelum menggunakan SellerBooks.");
         if(showAlert)sellerBooksAlert("Status accounts masih menunggu persetujuan Core Adiimasa.");
     }catch(error){console.error(error);sellerBooksShowApproval("Tidak dapat membaca status accounts saat ini. Periksa koneksi internet lalu coba lagi.");}
-    finally{
-        sellerBooksAuthCheckInProgress = false;
-    }
 }
 function sellerBooksOpenApplication(){
     const ownerName = String(sellerBooksProfile?.owner_name || "").trim();
@@ -15503,8 +15498,9 @@ async function loginGoogle(){
                 options:{
                     redirectTo:"https://sellerbooks.github.io/",
                     skipBrowserRedirect:true,
-                    queryParams:{}
-
+                    queryParams:{
+                        prompt:"select_account"
+                    }
                 }
             });
 
@@ -15532,8 +15528,9 @@ async function loginGoogle(){
             options:{
                 redirectTo:"https://sellerbooks.github.io/",
 
-                queryParams:{}
-
+                queryParams:{
+                    prompt:"select_account"
+                }
             }
         });
 
@@ -32366,231 +32363,6 @@ function sellerBooksTranslateAttributes(root, language){
     });
 }
 
-
-/* =====================================================
-   SELLERBOOKS - EN / ID TRANSLATION AUDIT
-   Runtime audit for visible UI language consistency.
-   Scans titles, labels, placeholders, buttons, dropdowns,
-   helper text, popups, validation/success/error messages,
-   statuses, and modal content.
-===================================================== */
-
-const SELLERBOOKS_I18N_AUDIT_ID_WORDS = [
-    "tambah","pilih","nama","akun","accounts","toko","produk","kategori",
-    "harga","jual","modal","hpp","stok","status","aktif","tidak aktif",
-    "simpan","hapus","edit","batal","tutup","kelola","biaya","admin",
-    "keterangan","nominal","tanggal","deskripsi","contoh","masukkan",
-    "isi","wajib","harus","belum","sudah","gagal","berhasil","kesalahan",
-    "perubahan","pengaturan","bahasa","semua","tidak ada","belum ada",
-    "penjualan","pesanan","pengiriman","pengambilan","integrasikan",
-    "terintegrasi","copot","tarik order","import penjualan","laporan",
-    "rincian","piutang","pembayaran","sisa","dibayar","dipilih","menunggu",
-    "segera hadir","kembali","lanjutkan","konfirmasi","persetujuan"
-];
-
-const SELLERBOOKS_I18N_AUDIT_EN_WORDS = [
-    "add","select","name","account","accounts","store","product","category",
-    "selling","price","cost","cogs","stock","status","active","inactive",
-    "save","delete","edit","cancel","close","manage","fee","description",
-    "amount","date","enter","required","must","not yet","already","failed",
-    "success","error","changes","settings","language","all","no data",
-    "sales","orders","shipment","pickup","integrate","integrated",
-    "disconnect","pull orders","sales import","reports","details",
-    "receivable","payment","remaining","paid","selected","waiting",
-    "coming soon","back","continue","confirm","approval"
-];
-
-function sellerBooksI18nAuditNormalize(value){
-    return String(value ?? "").replace(/\s+/g," ").trim();
-}
-
-function sellerBooksI18nAuditIsUiElement(el){
-    if(!el || !el.closest) return false;
-    if(el.closest("script,style,noscript,template")) return false;
-    return true;
-}
-
-function sellerBooksI18nAuditHasWord(text, words){
-    const value = sellerBooksI18nAuditNormalize(text).toLowerCase();
-    if(!value) return false;
-    return words.some(function(word){
-        const escaped = word.replace(/[.*+?^$()|[\]\\]/g,"\\let sellerBooksI18nApplying = false;
-let sellerBooksI18nObserver = null;");
-        return new RegExp("(^|[^a-z0-9])" + escaped + "([^a-z0-9]|$)","i").test(value);
-    });
-}
-
-function sellerBooksI18nAuditExactDictionaryHit(text, language){
-    const value = sellerBooksI18nAuditNormalize(text);
-    if(!value) return false;
-
-    const id = SELLERBOOKS_I18N.id || {};
-    const en = SELLERBOOKS_I18N.en || {};
-
-    if(language === "en"){
-        return Object.prototype.hasOwnProperty.call(en,value) &&
-            Object.prototype.hasOwnProperty.call(id,value) &&
-            id[value] !== en[value];
-    }
-
-    return Object.prototype.hasOwnProperty.call(id,value) &&
-        Object.prototype.hasOwnProperty.call(en,value) &&
-        id[value] !== en[value];
-}
-
-function sellerBooksRunI18nAudit(options){
-    options = options || {};
-    const language = options.language || sellerBooksCurrentLanguage();
-    const root = options.root || document.body;
-    const issues = [];
-    if(!root) return {language:language,ok:true,issueCount:0,issues:[]};
-
-    const addIssue = function(el,type,attribute,text,reason){
-        const value = sellerBooksI18nAuditNormalize(text);
-        if(!value) return;
-
-        const opposite =
-            language === "en"
-                ? sellerBooksI18nAuditHasWord(value,SELLERBOOKS_I18N_AUDIT_ID_WORDS)
-                : sellerBooksI18nAuditHasWord(value,SELLERBOOKS_I18N_AUDIT_EN_WORDS);
-
-        const exact = sellerBooksI18nAuditExactDictionaryHit(value,language);
-        if(!opposite && !exact) return;
-
-        let selector = "";
-        try{
-            selector =
-                el.id ? "#" + el.id :
-                el.className && typeof el.className === "string"
-                    ? "." + el.className.trim().split(/\s+/).filter(Boolean).slice(0,2).join(".")
-                    : el.tagName?.toLowerCase() || "";
-        }catch(error){}
-
-        issues.push({
-            language: language,
-            type: type,
-            attribute: attribute || null,
-            text: value,
-            selector: selector,
-            reason: reason || (exact ? "dictionary-mismatch" : "opposite-language-token")
-        });
-    };
-
-    const walker = document.createTreeWalker(
-        root,
-        NodeFilter.SHOW_TEXT,
-        {
-            acceptNode:function(node){
-                const parent = node.parentElement;
-                if(!parent || !sellerBooksI18nAuditIsUiElement(parent)){
-                    return NodeFilter.FILTER_REJECT;
-                }
-                return NodeFilter.FILTER_ACCEPT;
-            }
-        }
-    );
-
-    const textNodes = [];
-    let node;
-    while((node = walker.nextNode())) textNodes.push(node);
-
-    textNodes.forEach(function(textNode){
-        const parent = textNode.parentElement;
-        const value = textNode.nodeValue || "";
-        if(!sellerBooksI18nAuditNormalize(value)) return;
-
-        const semanticType =
-            parent.closest("dialog,[role='dialog'],.modal,.modal-content")
-                ? "modal"
-                : parent.matches("button") || parent.closest("button")
-                    ? "button"
-                    : parent.matches("option") || parent.closest("option")
-                        ? "dropdown"
-                        : parent.matches("label") || parent.closest("label")
-                            ? "label"
-                            : parent.matches("small,p,.helper,.help-text,.form-text,.error,.success")
-                                ? "helper-message"
-                                : "text";
-
-        addIssue(parent,semanticType,null,value);
-    });
-
-    root.querySelectorAll?.(
-        "input,textarea,select,button,option,[title],[aria-label],[data-tooltip]"
-    ).forEach(function(el){
-        if(!sellerBooksI18nAuditIsUiElement(el)) return;
-
-        ["placeholder","title","aria-label","data-tooltip"].forEach(function(attr){
-            const value = el.getAttribute(attr);
-            if(value) addIssue(el,"attribute",attr,value);
-        });
-
-        if(el.tagName === "OPTION"){
-            addIssue(el,"dropdown","text",el.textContent || "");
-        }
-
-        if(el.matches("button")){
-            addIssue(el,"button","text",el.textContent || "");
-        }
-    });
-
-    const dialogs = root.querySelectorAll?.(
-        "dialog,[role='dialog'],.modal,.modal-content,.toast,.notification,.alert,.error,.success"
-    ) || [];
-
-    dialogs.forEach(function(el){
-        const value = el.innerText || el.textContent || "";
-        if(value) addIssue(el,"message","text",value);
-    });
-
-    const unique = [];
-    const seen = new Set();
-    issues.forEach(function(issue){
-        const key = [
-            issue.type,
-            issue.attribute || "",
-            issue.text,
-            issue.selector
-        ].join("|");
-        if(seen.has(key)) return;
-        seen.add(key);
-        unique.push(issue);
-    });
-
-    const report = {
-        language: language,
-        ok: unique.length === 0,
-        issueCount: unique.length,
-        issues: unique,
-        scannedAt: new Date().toISOString()
-    };
-
-    window.SELLERBOOKS_I18N_AUDIT_LAST = report;
-
-    if(options.log !== false){
-        if(unique.length){
-            console.group(
-                "SellerBooks EN/ID Translation Audit — " +
-                language.toUpperCase() +
-                " — " + unique.length + " issue(s)"
-            );
-            console.table(unique);
-            console.groupEnd();
-        }else{
-            console.info(
-                "SellerBooks EN/ID Translation Audit — " +
-                language.toUpperCase() +
-                " — PASS: no mixed-language UI text found."
-            );
-        }
-    }
-
-    return report;
-}
-
-window.sellerBooksRunI18nAudit = sellerBooksRunI18nAudit;
-
-
 let sellerBooksI18nApplying = false;
 let sellerBooksI18nObserver = null;
 
@@ -32627,15 +32399,6 @@ function applySellerBooksLanguage(){
     );
     sellerBooksTranslateAttributes(document.body, language);
     sellerBooksStartLanguageObserver();
-
-    /* Audit the rendered UI after every language application. */
-    setTimeout(function(){
-        try{
-            sellerBooksRunI18nAudit({language:language,log:true});
-        }catch(error){
-            console.warn("SellerBooks i18n audit failed:",error);
-        }
-    },0);
 
     const pageLanguageData = {
         dashboard:{
