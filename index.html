@@ -17288,6 +17288,9 @@ function showView(viewId, button, saveHistory = true){
     ){
         sellerBooksApplySalesImportLanguage();
     }
+    if(viewId === "costs" && typeof sellerBooksApplyCostLanguage === "function"){
+        sellerBooksApplyCostLanguage();
+    }
 
 
     /* =========================================
@@ -29099,6 +29102,9 @@ document.addEventListener(
         if(typeof sellerBooksApplySalesImportLanguage === "function"){
             sellerBooksApplySalesImportLanguage();
         }
+        if(typeof sellerBooksApplyCostLanguage === "function"){
+            sellerBooksApplyCostLanguage();
+        }
 
 
         /* MARKETPLACE */
@@ -30633,6 +30639,66 @@ function isCostSnapshotLocked(cost){
    RENDER BIAYA
 ===================================================== */
 
+function sellerBooksCostText(key){
+    const language=sellerBooksCurrentLanguage();
+    const id={
+        pageTitle:"Biaya Lain",pageSubtitle:"Catat biaya tambahan yang mempengaruhi laba bisnis.",add:"Tambah Biaya",total:"Total Biaya Lain",listTitle:"Daftar Biaya",listSubtitle:"Semua biaya tambahan yang telah dicatat.",
+        emptyTitle:"Belum Ada Biaya Tambahan",emptyDescription:"Tambahkan biaya seperti iklan, transport, operasional atau biaya lainnya.",date:"Tanggal",marketplace:"Marketplace",storeAccount:"Akun Toko",category:"Kategori",description:"Keterangan",amount:"Nominal",notes:"Catatan",actions:"Aksi",edit:"Edit",delete:"Hapus",
+        addTitle:"Tambah Biaya",editTitle:"Edit Biaya",selectMarketplace:"-- Pilih Marketplace --",marketplaceHelp:"Pilih marketplace tempat biaya ini terjadi.",selectStore:"-- Pilih Akun Toko --",storeHelp:"Hanya akun dari marketplace yang dipilih yang ditampilkan.",
+        categoryLabel:"Kategori Biaya",selectCategory:"-- Pilih Kategori --",advertising:"Iklan",transport:"Transport",operations:"Operasional",other:"Lainnya",descriptionLabel:"Keterangan",descriptionPlaceholder:"Contoh: Biaya iklan TikTok bulan ini",amountLabel:"Nominal Biaya",amountPlaceholder:"Contoh: 50000",notesLabel:"Catatan",optional:"(Opsional)",notesPlaceholder:"Catatan tambahan...",cancel:"Batal",save:"Simpan Biaya",
+        requiredDate:sellerBooksCostText("requiredDate"),requiredMarketplace:sellerBooksCostText("requiredMarketplace"),requiredStore:sellerBooksCostText("requiredStore"),requiredCategory:sellerBooksCostText("requiredCategory"),requiredDescription:sellerBooksCostText("requiredDescription"),invalidAmount:sellerBooksCostText("invalidAmount"),notFound:sellerBooksCostText("notFound"),lockedEdit:"Biaya tanggal {date} sudah menjadi snapshot dan tidak dapat diedit lagi.",deleteConfirm:"Hapus biaya \"{description}\" sebesar {amount}?"
+    };
+    const en={
+        pageTitle:"Other Costs",pageSubtitle:"Record additional costs that affect your business profit.",add:"Add Cost",total:"Total Other Costs",listTitle:"Cost List",listSubtitle:"All additional costs that have been recorded.",
+        emptyTitle:"No Additional Costs",emptyDescription:"Add costs such as advertising, transport, operations, or other expenses.",date:"Date",marketplace:"Marketplace",storeAccount:"Store Account",category:"Category",description:"Description",amount:"Amount",notes:"Notes",actions:"Actions",edit:"Edit",delete:"Delete",
+        addTitle:"Add Cost",editTitle:"Edit Cost",selectMarketplace:"-- Select Marketplace --",marketplaceHelp:"Select the marketplace where this cost occurred.",selectStore:"-- Select Store Account --",storeHelp:"Only accounts from the selected marketplace are shown.",
+        categoryLabel:"Cost Category",selectCategory:"-- Select Category --",advertising:"Advertising",transport:"Transport",operations:"Operations",other:"Other",descriptionLabel:"Description",descriptionPlaceholder:"Example: TikTok advertising cost this month",amountLabel:"Cost Amount",amountPlaceholder:"Example: 50000",notesLabel:"Notes",optional:"(Optional)",notesPlaceholder:"Additional notes...",cancel:"Cancel",save:"Save Cost",
+        requiredDate:"Cost date is required.",requiredMarketplace:"A marketplace must be selected.",requiredStore:"A store account must be selected.",requiredCategory:"A cost category must be selected.",requiredDescription:"Cost description is required.",invalidAmount:"Cost amount must be greater than 0.",notFound:"Cost data was not found.",lockedEdit:"The cost dated {date} is already a snapshot and can no longer be edited.",deleteConfirm:"Delete cost \"{description}\" for {amount}?"
+    };
+    const source=language==="en"?en:id;
+    return source[key] ?? id[key] ?? key;
+}
+
+function sellerBooksCostCategoryLabel(value){
+    const map={"Iklan":"advertising","Transport":"transport","Operasional":"operations","Lainnya":"other"};
+    const key=map[String(value||"").trim()];
+    return key ? sellerBooksCostText(key) : String(value||"");
+}
+
+function sellerBooksApplyCostLanguage(){
+    const root=document.getElementById("costs"), modal=document.getElementById("costModal");
+    const topTitle=document.getElementById("topTitle"), topSubtitle=document.getElementById("topSubtitle");
+    if(!root && !modal)return;
+    const t=sellerBooksCostText;
+    if(root){
+        const q=(x)=>root.querySelector(x);
+        if(q(".page-header h2"))q(".page-header h2").textContent=t("pageTitle");
+        if(q(".page-header p"))q(".page-header p").textContent=t("pageSubtitle");
+        const add=q(".page-header button"); if(add)add.textContent="+ "+t("add");
+        const total=root.querySelector("#costTotal"); if(total&&total.previousElementSibling)total.previousElementSibling.textContent=t("total");
+        const hs=root.querySelectorAll("h3"); if(hs[0])hs[0].textContent=t("listTitle");
+        const lp=hs[0]?.nextElementSibling; if(lp)lp.textContent=t("listSubtitle");
+        const et=document.querySelector("#costEmptyState h3"), ep=document.querySelector("#costEmptyState p"); if(et)et.textContent=t("emptyTitle"); if(ep)ep.textContent=t("emptyDescription");
+        const headers=root.querySelectorAll("table thead th");
+        [t("date"),t("marketplace"),t("storeAccount"),t("category"),t("description"),t("amount"),t("notes"),t("actions")].forEach((v,i)=>{if(headers[i])headers[i].textContent=v;});
+    }
+    if(modal){
+        const title=document.getElementById("costModalTitle"); if(title)title.textContent=editingCostId?t("editTitle"):t("addTitle");
+        const labels=modal.querySelectorAll(".form-group > label");
+        [t("date")+" *",t("marketplace")+" *",t("storeAccount")+" *",t("categoryLabel")+" *",t("descriptionLabel")+" *",t("amountLabel")+" *"].forEach((v,i)=>{if(labels[i])labels[i].textContent=v;});
+        if(labels[6])labels[6].innerHTML=t("notesLabel")+" <span style=\"color:#94a3b8;\">"+t("optional")+"</span>";
+        const mp=document.getElementById("costMarketplace"); if(mp?.options[0])mp.options[0].textContent=t("selectMarketplace");
+        const st=document.getElementById("costStore"); if(st?.options[0])st.options[0].textContent=t("selectStore");
+        const cat=document.getElementById("costCategory");
+        if(cat){const map={"":"selectCategory","Iklan":"advertising","Transport":"transport","Operasional":"operations","Lainnya":"other"};Array.from(cat.options).forEach(o=>{if(map[o.value])o.textContent=t(map[o.value]);});}
+        const desc=document.getElementById("costDescription"), amt=document.getElementById("costAmount"), notes=document.getElementById("costNotes");
+        if(desc)desc.placeholder=t("descriptionPlaceholder"); if(amt)amt.placeholder=t("amountPlaceholder"); if(notes)notes.placeholder=t("notesPlaceholder");
+        const smalls=modal.querySelectorAll(".form-group small"); if(smalls[0])smalls[0].textContent=t("marketplaceHelp"); if(smalls[1])smalls[1].textContent=t("storeHelp");
+        const buttons=modal.querySelectorAll(".modal-body .secondary-button,.modal-body .primary-button"); if(buttons[0])buttons[0].textContent=t("cancel"); if(buttons[1])buttons[1].textContent=t("save");
+    }
+    if(document.getElementById("costs")?.classList.contains("active")){if(topTitle)topTitle.textContent=t("pageTitle");if(topSubtitle)topSubtitle.textContent=t("pageSubtitle");}
+}
+
 function renderCosts(){
 
     const tableBody =
@@ -30780,7 +30846,7 @@ function renderCosts(){
                                         font-weight:600;
                                     "
                                 >
-                                    ${escapeCostHtml(cost.category)}
+                                    ${escapeCostHtml(sellerBooksCostCategoryLabel(cost.category))}
                                 </span>
                             </td>
 
@@ -30824,7 +30890,7 @@ function renderCosts(){
                                                 class="secondary-button"
                                                 onclick="editCost('${cost.id}')"
                                             >
-                                                Edit
+                                                ${sellerBooksCostText("edit")}
                                             </button>
                                         `
                                     }
@@ -30838,7 +30904,7 @@ function renderCosts(){
                                             border-color:#fecaca;
                                         "
                                     >
-                                        Hapus
+                                        ${sellerBooksCostText("delete")}
                                     </button>
 
                                 </div>
@@ -30944,7 +31010,7 @@ function loadCostMarketplaceOptions(selectedId){
 
     select.innerHTML = `
         <option value="">
-            -- Pilih Marketplace --
+            '+sellerBooksCostText("selectMarketplace")+'
         </option>
     `;
 
@@ -30979,7 +31045,7 @@ function loadCostStoreOptions(selectedId){
 
     storeSelect.innerHTML = `
         <option value="">
-            -- Pilih Akun Toko --
+            '+sellerBooksCostText("selectStore")+'
         </option>
     `;
 
@@ -31127,7 +31193,7 @@ function saveCost(){
     if(!date){
 
         sellerBooksAlert(
-            "Tanggal biaya wajib diisi."
+            sellerBooksCostText("requiredDate")
         );
 
         return;
@@ -31138,7 +31204,7 @@ function saveCost(){
     if(!marketplaceId){
 
         sellerBooksAlert(
-            "Marketplace wajib dipilih."
+            sellerBooksCostText("requiredMarketplace")
         );
 
         return;
@@ -31149,7 +31215,7 @@ function saveCost(){
     if(!storeId){
 
         sellerBooksAlert(
-            "Akun toko wajib dipilih."
+            sellerBooksCostText("requiredStore")
         );
 
         return;
@@ -31160,7 +31226,7 @@ function saveCost(){
     if(!category){
 
         sellerBooksAlert(
-            "Kategori biaya wajib dipilih."
+            sellerBooksCostText("requiredCategory")
         );
 
         return;
@@ -31171,7 +31237,7 @@ function saveCost(){
     if(!description){
 
         sellerBooksAlert(
-            "Keterangan biaya wajib diisi."
+            sellerBooksCostText("requiredDescription")
         );
 
         return;
@@ -31185,7 +31251,7 @@ function saveCost(){
     ){
 
         sellerBooksAlert(
-            "Nominal biaya harus lebih dari 0."
+            sellerBooksCostText("invalidAmount")
         );
 
         return;
@@ -31205,12 +31271,12 @@ function saveCost(){
             });
 
         if(!existingCost){
-            sellerBooksAlert("Data biaya tidak ditemukan.");
+            sellerBooksAlert(sellerBooksCostText("notFound"));
             return;
         }
 
         if(isCostSnapshotLocked(existingCost)){
-            sellerBooksAlert("Biaya tanggal " + formatCostDate(existingCost.date) + " sudah menjadi snapshot dan tidak dapat diedit lagi.");
+            sellerBooksAlert(sellerBooksCostText("lockedEdit").replace("{date}",formatCostDate(existingCost.date)));
             return;
         }
 
@@ -31342,7 +31408,7 @@ function editCost(id){
     }
 
     if(isCostSnapshotLocked(cost)){
-        sellerBooksAlert("Biaya tanggal " + formatCostDate(cost.date) + " sudah menjadi snapshot dan tidak dapat diedit lagi.");
+        sellerBooksAlert(sellerBooksCostText("lockedEdit").replace("{date}",formatCostDate(cost.date)));
         return;
     }
 
@@ -31430,13 +31496,9 @@ async function deleteCost(id){
 
     const confirmed =
         await sellerBooksConfirm(
-            "Hapus biaya \"" +
-            cost.description +
-            "\" sebesar " +
-            formatCostCurrency(
-                cost.amount
-            ) +
-            "?"
+            sellerBooksCostText("deleteConfirm")
+                .replace("{description}",cost.description)
+                .replace("{amount}",formatCostCurrency(cost.amount))
         );
 
 
@@ -31475,6 +31537,9 @@ document.addEventListener(
     function(){
 
         renderCosts();
+        if(typeof sellerBooksApplyCostLanguage === "function"){
+            sellerBooksApplyCostLanguage();
+        }
 
     }
 );
