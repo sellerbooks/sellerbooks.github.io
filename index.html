@@ -30646,7 +30646,7 @@ function sellerBooksCostText(key){
         emptyTitle:"Belum Ada Biaya Tambahan",emptyDescription:"Tambahkan biaya seperti iklan, transport, operasional atau biaya lainnya.",date:"Tanggal",marketplace:"Marketplace",storeAccount:"Akun Toko",category:"Kategori",description:"Keterangan",amount:"Nominal",notes:"Catatan",actions:"Aksi",edit:"Edit",delete:"Hapus",
         addTitle:"Tambah Biaya",editTitle:"Edit Biaya",selectMarketplace:"-- Pilih Marketplace --",marketplaceHelp:"Pilih marketplace tempat biaya ini terjadi.",selectStore:"-- Pilih Akun Toko --",storeHelp:"Hanya akun dari marketplace yang dipilih yang ditampilkan.",
         categoryLabel:"Kategori Biaya",selectCategory:"-- Pilih Kategori --",advertising:"Iklan",transport:"Transport",operations:"Operasional",other:"Lainnya",descriptionLabel:"Keterangan",descriptionPlaceholder:"Contoh: Biaya iklan TikTok bulan ini",amountLabel:"Nominal Biaya",amountPlaceholder:"Contoh: 50000",notesLabel:"Catatan",optional:"(Opsional)",notesPlaceholder:"Catatan tambahan...",cancel:"Batal",save:"Simpan Biaya",
-        requiredDate:sellerBooksCostText("requiredDate"),requiredMarketplace:sellerBooksCostText("requiredMarketplace"),requiredStore:sellerBooksCostText("requiredStore"),requiredCategory:sellerBooksCostText("requiredCategory"),requiredDescription:sellerBooksCostText("requiredDescription"),invalidAmount:sellerBooksCostText("invalidAmount"),notFound:sellerBooksCostText("notFound"),lockedEdit:"Biaya tanggal {date} sudah menjadi snapshot dan tidak dapat diedit lagi.",deleteConfirm:"Hapus biaya \"{description}\" sebesar {amount}?"
+        requiredDate:"Tanggal biaya wajib diisi.",requiredMarketplace:"Marketplace wajib dipilih.",requiredStore:"Akun toko wajib dipilih.",requiredCategory:"Kategori biaya wajib dipilih.",requiredDescription:"Keterangan biaya wajib diisi.",invalidAmount:"Nominal biaya harus lebih dari 0.",notFound:"Data biaya tidak ditemukan.",lockedEdit:"Biaya tanggal {date} sudah menjadi snapshot dan tidak dapat diedit lagi.",deleteConfirm:"Hapus biaya \"{description}\" sebesar {amount}?"
     };
     const en={
         pageTitle:"Other Costs",pageSubtitle:"Record additional costs that affect your business profit.",add:"Add Cost",total:"Total Other Costs",listTitle:"Cost List",listSubtitle:"All additional costs that have been recorded.",
@@ -31082,7 +31082,7 @@ function openCostModal(){
     document.getElementById(
         "costModalTitle"
     ).textContent =
-        "Tambah Biaya";
+        sellerBooksCostText("addTitle");
 
 
     document.getElementById(
@@ -31420,7 +31420,7 @@ function editCost(id){
     document.getElementById(
         "costModalTitle"
     ).textContent =
-        "Edit Biaya";
+        sellerBooksCostText("editTitle");
 
 
     document.getElementById(
