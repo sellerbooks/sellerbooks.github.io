@@ -21516,7 +21516,9 @@ function applyStoreModalLanguage(){
 
     const title = document.getElementById("storeModalTitle");
     if(title){
-        title.innerText = isEN ? "Add Store Account" : "Tambah Accounts Toko";
+        title.innerText = editingStoreId
+            ? (isEN ? "Edit Store Account" : "Edit Accounts Toko")
+            : (isEN ? "Add Store Account" : "Tambah Accounts Toko");
     }
 
     const groups = modal.querySelectorAll(".form-group");
