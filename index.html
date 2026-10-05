@@ -8436,16 +8436,16 @@ function sellerBooksPdfGetPeriodLabel(){
         document.getElementById("reportPeriod")?.value || "today";
 
     const names = {
-        today:"Hari Ini",
-        yesterday:"Kemarin",
-        week:"Minggu Ini",
-        lastWeek:"Minggu Lalu",
-        month:"Bulan Ini",
-        lastMonth:"Bulan Lalu",
-        last3Months:"3 Bulan Terakhir",
-        year:"Tahun Ini",
-        custom:"Pilih Tanggal",
-        all:"Semua Periode"
+        today:sellerBooksReportsText("today"),
+        yesterday:sellerBooksReportsText("yesterday"),
+        week:sellerBooksReportsText("week"),
+        lastWeek:sellerBooksReportsText("lastWeek"),
+        month:sellerBooksReportsText("month"),
+        lastMonth:sellerBooksReportsText("lastMonth"),
+        last3Months:sellerBooksReportsText("last3Months"),
+        year:sellerBooksReportsText("year"),
+        custom:sellerBooksReportsText("custom"),
+        all:sellerBooksReportsText("all")
     };
 
     let label = names[period] || period;
@@ -8460,7 +8460,7 @@ function sellerBooksPdfGetPeriodLabel(){
         if(from || to){
             label += " (" +
                 (from ? from.split("-").reverse().join("/") : "...") +
-                " s/d " +
+                 " + sellerBooksReportsText("dateSeparator") + "  +
                 (to ? to.split("-").reverse().join("/") : "...") +
                 ")";
         }
@@ -8474,14 +8474,14 @@ function sellerBooksPdfGetMarketplaceLabel(){
         document.getElementById("reportMarketplace");
 
     if(!element){
-        return "Semua Marketplace";
+        return sellerBooksReportsText("allMarketplaces");
     }
 
     const option = element.options[element.selectedIndex];
 
     return option
-        ? String(option.textContent || option.value || "Semua Marketplace").trim()
-        : "Semua Marketplace";
+        ? String(option.textContent || option.value || sellerBooksReportsText("allMarketplaces")).trim()
+        : sellerBooksReportsText("allMarketplaces");
 }
 
 function sellerBooksPdfGetStoreLabel(){
@@ -8489,14 +8489,14 @@ function sellerBooksPdfGetStoreLabel(){
         document.getElementById("reportStore");
 
     if(!element){
-        return "Semua Akun Toko";
+        return sellerBooksReportsText("allStoreAccounts");
     }
 
     const option = element.options[element.selectedIndex];
 
     return option
-        ? String(option.textContent || option.value || "Semua Akun Toko").trim()
-        : "Semua Akun Toko";
+        ? String(option.textContent || option.value || sellerBooksReportsText("allStoreAccounts")).trim()
+        : sellerBooksReportsText("allStoreAccounts");
 }
 
 function sellerBooksPdfFormatNumber(value){
@@ -8533,7 +8533,7 @@ async function downloadReportPDF(){
 
         if(button){
             button.disabled = true;
-            button.innerHTML = "⏳ Menyiapkan PDF...";
+            button.innerHTML = sellerBooksReportsText("preparing");
         }
 
         /*
@@ -8802,45 +8802,45 @@ async function downloadReportPDF(){
         /* HEADER */
         doc.setFont("helvetica","bold");
         doc.setFontSize(18);
-        doc.text("SellerBooks - Laporan Bisnis",14,16);
+        doc.text(sellerBooksReportsText("pdfTitle"),14,16);
 
         doc.setFont("helvetica","normal");
         doc.setFontSize(9);
         doc.text(
-            "Dicetak: " + sellerBooksPdfFormatDateNow(),
+            sellerBooksReportsText("printed") + ": " sellerBooksPdfFormatDateNow(),
             pageWidth - 14,
             16,
             {align:"right"}
         );
 
         doc.setFontSize(10);
-        doc.text("Periode: " + periodLabel,14,23);
-        doc.text("Marketplace: " + marketplaceLabel,14,29);
-        doc.text("Akun Toko: " + storeLabel,14,35);
+        doc.text(sellerBooksReportsText("period") + ": " periodLabel,14,23);
+        doc.text(sellerBooksReportsText("marketplace") + ": " marketplaceLabel,14,29);
+        doc.text(sellerBooksReportsText("storeAccount") + ": " storeLabel,14,35);
 
         /* RINGKASAN KEUANGAN */
         const summaryRows = [
-            ["Total Penjualan", sellerBooksPdfFormatRupiah(financial.totalSales)],
-            ["Penjualan Bersih", sellerBooksPdfFormatRupiah(financial.netSales)],
-            ["Produk Terjual", sellerBooksPdfFormatNumber(financial.totalQty) + " PCS"],
-            ["HPP", sellerBooksPdfFormatRupiah(financial.totalHpp)],
-            ["Admin Marketplace", sellerBooksPdfFormatRupiah(financial.totalAdmin)],
+            [sellerBooksReportsText("totalSales").replace("TOTAL ",""), sellerBooksPdfFormatRupiah(financial.totalSales)],
+            [sellerBooksReportsText("netSales").replace("NET ",""), sellerBooksPdfFormatRupiah(financial.netSales)],
+            [sellerBooksReportsText("soldProducts"), sellerBooksPdfFormatNumber(financial.totalQty) + " PCS"],
+            [sellerBooksReportsText("hpp"), sellerBooksPdfFormatRupiah(financial.totalHpp)],
+            [sellerBooksReportsText("admin"), sellerBooksPdfFormatRupiah(financial.totalAdmin)],
             ["Packing", sellerBooksPdfFormatRupiah(financial.totalPacking)],
-            ["Biaya Lain", sellerBooksPdfFormatRupiah(financial.otherCosts)],
-            ["Laba Kotor", sellerBooksPdfFormatRupiah(financial.grossProfit)],
-            ["Laba Bersih", sellerBooksPdfFormatRupiah(financial.netProfit)],
-            ["Margin Bersih", Number(financial.margin || 0).toLocaleString("id-ID",{maximumFractionDigits:2}) + "%"]
+            [sellerBooksReportsText("otherCosts"), sellerBooksPdfFormatRupiah(financial.otherCosts)],
+            [sellerBooksReportsText("grossProfit"), sellerBooksPdfFormatRupiah(financial.grossProfit)],
+            [sellerBooksReportsText("netProfit"), sellerBooksPdfFormatRupiah(financial.netProfit)],
+            [sellerBooksReportsText("margin"), Number(financial.margin || 0).toLocaleString("id-ID",{maximumFractionDigits:2}) + "%"]
         ];
 
         doc.setFont("helvetica","bold");
         doc.setFontSize(12);
-        doc.text("Ringkasan Keuangan",14,44);
+        doc.text(sellerBooksReportsText("financialSummary"),14,44);
 
         doc.autoTable({
             startY:47,
             margin:{left:14,right:14},
             theme:"grid",
-            head:[["Komponen","Nilai"]],
+            head:[[sellerBooksReportsText("component"),sellerBooksReportsText("value")]],
             body:summaryRows,
             styles:{
                 font:"helvetica",
@@ -8862,7 +8862,7 @@ async function downloadReportPDF(){
         /* SKU / PRODUK */
         doc.setFont("helvetica","bold");
         doc.setFontSize(12);
-        doc.text("Rincian Penjualan per SKU",14,y);
+        doc.text(sellerBooksReportsText("skuDetails"),14,y);
 
         y += 3;
 
@@ -8878,7 +8878,7 @@ async function downloadReportPDF(){
                     sellerBooksPdfFormatRupiah(row.hpp),
                     sellerBooksPdfFormatRupiah(row.admin),
                     sellerBooksPdfFormatRupiah(row.profit),
-                    row.isLoss ? "MINUS" : "UNTUNG"
+                    row.isLoss ? sellerBooksReportsText("loss") : sellerBooksReportsText("gain")
                 ];
             });
 
@@ -8886,7 +8886,7 @@ async function downloadReportPDF(){
             skuBody.push([
                 "-",
                 "-",
-                "Tidak ada transaksi pada periode ini.",
+                sellerBooksReportsText("noSalesData"),
                 "-","-","-","-","-","-","-"
             ]);
         }
@@ -8898,14 +8898,14 @@ async function downloadReportPDF(){
             head:[[
                 "No",
                 "SKU",
-                "Nama Produk",
+                sellerBooksReportsText("productName"),
                 "QTY",
-                "Harga Jual",
-                "Penjualan",
-                "HPP",
-                "Admin",
-                "Laba Produk",
-                "Status"
+                sellerBooksReportsText("sellingPrice"),
+                sellerBooksReportsText("totalSalesHeader"),
+                sellerBooksReportsText("hpp"),
+                sellerBooksReportsText("admin"),
+                sellerBooksReportsText("productProfit"),
+                sellerBooksReportsText("status")
             ]],
             body:skuBody,
             styles:{
@@ -8947,7 +8947,7 @@ async function downloadReportPDF(){
         /* MARKETPLACE */
         doc.setFont("helvetica","bold");
         doc.setFontSize(12);
-        doc.text("Ringkasan Marketplace",14,y);
+        doc.text(sellerBooksReportsText("marketplaceSummaryPdf"),14,y);
 
         const marketplaceMap = new Map();
 
@@ -9017,7 +9017,7 @@ async function downloadReportPDF(){
 
         if(!marketplaceBody.length){
             marketplaceBody.push([
-                "Tidak ada data",
+                sellerBooksReportsText("noData"),
                 "-","-","-","-","-"
             ]);
         }
@@ -9029,10 +9029,10 @@ async function downloadReportPDF(){
             head:[[
                 "Marketplace",
                 "QTY",
-                "Penjualan",
-                "Admin",
-                "HPP",
-                "Laba Produk"
+                sellerBooksReportsText("totalSalesHeader"),
+                sellerBooksReportsText("admin"),
+                sellerBooksReportsText("hpp"),
+                sellerBooksReportsText("productProfit")
             ]],
             body:marketplaceBody,
             styles:{
@@ -9071,7 +9071,7 @@ async function downloadReportPDF(){
             doc.text(
                 "SellerBooks | Laporan Bisnis | Halaman " +
                 page +
-                " dari " +
+                " " + sellerBooksReportsText("of") + " "
                 totalPages,
                 pageWidth / 2,
                 pageHeight - 7,
@@ -9085,7 +9085,7 @@ async function downloadReportPDF(){
             );
 
         const fileName =
-            "SellerBooks_Laporan_" +
+            "SellerBooks_Report_" +
             safePeriod +
             "_" +
             new Date().toISOString().slice(0,10) +
@@ -9123,9 +9123,9 @@ async function downloadReportPDF(){
 
         sellerBooksAlert(
             "✅ PDF laporan berhasil dibuat.\n\n" +
-            "Periode: " + periodLabel + "\n" +
-            "Marketplace: " + marketplaceLabel + "\n" +
-            "Akun Toko: " + storeLabel
+            sellerBooksReportsText("period") + ": " periodLabel + "\n" +
+            sellerBooksReportsText("marketplace") + ": " marketplaceLabel + "\n" +
+            sellerBooksReportsText("storeAccount") + ": " storeLabel
         );
 
     }catch(error){
@@ -9136,11 +9136,11 @@ async function downloadReportPDF(){
         );
 
         sellerBooksAlert(
-            "❌ PDF gagal dibuat.\n\n" +
+            sellerBooksReportsText("pdfFailed") + "\n\n" +
             (
                 error && error.message
                     ? error.message
-                    : "Silakan coba lagi."
+                    : sellerBooksReportsText("tryAgain")
             )
         );
 
