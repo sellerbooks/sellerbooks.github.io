@@ -4533,16 +4533,7 @@ td{
         body.textContent = item.message;
         icon.textContent = item.confirm ? "?" : "✓";
         cancel.style.display = item.confirm ? "" : "none";
-        const dialogLanguage =
-            typeof sellerBooksCurrentLanguage === "function"
-                ? sellerBooksCurrentLanguage()
-                : "id";
-        ok.textContent =
-            item.confirm
-                ? (dialogLanguage === "en" ? "Continue" : "Lanjutkan")
-                : "OK";
-        cancel.textContent =
-            dialogLanguage === "en" ? "Cancel" : "Batal";
+        ok.textContent = item.confirm ? "Lanjutkan" : "OK";
 
         overlay.classList.add("show");
         overlay.setAttribute("aria-hidden","false");
@@ -12470,7 +12461,7 @@ document.addEventListener(
             <div style="flex:1;min-width:260px;">
                 <h3 style="margin:0 0 5px 0;">Hapus Laporan</h3>
                 <p style="margin:0;color:#64748b;font-size:13px;">
-                    <span id="deleteReportDescriptionText">Hapus data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.</span>
+                    ${sellerBooksCurrentLanguage() === "en" ? "Delete" : "Hapus"} data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.
                 </p>
             </div>
 
@@ -13327,7 +13318,7 @@ document.addEventListener(
                                     class="settings-remove-button"
                                     onclick="removeSettingsLogo()"
                                 >
-                                    <span id="settingsDeleteLogoText">Hapus Logo</span>
+                                    ${sellerBooksCurrentLanguage() === "en" ? "Delete" : "Hapus"} Logo
                                 </button>
 
                                 <small>
@@ -15704,18 +15695,6 @@ function sellerBooksRefreshActiveView(){
 }
 function sellerBooksRefreshAllViewsFromCloud(){
     if(typeof sellerBooksRefreshRuntimeFromCloud==="function")sellerBooksRefreshRuntimeFromCloud();
-    /*
-       Language is part of the authenticated user's cloud settings.
-       Re-apply it whenever Supabase realtime replaces cloud state so a
-       language change on another device immediately becomes authoritative
-       for this same Gmail account.
-    */
-    if(typeof applySellerBooksLanguage==="function" &&
-       sellerBooksAuthUser &&
-       sellerBooksCloudReady &&
-       !sellerBooksCloudLoading){
-        applySellerBooksLanguage();
-    }
     sellerBooksRefreshActiveView();
 }
 
@@ -18855,15 +18834,10 @@ async function deleteMarketplace(id){
 
     if(!marketplace) return;
 
-    const isEN = sellerBooksCurrentLanguage() === "en";
-    const marketplaceName = marketplace.name || "Marketplace";
-    const deleteConfirmMessage = isEN
-        ? "Delete marketplace \"" + marketplaceName + "\"?\n\nStore account data connected to this marketplace will also be deleted."
-        : "Hapus marketplace \"" + marketplaceName + "\"?\n\nData accounts toko yang terhubung dengan marketplace ini juga akan dihapus.";
-
     if(!await sellerBooksConfirm(
-        deleteConfirmMessage,
-        isEN ? "Confirm" : "Konfirmasi"
+        "Hapus marketplace \"" +
+        (marketplace.name || "Marketplace") +
+        "\"?\n\nData accounts toko yang terhubung dengan marketplace ini juga akan dihapus."
     )){
         return;
     }
@@ -18938,10 +18912,9 @@ async function deleteMarketplace(id){
         );
 
         sellerBooksAlert(
-            isEN
-                ? "Marketplace \"" + marketplaceName + "\" was successfully deleted and the change was verified as saved to the database."
-                : "Marketplace \"" + marketplaceName + "\" berhasil dihapus dan perubahan sudah terverifikasi tersimpan di database.",
-            isEN ? "SellerBooks" : "SellerBooks"
+            "Marketplace \"" +
+            (marketplace.name || "Marketplace") +
+            "\" berhasil dihapus dan perubahan sudah terverifikasi tersimpan di database."
         );
 
     }catch(error){
@@ -18957,9 +18930,9 @@ async function deleteMarketplace(id){
         if(typeof renderStores === "function")renderStores();
 
         sellerBooksAlert(
-            isEN
-                ? "The marketplace was not deleted from the database.\n\nThe change was rolled back because database verification failed.\n\nDetails: " + (error && error.message ? error.message : error)
-                : "Marketplace belum jadi dihapus dari database.\n\nPerubahan dibatalkan karena verifikasi Supabase gagal.\n\nDetail: " + (error && error.message ? error.message : error)
+            "Marketplace belum jadi dihapus dari database.\n\n" +
+            "Perubahan dibatalkan karena verifikasi Supabase gagal.\n\n" +
+            "Detail: " + (error && error.message ? error.message : error)
         );
     }
 }
@@ -19112,13 +19085,11 @@ function renderStoreMarketplaceOptions(){
     const currentValue = select.value;
 
 
-    const isEN = sellerBooksCurrentLanguage() === "en";
-
     select.innerHTML = `
 
         <option value="">
 
-            ${isEN ? "Select Marketplace" : "Pilih Marketplace"}
+            Pilih Marketplace
 
         </option>
 
@@ -19404,12 +19375,8 @@ async function disconnectStoreAccount(storeId){
         return String(item.id) === String(storeId);
     });
 
-    const isEN = sellerBooksCurrentLanguage() === "en";
     if(!store){
-        sellerBooksAlert(
-            isEN ? "Store account not found." : "Akun toko tidak ditemukan.",
-            isEN ? "Disconnect Integration" : "Copot Integrasi"
-        );
+        sellerBooksAlert("Akun toko tidak ditemukan.","Copot Integrasi");
         return;
     }
 
@@ -19418,10 +19385,7 @@ async function disconnectStoreAccount(storeId){
     });
 
     if(!marketplace){
-        sellerBooksAlert(
-            isEN ? "Store account marketplace not found." : "Marketplace accounts toko tidak ditemukan.",
-            isEN ? "Disconnect Integration" : "Copot Integrasi"
-        );
+        sellerBooksAlert("Marketplace accounts toko tidak ditemukan.","Copot Integrasi");
         return;
     }
 
@@ -19433,13 +19397,9 @@ async function disconnectStoreAccount(storeId){
         return;
     }
 
-    const confirmMessage = isEN
-        ? "Disconnect " + marketplace.name + " integration from store account \"" + store.name + "\"?\n\nAfter disconnecting, this account must be authorized again if you want to reconnect it."
-        : "Copot integrasi " + marketplace.name + " dari accounts toko \"" + store.name + "\"?\n\nSetelah dicopot, accounts ini harus diotorisasi ulang jika ingin terhubung kembali.";
-
     const confirmed = await sellerBooksConfirm(
-        confirmMessage,
-        isEN ? "Disconnect Integration" : "Copot Integrasi"
+        "Copot integrasi " + marketplace.name + " dari accounts toko \"" + store.name + "\"?\n\nSetelah dicopot, accounts ini harus diotorisasi ulang jika ingin terhubung kembali.",
+        "Copot Integrasi"
     );
 
     if(!confirmed) return;
@@ -19471,27 +19431,22 @@ async function disconnectStoreAccount(storeId){
         if(error) throw error;
 
         if(!data?.ok){
-            throw new Error(isEN ? "The integration could not be disconnected." : "Koneksi tidak berhasil dicopot.");
+            throw new Error("Koneksi tidak berhasil dicopot.");
         }
 
         sellerBooksStoreConnectionsUserId = "";
         await refreshStoreIntegrationStates(true);
 
         sellerBooksAlert(
-            isEN
-                ? marketplace.name + " integration was successfully disconnected."
-                : "Integrasi " + marketplace.name + " berhasil dicopot.",
-            isEN ? "Disconnect Integration" : "Copot Integrasi"
+            "Integrasi " + marketplace.name + " berhasil dicopot.",
+            "Copot Integrasi"
         );
     }catch(error){
-        console.error("Disconnect integration failed:",error);
+        console.error("Copot integrasi gagal:",error);
         sellerBooksAlert(
-            isEN
-                ? "The integration could not be disconnected.\n\n" +
-                  (error?.message || "A server error occurred.")
-                : "Integrasi gagal dicopot.\n\n" +
-                  (error?.message || "Terjadi kesalahan pada server."),
-            isEN ? "Disconnect Integration" : "Copot Integrasi"
+            "Integrasi gagal dicopot.\n\n" +
+            (error?.message || "Terjadi kesalahan pada server."),
+            "Copot Integrasi"
         );
     }
 }
@@ -19557,13 +19512,11 @@ async function integrateStoreAccount(storeId){
        dari halaman SellerBooks agar tidak muncul error konfigurasi OAuth.
     */
     if(!endpoint){
-        const isEN = sellerBooksCurrentLanguage() === "en";
-        const marketplaceName = String(marketplace.name || "marketplace");
         sellerBooksAlert(
-            isEN
-                ? "Integration for " + marketplaceName + " is not available yet. API synchronization will be available soon after the official SellerBooks connector/API is ready. For now, you can manually upload marketplace order files through Sales Import."
-                : "Integrasi " + marketplaceName + " belum tersedia saat ini. Fitur sinkronisasi API akan segera hadir setelah konektor/API resmi SellerBooks siap. Sementara Anda bisa melakukan upload file orderan marketplace secara manual melalui Import Sales.",
-            isEN ? "Coming Soon" : "Segera Hadir"
+            "Integrasi " + String(marketplace.name || "marketplace") +
+            " belum tersedia saat ini. Fitur sinkronisasi API akan segera hadir setelah konektor/API resmi SellerBooks siap. " +
+            "Sementara Anda bisa melakukan upload file orderan marketplace secara manual melalui Import Sales.",
+            "Segera Hadir"
         );
         return;
     }
@@ -19573,18 +19526,12 @@ async function integrateStoreAccount(storeId){
        Setelah itu kita boleh menunggu auth.getSession() dan backend init.
        Popup sementara tetap berada pada launcher/loading page.
     */
-    const uiLanguage = sellerBooksCurrentLanguage();
-    try{
-        window.localStorage.setItem("sellerbooks_ui_language", uiLanguage);
-    }catch(e){}
-
     const launcherUrl = new URL(
         "marketplace-oauth-launcher.html" +
-        "?v=20261005-language-bridge" +
+        "?v=20260930-session-bridge" +
         "&store_id=" + encodeURIComponent(String(store.id)) +
         "&marketplace_id=" + encodeURIComponent(String(store.marketplaceId || "")) +
         "&marketplace_name=" + encodeURIComponent(String(marketplace.name || "")) +
-        "&lang=" + encodeURIComponent(uiLanguage) +
         "&handoff=pending",
         window.location.href
     ).href;
@@ -21329,9 +21276,9 @@ function renderStores(skipIntegrationRefresh){
                         type="button"
                         class="store-action-button store-integrate-button"
                         onclick="syncShopeeOrdersNow('${store.id}')"
-                        aria-label="${sellerBooksCurrentLanguage() === "en" ? "Pull Shopee orders" : "Tarik order Shopee"}"
+                        title="Tarik order Shopee"
                     >
-                        🔄 ${sellerBooksCurrentLanguage() === "en" ? "Pull Orders" : "Tarik Order"}
+                        🔄 Tarik Order
                     </button>
                 </div>`;
         }else if(isLazadaStore){
@@ -21341,9 +21288,9 @@ function renderStores(skipIntegrationRefresh){
                         type="button"
                         class="store-action-button store-integrate-button"
                         onclick="syncLazadaOrdersNow('${store.id}')"
-                        aria-label="${sellerBooksCurrentLanguage() === "en" ? "Pull Lazada orders" : "Tarik order Lazada"}"
+                        title="Tarik order Lazada"
                     >
-                        🔄 ${sellerBooksCurrentLanguage() === "en" ? "Pull Orders" : "Tarik Order"}
+                        🔄 Tarik Order
                     </button>
                 </div>`;
         }
@@ -21560,82 +21507,6 @@ function renderStores(skipIntegrationRefresh){
    BUKA MODAL TAMBAH TOKO
 ===================================================== */
 
-function applyStoreModalLanguage(){
-
-    const isEN = sellerBooksCurrentLanguage() === "en";
-
-    const modal = document.getElementById("storeModal");
-    if(!modal) return;
-
-    const title = document.getElementById("storeModalTitle");
-    if(title){
-        title.innerText = editingStoreId
-            ? (isEN ? "Edit Store Account" : "Edit Accounts Toko")
-            : (isEN ? "Add Store Account" : "Tambah Accounts Toko");
-    }
-
-    const groups = modal.querySelectorAll(".form-group");
-    if(groups[0]){
-        const label = groups[0].querySelector("label");
-        if(label) label.textContent = isEN ? "Marketplace" : "Marketplace";
-        const select = document.getElementById("storeMarketplace");
-        if(select && select.options.length){
-            select.options[0].textContent = isEN ? "Select Marketplace" : "Pilih Marketplace";
-        }
-    }
-
-    if(groups[1]){
-        const label = groups[1].querySelector("label");
-        if(label) label.textContent = isEN ? "Store Account Name" : "Nama Accounts Toko";
-        const input = document.getElementById("storeName");
-        if(input) input.placeholder = isEN ? "Example: Adimasa Official Store" : "Contoh: Adimasa Official Store";
-    }
-
-    if(groups[2]){
-        const label = groups[2].querySelector("label");
-        if(label) label.innerHTML = isEN ? 'Store Code <span style="color:#94a3b8;">(Optional)</span>' : 'Kode Toko <span style="color:#94a3b8;">(Opsional)</span>';
-        const input = document.getElementById("storeCode");
-        if(input) input.placeholder = isEN ? "Example: SHOPEE-001" : "Contoh: SHOPEE-001";
-    }
-
-    if(groups[3]){
-        const label = groups[3].querySelector("label");
-        if(label) label.textContent = isEN ? "Marketplace Fee (%)" : "Biaya Admin Marketplace (%)";
-        const input = document.getElementById("storeFeePercent");
-        if(input) input.placeholder = isEN ? "Enter admin fee percentage" : "Masukkan persentase admin";
-        const small = groups[3].querySelector("small");
-        if(small) small.textContent = isEN
-            ? "Enter the marketplace fee for this store account."
-            : "Isi sesuai biaya admin accounts toko ini.";
-    }
-
-    if(groups[4]){
-        const label = groups[4].querySelector("label");
-        if(label) label.innerHTML = isEN ? 'Description <span style="color:#94a3b8;">(Optional)</span>' : 'Keterangan <span style="color:#94a3b8;">(Opsional)</span>';
-        const input = document.getElementById("storeDescription");
-        if(input) input.placeholder = isEN ? "Example: Main Shopee Account" : "Contoh: Accounts utama Shopee";
-    }
-
-    if(groups[5]){
-        const label = groups[5].querySelector("label");
-        if(label) label.textContent = isEN ? "Store Account Status" : "Status Accounts Toko";
-        const select = document.getElementById("storeStatus");
-        if(select && select.options.length >= 2){
-            select.options[0].textContent = isEN ? "Active" : "Aktif";
-            select.options[1].textContent = isEN ? "Inactive" : "Tidak Aktif";
-        }
-    }
-
-    const cancel = modal.querySelector(".modal-footer .cancel-button");
-    if(cancel) cancel.textContent = isEN ? "Cancel" : "Batal";
-
-    const save = modal.querySelector(".modal-footer .primary-button");
-    if(save) save.textContent = isEN
-        ? (editingStoreId ? "Save Changes" : "Save Store Account")
-        : (editingStoreId ? "Simpan Perubahan" : "Simpan Accounts Toko");
-}
-
-
 function openStoreModal(){
 
     const activeMarketplaces =
@@ -21663,7 +21534,12 @@ function openStoreModal(){
 
     editingStoreId = null;
 
-    applyStoreModalLanguage();
+
+    document.getElementById(
+        "storeModalTitle"
+    ).innerText =
+
+        "Tambah Accounts Toko";
 
 
     /*
@@ -21997,7 +21873,12 @@ function editStore(id){
 
     selectedMarketplaceId = null;
 
-    applyStoreModalLanguage();
+
+    document.getElementById(
+        "storeModalTitle"
+    ).innerText =
+
+        "Edit Accounts Toko";
 
 
     renderStoreMarketplaceOptions();
@@ -22893,68 +22774,6 @@ function changeProductPageSize(value){
    BUKA MODAL TAMBAH PRODUK
 ===================================================== */
 
-function applyProductModalLanguage(){
-    const isEN = sellerBooksCurrentLanguage() === "en";
-    const setText = function(id, en, idText){
-        const el = document.getElementById(id);
-        if(el) el.textContent = isEN ? en : idText;
-    };
-    const setPlaceholder = function(id, en, idText){
-        const el = document.getElementById(id);
-        if(el) el.placeholder = isEN ? en : idText;
-    };
-
-    setText("productModalTitle", "Add Product", "Tambah Produk");
-
-    const modal = document.getElementById("productModal");
-    if(!modal) return;
-
-    const labels = modal.querySelectorAll(".form-group > label");
-    const labelMap = [
-        ["Product SKU *","SKU Produk *"],
-        ["Product Name *","Nama Produk *"],
-        ["Category","Kategori"],
-        ["Selling Price","Harga Jual"],
-        ["COGS / Product Cost *","HPP / Modal Produk *"],
-        ["Product Stock","Stok Produk"],
-        ["Admin % SKU","Admin % SKU"],
-        ["Product Status","Status Produk"]
-    ];
-    labels.forEach(function(label, index){
-        if(!labelMap[index]) return;
-        const pair = labelMap[index];
-        const optional = label.querySelector("span");
-        label.textContent = isEN ? pair[0] : pair[1];
-        if(optional){
-            optional.textContent = isEN ? "(Optional)" : "(Opsional)";
-            label.appendChild(optional);
-        }
-    });
-
-    setPlaceholder("productSKU", "Example: TAS-BIRU-001", "Contoh: TAS-BIRU-001");
-    setPlaceholder("productName", "Example: Blue Premium Bag", "Contoh: Tas Biru Premium");
-    setPlaceholder("productCategory", "Example: Bag", "Contoh: Tas");
-    setPlaceholder("productPrice", "Example: 50000", "Contoh: 50000");
-    setPlaceholder("productCost", "Example: 25000", "Contoh: 25000");
-    setPlaceholder("productStock", "Example: 100", "Contoh: 100");
-    setPlaceholder("productAdminFeePercent", "Example: 15", "Contoh: 15");
-
-    const status = document.getElementById("productStatus");
-    if(status){
-        const current = status.value || "active";
-        status.innerHTML = isEN
-            ? '<option value="active">Active</option><option value="inactive">Inactive</option>'
-            : '<option value="active">Aktif</option><option value="inactive">Tidak Aktif</option>';
-        status.value = current;
-    }
-
-    const cancel = modal.querySelector(".cancel-button");
-    if(cancel) cancel.textContent = isEN ? "Cancel" : "Batal";
-
-    const save = modal.querySelector(".primary-button");
-    if(save) save.textContent = isEN ? "Save Product" : "Simpan Produk";
-}
-
 function openProductModal(){
 
     editingProductId = null;
@@ -22964,9 +22783,7 @@ function openProductModal(){
         "productModalTitle"
     ).innerText =
 
-        sellerBooksCurrentLanguage() === "en"
-            ? "Add Product"
-            : "Tambah Produk";
+        "Tambah Produk";
 
 
     document.getElementById(
@@ -23007,8 +22824,6 @@ function openProductModal(){
         "productStatus"
     ).value = "active";
 
-
-    applyProductModalLanguage();
 
     document
         .getElementById("productModal")
@@ -23392,9 +23207,7 @@ function editProduct(id){
         "productModalTitle"
     ).innerText =
 
-        sellerBooksCurrentLanguage() === "en"
-            ? "Edit Product"
-            : "Edit Produk";
+        "Edit Produk";
 
 
     document.getElementById(
@@ -23436,8 +23249,6 @@ document.getElementById(
         "productStatus"
     ).value = product.status;
 
-
-    applyProductModalLanguage();
 
     document
         .getElementById("productModal")
@@ -31571,9 +31382,7 @@ function saveSellerBooksSettings(){
 
     if(nameInfo){
         nameInfo.textContent =
-            language === "en"
-                ? "Settings saved successfully."
-                : "Pengaturan berhasil disimpan.";
+            "Pengaturan berhasil disimpan.";
     }
 
     const packingInfo =
@@ -31583,9 +31392,9 @@ function saveSellerBooksSettings(){
 
     if(packingInfo){
         packingInfo.textContent =
-            language === "en"
-                ? "Default packing: " + formatRupiah(packingCost) + " / order."
-                : "Packing default: " + formatRupiah(packingCost) + " / order.";
+            "Default packing: " +
+            formatRupiah(packingCost) +
+            " / order.";
     }
 
     const currencyInfo =
@@ -31602,24 +31411,18 @@ function saveSellerBooksSettings(){
         languageInfo.textContent =
             language === "en"
                 ? "Language saved to your account."
-                : "Bahasa tersimpan di akun Anda.";
+                : "Bahasa tersimpan di accounts Anda.";
     }
 
     if(currencyInfo){
         currencyInfo.textContent =
-            language === "en"
-                ? "Exchange rates saved. 1 USD = Rp" +
-                  Number(exchangeRates.USD).toLocaleString("id-ID") +
-                  " • 1 SGD = Rp" +
-                  Number(exchangeRates.SGD).toLocaleString("id-ID") +
-                  " • 1 MYR = Rp" +
-                  Number(exchangeRates.MYR).toLocaleString("id-ID")
-                : "Kurs tersimpan. 1 USD = Rp" +
-                  Number(exchangeRates.USD).toLocaleString("id-ID") +
-                  " • 1 SGD = Rp" +
-                  Number(exchangeRates.SGD).toLocaleString("id-ID") +
-                  " • 1 MYR = Rp" +
-                  Number(exchangeRates.MYR).toLocaleString("id-ID");
+            "Kurs tersimpan. " +
+            "1 USD = Rp" +
+            Number(exchangeRates.USD).toLocaleString("id-ID") +
+            " • 1 SGD = Rp" +
+            Number(exchangeRates.SGD).toLocaleString("id-ID") +
+            " • 1 MYR = Rp" +
+            Number(exchangeRates.MYR).toLocaleString("id-ID");
     }
 }
 
@@ -31814,11 +31617,11 @@ const SELLERBOOKS_LANGUAGE_ORIGINALS = new WeakMap();
 
 const SELLERBOOKS_I18N = {
     "id": {
-        "Dashboard":"Dasbor",
+        "Dashboard":"Dashboard",
         "Marketplace":"Marketplace",
-        "Store Accounts":"Akun Toko",
+        "Store Accounts":"Store Accounts",
         "Master Produk":"Master Produk",
-        "Import Sales":"Import Penjualan",
+        "Import Sales":"Import Sales",
         "Biaya Lain":"Biaya Lain",
         "Piutang":"Piutang",
         "Rincian":"Rincian",
@@ -31835,16 +31638,16 @@ const SELLERBOOKS_I18N = {
         "Analisis bisnis marketplace Anda":"Analisis bisnis marketplace Anda",
         "Analisis laba dan kerugian setiap produk":"Analisis laba dan kerugian setiap produk",
         "Pengaturan SellerBooks":"Pengaturan SellerBooks",
-        "Today":"Hari Ini",
-        "Yesterday":"Kemarin",
-        "This Week":"Minggu Ini",
-        "Last Week":"Minggu Lalu",
-        "This Month":"Bulan Ini",
-        "Last Month":"Bulan Lalu",
-        "Last 3 Months":"3 Bulan Terakhir",
-        "This Year":"Tahun Ini",
-        "Custom Date":"Pilih Tanggal",
-        "All Periods":"Semua Periode",
+        "Today":"Today",
+        "Yesterday":"Yesterday",
+        "This Week":"This Week",
+        "Last Week":"Last Week",
+        "This Month":"This Month",
+        "Last Month":"Last Month",
+        "Last 3 Months":"Last 3 Months",
+        "This Year":"This Year",
+        "Custom Date":"Custom Date",
+        "All Periods":"All Periods",
         "Nama Bisnis":"Nama Bisnis",
         "Atur nama bisnis yang digunakan sebagai identitas usaha.":"Atur nama bisnis yang digunakan sebagai identitas usaha.",
         "Logo Bisnis":"Logo Bisnis",
@@ -31858,7 +31661,7 @@ const SELLERBOOKS_I18N = {
         "Bahasa":"Bahasa",
         "Pilih bahasa yang digunakan pada tampilan SellerBooks.":"Pilih bahasa yang digunakan pada tampilan SellerBooks.",
         "Bahasa Tampilan":"Bahasa Tampilan",
-        "Bahasa tersimpan di accounts Anda.":"Bahasa tersimpan di akun Anda.",
+        "Bahasa tersimpan di accounts Anda.":"Bahasa tersimpan di accounts Anda.",
         "Simpan Bahasa":"Simpan Bahasa",
         "Biaya Packing Default":"Biaya Packing Default",
         "Nilai ini otomatis menjadi biaya packing per 1 order saat import penjualan.":"Nilai ini otomatis menjadi biaya packing per 1 order saat import penjualan.",
@@ -31867,429 +31670,16 @@ const SELLERBOOKS_I18N = {
         "Simpan":"Simpan",
         "Simpan Kurs":"Simpan Kurs",
         "IDR — Rupiah Indonesia":"IDR — Rupiah Indonesia",
-        "USD — US Dollar":"USD — Dolar AS",
-        "SGD — Singapore Dollar":"SGD — Dolar Singapura",
-        "MYR — Malaysian Ringgit":"MYR — Ringgit Malaysia",
+        "USD — US Dollar":"USD — US Dollar",
+        "SGD — Singapore Dollar":"SGD — Singapore Dollar",
+        "MYR — Malaysian Ringgit":"MYR — Malaysian Ringgit",
         "ID — Indonesia":"ID — Indonesia",
-        "EN — English":"EN — Inggris",
+        "EN — English":"EN — English",
         "Language":"Bahasa",
         "Marketplace Business Intelligence":"Kecerdasan Bisnis Marketplace",
 
-
-        "Semua Marketplace":"Semua Marketplace",
-        "Semua Accounts Toko":"Semua Accounts Toko",
-        "Semua Toko":"Semua Toko",
-        "Data laporan gagal ditampilkan. Silakan refresh halaman.":"Data laporan gagal ditampilkan. Silakan refresh halaman.",
-        "Belum ada data laporan.":"Belum ada data laporan.",
-        "Tidak ada SKU yang belum ditemukan.":"Tidak ada SKU yang belum ditemukan.",
-        "No sales data.":"Belum ada data penjualan.",
-        "No sales data":"Belum ada data penjualan",
-        "No sales data for this period":"Belum ada data penjualan untuk periode ini",
-        "Belum ada marketplace.":"Belum ada marketplace.",
-        "Belum Ada Accounts Toko":"Belum Ada Accounts Toko",
-        "Belum Ada Produk":"Belum Ada Produk",
-        "Belum ada master":"Belum ada master",
-        "Selamat Datang 👋":"Selamat Datang 👋",
-        "Masuk menggunakan accounts Google untuk mengakses SellerBooks.":"Masuk menggunakan accounts Google untuk mengakses SellerBooks.",
-        "Masuk dengan Google":"Masuk dengan Google",
-        "Data bisnis Anda terlindungi":"Data bisnis Anda terlindungi",
-        "Lengkapi Data Pemilik":"Lengkapi Data Pemilik",
-        "Sebelum masuk ke SellerBooks, silakan masukkan nama pemilik atau nama usaha Anda.":"Sebelum masuk ke SellerBooks, silakan masukkan nama pemilik atau nama usaha Anda.",
-        "💾 Simpan & Masuk SellerBooks":"💾 Simpan & Masuk SellerBooks",
-        "Data ini akan digunakan sebagai identitas pemilik accounts SellerBooks Anda.":"Data ini akan digunakan sebagai identitas pemilik accounts SellerBooks Anda.",
-        "Marketplace Intelligence":"Inteligensi Marketplace",
-        "Data Bisnis":"Data Bisnis",
-        "Selamat Datang di SellerBooks 👋":"Selamat Datang di SellerBooks 👋",
-        "TOTAL PENJUALAN":"TOTAL PENJUALAN",
-        "PRODUK TERJUAL":"PRODUK TERJUAL",
-        "Total produk keluar":"Total produk keluar",
-        "LABA BERSIH":"LABA BERSIH",
-        "Setelah seluruh biaya":"Setelah seluruh biaya",
-        "Performa keuntungan bisnis":"Performa keuntungan bisnis",
-        "TOTAL RESELLER RECEIVABLES":"TOTAL PIUTANG RESELLER",
-        "Total receivables minus payments received":"Total piutang dikurangi pembayaran yang diterima",
-        "Sales Chart":"Grafik Penjualan",
-        "Sales movement by period":"Pergerakan Penjualan berdasarkan Periode",
-        "Sales by Marketplace":"Penjualan berdasarkan Marketplace",
-        "Revenue comparison by marketplace":"Perbandingan Pendapatan berdasarkan Marketplace",
-        "Performa Marketplace":"Performa Marketplace",
-        "Summary of all marketplaces":"Ringkasan semua Marketplace",
-        "Lihat Marketplace →":"Lihat Marketplace →",
-        "Sales":"Penjualan",
-        "Net Profit":"Laba Bersih",
-        "Catat dan pantau total piutang secara terpisah dari laba bisnis.":"Catat dan pantau total piutang secara terpisah dari laba bisnis.",
-        "Tambah Piutang":"Tambah Piutang",
-        "Setiap data baru akan menambah total piutang.":"Setiap data baru akan menambah total piutang.",
-        "Tanggal":"Tanggal",
-        "Jumlah":"Jumlah",
-        "Keterangan":"Keterangan",
-        "+ Simpan Piutang":"+ Simpan Piutang",
-        "TOTAL PIUTANG":"TOTAL PIUTANG",
-        "Total seluruh piutang sesuai daftar piutang. Pembayaran ditampilkan terpisah.":"Total seluruh piutang sesuai daftar piutang. Pembayaran ditampilkan terpisah.",
-        "Seluruh piutang yang sudah dicatat.":"Seluruh piutang yang sudah dicatat.",
-        "Pilih Nama":"Pilih Nama",
-        "Semua Nama":"Semua Nama",
-        "Belum ada piutang.":"Belum ada piutang.",
-        "+ Simpan Pembayaran":"+ Simpan Pembayaran",
-        "TOTAL SUDAH DIBAYAR":"TOTAL SUDAH DIBAYAR",
-        "Total pembayaran yang sudah dicatat dari seluruh nama.":"Total pembayaran yang sudah dicatat dari seluruh nama.",
-        "Riwayat pembayaran yang sudah diterima.":"Riwayat pembayaran yang sudah diterima.",
-        "Belum ada pembayaran.":"Belum ada pembayaran.",
-        "Total piutang dikurangi total pembayaran berdasarkan nama yang dipilih.":"Total piutang dikurangi total pembayaran berdasarkan nama yang dipilih.",
-        "Total piutang Rp0 − Total sudah dibayar Rp0":"Total piutang Rp0 − Total sudah dibayar Rp0",
-        "Kelola marketplace yang digunakan oleh bisnis Anda.":"Kelola marketplace yang digunakan oleh bisnis Anda.",
-        "0 Marketplace":"0 Marketplace",
-        "+ Tambah Marketplace":"+ Tambah Marketplace",
-        "Kelola seluruh accounts toko dari marketplace yang aktif di bisnis Anda.":"Kelola seluruh accounts toko dari marketplace yang aktif di bisnis Anda.",
-        "0 Accounts Toko":"0 Accounts Toko",
-        "+ Tambah Accounts Toko":"+ Tambah Accounts Toko",
-        "Kelola seluruh produk, SKU, modal, dan data dasar produk bisnis Anda.":"Kelola seluruh produk, SKU, modal, dan data dasar produk bisnis Anda.",
-        "Produk":"Produk",
-        "Kategori":"Kategori",
-        "Aksi":"Aksi",
-        "Nonaktifkan":"Nonaktifkan",
-        "Aktifkan":"Aktifkan",
-        "Tampilkan":"Tampilkan",
-        "baris":"baris",
-        "1813 Produk":"1813 Produk",
-        "All Statuses":"Semua Status",
-        "0 Produk":"0 Produk",
-        "+ Tambah Produk":"+ Tambah Produk",
-        "🗑️ Hapus Terpilih (":"🗑️ Hapus Terpilih (",
-        "Semua Status":"Semua Status",
-        "Aktif":"Aktif",
-        "Tidak Aktif":"Tidak Aktif",
-        "Nama Produk":"Nama Produk",
-        "Harga Jual":"Harga Jual",
-        "Stok":"Stok",
-        "Status":"Status",
-        "Upload Laporan Sales":"Upload Laporan Penjualan",
-        "Klik di sini untuk memilih file":"Klik di sini untuk memilih file",
-        "+ Pilih File":"+ Pilih File",
-        "Menunggu Analisis":"Menunggu Analisis",
-        "Jumlah Baris":"Jumlah Baris",
-        "Jumlah Kolom":"Jumlah Kolom",
-        "Belum ditemukan":"Belum ditemukan",
-        "Menunggu analisis":"Menunggu analisis",
-        "Harga Jual Recognition":"Harga Jual Recognition",
-        "Kolom yang Ditemukan":"Kolom yang Ditemukan",
-        "✕ Batalkan":"✕ Batalkan",
-        "Preview & Konfirmasi Data":"Preview & Konfirmasi Data",
-        "Jumlah Data":"Jumlah Data",
-        "🏷️ Pilih Kolom SKU":"🏷️ Pilih Kolom SKU",
-        "-- Pilih Kolom SKU --":"-- Pilih Kolom SKU --",
-        "Pilih kolom yang berisi SKU atau kode produk.":"Pilih kolom yang berisi SKU atau kode produk.",
-        "📦 Pilih Kolom QTY":"📦 Pilih Kolom QTY",
-        "-- Pilih Kolom QTY --":"-- Pilih Kolom QTY --",
-        "Pilih kolom yang berisi jumlah produk terjual.":"Pilih kolom yang berisi jumlah produk terjual.",
-        "🏪 Marketplace Terdeteksi":"🏪 Marketplace Terdeteksi",
-        "SellerBooks menentukan marketplace dari struktur/header file.":"SellerBooks menentukan marketplace dari struktur/header file.",
-        "👤 Pilih Accounts Toko":"👤 Pilih Accounts Toko",
-        "-- Pilih Accounts Toko --":"-- Pilih Accounts Toko --",
-        "Akun toko wajib dipilih sebelum data disimpan.":"Akun toko wajib dipilih sebelum data disimpan.",
-        "📦 Biaya Packing / 1 Order":"📦 Biaya Packing / 1 Order",
-        "Nominal dapat diubah dan disimpan untuk import berikutnya.":"Nominal dapat diubah dan disimpan untuk import berikutnya.",
-        "🧮 Hasil Perhitungan Packing":"🧮 Hasil Perhitungan Packing",
-        "Order/Resi unik:":"Order/Resi unik:",
-        "Total biaya packing:":"Total biaya packing:",
-        "Identitas packing akan dipilih otomatis sesuai marketplace.":"Identitas packing akan dipilih otomatis sesuai marketplace.",
-        "Pilih kolom SKU dan QTY untuk melanjutkan.":"Pilih kolom SKU dan QTY untuk melanjutkan.",
-        "Semua baris transaksi ditampilkan.":"Semua baris transaksi ditampilkan.",
-        "← Kembali":"← Kembali",
-        "✓ Konfirmasi Data":"✓ Konfirmasi Data",
-        "Catat biaya tambahan yang mempengaruhi laba bisnis.":"Catat biaya tambahan yang mempengaruhi laba bisnis.",
-        "+ Tambah Biaya":"+ Tambah Biaya",
-        "Total Biaya Lain":"Total Biaya Lain",
-        "Daftar Biaya":"Daftar Biaya",
-        "Semua biaya tambahan yang telah dicatat.":"Semua biaya tambahan yang telah dicatat.",
-        "Belum Ada Biaya Tambahan":"Belum Ada Biaya Tambahan",
-        "Tambahkan biaya seperti iklan, transport, operasional atau biaya lainnya.":"Tambahkan biaya seperti iklan, transport, operasional atau biaya lainnya.",
-        "Rincian Produk":"Rincian Produk",
-        "Filter Rincian":"Filter Rincian",
-        "Total Produk":"Total Produk",
-        "Produk Untung":"Produk Untung",
-        "Produk Minus":"Produk Minus",
-        "Total Laba Produk":"Total Laba Produk",
-        "Rincian Sales Per Produk":"Rincian Penjualan Per Produk",
-        "Produk minus ditampilkan paling atas agar mudah diperbaiki.":"Produk minus ditampilkan paling atas agar mudah diperbaiki.",
-        "Total Sales":"Total Penjualan",
-        "Admin Marketplace":"Biaya Admin Marketplace",
-        "Laba Produk":"Laba Produk",
-        "Laporan Bisnis":"Laporan Bisnis",
-        "Analisis penjualan, biaya, dan laba seluruh marketplace serta accounts toko.":"Analisis penjualan, biaya, dan laba seluruh marketplace serta accounts toko.",
-        "📄 Download PDF Laporan":"📄 Download PDF Laporan",
-        "Filter Laporan":"Filter Laporan",
-        "Pilih periode, marketplace, dan accounts toko.":"Pilih periode, marketplace, dan accounts toko.",
-        "Menampilkan semua data penjualan.":"Menampilkan semua data penjualan.",
-        "Hapus Laporan":"Hapus Laporan",
-        "🗑️ Hapus Laporan":"🗑️ Hapus Laporan",
-        "Belum ada data":"Belum ada data",
-        "PENJUALAN BERSIH":"PENJUALAN BERSIH",
-        "Setelah potongan marketplace":"Setelah potongan marketplace",
-        "Total produk terjual":"Total produk terjual",
-        "TOTAL PACKING":"TOTAL PACKING",
-        "Jumlah order/packing":"Jumlah order/packing",
-        "TOTAL HPP":"TOTAL HPP",
-        "Modal produk terjual":"Modal produk terjual",
-        "BIAYA LAIN":"BIAYA LAIN",
-        "Biaya tambahan bisnis":"Biaya tambahan bisnis",
-        "LABA KOTOR":"LABA KOTOR",
-        "Setelah HPP dan packing":"Setelah HPP dan packing",
-        "Persentase laba bersih terhadap penjualan.":"Persentase laba bersih terhadap penjualan.",
-        "SKU Belum Ditemukan di Master Produk":"SKU Belum Ditemukan di Master Produk",
-        "Daftar SKU transaksi yang belum memiliki pasangan pada Master Produk.":"Daftar SKU transaksi yang belum memiliki pasangan pada Master Produk.",
-        "Total QTY":"Total QTY",
-        "Ringkasan performa berdasarkan marketplace.":"Ringkasan performa berdasarkan marketplace.",
-        "Sales Bersih":"Penjualan Bersih",
-        "Produk Terjual":"Produk Terjual",
-        "Performa Accounts Toko":"Performa Accounts Toko",
-        "Ringkasan performa masing-masing accounts toko.":"Ringkasan performa masing-masing accounts toko.",
-        "Detail Sales":"Rincian Penjualan",
-        "Daftar transaksi berdasarkan filter yang dipilih.":"Daftar transaksi berdasarkan filter yang dipilih.",
-        "Order":"Pesanan",
-        "Order ID":"ID Pesanan",
-        "💾 Simpan":"💾 Simpan",
-        "📁 Pilih Logo":"📁 Pilih Logo",
-        "PNG, JPG atau WEBP. Maksimal 1 MB.":"PNG, JPG atau WEBP. Maksimal 1 MB.",
-        "Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.":"Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.",
-        "Kurs tersimpan digunakan untuk konversi.":"Kurs tersimpan digunakan untuk konversi.",
-        "💾 Simpan Kurs":"💾 Simpan Kurs",
-        "💾 Simpan Bahasa":"💾 Simpan Bahasa",
-        "Nilai tersimpan digunakan sebagai default import.":"Nilai tersimpan digunakan sebagai default import.",
-        "Atur pembulatan nilai uang yang ditampilkan di SellerBooks.":"Atur pembulatan nilai uang yang ditampilkan di SellerBooks.",
-        "Ke Rp10 terdekat":"Ke Rp10 terdekat",
-        "Ke Rp100 terdekat":"Ke Rp100 terdekat",
-        "Ke Rp1.000 terdekat":"Ke Rp1.000 terdekat",
-        "Backup & Restore Data":"Cadangkan & Pulihkan Data",
-        "Simpan seluruh data SellerBooks ke file atau pulihkan dari file backup.":"Simpan seluruh data SellerBooks ke file atau pulihkan dari file backup.",
-        "⬇️ Backup Data":"⬇️ Cadangkan Data",
-        "⬆️ Restore Data":"⬆️ Pulihkan Data",
-        "Tambah Accounts Toko":"Tambah Accounts Toko",
-        "Pilih Marketplace":"Pilih Marketplace",
-        "Nama Accounts Toko":"Nama Accounts Toko",
-        "Kode Toko":"Kode Toko",
-        "Biaya Admin Marketplace (%)":"Biaya Admin Marketplace (%)",
-        "Isi sesuai biaya admin accounts toko ini.":"Isi sesuai biaya admin accounts toko ini.",
-        "Status Accounts Toko":"Status Accounts Toko",
-        "Simpan Accounts Toko":"Simpan Accounts Toko",
-        "Edit Piutang":"Edit Piutang",
-        "Simpan Perubahan":"Simpan Perubahan",
-        "Tambah Produk":"Tambah Produk",
-        "SKU Produk *":"SKU Produk *",
-        "Nama Produk *":"Nama Produk *",
-        "HPP / Modal Produk *":"HPP / Modal Produk *",
-        "Stok Produk":"Stok Produk",
-        "Status Produk":"Status Produk",
-        "Simpan Produk":"Simpan Produk",
-        "Pengaturan Biaya Packing":"Pengaturan Biaya Packing",
-        "Total Biaya Packing / Transaksi":"Total Biaya Packing / Transaksi",
-        "Tambah Marketplace":"Tambah Marketplace",
-        "Nama Marketplace":"Nama Marketplace",
-        "Simpan Marketplace":"Simpan Marketplace",
-        "Tambah Biaya":"Tambah Biaya",
-        "Tanggal *":"Tanggal *",
-        "Marketplace *":"Marketplace *",
-        "-- Pilih Marketplace --":"-- Pilih Marketplace --",
-        "Pilih marketplace tempat biaya ini terjadi.":"Pilih marketplace tempat biaya ini terjadi.",
-        "Store Accounts *":"Accounts Toko *",
-        "Hanya accounts dari marketplace yang dipilih yang ditampilkan.":"Hanya accounts dari marketplace yang dipilih yang ditampilkan.",
-        "Kategori Biaya *":"Kategori Biaya *",
-        "-- Pilih Kategori --":"-- Pilih Kategori --",
-        "Keterangan *":"Keterangan *",
-        "Nominal Biaya *":"Nominal Biaya *",
-        "Simpan Biaya":"Simpan Biaya",
-        "Menunggu Persetujuan Core Adiimasa":"Menunggu Persetujuan Core Adiimasa",
-        "Akun Anda sudah berhasil login. Silakan menunggu persetujuan dari Core Adiimasa sebelum menggunakan SellerBooks.":"Akun Anda sudah berhasil login. Silakan menunggu persetujuan dari Core Adiimasa sebelum menggunakan SellerBooks.",
-        "🔄 Cek Status Persetujuan":"🔄 Cek Status Persetujuan",
-        "Keluar":"Keluar",
-        "Belum ada transaksi pada periode yang dipilih.":"Belum ada transaksi pada periode yang dipilih.",
-        "Kelola Toko":"Kelola Toko",
-        "Hapus":"Hapus",
-        "Edit":"Edit",
-        "✓ Sudah terintegrasi sukses":"✓ Sudah terintegrasi sukses",
-        "🔄 Tarik Order":"🔄 Tarik Order",
-        "⛓ Copot Integrasi":"⛓ Copot Integrasi",
-        "🔗 Integrasikan Accounts":"🔗 Integrasikan Accounts",
-        "KODE TOKO":"KODE TOKO",
-        "MARKETPLACE":"MARKETPLACE",
-        "BIAYA ADMIN":"BIAYA ADMIN",
-        "✏️ Edit":"✏️ Edit",
-        "Belum ada transaksi.":"Belum ada transaksi.",
-        "Silakan refresh halaman.":"Silakan refresh halaman.",
-        "Data berhasil disimpan.":"Data berhasil disimpan.",
-        "Data gagal disimpan.":"Data gagal disimpan.",
-        "Berhasil disimpan.":"Berhasil disimpan.",
-        "Berhasil dihapus.":"Berhasil dihapus.",
-        "Gagal menyimpan data.":"Gagal menyimpan data.",
-        "Gagal menghapus data.":"Gagal menghapus data.",
-        "Konfirmasi":"Konfirmasi",
-        "Batal":"Batal",
-        "Ya":"Ya",
-        "Tidak":"Tidak",
-        "Cari":"Cari",
-        "Filter":"Filter",
-        "Reset":"Reset",
-        "Semua":"Semua",
-        "From Date":"Dari Tanggal",
-        "To Date":"Sampai Tanggal",
-        "Nama":"Nama",
-        "Email":"Email",
-        "Catatan":"Catatan",
-        "Deskripsi":"Deskripsi",
-        "Detail":"Detail",
-        "Total":"Total",
-        "Sub Total":"Subtotal",
-        "Diskon":"Diskon",
-        "Qty":"Jumlah",
-        "HPP":"HPP",
-        "Omzet":"Omzet",
-        "Profit":"Laba",
-        "Laba":"Laba",
-        "Rugi":"Rugi",
-        "Biaya":"Biaya",
-        "Admin":"Biaya Admin",
-        "Terintegrasi":"Terintegrasi",
-        "Belum terintegrasi":"Belum terintegrasi",
-        "Diaktifkan":"Diaktifkan",
-        "Nonaktif":"Nonaktif",
-        "Menunggu Pengiriman":"Menunggu Pengiriman",
-        "Menunggu Pengambilan":"Menunggu Pengambilan",
-        "Perlu dikirim":"Perlu dikirim",
-        "Sudah dikirim":"Sudah dikirim",
-        "Selesai":"Selesai",
-        "Dibatalkan":"Dibatalkan",
-        "Pengembalian":"Pengembalian",
-        "Terima":"Terima",
-        "Tolak":"Tolak",
-        "Berikutnya":"Berikutnya",
-        "Sebelumnya":"Sebelumnya",
-        "Halaman":"Halaman",
-        "tahun":"tahun",
-        "Nama Pemilik / Nama Usaha":"Nama Pemilik / Nama Usaha",
-        "Maksimal rentang tanggal 3 bulan terakhir sampai hari ini.":"Maksimal rentang tanggal 3 bulan terakhir sampai hari ini.",
-        "HPP / Modal":"HPP / Modal",
-        "Admin % SKU":"Admin % SKU",
-        "Nama File":"Nama File",
-        "Nominal":"Nominal",
-        "Maksimal rentang tanggal 3 bulan terakhir.":"Maksimal rentang tanggal 3 bulan terakhir.",
-        "Kelola Marketplace Lebih Cerdas.":"Kelola Marketplace Lebih Cerdas.",
-        "Multi Marketplace":"Banyak Marketplace",
-        "Multi Accounts Toko":"Multi Accounts Toko",
-        "Analisis Laba Bisnis":"Analisis Laba Bisnis",
-        "MBI — Semua Angka Bisnis, Dalam Satu Kendali.":"MBI — Semua Angka Bisnis, Dalam Satu Kendali.",
-        "Detail penjualan gagal ditampilkan. Silakan refresh halaman.":"Detail penjualan gagal ditampilkan. Silakan refresh halaman.",
-        "Gagal menampilkan Performa Accounts Toko":"Gagal menampilkan Performa Accounts Toko",
-        "Akun":"Akun",
-        "Marketplace:":"Marketplace:",
-        "Data":"Data",
-        "Belum ada data untuk periode ini.":"Belum ada data untuk periode ini.",
-        "Belum ada data marketplace.":"Belum ada data marketplace.",
-        "Belum ada accounts toko.":"Belum ada accounts toko.",
-        "Belum ada produk.":"Belum ada produk.",
-        "Belum ada biaya.":"Belum ada biaya.",
-        "Tidak ada piutang untuk nama tersebut.":"Tidak ada piutang untuk nama tersebut.",
-        "Tidak ada pembayaran untuk nama tersebut.":"Tidak ada pembayaran untuk nama tersebut.",
-        "Belum ada piutang":"Belum ada piutang",
-        "Belum ada pembayaran":"Belum ada pembayaran",
-        "SellerBooks | Marketplace Business Intelligence":"SellerBooks | Kecerdasan Bisnis Marketplace",
-        "Akun:":"Akun:",
-        "View Receivables →":"Lihat Piutang →",
-        "Daftar Piutang":"Daftar Piutang",
-        "Bayar Piutang":"Bayar Piutang",
-        "Catat pembayaran piutang. Pembayaran akan mengurangi sisa piutang.":"Catat pembayaran piutang. Pembayaran akan mengurangi sisa piutang.",
-        "Raport Pembayaran Piutang":"Raport Pembayaran Piutang",
-        "Sisa Piutang Per Reseller":"Sisa Piutang Per Reseller",
-        "Pastikan SellerBooks membaca kolom SKU dan QTY dengan benar sebelum melanjutkan.":"Pastikan SellerBooks membaca kolom SKU dan QTY dengan benar sebelum melanjutkan.",
-        "Analisis laba setiap SKU untuk mendeteksi produk yang minus dan mengetahui produk mana yang perlu diperbaiki.":"Analisis laba setiap SKU untuk mendeteksi produk yang minus dan mengetahui produk mana yang perlu diperbaiki.",
-        "Pilih periode, marketplace, dan accounts toko untuk mengetahui produk minus secara lebih spesifik.":"Pilih periode, marketplace, dan accounts toko untuk mengetahui produk minus secara lebih spesifik.",
-        "Hapus data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.":"Hapus data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.",
-        "Packing":"Packing",
-        "Kelola konfigurasi bisnis dan preferensi SellerBooks Anda.":"Kelola konfigurasi bisnis dan preferensi SellerBooks Anda.",
-        "ℹ️ Pembulatan hanya memengaruhi tampilan angka, bukan data transaksi yang tersimpan.":"ℹ️ Pembulatan hanya memengaruhi tampilan angka, bukan data transaksi yang tersimpan.",
-        "⚠️ Restore akan mengganti data SellerBooks saat ini dengan isi file backup.":"⚠️ Restore akan mengganti data SellerBooks saat ini dengan isi file backup.",
-        "Tambahkan accounts toko dari marketplace yang aktif untuk mulai mengelola bisnis.":"Tambahkan accounts toko dari marketplace yang aktif untuk mulai mengelola bisnis.",
-        "Tambahkan produk secara manual atau import menggunakan Excel.":"Tambahkan produk secara manual atau import menggunakan Excel.",
-        "Default packing:":"Packing bawaan:",
-        "Pastikan":"Pastikan",
-        "Gagal menampilkan Performa Marketplace:":"Gagal menampilkan Performa Marketplace:",
-        "Gagal menampilkan Performa Accounts Toko:":"Gagal menampilkan Performa Accounts Toko:",
-        "Catat pembayaran piutang.":"Catat pembayaran piutang.",
-        "Pembayaran akan mengurangi sisa piutang.":"Pembayaran akan mengurangi sisa piutang.",
-        "Jangan ubah logika perhitungan.":"Jangan ubah logika perhitungan.",
-        "Nilai":"Nilai",
-        "Terakhir":"Terakhir",
-        "Pantau penjualan, produk keluar, accounts toko dan laba bisnis Anda dalam satu sistem.":"Pantau penjualan, produk keluar, accounts toko dan laba bisnis Anda dalam satu sistem.",
-        "Setiap pengguna hanya dapat mengakses data bisnis yang memiliki izin untuknya.":"Setiap pengguna hanya dapat mengakses data bisnis yang memiliki izin untuknya.",
-        "Contoh: Adiimasa":"Contoh: Adiimasa",
-        "Status accounts masih menunggu persetujuan Core Adiimasa.":"Status accounts masih menunggu persetujuan Core Adiimasa.",
-        "Akun berhasil login, tetapi profile SellerBooks belum terbentuk. Silakan coba lagi beberapa saat lagi.":"Akun berhasil login, tetapi profile SellerBooks belum terbentuk. Silakan coba lagi beberapa saat lagi.",
-        "Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu.":"Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu.",
-        "Nama Pemilik berhasil direset.":"Nama Pemilik berhasil direset.",
-        "Gagal mereset Nama Pemilik:":"Gagal mereset Nama Pemilik:",
-        "Nama Pemilik gagal disimpan ke server.":"Nama Pemilik gagal disimpan ke server.",
-        "Accounts Toko":"Akun Toko",
-        "User SellerBooks":"User SellerBooks",
-        "Kelola seluruh penjualan marketplace, produk, accounts toko, dan laba bisnis Anda dalam satu sistem.":"Kelola seluruh penjualan marketplace, produk, accounts toko, dan laba bisnis Anda dalam satu sistem.",
-        "NET MARGIN":"MARGIN BERSIH",
-        "SISA HUTANG":"SISA HUTANG",
-        "Manage all products, SKUs, costs, and basic product data for your business.":"Kelola seluruh produk, SKU, modal, dan data dasar produk bisnis Anda.",
-        "📥 Import Excel":"📥 Impor Excel",
-        "📤 Export Excel":"📤 Ekspor Excel",
-        "Upload laporan penjualan marketplace. SellerBooks akan membaca struktur file dan mencari SKU serta QTY secara otomatis.":"Upload laporan penjualan marketplace. SellerBooks akan membaca struktur file dan mencari SKU serta QTY secara otomatis.",
-        "Upload file dari marketplace tanpa perlu memilih marketplace terlebih dahulu. Sistem akan menganalisis struktur data secara otomatis.":"Upload file dari marketplace tanpa perlu memilih marketplace terlebih dahulu. Sistem akan menganalisis struktur data secara otomatis.",
-        "Hasil Analisis File":"Hasil Analisis File",
-        "SellerBooks telah membaca struktur file Anda.":"SellerBooks telah membaca struktur file Anda.",
-        "SKU Recognition":"Pengenalan SKU",
-        "QTY Recognition":"Pengenalan QTY",
-        "Lanjutkan Import →":"Lanjutkan Import →",
-        "Margin Profit":"Margin Profit",
-        "SKU SellerBooks":"SKU SellerBooks",
-        "💱 Masukkan nilai rupiah untuk 1 unit mata uang asing. Contoh: jika 1 USD = Rp16.500, isi":"💱 Masukkan nilai rupiah untuk 1 unit mata uang asing. Contoh: jika 1 USD = Rp16.500, isi",
-        "ℹ️ Semua data disimpan dalam IDR sebagai nilai dasar. Saat mata uang diganti, seluruh nominal otomatis dikonversi ke kurs tampilan.":"ℹ️ Semua data disimpan dalam IDR sebagai nilai dasar. Saat mata uang diganti, seluruh nominal otomatis dikonversi ke kurs tampilan.",
-        "Pembulatan Nilai":"Pembulatan Nilai",
-        "Tanpa Pembulatan":"Tanpa Pembulatan",
-        "Masukkan biaya setiap komponen packing. Total akan dihitung otomatis sebagai biaya packing per transaksi.":"Masukkan biaya setiap komponen packing. Total akan dihitung otomatis sebagai biaya packing per transaksi.",
-        "Accounts Toko *":"Accounts Toko *",
-        "Nama pelanggan / pihak":"Nama pelanggan / pihak",
-        "Keterangan piutang":"Keterangan piutang",
-        "Keterangan pembayaran":"Keterangan pembayaran",
-        "🔍 Cari SKU atau nama produk...":"🔍 Cari SKU atau nama produk...",
-        "Jumlah baris Master Produk":"Jumlah baris Master Produk",
-        "Jumlah baris Rincian Sales per Produk":"Jumlah baris Rincian Penjualan per Produk",
-        "Jumlah baris Detail Sales":"Jumlah baris Rincian Penjualan",
-        "Masukkan persentase admin":"Masukkan persentase admin",
-        "Contoh: Accounts utama Shopee":"Contoh: Accounts utama Shopee",
-        "Contoh: TAS-BIRU-001":"Contoh: TAS-BIRU-001",
-        "Contoh: Tas Biru Premium":"Contoh: Tas Biru Premium",
-        "Contoh: Tas":"Contoh: Tas",
-        "Contoh: Biaya iklan TikTok bulan ini":"Contoh: Biaya iklan TikTok bulan ini",
-        "Catatan tambahan...":"Catatan tambahan...",
-        "Refresh Dashboard":"Segarkan Dasbor",
-
-        "Reset Identitas":"Reset Identitas",
-        "0 PCS":"0 PCS",
-        "SellerBooks Smart File Analyzer":"Penganalisis File Cerdas SellerBooks",
-        "Rp 0":"Rp 0",
-        "1 USD = Rp":"1 USD = Rp",
-        "1 SGD = Rp":"1 SGD = Rp",
-        "1 MYR = Rp":"1 MYR = Rp",
-        ". Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.":". Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.",
-        "© 2026 All Rights Reserved by":"© 2026 Hak Cipta Dilindungi oleh",
-        "Contoh: 500000":"Contoh: 500000",
-        "Contoh: 1500":"Contoh: 1500",
-        "Contoh: 16500":"Contoh: 16500",
-        "Contoh: 12900":"Contoh: 12900",
-        "Contoh: 3900":"Contoh: 3900",
-        "Contoh: 850":"Contoh: 850",
-        "Contoh: Adimasa Official Store":"Contoh: Toko Resmi Adimasa",
-        "Contoh: SHOPEE-001":"Contoh: SHOPEE-001",
-        "Contoh: 50000":"Contoh: 50000",
-        "Contoh: 25000":"Contoh: 25000",
-        "Contoh: 100":"Contoh: 100",
-        "Contoh: 15":"Contoh: 15",
-        "Contoh: Shopee":"Contoh: Shopee",
-        "Penghapusan hanya menyentuh laporan yang sesuai dengan tanggal + marketplace + accounts toko yang dipilih. Master Produk, Marketplace, Accounts Toko, dan Biaya Lain tidak ikut dihapus. Stok Master Produk akan otomatis dikembalikan sesuai QTY yang sebelumnya dipotong oleh laporan yang dihapus.":"Penghapusan hanya menyentuh laporan yang sesuai dengan tanggal + marketplace + accounts toko yang dipilih. Master Produk, Marketplace, Accounts Toko, dan Biaya Lain tidak ikut dihapus. Stok Master Produk akan otomatis dikembalikan sesuai QTY yang sebelumnya dipotong oleh laporan yang dihapus.",
-    },    "en": {
+    },
+    "en": {
         "Dashboard":"Dashboard",
         "Marketplace":"Marketplace",
         "Store Accounts":"Store Accounts",
@@ -32717,69 +32107,7 @@ const SELLERBOOKS_I18N = {
         "Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu.":"Please enter the Owner Name or Business Name first.",
         "Nama Pemilik berhasil direset.":"Owner Name reset successfully.",
         "Gagal mereset Nama Pemilik:":"Failed to reset Owner Name:",
-        "Nama Pemilik gagal disimpan ke server.":"Owner Name could not be saved to the server.",
-        "Accounts Toko":"Store Accounts",
-        "User SellerBooks":"SellerBooks User",
-        "Kelola seluruh penjualan marketplace, produk, accounts toko, dan laba bisnis Anda dalam satu sistem.":"Manage all marketplace sales, products, store accounts, and business profit in one system.",
-        "NET MARGIN":"NET MARGIN",
-        "SISA HUTANG":"REMAINING DEBT",
-        "Manage all products, SKUs, costs, and basic product data for your business.":"Manage all products, SKUs, costs, and basic product data for your business.",
-        "📥 Import Excel":"📥 Import Excel",
-        "📤 Export Excel":"📤 Export Excel",
-        "Upload laporan penjualan marketplace. SellerBooks akan membaca struktur file dan mencari SKU serta QTY secara otomatis.":"Upload marketplace sales reports. SellerBooks will read the file structure and automatically find SKU and QTY.",
-        "Upload file dari marketplace tanpa perlu memilih marketplace terlebih dahulu. Sistem akan menganalisis struktur data secara otomatis.":"Upload a marketplace file without selecting a marketplace first. The system will analyze the data structure automatically.",
-        "Hasil Analisis File":"File Analysis Results",
-        "SellerBooks telah membaca struktur file Anda.":"SellerBooks has read your file structure.",
-        "SKU Recognition":"SKU Recognition",
-        "QTY Recognition":"QTY Recognition",
-        "Lanjutkan Import →":"Continue Import →",
-        "Margin Profit":"Profit Margin",
-        "SKU SellerBooks":"SellerBooks SKU",
-        "💱 Masukkan nilai rupiah untuk 1 unit mata uang asing. Contoh: jika 1 USD = Rp16.500, isi":"💱 Enter the IDR value for 1 unit of foreign currency. Example: if 1 USD = Rp16,500, enter",
-        "ℹ️ Semua data disimpan dalam IDR sebagai nilai dasar. Saat mata uang diganti, seluruh nominal otomatis dikonversi ke kurs tampilan.":"ℹ️ All data is stored in IDR as the base value. When the currency changes, all amounts are automatically converted using the display exchange rate.",
-        "Pembulatan Nilai":"Value Rounding",
-        "Tanpa Pembulatan":"No Rounding",
-        "Masukkan biaya setiap komponen packing. Total akan dihitung otomatis sebagai biaya packing per transaksi.":"Enter the cost for each packing component. The total will be calculated automatically as the packing cost per transaction.",
-        "Accounts Toko *":"Store Account *",
-        "Nama pelanggan / pihak":"Customer / Party Name",
-        "Keterangan piutang":"Receivable Description",
-        "Keterangan pembayaran":"Payment Description",
-        "🔍 Cari SKU atau nama produk...":"🔍 Search SKU or product name...",
-        "Jumlah baris Master Produk":"Product Master Rows",
-        "Jumlah baris Rincian Sales per Produk":"Sales Detail Rows per Product",
-        "Jumlah baris Detail Sales":"Sales Detail Rows",
-        "Masukkan persentase admin":"Enter the admin fee percentage",
-        "Contoh: Accounts utama Shopee":"Example: Main Shopee Account",
-        "Contoh: TAS-BIRU-001":"Example: TAS-BLUE-001",
-        "Contoh: Tas Biru Premium":"Example: Blue Premium Bag",
-        "Contoh: Tas":"Example: Bag",
-        "Contoh: Biaya iklan TikTok bulan ini":"Example: TikTok advertising cost this month",
-        "Catatan tambahan...":"Additional notes...",
-        "Refresh Dashboard":"Refresh Dashboard",
-        "Reset Identitas":"Reset Identity",
-        "0 PCS":"0 PCS",
-        "SellerBooks Smart File Analyzer":"SellerBooks Smart File Analyzer",
-        "Rp 0":"Rp 0",
-        "1 USD = Rp":"1 USD = Rp",
-        "1 SGD = Rp":"1 SGD = Rp",
-        "1 MYR = Rp":"1 MYR = Rp",
-        ". Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.":". The exchange rate will be used for all displayed amounts.",
-        "© 2026 All Rights Reserved by":"© 2026 All Rights Reserved by",
-        "Language":"Language",
-        "Contoh: 500000":"Example: 500000",
-        "Contoh: 1500":"Example: 1500",
-        "Contoh: 16500":"Example: 16500",
-        "Contoh: 12900":"Example: 12900",
-        "Contoh: 3900":"Example: 3900",
-        "Contoh: 850":"Example: 850",
-        "Contoh: Adimasa Official Store":"Example: Adimasa Official Store",
-        "Contoh: SHOPEE-001":"Example: SHOPEE-001",
-        "Contoh: 50000":"Example: 50000",
-        "Contoh: 25000":"Example: 25000",
-        "Contoh: 100":"Example: 100",
-        "Contoh: 15":"Example: 15",
-        "Contoh: Shopee":"Example: Shopee",
-        "Penghapusan hanya menyentuh laporan yang sesuai dengan tanggal + marketplace + accounts toko yang dipilih. Master Produk, Marketplace, Accounts Toko, dan Biaya Lain tidak ikut dihapus. Stok Master Produk akan otomatis dikembalikan sesuai QTY yang sebelumnya dipotong oleh laporan yang dihapus.":"Deletion only affects reports matching the selected date, marketplace, and store account. Product Master, Marketplace, Store Accounts, and Other Costs are not deleted. Product Master stock is automatically restored based on the QTY previously deducted by the deleted reports.",
+        "Nama Pemilik gagal disimpan ke server.":"Owner Name could not be saved to the server."
     }
 };
 
@@ -32821,8 +32149,9 @@ function sellerBooksTranslateTextNodes(root, language){
         if(!core) return;
         const dictionary = SELLERBOOKS_I18N[language] || SELLERBOOKS_I18N.id;
         let translated = dictionary[core];
-        if(translated === undefined){
+        if(translated === undefined && language === "en"){
             translated = sellerBooksTranslateUserText(core, language);
+            if(translated !== core) translated = sellerBooksTranslateUserText(translated, language);
         }
         if(translated === undefined) return;
         const leading = String(original).match(/^\s*/)?.[0] || "";
@@ -32833,853 +32162,196 @@ function sellerBooksTranslateTextNodes(root, language){
     });
 }
 
-const SELLERBOOKS_EN_PHRASES = {
-    "Gagal membaca data import penjualan:": "Failed to read sales import data:",
-    "Rentang tanggal maksimal: 3 bulan terakhir sampai hari ini (": "Maximum date range: the last 3 months through today (",
-    "Silakan pilih From Date dan To Date terlebih dahulu.": "Please select From Date and To Date first.",
-    "Rentang tanggal tidak valid.": "Invalid date range.",
-    "From Date tidak boleh lebih besar dari To Date.": "From Date cannot be later than To Date.",
-    "Gagal membaca Master Produk:": "Failed to read Product Master:",
-    "SKU belum ditemukan di Master Produk": "SKU not found in Product Master",
-    "Gagal memuat library PDF.": "Failed to load the PDF library.",
-    "Rincian Sales per SKU": "Sales Details per SKU",
-    "Ringkasan Marketplace": "Marketplace Summary",
-    "Tidak ada data": "No data",
-    "Gagal membuat PDF laporan:": "Failed to generate the report PDF:",
-    "Silakan coba lagi.": "Please try again.",
-    "Laporan ringkasan:": "Summary report:",
-    "Laporan SKU:": "SKU report:",
-    "Laporan keuangan:": "Financial report:",
-    "Laporan marketplace:": "Marketplace report:",
-    "Laporan accounts toko:": "Store account report:",
-    "Data penjualan berubah di perangkat lain saat operasi penghapusan/edit berlangsung.": "Sales data changed on another device during the delete/edit operation.",
-    "Data cloud berubah di perangkat lain. Operasi hapus seluruh data dibatalkan demi keamanan.": "Cloud data changed on another device. Deleting all data was canceled for security.",
-    "Data cloud tidak ditemukan saat sinkronisasi. Penulisan dibatalkan demi keamanan.": "Cloud data was not found during synchronization. The write was canceled for safety.",
-    "Sinkronisasi gagal karena data berubah bersamaan.": "Synchronization failed because the data changed concurrently.",
-    "Data berubah di perangkat lain. Operasi kritis dibatalkan agar data tidak tertimpa.": "Data changed on another device. The critical operation was canceled to prevent overwriting.",
-    "Verifikasi gagal: perubahan belum tersimpan sesuai permintaan.": "Verification failed: the changes were not saved as requested.",
-    "Status accounts masih menunggu persetujuan Core Adiimasa.": "Account status is still awaiting Core Adiimasa approval.",
-    "Tidak dapat membaca status accounts saat ini. Periksa koneksi internet lalu coba lagi.": "Unable to read the account status right now. Check your internet connection and try again.",
-    "Google Login gagal:": "Google login failed:",
-    "❌ Login Google gagal.\\n\\n": "❌ Google login failed.\\n\\n",
-    "Realtime logout gagal:": "Realtime sign-out failed:",
-    "Logout gagal:": "Sign-out failed:",
-    "Marketplace aktif dan siap digunakan": "Marketplace active and ready to use",
-    "Marketplace belum digunakan": "Marketplace not used yet",
-    "Marketplace \\\"": "Marketplace \\\"",
-    "Copot Integrasi": "Disconnect Integration",
-    "Copot integrasi": "Disconnect integration",
-    "Marketplace accounts toko tidak ditemukan.": "Store account marketplace not found.",
-    "Koneksi tidak berhasil dicopot.": "The integration could not be disconnected.",
-    "Integrasikan Accounts": "Integrate Account",
-    "Hasil Tarik Order": "Pull Orders Result",
-    "Mesin Import Sales melewati data duplikat.": "The Import Sales engine skipped duplicate data.",
-    "Gagal membaca antrean API:": "Failed to read API queue:",
-    "Akun toko TikTok tidak ditemukan.": "TikTok store account not found.",
-    "Tarik Order TikTok": "Pull TikTok Orders",
-    "API hanya mengambil data mentah order.\\n": "The API only retrieves raw order data.\\n",
-    "Setelah itu data akan diproses oleh mesin Import Sales yang sama seperti upload Excel manual.": "After that, the data is processed by the same Import Sales engine as manual Excel uploads.",
-    "Pengambilan data TikTok Shop gagal.": "Failed to retrieve TikTok Shop data.",
-    "Tarik Order Shopee": "Pull Shopee Orders",
-    "Pengambilan data Shopee gagal.": "Failed to retrieve Shopee data.",
-    "Hasil Tarik Order Shopee": "Shopee Pull Orders Result",
-    "Tarik order Shopee gagal:": "Failed to pull Shopee orders:",
-    "Akun toko Lazada tidak ditemukan.": "Lazada store account not found.",
-    "Tarik Order Lazada": "Pull Lazada Orders",
-    "Pengambilan data Lazada gagal.": "Failed to retrieve Lazada data.",
-    "Belum ada marketplace aktif.": "No active marketplaces yet.",
-    "Silakan aktifkan marketplace terlebih dahulu.": "Please activate a marketplace first.",
-    "Nama toko ini sudah terdaftar": "This store name is already registered",
-    "di marketplace yang dipilih.": "in the selected marketplace.",
-    "Hapus accounts toko \\\"": "Delete store account \\\"",
-    "SKU sudah digunakan oleh produk lain.": "SKU is already used by another product.",
-    "SKU sudah terdaftar.": "SKU is already registered.",
-    "Penyimpanan Master Produk ke cloud gagal dimulai:": "Product Master cloud storage could not be started:",
-    "Data yang dihapus tidak dapat dikembalikan.": "Deleted data cannot be restored.",
-    "Status tidak valid": "Invalid status",
-    "Silakan pilih Aktif atau Tidak Aktif.": "Please select Active or Inactive.",
-    "Pilih Aktif atau Tidak Aktif.": "Select Active or Inactive.",
-    "Wajib diisi. SKU adalah kode unik produk dan tidak boleh sama dengan produk lain.": "Required. SKU is a unique product code and must be different from other products.",
-    "Wajib diisi. Masukkan nama produk dengan jelas.": "Required. Enter the product name clearly.",
-    "Isi angka biaya modal produk tanpa tulisan Rp. Contoh: 12000": "Enter the product cost as a number without Rp. Example: 12000",
-    "Isi jumlah stok awal produk dalam angka. Contoh: 100.": "Enter the initial product stock as a number. Example: 100.",
-    "Pilih dari dropdown: Aktif atau Tidak Aktif.": "Select from the dropdown: Active or Inactive.",
-    "Identitas packing belum ditemukan pada file.": "Packing identifier not found in the file.",
-    "Import ditolak: file/data penjualan yang sama sudah pernah disimpan.": "Import rejected: the same sales file/data has already been saved.",
-    "Format file tidak didukung.\\n\\n": "Unsupported file format.\\n\\n",
-    "Pastikan file tidak rusak.": "Make sure the file is not corrupted.",
-    "Tidak dikenali": "Not recognized",
-    "Tidak ditemukan": "Not found",
-    "Kolom SKU belum dikenali": "SKU column not recognized",
-    "Kolom QTY belum dikenali": "QTY column not recognized",
-    "Data import tidak ditemukan. Silakan upload file kembali.": "Import data not found. Please upload the file again.",
-    "Silakan pilih kolom SKU terlebih dahulu.": "Please select the SKU column first.",
-    "Silakan pilih kolom QTY terlebih dahulu.": "Please select the QTY column first.",
-    "Kolom SKU dan QTY tidak boleh sama.": "The SKU and QTY columns cannot be the same.",
-    "Marketplace file belum dapat dikenali otomatis.": "The marketplace in the file could not be detected automatically.",
-    "Silakan pilih accounts toko terlebih dahulu sebelum menyimpan.": "Please select a store account before saving.",
-    "Master Produk masih kosong": "Product Master is still empty",
-    "Tambahkan produk terlebih dahulu agar data penjualan dapat dihitung.": "Add products first so sales data can be calculated.",
-    "Identitas belum diatur": "Identity is not configured",
-    "Import penjualan belum selesai": "Sales import is not complete",
-    "SKU dan QTY dari file penjualan perlu dikonfirmasi.": "The SKU and QTY from the sales file must be confirmed.",
-    "produk stok menipis": "products have low stock",
-    "Ada produk dengan stok 5 atau kurang.": "Some products have stock of 5 or less.",
-    "Segera lakukan pengisian ulang.": "Restock them soon.",
-    "Biaya sudah menjadi snapshot setelah 00:00 WIB": "The cost became a snapshot after 00:00 WIB",
-    "sudah menjadi snapshot dan tidak dapat diedit lagi.": "is already a snapshot and can no longer be edited.",
-    "Edit Biaya": "Edit Cost",
-    "Hapus biaya \\\"": "Delete cost \\\"",
-    "Pengaturan berhasil disimpan.": "Settings saved successfully.",
-    "Bahasa tersimpan di accounts Anda.": "Language saved to your account.",
-    "Tidak ada laporan yang cocok dengan tanggal, marketplace, dan accounts toko yang dipilih.": "No report matches the selected date, marketplace, and store account.",
-    "Nama accounts toko wajib diisi.": "Store account name is required.",
-    "Popup/tab baru diblokir browser. Silakan izinkan pop-up untuk SellerBooks lalu klik Integrasikan Accounts lagi.": "The new popup/tab was blocked by the browser. Please allow pop-ups for SellerBooks, then click Integrate Account again.",
-    "Akun toko Shopee tidak ditemukan.": "Shopee store account not found.",
-    "Akun toko ini bukan Shopee.": "This store account is not a Shopee account.",
-    "Akun Shopee belum terintegrasi.": "Shopee account is not integrated yet.",
-    "Akun Lazada belum terintegrasi.": "Lazada account is not integrated yet.",
-    "Akun TikTok belum terintegrasi.": "TikTok account is not integrated yet.",
-    "Tidak ada order TikTok pada periode yang diperiksa.\\n\\n": "No TikTok orders were found in the checked period.\\n\\n",
-    "Tidak ada order Shopee pada periode yang diperiksa.\\n\\nOrder ditemukan:": "No Shopee orders were found in the checked period.\\n\\nOrders found:",
-    "Tidak ada order Lazada pada periode yang diperiksa.\\n\\nOrder ditemukan:": "No Lazada orders were found in the checked period.\\n\\nOrders found:",
-    "Tarik Pesanan TikTok": "Pull TikTok Orders",
-    "Tarik Pesanan Shopee": "Pull Shopee Orders",
-    "Tarik Pesanan Lazada": "Pull Lazada Orders",
-    "Integrasi Berhasil": "Integration Successful",
-    "Simpan Marketplace": "Save Marketplace",
-    "Simpan Produk": "Save Product",
-    "Simpan Accounts Toko": "Save Store Account",
-    "Simpan Pembayaran": "Save Payment",
-    "Tambah Marketplace": "Add Marketplace",
-    "Tambah Produk": "Add Product",
-    "Tambah Accounts Toko": "Add Store Account",
-    "Upload Laporan Sales": "Upload Sales Report",
-    "Upload Laporan Penjualan": "Upload Sales Report",
-    "All Store Accounts": "All Store Accounts",
-    "Semua Akun Toko": "All Store Accounts",
-    "Accounts Toko": "Store Accounts",
-    "Save Marketplace": "Save Marketplace",
-    "Save Product": "Save Product",
-    "Save Store Account": "Save Store Account",
-    "Save Payment": "Save Payment",
-    "Add Marketplace": "Add Marketplace",
-    "Add Product": "Add Product",
-    "Add Store Account": "Add Store Account",
-    "Simpan Akun Toko": "Save Store Account",
-    "Tambah Akun Toko": "Add Store Account"
-};
-
 const SELLERBOOKS_EN_FALLBACK = {
-    "silakan": "please",
-    "terlebih dahulu": "first",
-    "kelola": "manage",
-    "Anda": "you",
-    "bisnis": "business",
-    "satu": "one",
-    "sistem": "system",
-    "terjual": "sold",
-    "keluar": "sign out",
-    "tidak dapat": "cannot",
-    "tidak bisa": "cannot",
-    "tidak ditemukan": "not found",
-    "belum ditemukan": "not found yet",
-    "belum ada": "no",
-    "sudah": "already",
-    "akan": "will",
-    "harus": "must",
-    "wajib": "required",
-    "dapat": "can",
-    "dengan": "with",
-    "tanpa": "without",
-    "sesuai": "according to",
-    "berdasarkan": "based on",
-    "digunakan": "used",
-    "menggunakan": "using",
-    "menampilkan": "display",
-    "ditampilkan": "displayed",
-    "tersimpan": "saved",
-    "disimpan": "saved",
-    "menyimpan": "save",
-    "simpan": "save",
-    "berhasil": "successfully",
-    "gagal": "failed",
-    "kesalahan": "error",
-    "terjadi": "occurred",
-    "terjadi kesalahan": "an error occurred",
-    "perubahan": "changes",
-    "diperbarui": "updated",
-    "memuat": "loading",
-    "membaca": "reading",
-    "dibaca": "read",
-    "menghapus": "delete",
-    "dihapus": "deleted",
-    "penghapusan": "deletion",
-    "menambahkan": "add",
-    "tambahkan": "add",
-    "mengedit": "edit",
-    "diedit": "edited",
-    "pilih": "select",
-    "dipilih": "selected",
-    "memilih": "select",
-    "isi": "enter",
-    "masukkan": "enter",
-    "mengisi": "enter",
-    "kosong": "empty",
-    "kosongkan": "clear",
-    "lengkapi": "complete",
-    "baru": "new",
-    "lama": "old",
-    "semua": "all",
-    "setiap": "each",
-    "hanya": "only",
-    "jika": "if",
-    "apabila": "if",
-    "ketika": "when",
-    "saat": "when",
-    "sebelum": "before",
-    "setelah": "after",
-    "hingga": "until",
-    "sampai": "until",
-    "dalam": "in",
-    "pada": "on",
-    "dari": "from",
-    "ke": "to",
-    "untuk": "for",
-    "oleh": "by",
-    "dan": "and",
-    "atau": "or",
-    "yang": "that",
-    "ini": "this",
-    "itu": "that",
-    "tersebut": "the",
-    "juga": "also",
-    "lebih": "more",
-    "kurang": "less",
-    "tidak": "not",
-    "belum": "not yet",
-    "bukan": "not",
-    "ada": "exists",
-    "diperlukan": "required",
-    "dibutuhkan": "required",
-    "tersedia": "available",
-    "tidak tersedia": "is not available",
-    "aktif": "active",
-    "tidak aktif": "inactive",
-    "menunggu": "waiting",
-    "berikutnya": "next",
-    "sebelumnya": "previous",
-    "kembali": "back",
-    "lanjutkan": "continue",
-    "batal": "cancel",
-    "konfirmasi": "confirm",
-    "tutup": "close",
-    "buka": "open",
-    "cari": "search",
-    "filter": "filter",
-    "reset": "reset",
-    "tanggal": "date",
-    "hari": "day",
-    "kemarin": "yesterday",
-    "minggu": "week",
-    "bulan": "month",
-    "tahun": "year",
-    "periode": "period",
-    "rentang": "range",
-    "nama": "name",
-    "nama produk": "product name",
-    "nama bisnis": "business name",
-    "nama toko": "store name",
-    "nama accounts": "account name",
-    "pemilik": "owner",
-    "usaha": "business",
-    "akun": "account",
-    "akun toko": "store account",
-    "toko": "store",
-    "produk": "product",
-    "produk terjual": "products sold",
-    "penjualan": "sales",
-    "penjualan bersih": "net sales",
-    "laporan": "report",
-    "rincian": "details",
-    "biaya": "cost",
-    "biaya lain": "other costs",
-    "biaya admin": "admin fee",
-    "admin marketplace": "marketplace fee",
-    "admin sku": "SKU fee",
-    "modal": "cost",
-    "hpp": "COGS",
-    "harga jual": "selling price",
-    "harga": "price",
-    "stok": "stock",
-    "jumlah": "amount",
-    "jumlah data": "data count",
-    "jumlah baris": "rows",
-    "jumlah kolom": "columns",
-    "keterangan": "description",
-    "nominal": "amount",
-    "diskon": "discount",
-    "laba": "profit",
-    "laba bersih": "net profit",
-    "laba kotor": "gross profit",
-    "rugi": "loss",
-    "piutang": "receivable",
-    "pembayaran": "payment",
-    "sudah dibayar": "paid",
-    "belum dibayar": "unpaid",
-    "pesanan": "orders",
-    "nomor pesanan": "order number",
-    "nomor resi": "tracking number",
-    "resi": "tracking number",
-    "pengiriman": "shipment",
-    "pengambilan": "pickup",
-    "dikirim": "shipped",
-    "menunggu pengiriman": "awaiting shipment",
-    "menunggu pengambilan": "awaiting pickup",
-    "selesai": "completed",
-    "dibatalkan": "cancelled",
-    "pengembalian": "return",
-    "integrasi": "integration",
-    "integrasikan": "integrate",
-    "terintegrasi": "integrated",
-    "copot": "disconnect",
-    "sinkronisasi": "sync",
-    "sinkron": "sync",
-    "tarik order": "pull orders",
-    "ambil order": "pull orders",
-    "upload": "upload",
-    "download": "download",
-    "file": "file",
-    "kolom": "column",
-    "baris": "row",
-    "template": "template",
-    "pengaturan": "settings",
-    "bahasa": "language",
-    "mata uang": "currency",
-    "kurs": "exchange rate",
-    "pembulatan": "rounding",
-    "packing": "packing",
-    "default": "default",
-    "per order": "per order",
-    "per transaksi": "per transaction",
-    "hari ini": "today",
-    "hari kemarin": "yesterday",
-    "minggu ini": "this week",
-    "minggu lalu": "last week",
-    "bulan ini": "this month",
-    "bulan lalu": "last month",
-    "3 bulan terakhir": "last 3 months",
-    "tahun ini": "this year",
-    "pilih tanggal": "custom date",
-    "semua periode": "all periods",
-    "semua marketplace": "all marketplaces",
-    "semua accounts toko": "all store accounts",
-    "semua status": "all statuses",
-    "tidak ada data": "no data",
-    "belum ada data": "no data yet",
-    "belum ada transaksi": "no transactions yet",
-    "tidak ada transaksi": "no transactions",
-    "belum ada produk": "no products yet",
-    "belum ada accounts": "no accounts yet",
-    "belum ada marketplace": "no marketplaces yet",
-    "belum ada biaya": "no costs yet",
-    "belum ada piutang": "no receivables yet",
-    "belum ada pembayaran": "no payments yet",
-    "wajib diisi": "is required",
-    "harus diisi": "is required",
-    "harus dipilih": "must be selected",
-    "tidak boleh kosong": "cannot be empty",
-    "tidak boleh sama": "must be different",
-    "lebih dari": "greater than",
-    "kurang dari": "less than",
-    "maksimal": "maximum",
-    "minimal": "minimum",
-    "terdekat": "nearest",
-    "contoh": "example",
-    "catatan": "note",
-    "pesan": "message",
-    "notifikasi": "notification",
-    "status": "status",
-    "hasil": "result",
-    "ringkasan": "summary",
-    "performa": "performance",
-    "pergerakan": "movement",
-    "perbandingan": "comparison",
-    "daftar": "list",
-    "riwayat": "history",
-    "identitas": "identity",
-    "sesi": "session",
-    "login": "login",
-    "masuk": "sign in",
-    "persetujuan": "approval",
-    "ditolak": "rejected",
-    "ditangguhkan": "suspended",
-    "akses": "access",
-    "koneksi": "connection",
-    "perangkat": "device",
-    "hapus": "delete",
-    "permanen": "permanently",
-    "data": "data",
-    "tidak ada": "no",
-    "cocok": "match",
-    "terakhir": "last",
-    "dilakukan": "be performed",
-    "ditemukan": "found",
-    "periksa": "check",
-    "internet": "internet",
-    "coba": "try",
-    "lagi": "again",
-    "menampilkan semua": "showing all",
-    "laporan sku": "SKU report",
-    "laporan keuangan": "Financial report",
-    "laporan marketplace": "Marketplace report",
-    "laporan accounts toko": "Store account report",
-    "sku belum ada": "SKU not found",
-    "sku belum ada di master produk": "SKU not found in Product Master",
-    "tidak dikenali": "Unrecognized",
-    "sudah digunakan": "already in use",
-    "sudah terdaftar": "already registered",
-    "harus antara": "must be between",
-    "terdaftar": "registered",
-    "aktifkan": "activate",
-    "integrasikan accounts": "integrate accounts",
-    "integrasi berhasil": "integration successful",
-    "integrasi gagal": "integration failed",
-    "belum tersedia": "not available",
-    "segera hadir": "coming soon",
-    "sementara": "for now",
-    "bisa": "can",
-    "melalui": "through",
-    "secara manual": "manually",
-    "orderan": "orders",
-    "dimulai": "started",
-    "disiapkan": "prepared",
-    "menyiapkan": "preparing",
-    "sedang": "currently",
-    "mengambil": "fetching",
-    "tujuh hari": "seven days",
-    "7 hari terakhir": "last 7 days",
-    "data mentah": "raw data",
-    "setelah itu": "after that",
-    "mesin": "engine",
-    "sama": "same",
-    "seperti": "as",
-    "upload file": "file upload",
-    "manual": "manual",
-    "pengambilan data": "data retrieval",
-    "diperiksa": "checked",
-    "tarik": "pull",
-    "status api": "API status",
-    "penyimpanan": "storage",
-    "penyimpanan master produk": "Product Master storage",
-    "import selesai": "import completed",
-    "data tidak valid": "invalid data",
-    "membaca file": "reading the file",
-    "file excel": "Excel file",
-    "file ini": "this file",
-    "rusak": "corrupted",
-    "pastikan": "make sure",
-    "terlebih": "first",
-    "dikonfirmasi": "confirmed",
-    "berhasil disimpan": "saved successfully",
-    "gagal disimpan": "failed to save",
-    "berubah": "changed",
-    "operasi": "operation",
-    "keamanan": "security",
-    "verifikasi": "verification",
-    "belum tersimpan": "not saved yet",
-    "hanya dapat": "can only",
-    "komputer": "computer",
-    "laptop": "laptop",
-    "dikosongkan": "cleared",
-    "pengisian": "entry",
-    "tetap": "remain",
-    "nama pemilik": "owner name",
-    "akun gmail": "Gmail account",
-    "tetap tersimpan": "remains saved",
-    "status accounts": "account status",
-    "tidak dapat digunakan": "cannot be used",
-    "telah ditangguhkan": "has been suspended",
-    "telah ditolak": "has been rejected",
-    "telah dihapus": "has been deleted",
-    "saat ini": "currently",
-    "hubungi": "contact",
-    "informasi lebih lanjut": "more information",
-    "logout": "sign out",
-    "login kembali": "sign in again",
-    "sesi login": "login session",
-    "laporan berhasil": "report completed",
-    "pdf laporan": "PDF report",
-    "pergerakan penjualan": "sales movement",
-    "minus": "loss-making",
-    "untung": "profitable",
-    "produk minus": "loss-making products",
-    "produk untung": "profitable products",
-    "per produk": "by product",
-    "secara lebih spesifik": "more specifically",
-    "secara spesifik": "specifically",
-    "dihitung": "calculated",
-    "terpisah": "separately",
-    "konfigurasi": "configuration",
-    "preferensi": "preferences",
-    "rupiah": "rupiah",
-    "unit": "unit",
-    "mata uang asing": "foreign currency",
-    "perubahan kurs": "exchange rate changes",
-    "seluruh": "all",
-    "angka": "numbers",
-    "transaksi": "transactions",
-    "backup": "backup",
-    "restore": "restore",
-    "mengganti": "replace",
-    "isi file": "file contents",
-    "isi sesuai": "enter according to",
-    "status accounts toko": "store account status",
-    "toko ini": "this store",
-    "dari marketplace": "from the marketplace",
-    "hanya accounts": "only accounts",
-    "kategori biaya": "cost category",
-    "lainnya": "other",
-    "nominal biaya": "cost amount",
-    "simpan biaya": "save cost",
-    "simpan marketplace": "save marketplace",
-    "simpan produk": "save product",
-    "simpan accounts toko": "save store account",
-    "simpan pembayaran": "save payment",
-    "edit": "edit",
-    "tambah": "add",
-    "pilih marketplace": "select marketplace",
-    "pilih kategori": "select category",
-    "pilih accounts toko": "select store account",
-    "pilih kolom sku": "select SKU column",
-    "pilih kolom qty": "select QTY column",
-    "belum dapat dikenali": "cannot be identified yet",
-    "otomatis": "automatically",
-    "sebelum melanjutkan": "before continuing",
-    "setiap komponen": "each component",
-    "total akan dihitung": "total will be calculated",
-    "dengan benar": "correctly",
-    "mengetahui": "identify",
-    "perlu diperbaiki": "need improvement",
-    "data import": "import data",
-    "import penjualan": "sales import",
-    "sama sudah pernah disimpan": "the same data has already been saved",
-    "gagal membaca": "failed to read",
-    "berhasil dibuat": "created successfully",
-    "ringkasan laporan": "report summary",
-    "sisa": "remaining",
-    "per reseller": "by reseller",
-    "catat": "record",
-    "mengurangi": "reduce",
-    "masih": "still",
-    "accounts toko": "store accounts",
-    "nama accounts toko": "store account name",
-    "nama akun toko": "store account name",
-    "diblokir": "blocked",
-    "izinkan": "allow",
-    "lalu": "then",
-    "klik": "click",
-    "terhubung": "connected",
-    "menghubungkan": "connecting",
-    "membuka": "opening",
-    "halaman": "page",
-    "resmi": "official",
-    "autentikasi": "authentication",
-    "otorisasi": "authorization",
-    "belum diaktifkan": "is not enabled yet",
-    "tidak dapat dimulai": "could not be started",
-    "gagal dimulai": "failed to start",
-    "berhasil terhubung": "connected successfully",
-    "sudah berhasil dibuka": "was opened successfully",
-    "mohon tunggu": "please wait",
-    "memeriksa": "checking",
-    "pesanan ditemukan": "orders found",
-    "bisnis Anda": "your business",
-    "anda": "you",
-    "secara": ""
-};
-
-const SELLERBOOKS_EN_EXTRA_FALLBACK = {
-    "akun":"account",
-    "toko":"store",
-    "accounts toko":"store accounts",
-    "akun toko":"store account",
-    "nama accounts toko":"store account name",
-    "nama akun toko":"store account name",
-    "diblokir":"blocked",
-    "izinkan":"allow",
-    "lalu":"then",
-    "klik":"click",
-    "terhubung":"connected",
-    "menghubungkan":"connecting",
-    "membuka":"opening",
-    "memuat":"loading",
-    "halaman":"page",
-    "resmi":"official",
-    "autentikasi":"authentication",
-    "otorisasi":"authorization",
-    "belum diaktifkan":"is not enabled yet",
-    "tidak tersedia":"is not available",
-    "tidak dapat dimulai":"could not be started",
-    "gagal dimulai":"failed to start",
-    "berhasil terhubung":"connected successfully",
-    "sudah berhasil dibuka":"was opened successfully",
-    "mohon tunggu":"please wait",
-    "menyiapkan":"preparing",
-    "memeriksa":"checking",
-    "koneksi":"connection",
-    "sesi":"session",
-    "kembali":"back",
-    "login kembali":"sign in again",
-    "terjadi kesalahan":"an error occurred",
-    "terjadi":"occurred",
-    "server":"server",
-    "detail":"detail",
-    "dipilih":"selected",
-    "diperiksa":"checked",
-    "periode":"period",
-    "tanggal":"date",
-    "pesanan":"orders",
-    "pesanan ditemukan":"orders found",
-    "order":"order",
-    "tarik order":"pull orders",
-    "integrasikan":"integrate",
-    "integrasikan accounts":"integrate accounts",
-    "pengguna":"user",
-    "penggunaan":"usage",
-    "bisnis Anda":"your business",
-    "Anda":"you",
-    "anda":"you",
-    "akan":"will",
-    "sudah":"already",
-    "belum":"not yet",
-    "masih":"still",
-    "setelah":"after",
-    "sebelum":"before",
-    "dengan":"with",
-    "tanpa":"without",
-    "untuk":"for",
-    "dan":"and",
-    "atau":"or",
-    "yang":"that",
-    "dari":"from",
-    "ke":"to",
-    "pada":"on",
-    "saat":"when",
-    "jika":"if",
-    "karena":"because",
-    "oleh":"by",
-    "sesuai":"according to",
-    "berdasarkan":"based on",
-    "secara":"specifically",
-    "manual":"manually",
-    "otomatis":"automatically",
-    "sementara":"for now",
-    "silakan":"please",
-    "mohon":"please",
-    "terlebih dahulu":"first",
-    "terlebih":"first",
-    "cukup":"enough",
-    "hanya":"only",
-    "semua":"all",
-    "seluruh":"all",
-    "setiap":"each",
-    "lebih":"more",
-    "kurang":"less",
-    "maksimal":"maximum",
-    "minimal":"minimum",
-    "wajib diisi":"is required",
-    "harus diisi":"is required",
-    "harus dipilih":"must be selected",
-    "tidak ditemukan":"not found",
-    "belum ditemukan":"not found yet",
-    "belum ada":"no",
+"silakan":"please","terlebih dahulu":"first","kelola":"manage","Anda":"your","bisnis":"business","satu":"one","sistem":"system","terjual":"sold","keluar":"sold","tidak dapat":"cannot","tidak bisa":"cannot","tidak ditemukan":"not found","belum ditemukan":"not found yet","belum ada":"no","sudah":"already","akan":"will","harus":"must","wajib":"required","dapat":"can","dengan":"with","tanpa":"without","sesuai":"according to","berdasarkan":"based on","digunakan":"used","menggunakan":"using","menampilkan":"display","ditampilkan":"displayed","tersimpan":"saved","disimpan":"saved","menyimpan":"save","simpan":"save","berhasil":"successfully","gagal":"failed","kesalahan":"error","terjadi":"occurred","terjadi kesalahan":"an error occurred","perubahan":"changes","diperbarui":"updated","memuat":"loading","membaca":"reading","dibaca":"read","menghapus":"delete","dihapus":"deleted","penghapusan":"deletion","menambahkan":"add","tambahkan":"add","mengedit":"edit","diedit":"edited","pilih":"select","dipilih":"selected","memilih":"select","isi":"enter","masukkan":"enter","mengisi":"enter","kosong":"empty","kosongkan":"clear","lengkapi":"complete","baru":"new","lama":"old","semua":"all","setiap":"each","hanya":"only","jika":"if","apabila":"if","ketika":"when","saat":"when","sebelum":"before","setelah":"after","hingga":"until","sampai":"until","dalam":"in","pada":"on","dari":"from","ke":"to","untuk":"for","oleh":"by","dan":"and","atau":"or","yang":"that","ini":"this","itu":"that","tersebut":"the","juga":"also","lebih":"more","kurang":"less","tidak":"not","belum":"not yet","bukan":"not","ada":"exists","diperlukan":"required","dibutuhkan":"required","tersedia":"available","tidak tersedia":"not available","aktif":"active","tidak aktif":"inactive","menunggu":"waiting","berikutnya":"next","sebelumnya":"previous","kembali":"back","lanjutkan":"continue","batal":"cancel","konfirmasi":"confirm","tutup":"close","buka":"open","cari":"search","filter":"filter","reset":"reset","tanggal":"date","hari":"day","kemarin":"yesterday","minggu":"week","bulan":"month","tahun":"year","periode":"period","rentang":"range","nama":"name","nama produk":"product name","nama bisnis":"business name","nama toko":"store name","nama accounts":"account name","pemilik":"owner","usaha":"business","akun":"account","akun toko":"store account","toko":"store","produk":"product","produk terjual":"products sold","penjualan":"sales","penjualan bersih":"net sales","laporan":"report","rincian":"details","biaya":"cost","biaya lain":"other costs","biaya admin":"admin fee","admin marketplace":"marketplace fee","admin sku":"SKU fee","modal":"cost","hpp":"COGS","harga jual":"selling price","harga":"price","stok":"stock","jumlah":"amount","jumlah data":"data count","jumlah baris":"rows","jumlah kolom":"columns","keterangan":"description","nominal":"amount","diskon":"discount","laba":"profit","laba bersih":"net profit","laba kotor":"gross profit","rugi":"loss","total":"total","piutang":"receivable","pembayaran":"payment","sudah dibayar":"paid","belum dibayar":"unpaid","pesanan":"orders","order":"order","nomor pesanan":"order number","nomor resi":"tracking number","resi":"tracking number","pengiriman":"shipment","pengambilan":"pickup","dikirim":"shipped","menunggu pengiriman":"awaiting shipment","menunggu pengambilan":"awaiting pickup","selesai":"completed","dibatalkan":"cancelled","pengembalian":"return","integrasi":"integration","integrasikan":"integrate","terintegrasi":"integrated","copot":"disconnect","sinkronisasi":"sync","sinkron":"sync","tarik order":"pull orders","ambil order":"pull orders","upload":"upload","download":"download","file":"file","kolom":"column","baris":"row","template":"template","pengaturan":"settings","bahasa":"language","mata uang":"currency","kurs":"exchange rate","pembulatan":"rounding","packing":"packing","default":"default","per order":"per order","per transaksi":"per transaction","hari ini":"today","hari kemarin":"yesterday","minggu ini":"this week","minggu lalu":"last week","bulan ini":"this month","bulan lalu":"last month","3 bulan terakhir":"last 3 months","tahun ini":"this year","pilih tanggal":"custom date","semua periode":"all periods","semua marketplace":"all marketplaces","semua accounts toko":"all store accounts","semua status":"all statuses","tidak ada data":"no data","belum ada data":"no data yet","belum ada transaksi":"no transactions yet","tidak ada transaksi":"no transactions","belum ada produk":"no products yet","belum ada accounts":"no accounts yet","belum ada marketplace":"no marketplaces yet","belum ada biaya":"no costs yet","belum ada piutang":"no receivables yet","belum ada pembayaran":"no payments yet","wajib diisi":"is required","harus diisi":"is required","harus dipilih":"must be selected","tidak boleh kosong":"cannot be empty","tidak boleh sama":"must be different","lebih dari":"greater than","kurang dari":"less than","maksimal":"maximum","minimal":"minimum","terdekat":"nearest","contoh":"example","catatan":"note","pesan":"message","notifikasi":"notification","status":"status","hasil":"result","ringkasan":"summary","performa":"performance","pergerakan":"movement","perbandingan":"comparison","daftar":"list","riwayat":"history","identitas":"identity","sesi":"session","login":"login","keluar":"sign out","masuk":"sign in","persetujuan":"approval","ditolak":"rejected","ditangguhkan":"suspended","akses":"access","koneksi":"connection","perangkat":"device",
+    "hapus":"delete",
+    "permanen":"permanently",
+    "data":"data",
     "tidak ada":"no",
-    "sudah terdaftar":"already registered",
+    "cocok":"match",
+    "terakhir":"last",
+    "dilakukan":"be performed",
+    "ditemukan":"found",
+    "periksa":"check",
+    "internet":"internet",
+    "coba":"try",
+    "lagi":"again",
+    "menampilkan semua":"showing all",
+    "laporan sku":"SKU report",
+    "laporan keuangan":"Financial report",
+    "laporan marketplace":"Marketplace report",
+    "laporan accounts toko":"Store account report",
+    "sku belum ada":"SKU not found",
+    "sku belum ada di master produk":"SKU not found in Product Master",
+    "tidak dikenali":"Unrecognized",
     "sudah digunakan":"already in use",
-    "berhasil":"successfully",
-    "gagal":"failed",
-    "disimpan":"saved",
-    "tersimpan":"saved",
-    "dihapus":"deleted",
-    "diedit":"edited",
-    "diproses":"processed",
-    "dibaca":"read",
-    "dibuat":"created",
-    "diperbarui":"updated"
+    "sudah terdaftar":"already registered",
+    "harus antara":"must be between",
+    "terdaftar":"registered",
+    "aktifkan":"activate",
+    "integrasikan accounts":"integrate account",
+    "integrasi berhasil":"integration successful",
+    "integrasi gagal":"integration failed",
+    "belum tersedia":"not available",
+    "segera hadir":"coming soon",
+    "sementara":"for now",
+    "bisa":"can",
+    "melalui":"through",
+    "secara manual":"manually",
+    "orderan":"orders",
+    "dimulai":"started",
+    "disiapkan":"prepared",
+    "menyiapkan":"preparing",
+    "sedang":"currently",
+    "mengambil":"fetching",
+    "tujuh hari":"seven days",
+    "7 hari terakhir":"last 7 days",
+    "data mentah":"raw data",
+    "setelah itu":"after that",
+    "mesin":"engine",
+    "sama":"same",
+    "seperti":"as",
+    "upload file":"file upload",
+    "manual":"manual",
+    "pengambilan data":"data retrieval",
+    "diperiksa":"checked",
+    "tarik":"pull",
+    "status api":"API status",
+    "penyimpanan":"storage",
+    "penyimpanan master produk":"Product Master storage",
+    "import selesai":"import completed",
+    "data tidak valid":"invalid data",
+    "membaca file":"reading the file",
+    "file excel":"Excel file",
+    "file ini":"this file",
+    "rusak":"corrupted",
+    "pastikan":"make sure",
+    "terlebih":"first",
+    "dikonfirmasi":"confirmed",
+    "berhasil disimpan":"saved successfully",
+    "gagal disimpan":"failed to save",
+    "berubah":"changed",
+    "operasi":"operation",
+    "keamanan":"security",
+    "verifikasi":"verification",
+    "belum tersimpan":"not saved yet",
+    "hanya dapat":"can only",
+    "komputer":"computer",
+    "laptop":"laptop",
+    "dikosongkan":"cleared",
+    "pengisian":"entry",
+    "tetap":"remain",
+    "nama pemilik":"owner name",
+    "akun gmail":"Gmail account",
+    "tetap tersimpan":"remains saved",
+    "status accounts":"account status",
+    "tidak dapat digunakan":"cannot be used",
+    "telah ditangguhkan":"has been suspended",
+    "telah ditolak":"has been rejected",
+    "telah dihapus":"has been deleted",
+    "saat ini":"currently",
+    "hubungi":"contact",
+    "informasi lebih lanjut":"more information",
+    "logout":"sign out",
+    "login kembali":"sign in again",
+    "sesi login":"login session",
+    "laporan berhasil":"report completed",
+    "pdf laporan":"PDF report",
+    "pergerakan penjualan":"sales movement",
+    "minus":"loss-making",
+    "untung":"profitable",
+    "produk minus":"loss-making products",
+    "produk untung":"profitable products",
+    "per produk":"by product",
+    "secara lebih spesifik":"more specifically",
+    "secara spesifik":"specifically",
+    "dihitung":"calculated",
+    "terpisah":"separately",
+    "konfigurasi":"configuration",
+    "preferensi":"preferences",
+    "rupiah":"rupiah",
+    "unit":"unit",
+    "mata uang asing":"foreign currency",
+    "perubahan kurs":"exchange rate changes",
+    "seluruh":"all",
+    "angka":"numbers",
+    "transaksi":"transactions",
+    "backup":"backup",
+    "restore":"restore",
+    "mengganti":"replace",
+    "isi file":"file contents",
+    "isi sesuai":"enter according to",
+    "status accounts toko":"store account status",
+    "toko ini":"this store",
+    "dari marketplace":"from the marketplace",
+    "hanya accounts":"only accounts",
+    "kategori biaya":"cost category",
+    "lainnya":"other",
+    "nominal biaya":"cost amount",
+    "simpan biaya":"save cost",
+    "simpan marketplace":"save marketplace",
+    "simpan produk":"save product",
+    "simpan accounts toko":"save store account",
+    "simpan pembayaran":"save payment",
+    "edit":"edit",
+    "tambah":"add",
+    "pilih marketplace":"select marketplace",
+    "pilih kategori":"select category",
+    "pilih accounts toko":"select store account",
+    "pilih kolom sku":"select SKU column",
+    "pilih kolom qty":"select QTY column",
+    "belum dapat dikenali":"cannot be identified yet",
+    "otomatis":"automatically",
+    "sebelum melanjutkan":"before continuing",
+    "setiap komponen":"each component",
+    "total akan dihitung":"total will be calculated",
+    "dengan benar":"correctly",
+    "mengetahui":"identify",
+    "perlu diperbaiki":"need improvement",
+    "data import":"import data",
+    "import penjualan":"sales import",
+    "sama sudah pernah disimpan":"the same data has already been saved",
+    "gagal membaca":"failed to read",
+    "berhasil dibuat":"created successfully",
+    "ringkasan laporan":"report summary",
+    "sisa":"remaining",
+    "per reseller":"by reseller",
+    "catat":"record",
+    "mengurangi":"reduce",
+    "masih":"still"
+
 };
-
-Object.assign(SELLERBOOKS_EN_FALLBACK,SELLERBOOKS_EN_EXTRA_FALLBACK);
-
-const SELLERBOOKS_ID_PHRASES = Object.fromEntries(
-    Object.entries(SELLERBOOKS_EN_PHRASES).map(function(pair){
-        return [pair[1], pair[0]];
-    })
-);
-
-const SELLERBOOKS_ID_FALLBACK = Object.fromEntries(
-    Object.entries(SELLERBOOKS_EN_FALLBACK).map(function(pair){
-        return [pair[1], pair[0]];
-    })
-);
-
-Object.assign(SELLERBOOKS_ID_FALLBACK,{
-    "Store Accounts":"Akun Toko",
-    "Store Account":"Akun Toko",
-    "All Store Accounts":"Semua Akun Toko",
-    "All Statuses":"Semua Status",
-    "Save Marketplace":"Simpan Marketplace",
-    "Save Product":"Simpan Produk",
-    "Save Store Account":"Simpan Akun Toko",
-    "Save Payment":"Simpan Pembayaran",
-    "Add Marketplace":"Tambah Marketplace",
-    "Add Product":"Tambah Produk",
-    "Add Store Account":"Tambah Akun Toko",
-    "Pull TikTok Orders":"Tarik Pesanan TikTok",
-    "Pull Shopee Orders":"Tarik Pesanan Shopee",
-    "Pull Lazada Orders":"Tarik Pesanan Lazada",
-    "Pull Orders":"Tarik Pesanan",
-    "Integration Successful":"Integrasi Berhasil",
-    "Sales Import":"Impor Penjualan",
-    "Product Master":"Master Produk",
-    "Account Status":"Status Akun",
-    "Account Settings":"Pengaturan Akun",
-    "Settings saved successfully.":"Pengaturan berhasil disimpan.",
-    "Language saved to your account.":"Bahasa tersimpan di akun Anda.",
-    "Please sign in again.":"Silakan masuk kembali.",
-    "save marketplace":"Simpan Marketplace",
-    "save product":"Simpan Produk",
-    "save store account":"Simpan Akun Toko",
-    "save payment":"Simpan Pembayaran",
-    "add marketplace":"Tambah Marketplace",
-    "add product":"Tambah Produk",
-    "add store account":"Tambah Akun Toko",
-
-    "No data":"Tidak ada data",
-    "No transactions":"Tidak ada transaksi",
-    "No transactions yet":"Belum ada transaksi",
-    "No products yet":"Belum ada produk",
-    "No accounts yet":"Belum ada akun",
-    "No marketplaces yet":"Belum ada marketplace",
-    "accounts":"akun",
-    "account":"akun",
-    "store accounts":"akun toko",
-    "store account":"akun toko",
-    "order":"pesanan",
-    "orders":"pesanan",
-    "save":"simpan",
-    "delete":"hapus",
-    "cancel":"batal",
-    "close":"tutup",
-    "select":"pilih",
-    "name":"nama",
-    "product":"produk",
-    "products":"produk",
-    "settings":"pengaturan",
-    "dashboard":"dasbor",
-    "reports":"laporan",
-    "report":"laporan",
-    "details":"rincian",
-    "language":"bahasa",
-    "all":"semua",
-    "all marketplaces":"semua marketplace",
-    "all store accounts":"semua akun toko",
-    "all statuses":"semua status",
-    "add":"tambah",
-    "upload":"unggah",
-    "download":"unduh",
-    "search":"cari",
-    "filter":"filter",
-    "reset":"atur ulang",
-    "today":"hari ini",
-    "yesterday":"kemarin",
-    "this week":"minggu ini",
-    "last week":"minggu lalu",
-    "this month":"bulan ini",
-    "last month":"bulan lalu",
-    "this year":"tahun ini",
-    "all periods":"semua periode",
-    "custom date":"tanggal khusus",
-    "select marketplace":"pilih marketplace",
-    "select category":"pilih kategori",
-    "select store account":"pilih akun toko",
-    "select SKU column":"pilih kolom SKU",
-    "select QTY column":"pilih kolom QTY",
-    "import sales":"impor penjualan",
-    "sales import":"impor penjualan",
-    "integrate account":"integrasikan akun",
-    "integrate accounts":"integrasikan akun",
-    "disconnect integration":"copot integrasi",
-    "integration successful":"integrasi berhasil",
-    "integration failed":"integrasi gagal",
-    "coming soon":"segera hadir",
-    "no data":"tidak ada data",
-    "no products yet":"belum ada produk",
-    "no accounts yet":"belum ada akun",
-    "no marketplaces yet":"belum ada marketplace",
-    "no transactions":"tidak ada transaksi",
-    "no transactions yet":"belum ada transaksi",
-    "tarik order tiktok":"Tarik Pesanan TikTok",
-    "tarik order shopee":"Tarik Pesanan Shopee",
-    "tarik order lazada":"Tarik Pesanan Lazada",
-    "tarik order":"tarik pesanan",
-    "nama accounts toko":"Nama akun toko",
-    "popup/tab":"popup/tab"
-});;
 
 function sellerBooksTranslateUserText(value, language){
     const text = String(value ?? "");
-    if(!text) return text;
-
-    const dictionary = SELLERBOOKS_I18N[language] || SELLERBOOKS_I18N.id;
+    if(language !== "en" || !text) return text;
+    const dictionary = SELLERBOOKS_I18N.en || {};
     const trimmed = text.trim();
-
-    // Exact dictionary translation always wins.
     if(dictionary[trimmed] !== undefined){
         return text.replace(trimmed, dictionary[trimmed]);
     }
-
     let result = text;
-    const phraseTable = language === "en"
-        ? SELLERBOOKS_EN_PHRASES
-        : SELLERBOOKS_ID_PHRASES;
-    const fallbackTable = language === "en"
-        ? SELLERBOOKS_EN_FALLBACK
-        : SELLERBOOKS_ID_FALLBACK;
 
-    Object.entries(phraseTable)
-        .sort((a,b)=>b[0].length-a[0].length)
-        .forEach(function(pair){
-            result = result.replace(pair[0], pair[1]);
-        });
+    result = result.replace(/(\d+\s*-\s*\d+)\s+dari\s+(\d+)/gi, "$1 of $2");
+    result = result.replace(/\bPeriode:\s*/gi, "Period: ");
+    result = result.replace(/Kelola all sales marketplace, product, store account, and profit bisnis Anda in satu sistem\.?/gi,"Manage all sales across marketplaces, products, store accounts, and business profit in one system.");
 
-    if(language === "en"){
-        result = result.replace(/(\\d+\\s*-\\s*\\d+)\\s+dari\\s+(\\d+)/gi, "$1 of $2");
-        result = result.replace(/\\bPeriode:\\s*/gi, "Period: ");
-        result = result.replace(
-            /Kelola all sales marketplace, product, store account, and profit bisnis Anda in satu sistem\\.?/gi,
-            "Manage all sales across marketplaces, products, store accounts, and business profit in one system."
-        );
-    }
-
-    Object.entries(fallbackTable)
+    Object.entries(SELLERBOOKS_EN_FALLBACK)
         .sort((a,b)=>b[0].length-a[0].length)
         .forEach(function(pair){
             const source = pair[0];
             const target = pair[1];
-            const escaped = source.replace(/[.*+?^$()|[\\]\\\\]/g, "\\$&");
+            const escaped = source.replace(/[.*+?^$()|[\]\\]/g, "\\function sellerBooksTranslateAttributes(root, language){");
             result = result.replace(new RegExp("\\b" + escaped + "\\b","gi"), target);
         });
-
     return result;
 }
-
 
 function sellerBooksTranslateAttributes(root, language){
     if(!root) return;
     const dictionary = SELLERBOOKS_I18N[language] || SELLERBOOKS_I18N.id;
     root.querySelectorAll?.("input,textarea,select,button,[title],[aria-label]").forEach(function(el){
-        ["placeholder","title","aria-label","data-tooltip"].forEach(function(attr){
+        ["placeholder","title","aria-label"].forEach(function(attr){
             const value = el.getAttribute(attr);
             if(!value) return;
             const key = value.trim();
@@ -33698,14 +32370,18 @@ function sellerBooksStartLanguageObserver(){
     if(sellerBooksI18nObserver || !document.body) return;
     sellerBooksI18nObserver = new MutationObserver(function(mutations){
         if(sellerBooksI18nApplying) return;
-        const language = sellerBooksCurrentLanguage();
-        if(language !== "en" && language !== "id") return;
+        if(sellerBooksCurrentLanguage() !== "en") return;
         let needsTranslate = false;
         mutations.forEach(function(m){
             if((m.type === "childList" && (m.addedNodes?.length || 0)) || m.type === "characterData") needsTranslate = true;
         });
         if(!needsTranslate) return;
-        applySellerBooksLanguage();
+        sellerBooksI18nApplying = true;
+        try{
+            applySellerBooksLanguage();
+        }finally{
+            sellerBooksI18nApplying = false;
+        }
     });
     sellerBooksI18nObserver.observe(document.body,{childList:true,subtree:true});
 }
@@ -33726,7 +32402,7 @@ function applySellerBooksLanguage(){
 
     const pageLanguageData = {
         dashboard:{
-            id:["Dasbor","Ringkasan bisnis marketplace Anda"],
+            id:["Dashboard","Ringkasan bisnis marketplace Anda"],
             en:["Dashboard","Your marketplace business summary"]
         },
         marketplace:{
@@ -33734,7 +32410,7 @@ function applySellerBooksLanguage(){
             en:["Marketplace","Manage your business marketplaces"]
         },
         stores:{
-            id:["Akun Toko","Kelola seluruh akun toko"],
+            id:["Store Accounts","Kelola seluruh accounts toko"],
             en:["Store Accounts","Manage all store accounts"]
         },
         products:{
@@ -33742,7 +32418,7 @@ function applySellerBooksLanguage(){
             en:["Product Master","Manage products and SKUs"]
         },
         import:{
-            id:["Impor Penjualan","Unggah dan proses laporan penjualan"],
+            id:["Import Sales","Upload dan proses laporan penjualan"],
             en:["Sales Import","Upload and process sales reports"]
         },
         costs:{
@@ -33777,19 +32453,6 @@ function applySellerBooksLanguage(){
 
     const languageSelect = document.getElementById("settingsLanguage");
     if(languageSelect) languageSelect.value = language;
-
-    const deleteLogoText = document.getElementById("settingsDeleteLogoText");
-    if(deleteLogoText){
-        deleteLogoText.textContent = language === "en" ? "Delete Logo" : "Hapus Logo";
-    }
-
-    const deleteReportDescriptionText = document.getElementById("deleteReportDescriptionText");
-    if(deleteReportDescriptionText){
-        deleteReportDescriptionText.textContent =
-            language === "en"
-                ? "Delete sales import data specifically by date, marketplace, and store account."
-                : "Hapus data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.";
-    }
 
     const languageInfo = document.getElementById("settingsLanguageInfo");
     if(languageInfo){
