@@ -33130,7 +33130,7 @@ function sellerBooksTranslateAttributes(root, language){
     if(!root) return;
     const dictionary = SELLERBOOKS_I18N[language] || SELLERBOOKS_I18N.id;
     root.querySelectorAll?.("input,textarea,select,button,[title],[aria-label]").forEach(function(el){
-        ["placeholder","title","aria-label"].forEach(function(attr){
+        ["placeholder","title","aria-label","data-tooltip"].forEach(function(attr){
             const value = el.getAttribute(attr);
             if(!value) return;
             const key = value.trim();
