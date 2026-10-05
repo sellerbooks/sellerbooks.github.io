@@ -4652,7 +4652,7 @@ function sellerBooksReportsText(key){
         transactionDetail:"Detail Penjualan",transactionDescription:"Daftar transaksi berdasarkan filter yang dipilih.",date:"Tanggal",order:"Order",orderId:"Order ID",sellerSku:"SKU SellerBooks",status:"Status",noSalesData:"Belum ada data penjualan.",valid:"✓ Valid",missingSku:"⚠ SKU belum ada",
         show:"Tampilkan",rowLabel:"baris",previous:"Halaman sebelumnya",next:"Halaman berikutnya",nextButton:"Next ›",
         deleteMissing:"Silakan pilih Dari Tanggal dan Sampai Dengan terlebih dahulu.",invalidRange:"Rentang tanggal tidak valid.",invalidOrder:"Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.",maxDeleteRange:"Penghapusan hanya dapat dilakukan untuk rentang maksimal 3 bulan terakhir sampai hari ini.",noDeleteMatch:"Tidak ada laporan yang cocok dengan tanggal, marketplace, dan akun toko yang dipilih.",
-        deleteConfirmTitle:"Konfirmasi Penghapusan",deleteConfirm:"HAPUS LAPORAN PERMANEN?",range:"Rentang",selectedMarketplace:"Marketplace",selectedStore:"Akun Toko",importCount:"Jumlah data import",onlyFiltered:"Hanya laporan yang sesuai dengan filter di atas yang akan dihapus.",restore:"Stok produk akan DIKEMBALIKAN sesuai jumlah stok yang sebelumnya dipotong oleh laporan tersebut.",irreversible:"Data yang dihapus tidak dapat dikembalikan.",
+        deleteConfirmTitle:"Konfirmasi Penghapusan",dateValidationTitle:"Validasi Tanggal",deleteConfirm:"HAPUS LAPORAN PERMANEN?",range:"Rentang",selectedMarketplace:"Marketplace",selectedStore:"Akun Toko",importCount:"Jumlah data import",onlyFiltered:"Hanya laporan yang sesuai dengan filter di atas yang akan dihapus.",restore:"Stok produk akan DIKEMBALIKAN sesuai jumlah stok yang sebelumnya dipotong oleh laporan tersebut.",irreversible:"Data yang dihapus tidak dapat dikembalikan.",
         deleteSuccess:"Laporan berhasil dihapus.",deletedImports:"data import telah dihapus.",restored:"Stok dikembalikan",noRestore:"Tidak ada stok yang perlu dikembalikan.",pdfSuccess:"✅ PDF laporan berhasil dibuat.",pdfFailed:"❌ PDF gagal dibuat.",tryAgain:"Silakan coba lagi.",
         pdfTitle:"SellerBooks - Laporan Bisnis",no:"No",printed:"Dicetak",financialSummary:"Ringkasan Keuangan",component:"Komponen",value:"Nilai",skuDetails:"Rincian Penjualan per SKU",productName:"Nama Produk",sellingPrice:"Harga Jual",totalSalesHeader:"Penjualan",hpp:"HPP",admin:"Admin",productProfit:"Laba Produk",loss:"MINUS",gain:"UNTUNG",marketplaceSummaryPdf:"Ringkasan Marketplace",noData:"Tidak ada data",page:"Halaman",of:"dari"
       },
@@ -4675,7 +4675,7 @@ function sellerBooksReportsText(key){
         transactionDetail:"Sales Details",transactionDescription:"Transactions based on the selected filters.",date:"Date",order:"Order",orderId:"Order ID",sellerSku:"SellerBooks SKU",status:"Status",noSalesData:"No sales data yet.",valid:"✓ Valid",missingSku:"⚠ SKU not found",
         show:"Show",rowLabel:"rows",previous:"Previous page",next:"Next page",nextButton:"Next ›",
         deleteMissing:"Please select From Date and To Date first.",invalidRange:"Invalid date range.",invalidOrder:"From Date cannot be later than To Date.",maxDeleteRange:"Deletion is only allowed for a maximum range of the last 3 months through today.",noDeleteMatch:"No reports match the selected date, marketplace, and store account.",
-        deleteConfirmTitle:"Delete Confirmation",deleteConfirm:"PERMANENTLY DELETE REPORTS?",range:"Range",selectedMarketplace:"Marketplace",selectedStore:"Store Account",importCount:"Import data count",onlyFiltered:"Only reports matching the filters above will be deleted.",restore:"Product stock will be RESTORED according to the stock quantity previously deducted by those reports.",irreversible:"Deleted data cannot be recovered.",
+        deleteConfirmTitle:"Delete Confirmation",dateValidationTitle:"Date Validation",deleteConfirm:"PERMANENTLY DELETE REPORTS?",range:"Range",selectedMarketplace:"Marketplace",selectedStore:"Store Account",importCount:"Import data count",onlyFiltered:"Only reports matching the filters above will be deleted.",restore:"Product stock will be RESTORED according to the stock quantity previously deducted by those reports.",irreversible:"Deleted data cannot be recovered.",
         deleteSuccess:"Reports deleted successfully.",deletedImports:"import records were deleted.",restored:"Stock restored",noRestore:"No stock needed to be restored.",pdfSuccess:"✅ Report PDF created successfully.",pdfFailed:"❌ Failed to create report PDF.",tryAgain:"Please try again.",
         pdfTitle:"SellerBooks - Business Report",no:"No",printed:"Printed",financialSummary:"Financial Summary",component:"Component",value:"Value",skuDetails:"Sales Details by SKU",productName:"Product Name",sellingPrice:"Selling Price",totalSalesHeader:"Sales",hpp:"COGS",admin:"Admin",productProfit:"Product Profit",loss:"LOSS",gain:"PROFIT",marketplaceSummaryPdf:"Marketplace Summary",noData:"No data",page:"Page",of:"of"
       }
@@ -5049,7 +5049,7 @@ function applyReportFilters(){
     if(period === "custom" && dateFrom && dateTo && dateFrom > dateTo){
         sellerBooksAlert(
             sellerBooksReportsText("invalidOrder"),
-            sellerBooksReportsText("deleteConfirmTitle")
+            sellerBooksReportsText("dateValidationTitle")
         );
         return false;
     }
