@@ -5075,45 +5075,33 @@ function updateReportFilterInfo(
 
     const periodNames = {
 
-        today:
-            "Hari Ini",
+        today:sellerBooksReportsText("today"),
 
-        yesterday:
-            "Kemarin",
+        yesterday:sellerBooksReportsText("yesterday"),
 
-        week:
-            "Minggu Ini",
+        week:sellerBooksReportsText("week"),
 
-        lastWeek:
-            "Minggu Lalu",
+        lastWeek:sellerBooksReportsText("lastWeek"),
 
-        month:
-            "Bulan Ini",
+        month:sellerBooksReportsText("month"),
 
-        lastMonth:
-            "Bulan Lalu",
+        lastMonth:sellerBooksReportsText("lastMonth"),
 
-        last3Months:
-            "3 Bulan Terakhir",
+        last3Months:sellerBooksReportsText("last3Months"),
 
-        year:
-            "Tahun Ini",
+        year:sellerBooksReportsText("year"),
 
-        custom:
-            "Pilih Tanggal",
+        custom:sellerBooksReportsText("custom"),
 
-        all:
-            "Semua Periode"
+        all:sellerBooksReportsText("all")
 
     };
 
 
-    let marketplaceName =
-        "Semua Marketplace";
+    let marketplaceName = sellerBooksReportsText("allMarketplaces");
 
 
-    let storeName =
-        "Semua Akun Toko";
+    let storeName = sellerBooksReportsText("allStoreAccounts");
 
 
     try{
@@ -5184,7 +5172,7 @@ function updateReportFilterInfo(
     }catch(error){}
 
 
-    let periodLabel = periodNames[period] || "Bulan Ini";
+    let periodLabel = periodNames[period] || sellerBooksReportsText("month");
 
     if(period === "custom"){
         const from = getReportInputDate("reportDateFrom");
@@ -5192,22 +5180,22 @@ function updateReportFilterInfo(
         if(from || to){
             periodLabel += " (" +
                 (from ? from.split("-").reverse().join("/") : "...") +
-                " s/d " +
+                " " + sellerBooksReportsText("dateSeparator") + " " +
                 (to ? to.split("-").reverse().join("/") : "...") +
                 ")";
         }
     }
 
     info.innerHTML =
-        "Periode: <strong>" +
+        sellerBooksReportsText("period") + ": <strong>" +
         periodLabel +
         "</strong>" +
         " &nbsp;•&nbsp; " +
-        "Marketplace: <strong>" +
+        sellerBooksReportsText("marketplace") + ": <strong>" +
         marketplaceName +
         "</strong>" +
         " &nbsp;•&nbsp; " +
-        "Akun: <strong>" +
+        sellerBooksReportsText("storeAccount") + ": <strong>" +
         storeName +
         "</strong>";
 
@@ -5993,7 +5981,7 @@ async function deleteReportsByDateRange(){
         storeElement ? storeElement.value || "all" : "all";
 
     if(!fromValue || !toValue){
-        sellerBooksAlert("Silakan pilih Dari Tanggal dan Sampai Dengan terlebih dahulu.");
+        sellerBooksAlert("${sellerBooksReportsText("deleteMissing")}");
         return;
     }
 
@@ -6001,12 +5989,12 @@ async function deleteReportsByDateRange(){
     const to = getReportDateOnly(toValue);
 
     if(!from || !to){
-        sellerBooksAlert("Rentang tanggal tidak valid.");
+        sellerBooksAlert("${sellerBooksReportsText("invalidRange")}");
         return;
     }
 
     if(from > to){
-        sellerBooksAlert("Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.");
+        sellerBooksAlert("${sellerBooksReportsText("invalidOrder")}");
         return;
     }
 
@@ -6021,7 +6009,7 @@ async function deleteReportsByDateRange(){
 
     if(from < minDate || to > today){
         sellerBooksAlert(
-            "Penghapusan hanya dapat dilakukan untuk rentang maksimal 3 bulan terakhir sampai hari ini."
+            "${sellerBooksReportsText("maxDeleteRange")}"
         );
         return;
     }
@@ -6073,7 +6061,7 @@ async function deleteReportsByDateRange(){
 
     if(deleted === 0){
         sellerBooksAlert(
-            "Tidak ada laporan yang cocok dengan tanggal, marketplace, dan akun toko yang dipilih."
+            "${sellerBooksReportsText("noDeleteMatch")}"
         );
         return;
     }
@@ -6091,14 +6079,14 @@ async function deleteReportsByDateRange(){
         marketplaceElement.selectedOptions &&
         marketplaceElement.selectedOptions[0]
             ? marketplaceElement.selectedOptions[0].textContent
-            : "Semua Marketplace";
+            : sellerBooksReportsText("allMarketplaces");
 
     const storeSelectText =
         storeElement &&
         storeElement.selectedOptions &&
         storeElement.selectedOptions[0]
             ? storeElement.selectedOptions[0].textContent
-            : "Semua Akun Toko";
+            : sellerBooksReportsText("allStoreAccounts");
 
     const confirmed =
         await sellerBooksConfirm(
@@ -6731,20 +6719,7 @@ function renderReportSalesSummary(){
 
     if(info){
 
-        let infoText =
-            "Menampilkan " +
-            transactions.length.toLocaleString(
-                "id-ID"
-            ) +
-            " baris transaksi • " +
-            finalTransactionCount.toLocaleString(
-                "id-ID"
-            ) +
-            " transaksi • " +
-            totalQty.toLocaleString(
-                "id-ID"
-            ) +
-            " produk";
+        let infoText = sellerBooksReportsText("showing") + " " + transactions.length.toLocaleString("id-ID") + " " + sellerBooksReportsText("rows") + " • " + finalTransactionCount.toLocaleString("id-ID") + " " + sellerBooksReportsText("transactions") + " • " + totalQty.toLocaleString("id-ID") + " " + sellerBooksReportsText("products");
 
 
         /*
@@ -6758,7 +6733,7 @@ function renderReportSalesSummary(){
                 unmatchedSkuCount.toLocaleString(
                     "id-ID"
                 ) +
-                " SKU belum ditemukan di Master Produk";
+                " " + sellerBooksReportsText("unmatched");
 
         }
 
@@ -6969,7 +6944,7 @@ function renderUnmatchedSkuReport(){
                         color:#64748b;
                     "
                 >
-                    Tidak ada SKU yang belum ditemukan.
+                    ${sellerBooksReportsText("noUnmatched")}
                 </td>
             </tr>
             `;
@@ -8021,7 +7996,7 @@ function renderReportMarketplaceTable(){
         const transactions = getFilteredReportTransactions();
 
         if(!transactions.length){
-            body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:35px;color:#64748b;">Belum ada data laporan.</td></tr>`;
+            body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:35px;color:#64748b;">${sellerBooksReportsText("noReportData")}</td></tr>`;
             return;
         }
 
@@ -8082,7 +8057,7 @@ function renderReportMarketplaceTable(){
             html += `
                 <tr>
                     <td>${escapeHtml(group.marketplace)}</td>
-                    <td>Semua Toko</td>
+                    <td>${sellerBooksReportsText("allStores")}</td>
                     <td>${formatRupiah(group.sales)}</td>
                     <td>${formatRupiah(netSales)}</td>
                     <td>${group.qty.toLocaleString("id-ID")} PCS</td>
@@ -8093,11 +8068,11 @@ function renderReportMarketplaceTable(){
             `;
         });
 
-        body.innerHTML = html || `<tr><td colspan="8" style="text-align:center;padding:35px;color:#64748b;">Belum ada data laporan.</td></tr>`;
+        body.innerHTML = html || `<tr><td colspan="8" style="text-align:center;padding:35px;color:#64748b;">${sellerBooksReportsText("noReportData")}</td></tr>`;
 
     }catch(error){
         console.error("Gagal menampilkan Performa Marketplace:", error);
-        body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:35px;color:#dc2626;">Data laporan gagal ditampilkan. Silakan refresh halaman.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:35px;color:#dc2626;">${sellerBooksReportsText("reportLoadError")}</td></tr>`;
     }
 }
 /* =========================================================
@@ -8113,7 +8088,7 @@ function renderReportStoreTable(){
         const transactions = getFilteredReportTransactions();
 
         if(!transactions.length){
-            body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:35px;color:#64748b;">Belum ada data laporan.</td></tr>`;
+            body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:35px;color:#64748b;">${sellerBooksReportsText("noReportData")}</td></tr>`;
             return;
         }
 
@@ -8183,11 +8158,11 @@ function renderReportStoreTable(){
             `;
         });
 
-        body.innerHTML = html || `<tr><td colspan="8" style="text-align:center;padding:35px;color:#64748b;">Belum ada data laporan.</td></tr>`;
+        body.innerHTML = html || `<tr><td colspan="8" style="text-align:center;padding:35px;color:#64748b;">${sellerBooksReportsText("noReportData")}</td></tr>`;
 
     }catch(error){
         console.error("Gagal menampilkan Performa Akun Toko:", error);
-        body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:35px;color:#dc2626;">Data laporan gagal ditampilkan. Silakan refresh halaman.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:35px;color:#dc2626;">${sellerBooksReportsText("reportLoadError")}</td></tr>`;
     }
 }
 /* =========================================================
@@ -8227,7 +8202,7 @@ function renderReportTransactionTable(){
         }
 
         if(!transactions.length){
-            body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:35px;color:#64748b;">Belum ada data penjualan.</td></tr>`;
+            body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:35px;color:#64748b;">${sellerBooksReportsText("noSalesData")}</td></tr>`;
             if(pagination){ pagination.style.display = "none"; }
             return;
         }
@@ -8268,7 +8243,7 @@ function renderReportTransactionTable(){
 
             const sku = String(item.sku || "").trim();
             const product = getMasterProductBySku(sku);
-            const status = product ? "✓ Valid" : "⚠ SKU belum ada";
+            const status = product ? sellerBooksReportsText("valid") : sellerBooksReportsText("missingSku");
 
             html += `
                 <tr>
@@ -8296,7 +8271,7 @@ function renderReportTransactionTable(){
 
             controlsHtml += `
                 <span class="report-transaction-page-info">
-                    ${startIndex + 1}-${endIndex} dari ${transactions.length}
+                    ${startIndex + 1}-${endIndex} ${sellerBooksReportsText("dateSeparator")} ${transactions.length}
                 </span>
             `;
 
@@ -8306,7 +8281,7 @@ function renderReportTransactionTable(){
                     class="report-transaction-page-button"
                     onclick="goToReportTransactionPage(${reportTransactionPage - 1})"
                     ${reportTransactionPage <= 1 ? "disabled" : ""}
-                    aria-label="${sellerBooksProductText("previous")}"
+                    aria-label="${sellerBooksReportsText("previous")}"
                 >
                     ‹
                 </button>
@@ -8351,9 +8326,9 @@ function renderReportTransactionTable(){
                     class="report-transaction-page-button"
                     onclick="goToReportTransactionPage(${reportTransactionPage + 1})"
                     ${reportTransactionPage >= totalPages ? "disabled" : ""}
-                    aria-label="Halaman berikutnya"
+                    aria-label="${sellerBooksReportsText("next")}"
                 >
-                    Next ›
+                    ${sellerBooksReportsText("nextButton")}
                 </button>
             `;
 
@@ -8362,7 +8337,7 @@ function renderReportTransactionTable(){
 
     }catch(error){
         console.error("Gagal menampilkan Detail Penjualan:", error);
-        body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:35px;color:#dc2626;">Detail penjualan gagal ditampilkan. Silakan refresh halaman.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:35px;color:#dc2626;">${sellerBooksReportsText("reportLoadError")}</td></tr>`;
         if(pagination){ pagination.style.display = "none"; }
     }
 }
