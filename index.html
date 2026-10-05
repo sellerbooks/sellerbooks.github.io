@@ -13222,6 +13222,43 @@ document.addEventListener(
 
                 </div>
 
+                <!-- BAHASA SELLERBOOKS -->
+                <div class="content-section settings-card">
+                    <div class="settings-card-header">
+                        <div class="settings-card-icon">🌐</div>
+                        <div>
+                            <h3>Bahasa</h3>
+                            <p>Pilih bahasa SellerBooks. Pilihan ini tersimpan pada akun Anda dan digunakan di semua perangkat.</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="settingsLanguage">Bahasa Tampilan</label>
+                        <select
+                            id="settingsLanguage"
+                            class="form-control"
+                            onchange="sellerBooksSaveLanguage(this.value)"
+                            disabled
+                        >
+                            <option value="id">Bahasa Indonesia</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+
+                    <div class="settings-card-footer">
+                        <span class="settings-save-info" id="settingsLanguageInfo">
+                            Bahasa tersimpan pada akun Anda.
+                        </span>
+                        <button
+                            type="button"
+                            class="primary-button"
+                            onclick="sellerBooksSaveLanguage(document.getElementById('settingsLanguage')?.value || 'id')"
+                        >
+                            💾 Simpan Bahasa
+                        </button>
+                    </div>
+                </div>
+
                 <div class="settings-grid">
 
                     <!-- 1. NAMA BISNIS -->
@@ -15252,6 +15289,8 @@ async function sellerBooksLoadCloudData(){
     sellerBooksCloudReady=true;
     sellerBooksCloudLoading=false;
 
+    sellerBooksEnsureDefaultLanguage();
+
     /* Migrasikan logo data-url lama ke Supabase Storage bila masih ada. */
     try{
         const settingsText=sellerBooksStorageGetItem("sellerbooks_settings");
@@ -15310,7 +15349,10 @@ function sellerBooksRefreshRuntimeFromCloud(){
             renderSettingsLogo();
         }
     }catch(error){}
-}
+
+    try{
+        sellerBooksSyncLanguageControl();
+    }catch(error){}
 
 let sellerBooksAuthUser=null;
 let sellerBooksProfile=null;
@@ -31138,6 +31180,118 @@ document.addEventListener(
    TAMBAHAN BARU, TIDAK MENGHAPUS FUNGSI LAMA
 ===================================================== */
 
+/* =====================================================
+   SELLERBOOKS LANGUAGE FOUNDATION
+   Bahasa disimpan di state akun SellerBooks yang tersimpan
+   di Supabase (sellerbooks_user_data), bukan hanya browser.
+   Default akun baru: Bahasa Indonesia.
+===================================================== */
+
+const SELLERBOOKS_LANGUAGE_KEY = "sellerbooks_language";
+const SELLERBOOKS_DEFAULT_LANGUAGE = "id";
+
+function sellerBooksNormalizeLanguage(value){
+    return String(value || "").toLowerCase() === "en" ? "en" : "id";
+}
+
+function sellerBooksCurrentLanguage(){
+    try{
+        return sellerBooksNormalizeLanguage(
+            sellerBooksStorageGetItem(SELLERBOOKS_LANGUAGE_KEY) ||
+            SELLERBOOKS_DEFAULT_LANGUAGE
+        );
+    }catch(error){
+        return SELLERBOOKS_DEFAULT_LANGUAGE;
+    }
+}
+
+function sellerBooksLanguageName(language){
+    return sellerBooksNormalizeLanguage(language) === "en"
+        ? "English"
+        : "Bahasa Indonesia";
+}
+
+function sellerBooksSyncLanguageControl(){
+    const select = document.getElementById("settingsLanguage");
+    if(!select) return;
+
+    const language = sellerBooksCurrentLanguage();
+    select.value = language;
+    select.disabled = !sellerBooksCloudReady;
+
+    const info = document.getElementById("settingsLanguageInfo");
+    if(info){
+        info.textContent =
+            sellerBooksCloudReady
+                ? "Bahasa tersimpan pada akun Anda."
+                : "Menyiapkan bahasa akun...";
+    }
+}
+
+async function sellerBooksSaveLanguage(value){
+    const language = sellerBooksNormalizeLanguage(value);
+
+    if(!sellerBooksAuthUser || !sellerBooksCloudReady){
+        sellerBooksSyncLanguageControl();
+        return false;
+    }
+
+    try{
+        sellerBooksStorageSetItem(
+            SELLERBOOKS_LANGUAGE_KEY,
+            language
+        );
+
+        const info = document.getElementById("settingsLanguageInfo");
+        if(info){
+            info.textContent =
+                language === "en"
+                    ? "Language saved to your account."
+                    : "Bahasa tersimpan pada akun Anda.";
+        }
+
+        /*
+           Penyimpanan cloud mengikuti mekanisme sinkronisasi akun SellerBooks
+           yang sudah ada. Tidak membuat localStorage sebagai sumber utama.
+        */
+        await sellerBooksPersistCloudDataNow();
+
+        /*
+           Tahap berikutnya akan memakai nilai ini untuk menerapkan seluruh
+           terjemahan UI secara global. Untuk tahap fondasi ini, tampilan
+           tetap Bahasa Indonesia sampai engine terjemahan selesai.
+        */
+        return true;
+    }catch(error){
+        console.error("Gagal menyimpan bahasa SellerBooks:",error);
+        const info = document.getElementById("settingsLanguageInfo");
+        if(info){
+            info.textContent = "Bahasa gagal disimpan. Silakan coba lagi.";
+        }
+        return false;
+    }
+}
+
+function sellerBooksEnsureDefaultLanguage(){
+    if(!sellerBooksAuthUser || !sellerBooksCloudReady) return;
+
+    const current = sellerBooksStorageGetItem(SELLERBOOKS_LANGUAGE_KEY);
+
+    if(!current){
+        /*
+           Akun lama yang belum memiliki preferensi bahasa dan akun baru
+           selalu dimulai dari Bahasa Indonesia.
+        */
+        sellerBooksStorageSetItem(
+            SELLERBOOKS_LANGUAGE_KEY,
+            SELLERBOOKS_DEFAULT_LANGUAGE
+        );
+        sellerBooksPersistCloudDataNow();
+    }
+
+    sellerBooksSyncLanguageControl();
+}
+
 const SELLERBOOKS_SETTINGS_KEY = "sellerbooks_settings";
 
 const DEFAULT_SELLERBOOKS_SETTINGS = {
@@ -31394,6 +31548,7 @@ function loadSellerBooksSettings(){
 
     renderSettingsLogo();
     applySellerBooksSettings();
+    sellerBooksSyncLanguageControl();
 }
 
 function roundSellerBooksValue(value){
