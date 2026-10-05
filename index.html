@@ -10678,7 +10678,7 @@ document.addEventListener(
                 </div>
             </div>
 
-            <form id="sbPiutangForm" onsubmit="return sbPiutangSave(event)">
+            <form id="sbPiutangForm" novalidate onsubmit="return sbPiutangSave(event)">
                 <div class="sb-piutang-form-group">
                     <label for="sbPiutangTanggal">Tanggal</label>
                     <input id="sbPiutangTanggal" class="form-control" type="date" required>
@@ -10751,7 +10751,7 @@ document.addEventListener(
                 </div>
             </div>
 
-            <form id="sbPiutangBayarForm" onsubmit="return sbPiutangBayarSave(event)">
+            <form id="sbPiutangBayarForm" novalidate onsubmit="return sbPiutangBayarSave(event)">
                 <div class="sb-piutang-form-group">
                     <label for="sbPiutangBayarTanggal">Tanggal</label>
                     <input id="sbPiutangBayarTanggal" class="form-control" type="date" required>
@@ -33384,7 +33384,7 @@ document.addEventListener(
             noPayments:"Belum ada pembayaran.",noPaymentsForName:"Tidak ada pembayaran untuk nama tersebut.",
             remainingTitle:"Sisa Piutang Per Reseller",remainingSubtitle:"Total piutang dikurangi total pembayaran berdasarkan nama yang dipilih.",
             remaining:"SISA HUTANG",breakdown:"Total piutang {receivable} − Total sudah dibayar {paid}",
-            editReceivable:"Edit Piutang",editPayment:"Edit Pembayaran Piutang",cancel:"Batal",saveChanges:"Simpan Perubahan",
+            editReceivable:"Edit Piutang",editPayment:"Edit Pembayaran Piutang",cancel:"Batal",saveChanges:"Simpan Perubahan",confirmationTitle:"Konfirmasi",validationTitle:"Validasi",errorTitle:"Kesalahan",
             requiredFields:"Tanggal, Nama, dan Jumlah wajib diisi dengan benar.",requiredPaymentFields:"Tanggal, Nama, dan Jumlah pembayaran wajib diisi dengan benar.",
             cloudUnavailable:"Piutang belum tersambung ke Supabase. Coba lagi sebentar.",paymentCloudUnavailable:"Pembayaran belum tersambung ke Supabase. Coba lagi sebentar.",
             saveFailed:"Piutang gagal disimpan ke Supabase.",paymentSaveFailed:"Pembayaran gagal disimpan ke Supabase.",
@@ -33414,7 +33414,7 @@ document.addEventListener(
             noPayments:"No payments yet.",noPaymentsForName:"No payments found for this name.",
             remainingTitle:"Remaining Receivables by Reseller",remainingSubtitle:"Total receivables minus total payments for the selected name.",
             remaining:"REMAINING RECEIVABLES",breakdown:"Total receivables {receivable} − Total paid {paid}",
-            editReceivable:"Edit Receivable",editPayment:"Edit Receivable Payment",cancel:"Cancel",saveChanges:"Save Changes",
+            editReceivable:"Edit Receivable",editPayment:"Edit Receivable Payment",cancel:"Cancel",saveChanges:"Save Changes",confirmationTitle:"Confirmation",validationTitle:"Validation",errorTitle:"Error",
             requiredFields:"Date, Name, and Amount must be filled in correctly.",requiredPaymentFields:"Date, Name, and Payment Amount must be filled in correctly.",
             cloudUnavailable:"Receivables are not connected to Supabase yet. Please try again shortly.",paymentCloudUnavailable:"Payments are not connected to Supabase yet. Please try again shortly.",
             saveFailed:"Failed to save receivable to Supabase.",paymentSaveFailed:"Failed to save payment to Supabase.",
@@ -33774,15 +33774,15 @@ document.addEventListener(
         const keterangan = String(ketEl ? ketEl.value : "").trim();
 
         if(!tanggal){
-            alert(window.sbPiutangText("requiredFields"));
+            window.sellerBooksAlert(window.sbPiutangText("requiredFields"),window.sbPiutangText("validationTitle"));
             return false;
         }
         if(!nama){
-            alert(window.sbPiutangText("requiredFields"));
+            window.sellerBooksAlert(window.sbPiutangText("requiredFields"),window.sbPiutangText("validationTitle"));
             return false;
         }
         if(!Number.isFinite(jumlah) || jumlah <= 0){
-            alert(window.sbPiutangText("requiredFields"));
+            window.sellerBooksAlert(window.sbPiutangText("requiredFields"),window.sbPiutangText("validationTitle"));
             return false;
         }
 
@@ -33839,9 +33839,9 @@ document.addEventListener(
         const nama=String(namaEl? namaEl.value:"").trim();
         const jumlah=Number(jumlahEl? jumlahEl.value:0);
         const keterangan=String(ketEl? ketEl.value:"").trim();
-        if(!tanggal){alert(window.sbPiutangText("requiredPaymentFields"));return false;}
-        if(!nama){alert(window.sbPiutangText("requiredPaymentFields"));return false;}
-        if(!Number.isFinite(jumlah)||jumlah<=0){alert(window.sbPiutangText("requiredPaymentFields"));return false;}
+        if(!tanggal){window.sellerBooksAlert(window.sbPiutangText("requiredPaymentFields"),window.sbPiutangText("validationTitle"));return false;}
+        if(!nama){window.sellerBooksAlert(window.sbPiutangText("requiredPaymentFields"),window.sbPiutangText("validationTitle"));return false;}
+        if(!Number.isFinite(jumlah)||jumlah<=0){window.sellerBooksAlert(window.sbPiutangText("requiredPaymentFields"),window.sbPiutangText("validationTitle"));return false;}
 
         const outstanding=sbPiutangSisaTotal();
         if(jumlah>outstanding){
@@ -34123,11 +34123,11 @@ document.addEventListener(
 
     window.sbPiutangSave=async function(event){
         if(event)event.preventDefault();
-        if(!cloudReady){alert(window.sbPiutangText("cloudUnavailable"));return false;}
+        if(!cloudReady){window.sellerBooksAlert(window.sbPiutangText("cloudUnavailable"),window.sbPiutangText("errorTitle"));return false;}
         const t=document.getElementById("sbPiutangTanggal")?.value||"", n=document.getElementById("sbPiutangNama")?.value.trim()||"", j=Number(document.getElementById("sbPiutangJumlah")?.value||0), k=document.getElementById("sbPiutangKeterangan")?.value.trim()||"";
-        if(!t||!n||!(j>0)){alert(window.sbPiutangText("requiredFields"));return false;}
+        if(!t||!n||!(j>0)){window.sellerBooksAlert(window.sbPiutangText("requiredFields"),window.sbPiutangText("validationTitle"));return false;}
         const r=await sellerBooksSupabase.rpc("piutang_add_entry",{p_tanggal:t,p_nama:n,p_jumlah:j,p_keterangan:k||null});
-        if(r.error){console.error(r.error);alert(window.sbPiutangText("saveFailed"));return false;}
+        if(r.error){console.error(r.error);window.sellerBooksAlert(window.sbPiutangText("saveFailed"),window.sbPiutangText("errorTitle"));return false;}
         await piutangCloudList(); piutangRenderCloud();
         ["sbPiutangTanggal","sbPiutangNama","sbPiutangJumlah","sbPiutangKeterangan"].forEach(id=>{const x=document.getElementById(id);if(x)x.value="";});
         return false;
@@ -34168,7 +34168,7 @@ document.addEventListener(
         const k=document.getElementById("sbPiutangEditKeterangan")?.value.trim()||"";
 
         if(!id||!type||!t||!n||!(j>0)){
-            alert(window.sbPiutangText("requiredFields"));
+            window.sellerBooksAlert(window.sbPiutangText("requiredFields"),window.sbPiutangText("validationTitle"));
             return false;
         }
 
@@ -34183,7 +34183,7 @@ document.addEventListener(
 
         if(r.error){
             console.error(r.error);
-            alert(type==="payment"?window.sbPiutangText("paymentEditFailed"):window.sbPiutangText("editFailed"));
+            window.sellerBooksAlert(type==="payment"?window.sbPiutangText("paymentEditFailed"):window.sbPiutangText("editFailed"),window.sbPiutangText("errorTitle"));
             return false;
         }
 
@@ -34203,19 +34203,26 @@ document.addEventListener(
 
     window.sbPiutangDeleteCloud=async function(id){
         const item=cloudEntries.find(x=>x.id===id); if(!item)return false;
-        if(!confirm(window.sbPiutangText("deleteReceivable")+"\n\nTanggal: "+piutangDate(item.tanggal)+"\nNama: "+item.nama+"\nJumlah: "+piutangMoney(item.jumlah)))return false;
+        const confirmed=await window.sellerBooksConfirm(
+             window.sbPiutangText("deleteReceivable")+"\n\n"+
+             window.sbPiutangText("date")+": "+piutangDate(item.tanggal)+"\n"+
+             window.sbPiutangText("name")+": "+item.nama+"\n"+
+             window.sbPiutangText("amount")+": "+piutangMoney(item.jumlah),
+             window.sbPiutangText("confirmationTitle")
+         );
+         if(!confirmed)return false;
         const r=await sellerBooksSupabase.rpc("piutang_delete_entry",{p_id:id});
-        if(r.error){alert(window.sbPiutangText("deleteFailed"));return false;}
+        if(r.error){window.sellerBooksAlert(window.sbPiutangText("deleteFailed"),window.sbPiutangText("errorTitle"));return false;}
         await piutangCloudList(); piutangRenderCloud(); return false;
     };
 
     window.sbPiutangBayarSave=async function(event){
         if(event)event.preventDefault();
-        if(!cloudReady){alert(window.sbPiutangText("paymentCloudUnavailable"));return false;}
+        if(!cloudReady){window.sellerBooksAlert(window.sbPiutangText("paymentCloudUnavailable"),window.sbPiutangText("errorTitle"));return false;}
         const t=document.getElementById("sbPiutangBayarTanggal")?.value||"", n=document.getElementById("sbPiutangBayarNama")?.value.trim()||"", j=Number(document.getElementById("sbPiutangBayarJumlah")?.value||0), k=document.getElementById("sbPiutangBayarKeterangan")?.value.trim()||"";
-        if(!t||!n||!(j>0)){alert(window.sbPiutangText("requiredPaymentFields"));return false;}
+        if(!t||!n||!(j>0)){window.sellerBooksAlert(window.sbPiutangText("requiredPaymentFields"),window.sbPiutangText("validationTitle"));return false;}
         const r=await sellerBooksSupabase.rpc("piutang_add_payment",{p_tanggal:t,p_nama:n,p_jumlah:j,p_keterangan:k||null});
-        if(r.error){console.error(r.error);alert(window.sbPiutangText("paymentSaveFailed"));return false;}
+        if(r.error){console.error(r.error);window.sellerBooksAlert(window.sbPiutangText("paymentSaveFailed"),window.sbPiutangText("errorTitle"));return false;}
         await piutangCloudList(); piutangRenderCloud();
         ["sbPiutangBayarTanggal","sbPiutangBayarNama","sbPiutangBayarJumlah","sbPiutangBayarKeterangan"].forEach(id=>{const x=document.getElementById(id);if(x)x.value="";});
         return false;
@@ -34225,7 +34232,7 @@ document.addEventListener(
         const item=cloudPayments.find(x=>x.id===id); if(!item)return false;
         if(!confirm(window.sbPiutangText("deletePayment")+"\n\nTanggal: "+piutangDate(item.tanggal)+"\nNama: "+item.nama+"\nJumlah: "+piutangMoney(item.jumlah)+"\n\n"+window.sbPiutangText("paymentDeleteShort")))return false;
         const r=await sellerBooksSupabase.rpc("piutang_delete_payment",{p_id:id});
-        if(r.error){alert(window.sbPiutangText("paymentDeleteFailed"));return false;}
+        if(r.error){window.sellerBooksAlert(window.sbPiutangText("paymentDeleteFailed"),window.sbPiutangText("errorTitle"));return false;}
         await piutangCloudList(); piutangRenderCloud(); return false;
     };
 
