@@ -5922,14 +5922,24 @@ async function deleteReportsByDateRange(){
 
     const confirmed =
         await sellerBooksConfirm(
-            "HAPUS LAPORAN PERMANEN?\n\n" +
-            "Rentang: " + fromText + " s/d " + toText + "\n" +
-            "Marketplace: " + marketplaceSelectText + "\n" +
-            "Store Accounts: " + storeSelectText + "\n" +
+            "HAPUS LAPORAN PERMANEN?
+
+" +
+            "Rentang: " + fromText + " s/d " + toText + "
+" +
+            "Marketplace: " + marketplaceSelectText + "
+" +
+            "Store Accounts: " + storeSelectText + "
+" +
             "Jumlah data import: " + deleted +
-            "\n\n" +
-            "Hanya laporan yang sesuai dengan filter di atas yang akan dihapus.\n" +
-            "Stok produk akan DIKEMBALIKAN sesuai jumlah stok yang sebelumnya dipotong oleh laporan tersebut.\n\n" +
+            "
+
+" +
+            "Hanya laporan yang sesuai dengan filter di atas yang akan dihapus.
+" +
+            "Stok produk akan DIKEMBALIKAN sesuai jumlah stok yang sebelumnya dipotong oleh laporan tersebut.
+
+" +
             "Data yang dihapus tidak dapat dikembalikan."
         );
 
@@ -5954,14 +5964,19 @@ async function deleteReportsByDateRange(){
     updateReports();
 
     sellerBooksAlert(
-        "Laporan berhasil dihapus.\n" +
+        "Laporan berhasil dihapus.
+" +
         deleted + " data import telah dihapus." +
         (
             stockRestoreResult.restoredQty > 0
-                ? "\n\nStok dikembalikan: " +
+                ? "
+
+Stok dikembalikan: " +
                   stockRestoreResult.restoredQty +
                   " pcs."
-                : "\n\nTidak ada stok yang perlu dikembalikan."
+                : "
+
+Tidak ada stok yang perlu dikembalikan."
         )
     );
 }
@@ -8973,9 +8988,13 @@ async function downloadReportPDF(){
         },15000);
 
         sellerBooksAlert(
-            "✅ PDF laporan berhasil dibuat.\n\n" +
-            "Periode: " + periodLabel + "\n" +
-            "Marketplace: " + marketplaceLabel + "\n" +
+            "✅ PDF laporan berhasil dibuat.
+
+" +
+            "Periode: " + periodLabel + "
+" +
+            "Marketplace: " + marketplaceLabel + "
+" +
             "Store Accounts: " + storeLabel
         );
 
@@ -8987,7 +9006,9 @@ async function downloadReportPDF(){
         );
 
         sellerBooksAlert(
-            "❌ PDF gagal dibuat.\n\n" +
+            "❌ PDF gagal dibuat.
+
+" +
             (
                 error && error.message
                     ? error.message
@@ -15506,7 +15527,9 @@ async function loginGoogle(){
 
             if(error){
                 console.error("Google Login gagal:",error);
-                sellerBooksAlert("❌ Login Google gagal.\n\n"+error.message);
+                sellerBooksAlert("❌ Login Google gagal.
+
+"+error.message);
                 return;
             }
 
@@ -15536,7 +15559,9 @@ async function loginGoogle(){
 
         if(error){
             console.error("Google Login gagal:",error);
-            sellerBooksAlert("❌ Login Google gagal.\n\n"+error.message);
+            sellerBooksAlert("❌ Login Google gagal.
+
+"+error.message);
         }
 
     }catch(error){
@@ -15836,7 +15861,9 @@ function sellerBooksHandleRealtimeAccountAction(status){
         sellerBooksProfile=null;
         sellerBooksStorage.removeItem("sellerbooks_owner_name");
         sellerBooksShowOnly("loginPage");
-        sellerBooksAlert("⚠️ Akses Accounts Berubah\n\n"+message);
+        sellerBooksAlert("⚠️ Akses Accounts Berubah
+
+"+message);
         sellerBooksAccountRealtimeHandling=false;
     });
 }
@@ -15982,8 +16009,12 @@ async function saveOwnerName(){
         document.getElementById("ownerSetupPage").style.display="none";
         document.getElementById("loginPage").style.display="none";
         document.getElementById("app").style.display="block";
-        sellerBooksAlert("✅ Data berhasil disimpan!\n\nSelamat datang, "+ownerName);
-    }catch(error){console.error("Gagal menyimpan Nama Pemilik:",error);sellerBooksAlert("❌ Nama Pemilik gagal disimpan ke server.\n\n"+error.message);}
+        sellerBooksAlert("✅ Data berhasil disimpan!
+
+Selamat datang, "+ownerName);
+    }catch(error){console.error("Gagal menyimpan Nama Pemilik:",error);sellerBooksAlert("❌ Nama Pemilik gagal disimpan ke server.
+
+"+error.message);}
 }
 
 /* =====================================================
@@ -18837,7 +18868,9 @@ async function deleteMarketplace(id){
     if(!await sellerBooksConfirm(
         "Hapus marketplace \"" +
         (marketplace.name || "Marketplace") +
-        "\"?\n\nData accounts toko yang terhubung dengan marketplace ini juga akan dihapus."
+        "\"?
+
+Data accounts toko yang terhubung dengan marketplace ini juga akan dihapus."
     )){
         return;
     }
@@ -18930,8 +18963,12 @@ async function deleteMarketplace(id){
         if(typeof renderStores === "function")renderStores();
 
         sellerBooksAlert(
-            "Marketplace belum jadi dihapus dari database.\n\n" +
-            "Perubahan dibatalkan karena verifikasi Supabase gagal.\n\n" +
+            "Marketplace belum jadi dihapus dari database.
+
+" +
+            "Perubahan dibatalkan karena verifikasi Supabase gagal.
+
+" +
             "Detail: " + (error && error.message ? error.message : error)
         );
     }
@@ -19398,7 +19435,9 @@ async function disconnectStoreAccount(storeId){
     }
 
     const confirmed = await sellerBooksConfirm(
-        "Copot integrasi " + marketplace.name + " dari accounts toko \"" + store.name + "\"?\n\nSetelah dicopot, accounts ini harus diotorisasi ulang jika ingin terhubung kembali.",
+        "Copot integrasi " + marketplace.name + " dari accounts toko \"" + store.name + "\"?
+
+Setelah dicopot, accounts ini harus diotorisasi ulang jika ingin terhubung kembali.",
         "Copot Integrasi"
     );
 
@@ -19444,7 +19483,9 @@ async function disconnectStoreAccount(storeId){
     }catch(error){
         console.error("Copot integrasi gagal:",error);
         sellerBooksAlert(
-            "Integrasi gagal dicopot.\n\n" +
+            "Integrasi gagal dicopot.
+
+" +
             (error?.message || "Terjadi kesalahan pada server."),
             "Copot Integrasi"
         );
@@ -19693,7 +19734,9 @@ async function integrateStoreAccount(storeId){
 
         sellerBooksAlert(
             "Integrasi " + String(marketplace.name || "Marketplace") +
-            " gagal dimulai.\n\n" +
+            " gagal dimulai.
+
+" +
             (error?.message || "Terjadi kesalahan saat menyiapkan OAuth."),
             "Integrasikan Accounts"
         );
@@ -19819,15 +19862,22 @@ async function sellerBooksDispatchExcelToImportSales(queueItem,showResult){
         const title="Hasil Tarik Order "+marketplaceName;
         if(result.new_transactions>0){
             sellerBooksAlert(
-                "Order "+marketplaceName+" berhasil diproses oleh mesin Import Sales.\n\n"+
-                "Packing baru: "+result.new_packing_count.toLocaleString("id-ID")+"\n"+
-                "PCS baru: "+result.new_qty.toLocaleString("id-ID")+"\n\n"+
+                "Order "+marketplaceName+" berhasil diproses oleh mesin Import Sales.
+
+"+
+                "Packing baru: "+result.new_packing_count.toLocaleString("id-ID")+"
+"+
+                "PCS baru: "+result.new_qty.toLocaleString("id-ID")+"
+
+"+
                 "Perhitungan, HPP, admin, packing, snapshot dan laporan dikerjakan oleh mesin Import Sales SellerBooks.",
                 title
             );
         }else{
             sellerBooksAlert(
-                "Data "+marketplaceName+" sudah ada / tidak menghasilkan transaksi baru.\n\n"+
+                "Data "+marketplaceName+" sudah ada / tidak menghasilkan transaksi baru.
+
+"+
                 "Mesin Import Sales melewati data duplikat.",
                 title
             );
@@ -19928,8 +19978,11 @@ async function syncTikTokOrdersNow(storeId){
         const timeFrom=now-(7*24*60*60);
 
         sellerBooksAlert(
-            "Sedang mengambil order TikTok Shop 7 hari terakhir...\n\n"+
-            "API hanya mengambil data mentah order.\n"+
+            "Sedang mengambil order TikTok Shop 7 hari terakhir...
+
+"+
+            "API hanya mengambil data mentah order.
+"+
             "Setelah itu data akan diproses oleh mesin Import Sales yang sama seperti upload Excel manual.",
             "Tarik Order TikTok"
         );
@@ -19964,7 +20017,10 @@ async function syncTikTokOrdersNow(storeId){
 
             if(data.diagnostic){
                 message+=
-                    "\n\nDIAGNOSTIC:\n"+
+                    "
+
+DIAGNOSTIC:
+"+
                     JSON.stringify(
                         data.diagnostic,
                         null,
@@ -19999,7 +20055,9 @@ async function syncTikTokOrdersNow(storeId){
 
         if(result.status==="NO_ORDERS"){
             sellerBooksAlert(
-                "Tidak ada data order TikTok pada periode yang diperiksa.\n\n"+
+                "Tidak ada data order TikTok pada periode yang diperiksa.
+
+"+
                 "Order ditemukan: "+
                 Number(result.orders_found||0),
                 "Hasil Tarik Order TikTok"
@@ -20025,7 +20083,9 @@ async function syncTikTokOrdersNow(storeId){
         );
 
         sellerBooksAlert(
-            "Tarik order TikTok gagal.\n\n"+
+            "Tarik order TikTok gagal.
+
+"+
             (error?.message||
                 "Terjadi kesalahan saat mengambil data."),
             "Tarik Order TikTok"
@@ -20050,14 +20110,21 @@ async function syncShopeeOrdersNow(storeId){
         const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
         if(!session?.access_token)throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
         const now=Date.now(),timeFrom=new Date(now-7*86400000).toISOString(),timeTo=new Date(now).toISOString();
-        sellerBooksAlert("Sedang mengambil order Shopee 7 hari terakhir...\n\nAPI hanya mengambil data mentah.\nSetelah itu data masuk ke mesin Import Sales yang sama seperti upload Excel manual.","Sinkronisasi Shopee");
+        sellerBooksAlert("Sedang mengambil order Shopee 7 hari terakhir...
+
+API hanya mengambil data mentah.
+Setelah itu data masuk ke mesin Import Sales yang sama seperti upload Excel manual.","Sinkronisasi Shopee");
         const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-sync-orders",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id),time_from:timeFrom,time_to:timeTo})});
         const data=await response.json().catch(()=>({}));
         if(!response.ok||!data.ok)throw new Error(data.error||"Pengambilan data Shopee gagal.");
-        if(data.status==="NO_ORDERS"){sellerBooksAlert("Tidak ada order Shopee pada periode yang diperiksa.\n\nOrder ditemukan: "+Number(data.orders_found||0),"Hasil Tarik Order Shopee");return;}
+        if(data.status==="NO_ORDERS"){sellerBooksAlert("Tidak ada order Shopee pada periode yang diperiksa.
+
+Order ditemukan: "+Number(data.orders_found||0),"Hasil Tarik Order Shopee");return;}
         if(data.status==="RAW_FILE_READY"){await sellerBooksDispatchExcelQueue({showResult:true});return;}
         throw new Error("Status API Shopee: "+String(data.status||"UNKNOWN"));
-    }catch(error){console.error("Tarik order Shopee gagal:",error);sellerBooksAlert("Tarik order Shopee gagal.\n\n"+(error?.message||"Terjadi kesalahan."),"Sinkronisasi Shopee");}
+    }catch(error){console.error("Tarik order Shopee gagal:",error);sellerBooksAlert("Tarik order Shopee gagal.
+
+"+(error?.message||"Terjadi kesalahan."),"Sinkronisasi Shopee");}
 }
 
 /* =====================================================
@@ -20077,17 +20144,24 @@ async function syncLazadaOrdersNow(storeId){
         const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
         if(!session?.access_token)throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
         const now=Math.floor(Date.now()/1000),timeFrom=now-7*86400,timeTo=now;
-        sellerBooksAlert("Sedang mengambil order Lazada 7 hari terakhir...\n\nAPI hanya mengambil data mentah.\nSetelah itu data masuk ke mesin Import Sales yang sama seperti upload Excel manual.","Sinkronisasi Lazada");
+        sellerBooksAlert("Sedang mengambil order Lazada 7 hari terakhir...
+
+API hanya mengambil data mentah.
+Setelah itu data masuk ke mesin Import Sales yang sama seperti upload Excel manual.","Sinkronisasi Lazada");
         const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-lazada-sync-orders",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id),time_from:timeFrom,time_to:timeTo})});
         const data=await response.json().catch(()=>({}));
         if(!response.ok||!data.ok)throw new Error(data.error||"Pengambilan data Lazada gagal.");
         const result=Array.isArray(data.results)?data.results.find(x=>String(x.connection_id||"")===String(connection.id))||data.results[0]:null;
         if(!result)throw new Error("Koneksi Lazada tidak menghasilkan file data.");
         if(result.status==="ERROR")throw new Error(String(result.error||"Lazada API mengembalikan error."));
-        if(result.status==="NO_ORDERS"){sellerBooksAlert("Tidak ada order Lazada pada periode yang diperiksa.\n\nOrder ditemukan: "+Number(result.orders_found||0),"Hasil Tarik Order Lazada");return;}
+        if(result.status==="NO_ORDERS"){sellerBooksAlert("Tidak ada order Lazada pada periode yang diperiksa.
+
+Order ditemukan: "+Number(result.orders_found||0),"Hasil Tarik Order Lazada");return;}
         if(result.status==="RAW_FILE_READY"){await sellerBooksDispatchExcelQueue({showResult:true});return;}
         throw new Error("Status API Lazada: "+String(result.status||"UNKNOWN"));
-    }catch(error){console.error("Tarik order Lazada gagal:",error);sellerBooksAlert("Tarik order Lazada gagal.\n\n"+(error?.message||"Terjadi kesalahan."),"Sinkronisasi Lazada");}
+    }catch(error){console.error("Tarik order Lazada gagal:",error);sellerBooksAlert("Tarik order Lazada gagal.
+
+"+(error?.message||"Terjadi kesalahan."),"Sinkronisasi Lazada");}
 }
 
 /* =====================================================
@@ -20146,7 +20220,9 @@ function handleShopeeOAuthResult(){
     const reason = params.get("reason") || "OAUTH_FAILED";
 
     sellerBooksAlert(
-        "Integrasi Shopee gagal.\n\n" +
+        "Integrasi Shopee gagal.
+
+" +
         "Kode: " + reason,
         "Integrasikan Accounts"
     );
@@ -20275,7 +20351,9 @@ if(!window.sellerBooksMarketplaceOAuthMessageHandler){
 
             sellerBooksAlert(
                 "Integrasi " + marketplaceLabel +
-                " gagal.\n\nKode: " + reason,
+                " gagal.
+
+Kode: " + reason,
                 "Integrasikan Accounts"
             );
 
@@ -20374,7 +20452,9 @@ window.onMarketplaceOAuthReturn = function(marketplace, status, reason, connecti
 
     sellerBooksAlert(
         "Integrasi " + errorLabel + " gagal." +
-        (reason ? "\n\nKode: " + reason : ""),
+        (reason ? "
+
+Kode: " + reason : ""),
         "Integrasikan Accounts"
     );
 
@@ -23405,7 +23485,9 @@ async function deleteSelectedProducts(){
     const confirmation = await sellerBooksConfirm(
         "Hapus " +
         selectedIds.length +
-        " produk yang dipilih?\n\n" +
+        " produk yang dipilih?
+
+" +
         "Data yang dihapus tidak dapat dikembalikan."
     );
 
@@ -23949,15 +24031,19 @@ const stock = Math.max(
 
             sellerBooksAlert(
 
-                "Import selesai.\n\n" +
+                "Import selesai.
+
+" +
 
                 "Berhasil: " +
                 successCount +
 
-                "\nDuplikat SKU: " +
+                "
+Duplikat SKU: " +
                 duplicateCount +
 
-                "\nData tidak valid: " +
+                "
+Data tidak valid: " +
                 errorCount
 
             );
@@ -26445,13 +26531,18 @@ async function analyzeSalesFile(input){
 
         sellerBooksAlert(
 
-            "Format file tidak didukung.\n\n" +
+            "Format file tidak didukung.
 
-            "Gunakan:\n" +
+" +
 
-            "XLSX\n" +
+            "Gunakan:
+" +
 
-            "XLS\n" +
+            "XLSX
+" +
+
+            "XLS
+" +
 
             "CSV"
 
@@ -27016,7 +27107,9 @@ async function analyzeSalesFile(input){
 
             sellerBooksAlert(
 
-                "SellerBooks tidak dapat membaca file ini.\n\n" +
+                "SellerBooks tidak dapat membaca file ini.
+
+" +
 
                 "Pastikan file tidak rusak."
 
@@ -28625,7 +28718,9 @@ function confirmSalesColumns(){
         console.error("SellerBooks: saveSalesImportData gagal:", error);
 
         sellerBooksAlert(
-            "Data penjualan gagal disimpan.\n\n" +
+            "Data penjualan gagal disimpan.
+
+" +
             (error?.message || String(error))
         );
 
@@ -28655,21 +28750,27 @@ function confirmSalesColumns(){
     */
 
     sellerBooksAlert(
-        "Import berhasil disimpan ✓\n\n" +
+        "Import berhasil disimpan ✓
+
+" +
 
         "Marketplace: " +
         record.marketplace +
 
-        "\nAkun: " +
+        "
+Akun: " +
         record.storeName +
 
-        "\nData transaksi: " +
+        "
+Data transaksi: " +
         record.rowCount.toLocaleString("id-ID") +
 
-        "\nPacking unik: " +
+        "
+Packing unik: " +
         record.uniquePackingCount.toLocaleString("id-ID") +
 
-        "\nBiaya packing: " +
+        "
+Biaya packing: " +
         formatRupiah(
             record.totalPackingCost
         )
@@ -28952,7 +29053,9 @@ async function logoutSellerBooks(){
         );
 
         sellerBooksAlert(
-            "❌ Logout gagal.\n\n" +
+            "❌ Logout gagal.
+
+" +
             error.message
         );
     }
@@ -28980,9 +29083,13 @@ async function resetIdentity(){
         return;
     }
     const confirmReset = await sellerBooksConfirm(
-        "Reset Nama Pemilik?\n\n" +
+        "Reset Nama Pemilik?
+
+" +
         "Nama Pemilik akan dikosongkan dan Anda " +
-        "akan kembali ke halaman pengisian Nama Pemilik.\n\n" +
+        "akan kembali ke halaman pengisian Nama Pemilik.
+
+" +
         "Akun Gmail dan status persetujuan Core Adiimasa " +
         "tetap tersimpan."
     );
@@ -29092,9 +29199,13 @@ async function resetIdentity(){
         }
 
         sellerBooksAlert(
-            "✅ Nama Pemilik berhasil direset.\n\n" +
+            "✅ Nama Pemilik berhasil direset.
+
+" +
             "Akun Gmail dan persetujuan Core Adiimasa " +
-            "tetap tersimpan.\n\n" +
+            "tetap tersimpan.
+
+" +
             "Silakan masukkan Nama Pemilik yang baru."
         );
 
@@ -29106,7 +29217,9 @@ async function resetIdentity(){
         );
 
         sellerBooksAlert(
-            "❌ Nama Pemilik gagal direset.\n\n" +
+            "❌ Nama Pemilik gagal direset.
+
+" +
             error.message
         );
     }
@@ -32032,7 +32145,66 @@ const SELLERBOOKS_I18N = {
         "Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu.":"Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu.",
         "Nama Pemilik berhasil direset.":"Nama Pemilik berhasil direset.",
         "Gagal mereset Nama Pemilik:":"Gagal mereset Nama Pemilik:",
-        "Nama Pemilik gagal disimpan ke server.":"Nama Pemilik gagal disimpan ke server.",\n        "Accounts Toko":"Akun Toko",\n        "User SellerBooks":"Pengguna SellerBooks",\n        "Reset Identitas":"Reset Identitas",\n        "Kelola seluruh penjualan marketplace, produk, accounts toko, dan laba bisnis Anda dalam satu sistem.":"Kelola seluruh penjualan marketplace, produk, akun toko, dan laba bisnis Anda dalam satu sistem.",\n        "0 PCS":"0 PCS",\n        "NET MARGIN":"MARGIN BERSIH",\n        "SISA HUTANG":"SISA HUTANG",\n        "Manage all products, SKUs, costs, and basic product data for your business.":"Kelola seluruh produk, SKU, modal, dan data dasar produk bisnis Anda.",\n        "📥 Import Excel":"📥 Impor Excel",\n        "📤 Export Excel":"📤 Ekspor Excel",\n        "Upload laporan penjualan marketplace. SellerBooks akan membaca struktur file dan mencari SKU serta QTY secara otomatis.":"Upload laporan penjualan marketplace. SellerBooks akan membaca struktur file dan mencari SKU serta QTY secara otomatis.",\n        "SellerBooks Smart File Analyzer":"Penganalisis File Cerdas SellerBooks",\n        "Upload file dari marketplace tanpa perlu memilih marketplace terlebih dahulu. Sistem akan menganalisis struktur data secara otomatis.":"Upload file dari marketplace tanpa perlu memilih marketplace terlebih dahulu. Sistem akan menganalisis struktur data secara otomatis.",\n        "SellerBooks telah membaca struktur file Anda.":"SellerBooks telah membaca struktur file Anda.",\n        "SKU Recognition":"Pengenalan SKU",\n        "QTY Recognition":"Pengenalan QTY",\n        "Lanjutkan Import →":"Lanjutkan Impor →",\n        "Rp 0":"Rp 0",\n        "${sellerBooksCurrentLanguage() === \"en\" ? \"Delete\" : \"Hapus\"} data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.":"Hapus data impor penjualan secara spesifik berdasarkan tanggal, marketplace, dan akun toko.",\n        "Penghapusan hanya menyentuh laporan yang sesuai dengan tanggal + marketplace + accounts toko yang dipilih. Master Produk, Marketplace, Accounts Toko, dan Biaya Lain tidak ikut dihapus. Stok Master Produk akan otomatis dikembalikan sesuai QTY yang sebelumnya dipotong oleh laporan yang dihapus.":"Penghapusan hanya menyentuh laporan yang sesuai dengan tanggal + marketplace + akun toko yang dipilih. Master Produk, Marketplace, Akun Toko, dan Biaya Lain tidak ikut dihapus. Stok Master Produk akan otomatis dikembalikan sesuai QTY yang sebelumnya dipotong oleh laporan yang dihapus.",\n        "Margin Profit":"Margin Laba",\n        "SKU SellerBooks":"SKU SellerBooks",\n        "${sellerBooksCurrentLanguage() === \"en\" ? \"Delete\" : \"Hapus\"} Logo":"Hapus Logo",\n        "1 USD = Rp":"1 USD = Rp",\n        "1 SGD = Rp":"1 SGD = Rp",\n        "1 MYR = Rp":"1 MYR = Rp",\n        ". Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.":". Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.",\n        "ℹ️ Semua data disimpan dalam IDR sebagai nilai dasar. Saat mata uang diganti, seluruh nominal otomatis dikonversi ke kurs tampilan.":"ℹ️ Semua data disimpan dalam IDR sebagai nilai dasar. Saat mata uang diganti, seluruh nominal otomatis dikonversi ke kurs tampilan.",\n        "Tanpa Pembulatan":"Tanpa Pembulatan",\n        "Masukkan biaya setiap komponen packing. Total akan dihitung otomatis sebagai biaya packing per transaksi.":"Masukkan biaya setiap komponen packing. Total akan dihitung otomatis sebagai biaya packing per transaksi.",\n        "Accounts Toko *":"Akun Toko *",\n        "Refresh Dashboard":"Muat Ulang Dasbor",\n        "Nama pelanggan / pihak":"Nama pelanggan / pihak",\n        "Contoh: 500000":"Contoh: 500000",\n        "Keterangan piutang":"Keterangan piutang",\n        "Keterangan pembayaran":"Keterangan pembayaran",\n        "🔍 Cari SKU atau nama produk...":"🔍 Cari SKU atau nama produk...",\n        "Jumlah baris Master Produk":"Jumlah baris Master Produk",\n        "Contoh: 1500":"Contoh: 1500",\n        "Jumlah baris Rincian Sales per Produk":"Jumlah baris Rincian Penjualan per Produk",\n        "Jumlah baris Detail Sales":"Jumlah baris Rincian Penjualan",\n        "Contoh: 16500":"Contoh: 16500",\n        "Contoh: 12900":"Contoh: 12900",\n        "Contoh: 3900":"Contoh: 3900",\n        "Contoh: 850":"Contoh: 850",\n        "Contoh: Adimasa Official Store":"Contoh: Adimasa Official Store",\n        "Contoh: SHOPEE-001":"Contoh: SHOPEE-001",\n        "Masukkan persentase admin":"Masukkan persentase admin",\n        "Contoh: Accounts utama Shopee":"Contoh: Akun utama Shopee",\n        "Contoh: TAS-BIRU-001":"Contoh: TAS-BIRU-001",\n        "Contoh: Tas Biru Premium":"Contoh: Tas Biru Premium",\n        "Contoh: Tas":"Contoh: Tas",\n        "Contoh: 50000":"Contoh: 50000",\n        "Contoh: 25000":"Contoh: 25000",\n        "Contoh: 100":"Contoh: 100",\n        "Contoh: 15":"Contoh: 15",\n        "Contoh: Shopee":"Contoh: Shopee",\n        "Contoh: Biaya iklan TikTok bulan ini":"Contoh: Biaya iklan TikTok bulan ini",\n        "Catatan tambahan...":"Catatan tambahan...",
+        "Nama Pemilik gagal disimpan ke server.":"Nama Pemilik gagal disimpan ke server.",
+        "Accounts Toko":"Akun Toko",
+        "User SellerBooks":"Pengguna SellerBooks",
+        "Reset Identitas":"Reset Identitas",
+        "Kelola seluruh penjualan marketplace, produk, accounts toko, dan laba bisnis Anda dalam satu sistem.":"Kelola seluruh penjualan marketplace, produk, akun toko, dan laba bisnis Anda dalam satu sistem.",
+        "0 PCS":"0 PCS",
+        "NET MARGIN":"MARGIN BERSIH",
+        "SISA HUTANG":"SISA HUTANG",
+        "Manage all products, SKUs, costs, and basic product data for your business.":"Kelola seluruh produk, SKU, modal, dan data dasar produk bisnis Anda.",
+        "📥 Import Excel":"📥 Impor Excel",
+        "📤 Export Excel":"📤 Ekspor Excel",
+        "Upload laporan penjualan marketplace. SellerBooks akan membaca struktur file dan mencari SKU serta QTY secara otomatis.":"Upload laporan penjualan marketplace. SellerBooks akan membaca struktur file dan mencari SKU serta QTY secara otomatis.",
+        "SellerBooks Smart File Analyzer":"Penganalisis File Cerdas SellerBooks",
+        "Upload file dari marketplace tanpa perlu memilih marketplace terlebih dahulu. Sistem akan menganalisis struktur data secara otomatis.":"Upload file dari marketplace tanpa perlu memilih marketplace terlebih dahulu. Sistem akan menganalisis struktur data secara otomatis.",
+        "SellerBooks telah membaca struktur file Anda.":"SellerBooks telah membaca struktur file Anda.",
+        "SKU Recognition":"Pengenalan SKU",
+        "QTY Recognition":"Pengenalan QTY",
+        "Lanjutkan Import →":"Lanjutkan Impor →",
+        "Rp 0":"Rp 0",
+        "${sellerBooksCurrentLanguage() === \"en\" ? \"Delete\" : \"Hapus\"} data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.":"Hapus data impor penjualan secara spesifik berdasarkan tanggal, marketplace, dan akun toko.",
+        "Penghapusan hanya menyentuh laporan yang sesuai dengan tanggal + marketplace + accounts toko yang dipilih. Master Produk, Marketplace, Accounts Toko, dan Biaya Lain tidak ikut dihapus. Stok Master Produk akan otomatis dikembalikan sesuai QTY yang sebelumnya dipotong oleh laporan yang dihapus.":"Penghapusan hanya menyentuh laporan yang sesuai dengan tanggal + marketplace + akun toko yang dipilih. Master Produk, Marketplace, Akun Toko, dan Biaya Lain tidak ikut dihapus. Stok Master Produk akan otomatis dikembalikan sesuai QTY yang sebelumnya dipotong oleh laporan yang dihapus.",
+        "Margin Profit":"Margin Laba",
+        "SKU SellerBooks":"SKU SellerBooks",
+        "${sellerBooksCurrentLanguage() === \"en\" ? \"Delete\" : \"Hapus\"} Logo":"Hapus Logo",
+        "1 USD = Rp":"1 USD = Rp",
+        "1 SGD = Rp":"1 SGD = Rp",
+        "1 MYR = Rp":"1 MYR = Rp",
+        ". Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.":". Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.",
+        "ℹ️ Semua data disimpan dalam IDR sebagai nilai dasar. Saat mata uang diganti, seluruh nominal otomatis dikonversi ke kurs tampilan.":"ℹ️ Semua data disimpan dalam IDR sebagai nilai dasar. Saat mata uang diganti, seluruh nominal otomatis dikonversi ke kurs tampilan.",
+        "Tanpa Pembulatan":"Tanpa Pembulatan",
+        "Masukkan biaya setiap komponen packing. Total akan dihitung otomatis sebagai biaya packing per transaksi.":"Masukkan biaya setiap komponen packing. Total akan dihitung otomatis sebagai biaya packing per transaksi.",
+        "Accounts Toko *":"Akun Toko *",
+        "Refresh Dashboard":"Muat Ulang Dasbor",
+        "Nama pelanggan / pihak":"Nama pelanggan / pihak",
+        "Contoh: 500000":"Contoh: 500000",
+        "Keterangan piutang":"Keterangan piutang",
+        "Keterangan pembayaran":"Keterangan pembayaran",
+        "🔍 Cari SKU atau nama produk...":"🔍 Cari SKU atau nama produk...",
+        "Jumlah baris Master Produk":"Jumlah baris Master Produk",
+        "Contoh: 1500":"Contoh: 1500",
+        "Jumlah baris Rincian Sales per Produk":"Jumlah baris Rincian Penjualan per Produk",
+        "Jumlah baris Detail Sales":"Jumlah baris Rincian Penjualan",
+        "Contoh: 16500":"Contoh: 16500",
+        "Contoh: 12900":"Contoh: 12900",
+        "Contoh: 3900":"Contoh: 3900",
+        "Contoh: 850":"Contoh: 850",
+        "Contoh: Adimasa Official Store":"Contoh: Adimasa Official Store",
+        "Contoh: SHOPEE-001":"Contoh: SHOPEE-001",
+        "Masukkan persentase admin":"Masukkan persentase admin",
+        "Contoh: Accounts utama Shopee":"Contoh: Akun utama Shopee",
+        "Contoh: TAS-BIRU-001":"Contoh: TAS-BIRU-001",
+        "Contoh: Tas Biru Premium":"Contoh: Tas Biru Premium",
+        "Contoh: Tas":"Contoh: Tas",
+        "Contoh: 50000":"Contoh: 50000",
+        "Contoh: 25000":"Contoh: 25000",
+        "Contoh: 100":"Contoh: 100",
+        "Contoh: 15":"Contoh: 15",
+        "Contoh: Shopee":"Contoh: Shopee",
+        "Contoh: Biaya iklan TikTok bulan ini":"Contoh: Biaya iklan TikTok bulan ini",
+        "Catatan tambahan...":"Catatan tambahan...",
     },
     "en": {
         "Dashboard":"Dashboard",
@@ -32465,7 +32637,66 @@ const SELLERBOOKS_I18N = {
         "Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu.":"Please enter the Owner Name or Business Name first.",
         "Nama Pemilik berhasil direset.":"Owner Name reset successfully.",
         "Gagal mereset Nama Pemilik:":"Failed to reset Owner Name:",
-        "Nama Pemilik gagal disimpan ke server.":"Owner Name could not be saved to the server."\n        "Accounts Toko":"Store Accounts",\n        "User SellerBooks":"SellerBooks User",\n        "Reset Identitas":"Reset Identity",\n        "Kelola seluruh penjualan marketplace, produk, accounts toko, dan laba bisnis Anda dalam satu sistem.":"Manage all marketplace sales, products, store accounts, and business profit in one system.",\n        "0 PCS":"0 PCS",\n        "NET MARGIN":"NET MARGIN",\n        "SISA HUTANG":"REMAINING DEBT",\n        "Manage all products, SKUs, costs, and basic product data for your business.":"Manage all products, SKUs, costs, and basic product data for your business.",\n        "📥 Import Excel":"📥 Import Excel",\n        "📤 Export Excel":"📤 Export Excel",\n        "Upload laporan penjualan marketplace. SellerBooks akan membaca struktur file dan mencari SKU serta QTY secara otomatis.":"Upload marketplace sales reports. SellerBooks will read the file structure and automatically find SKU and QTY.",\n        "SellerBooks Smart File Analyzer":"SellerBooks Smart File Analyzer",\n        "Upload file dari marketplace tanpa perlu memilih marketplace terlebih dahulu. Sistem akan menganalisis struktur data secara otomatis.":"Upload a marketplace file without selecting the marketplace first. The system will analyze the data structure automatically.",\n        "SellerBooks telah membaca struktur file Anda.":"SellerBooks has read your file structure.",\n        "SKU Recognition":"SKU Recognition",\n        "QTY Recognition":"QTY Recognition",\n        "Lanjutkan Import →":"Continue Import →",\n        "Rp 0":"Rp 0",\n        "${sellerBooksCurrentLanguage() === \"en\" ? \"Delete\" : \"Hapus\"} data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.":"Delete sales import data specifically by date, marketplace, and store account.",\n        "Penghapusan hanya menyentuh laporan yang sesuai dengan tanggal + marketplace + accounts toko yang dipilih. Master Produk, Marketplace, Accounts Toko, dan Biaya Lain tidak ikut dihapus. Stok Master Produk akan otomatis dikembalikan sesuai QTY yang sebelumnya dipotong oleh laporan yang dihapus.":"Deletion only affects reports matching the selected date, marketplace, and store account. Product Master, Marketplace, Store Accounts, and Other Costs are not deleted. Product Master stock is automatically restored according to the QTY previously deducted by the deleted report.",\n        "Margin Profit":"Profit Margin",\n        "SKU SellerBooks":"SellerBooks SKU",\n        "${sellerBooksCurrentLanguage() === \"en\" ? \"Delete\" : \"Hapus\"} Logo":"Delete Logo",\n        "1 USD = Rp":"1 USD = Rp",\n        "1 SGD = Rp":"1 SGD = Rp",\n        "1 MYR = Rp":"1 MYR = Rp",\n        ". Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.":". Exchange rate changes will be used for all displayed amounts.",\n        "ℹ️ Semua data disimpan dalam IDR sebagai nilai dasar. Saat mata uang diganti, seluruh nominal otomatis dikonversi ke kurs tampilan.":"ℹ️ All data is stored in IDR as the base value. When the currency changes, all amounts are automatically converted using the display exchange rate.",\n        "Tanpa Pembulatan":"No Rounding",\n        "Masukkan biaya setiap komponen packing. Total akan dihitung otomatis sebagai biaya packing per transaksi.":"Enter the cost of each packing component. The total will be calculated automatically as the packing cost per transaction.",\n        "Accounts Toko *":"Store Account *",\n        "Refresh Dashboard":"Refresh Dashboard",\n        "Nama pelanggan / pihak":"Customer / Party Name",\n        "Contoh: 500000":"Example: 500000",\n        "Keterangan piutang":"Receivable Description",\n        "Keterangan pembayaran":"Payment Description",\n        "🔍 Cari SKU atau nama produk...":"🔍 Search SKU or product name...",\n        "Jumlah baris Master Produk":"Product Master Rows",\n        "Contoh: 1500":"Example: 1500",\n        "Jumlah baris Rincian Sales per Produk":"Sales Details per Product Rows",\n        "Jumlah baris Detail Sales":"Sales Details Rows",\n        "Contoh: 16500":"Example: 16500",\n        "Contoh: 12900":"Example: 12900",\n        "Contoh: 3900":"Example: 3900",\n        "Contoh: 850":"Example: 850",\n        "Contoh: Adimasa Official Store":"Example: Adimasa Official Store",\n        "Contoh: SHOPEE-001":"Example: SHOPEE-001",\n        "Masukkan persentase admin":"Enter the admin fee percentage",\n        "Contoh: Accounts utama Shopee":"Example: Main Shopee account",\n        "Contoh: TAS-BIRU-001":"Example: TAS-BIRU-001",\n        "Contoh: Tas Biru Premium":"Example: Premium Blue Bag",\n        "Contoh: Tas":"Example: Bag",\n        "Contoh: 50000":"Example: 50000",\n        "Contoh: 25000":"Example: 25000",\n        "Contoh: 100":"Example: 100",\n        "Contoh: 15":"Example: 15",\n        "Contoh: Shopee":"Example: Shopee",\n        "Contoh: Biaya iklan TikTok bulan ini":"Example: TikTok advertising cost this month",\n        "Catatan tambahan...":"Additional notes...",
+        "Nama Pemilik gagal disimpan ke server.":"Owner Name could not be saved to the server."
+        "Accounts Toko":"Store Accounts",
+        "User SellerBooks":"SellerBooks User",
+        "Reset Identitas":"Reset Identity",
+        "Kelola seluruh penjualan marketplace, produk, accounts toko, dan laba bisnis Anda dalam satu sistem.":"Manage all marketplace sales, products, store accounts, and business profit in one system.",
+        "0 PCS":"0 PCS",
+        "NET MARGIN":"NET MARGIN",
+        "SISA HUTANG":"REMAINING DEBT",
+        "Manage all products, SKUs, costs, and basic product data for your business.":"Manage all products, SKUs, costs, and basic product data for your business.",
+        "📥 Import Excel":"📥 Import Excel",
+        "📤 Export Excel":"📤 Export Excel",
+        "Upload laporan penjualan marketplace. SellerBooks akan membaca struktur file dan mencari SKU serta QTY secara otomatis.":"Upload marketplace sales reports. SellerBooks will read the file structure and automatically find SKU and QTY.",
+        "SellerBooks Smart File Analyzer":"SellerBooks Smart File Analyzer",
+        "Upload file dari marketplace tanpa perlu memilih marketplace terlebih dahulu. Sistem akan menganalisis struktur data secara otomatis.":"Upload a marketplace file without selecting the marketplace first. The system will analyze the data structure automatically.",
+        "SellerBooks telah membaca struktur file Anda.":"SellerBooks has read your file structure.",
+        "SKU Recognition":"SKU Recognition",
+        "QTY Recognition":"QTY Recognition",
+        "Lanjutkan Import →":"Continue Import →",
+        "Rp 0":"Rp 0",
+        "${sellerBooksCurrentLanguage() === \"en\" ? \"Delete\" : \"Hapus\"} data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan accounts toko.":"Delete sales import data specifically by date, marketplace, and store account.",
+        "Penghapusan hanya menyentuh laporan yang sesuai dengan tanggal + marketplace + accounts toko yang dipilih. Master Produk, Marketplace, Accounts Toko, dan Biaya Lain tidak ikut dihapus. Stok Master Produk akan otomatis dikembalikan sesuai QTY yang sebelumnya dipotong oleh laporan yang dihapus.":"Deletion only affects reports matching the selected date, marketplace, and store account. Product Master, Marketplace, Store Accounts, and Other Costs are not deleted. Product Master stock is automatically restored according to the QTY previously deducted by the deleted report.",
+        "Margin Profit":"Profit Margin",
+        "SKU SellerBooks":"SellerBooks SKU",
+        "${sellerBooksCurrentLanguage() === \"en\" ? \"Delete\" : \"Hapus\"} Logo":"Delete Logo",
+        "1 USD = Rp":"1 USD = Rp",
+        "1 SGD = Rp":"1 SGD = Rp",
+        "1 MYR = Rp":"1 MYR = Rp",
+        ". Perubahan kurs akan digunakan untuk seluruh nominal yang ditampilkan.":". Exchange rate changes will be used for all displayed amounts.",
+        "ℹ️ Semua data disimpan dalam IDR sebagai nilai dasar. Saat mata uang diganti, seluruh nominal otomatis dikonversi ke kurs tampilan.":"ℹ️ All data is stored in IDR as the base value. When the currency changes, all amounts are automatically converted using the display exchange rate.",
+        "Tanpa Pembulatan":"No Rounding",
+        "Masukkan biaya setiap komponen packing. Total akan dihitung otomatis sebagai biaya packing per transaksi.":"Enter the cost of each packing component. The total will be calculated automatically as the packing cost per transaction.",
+        "Accounts Toko *":"Store Account *",
+        "Refresh Dashboard":"Refresh Dashboard",
+        "Nama pelanggan / pihak":"Customer / Party Name",
+        "Contoh: 500000":"Example: 500000",
+        "Keterangan piutang":"Receivable Description",
+        "Keterangan pembayaran":"Payment Description",
+        "🔍 Cari SKU atau nama produk...":"🔍 Search SKU or product name...",
+        "Jumlah baris Master Produk":"Product Master Rows",
+        "Contoh: 1500":"Example: 1500",
+        "Jumlah baris Rincian Sales per Produk":"Sales Details per Product Rows",
+        "Jumlah baris Detail Sales":"Sales Details Rows",
+        "Contoh: 16500":"Example: 16500",
+        "Contoh: 12900":"Example: 12900",
+        "Contoh: 3900":"Example: 3900",
+        "Contoh: 850":"Example: 850",
+        "Contoh: Adimasa Official Store":"Example: Adimasa Official Store",
+        "Contoh: SHOPEE-001":"Example: SHOPEE-001",
+        "Masukkan persentase admin":"Enter the admin fee percentage",
+        "Contoh: Accounts utama Shopee":"Example: Main Shopee account",
+        "Contoh: TAS-BIRU-001":"Example: TAS-BIRU-001",
+        "Contoh: Tas Biru Premium":"Example: Premium Blue Bag",
+        "Contoh: Tas":"Example: Bag",
+        "Contoh: 50000":"Example: 50000",
+        "Contoh: 25000":"Example: 25000",
+        "Contoh: 100":"Example: 100",
+        "Contoh: 15":"Example: 15",
+        "Contoh: Shopee":"Example: Shopee",
+        "Contoh: Biaya iklan TikTok bulan ini":"Example: TikTok advertising cost this month",
+        "Catatan tambahan...":"Additional notes...",
     }
 };
 
@@ -33064,7 +33295,9 @@ function handleSettingsLogoUpload(input){
             );
             input.value = "";
             sellerBooksAlert(
-                "❌ Logo gagal disimpan ke Supabase.\n\n" +
+                "❌ Logo gagal disimpan ke Supabase.
+
+" +
                 error.message
             );
         }
@@ -33115,7 +33348,9 @@ async function removeSettingsLogo(){
             error
         );
         sellerBooksAlert(
-            "❌ Logo gagal dihapus dari Supabase.\n\n"+
+            "❌ Logo gagal dihapus dari Supabase.
+
+"+
             error.message
         );
     }
@@ -33891,10 +34126,16 @@ document.addEventListener(
         const jumlah=sbPiutangFormat(item.jumlah);
 
         const yakin=window.confirm(
-            "Hapus piutang ini?\n\n" +
-            "Tanggal: " + tanggal + "\n" +
-            "Nama: " + nama + "\n" +
-            "Jumlah: " + jumlah + "\n\n" +
+            "Hapus piutang ini?
+
+" +
+            "Tanggal: " + tanggal + "
+" +
+            "Nama: " + nama + "
+" +
+            "Jumlah: " + jumlah + "
+
+" +
             "Data yang dihapus tidak akan dihitung lagi dalam Total Piutang."
         );
         if(!yakin) return false;
@@ -33961,10 +34202,16 @@ document.addEventListener(
         if(index<0 || index>=data.length) return false;
         const item=data[index];
         const yakin=window.confirm(
-            "Hapus catatan pembayaran ini?\n\n"+
-            "Tanggal: "+sbPiutangFormatTanggal(item.tanggal||"")+"\n"+
-            "Nama: "+(String(item.nama||"").trim()||"-")+"\n"+
-            "Jumlah: "+sbPiutangFormat(item.jumlah)+"\n\n"+
+            "Hapus catatan pembayaran ini?
+
+"+
+            "Tanggal: "+sbPiutangFormatTanggal(item.tanggal||"")+"
+"+
+            "Nama: "+(String(item.nama||"").trim()||"-")+"
+"+
+            "Jumlah: "+sbPiutangFormat(item.jumlah)+"
+
+"+
             "Jika dihapus, jumlah pembayaran ini akan kembali menjadi piutang."
         );
         if(!yakin) return false;
@@ -33994,7 +34241,9 @@ document.addEventListener(
         const outstanding=sbPiutangSisaTotal();
         if(jumlah>outstanding){
             const lanjut=window.confirm(
-                "Jumlah pembayaran ("+sbPiutangFormat(jumlah)+") lebih besar dari sisa piutang ("+sbPiutangFormat(outstanding)+").\n\nTetap simpan pembayaran ini?"
+                "Jumlah pembayaran ("+sbPiutangFormat(jumlah)+") lebih besar dari sisa piutang ("+sbPiutangFormat(outstanding)+").
+
+Tetap simpan pembayaran ini?"
             );
             if(!lanjut) return false;
         }
@@ -34349,7 +34598,11 @@ document.addEventListener(
 
     window.sbPiutangDeleteCloud=async function(id){
         const item=cloudEntries.find(x=>x.id===id); if(!item)return false;
-        if(!confirm("Hapus piutang ini?\n\nTanggal: "+piutangDate(item.tanggal)+"\nNama: "+item.nama+"\nJumlah: "+piutangMoney(item.jumlah)))return false;
+        if(!confirm("Hapus piutang ini?
+
+Tanggal: "+piutangDate(item.tanggal)+"
+Nama: "+item.nama+"
+Jumlah: "+piutangMoney(item.jumlah)))return false;
         const r=await sellerBooksSupabase.rpc("piutang_delete_entry",{p_id:id});
         if(r.error){alert("Piutang gagal dihapus.");return false;}
         await piutangCloudList(); piutangRenderCloud(); return false;
@@ -34369,7 +34622,13 @@ document.addEventListener(
 
     window.sbPiutangBayarDeleteCloud=async function(id){
         const item=cloudPayments.find(x=>x.id===id); if(!item)return false;
-        if(!confirm("Hapus catatan pembayaran ini?\n\nTanggal: "+piutangDate(item.tanggal)+"\nNama: "+item.nama+"\nJumlah: "+piutangMoney(item.jumlah)+"\n\nNominal akan kembali menjadi sisa piutang."))return false;
+        if(!confirm("Hapus catatan pembayaran ini?
+
+Tanggal: "+piutangDate(item.tanggal)+"
+Nama: "+item.nama+"
+Jumlah: "+piutangMoney(item.jumlah)+"
+
+Nominal akan kembali menjadi sisa piutang."))return false;
         const r=await sellerBooksSupabase.rpc("piutang_delete_payment",{p_id:id});
         if(r.error){alert("Pembayaran gagal dihapus.");return false;}
         await piutangCloudList(); piutangRenderCloud(); return false;
