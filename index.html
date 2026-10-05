@@ -29219,6 +29219,9 @@ document.addEventListener(
         if(typeof sellerBooksApplySalesImportLanguage === "function"){
             sellerBooksApplySalesImportLanguage();
         }
+        if(typeof sellerBooksApplyReportsLanguage === "function"){
+            sellerBooksApplyReportsLanguage();
+        }
         if(typeof window.sbPiutangApplyLanguage === "function"){
             window.sbPiutangApplyLanguage();
         }
@@ -32235,6 +32238,40 @@ function sellerBooksApplyDashboardLanguage(){
     }
 }
 
+function sellerBooksApplyReportsLanguage(){
+    const view = document.getElementById("reports");
+    if(!view) return;
+
+    const language = sellerBooksCurrentLanguage();
+    const title = view.querySelector(".page-header h2");
+    const subtitle = view.querySelector(".page-header p");
+
+    if(title){
+        title.textContent = language === "en"
+            ? "Business Reports"
+            : "Laporan Bisnis";
+    }
+
+    if(subtitle){
+        subtitle.textContent = language === "en"
+            ? "Analyze sales, costs, and profit across all marketplaces and store accounts."
+            : "Analisis penjualan, biaya, dan laba seluruh marketplace serta akun toko.";
+    }
+
+    const topTitle = document.getElementById("topTitle");
+    const topSubtitle = document.getElementById("topSubtitle");
+
+    if(topTitle && view.classList.contains("active")){
+        topTitle.textContent = language === "en"
+            ? "Business Reports"
+            : "Laporan Bisnis";
+
+        topSubtitle.textContent = language === "en"
+            ? "Analyze sales, costs, and profit across all marketplaces and store accounts."
+            : "Analisis penjualan, biaya, dan laba seluruh marketplace serta akun toko.";
+    }
+}
+
 function sellerBooksLanguageName(language){
     return sellerBooksNormalizeLanguage(language) === "en"
         ? "English"
@@ -32266,6 +32303,10 @@ function sellerBooksSyncLanguageControl(){
     }
     if(typeof sellerBooksApplyDetailsLanguage === "function"){
         sellerBooksApplyDetailsLanguage();
+    }
+
+    if(typeof sellerBooksApplyReportsLanguage === "function"){
+        sellerBooksApplyReportsLanguage();
     }
 
     const info = document.getElementById("settingsLanguageInfo");
