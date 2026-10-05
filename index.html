@@ -9069,10 +9069,9 @@ async function downloadReportPDF(){
             doc.setFontSize(7);
 
             doc.text(
-                "SellerBooks | Laporan Bisnis | Halaman " +
-                page +
-                " " + sellerBooksReportsText("of") + " "
-                totalPages,
+                "SellerBooks | " + sellerBooksReportsText("pdfTitle").replace("SellerBooks - ","") + " | " +
+                sellerBooksReportsText("page") + " " + page + " " +
+                sellerBooksReportsText("of") + " " + totalPages,
                 pageWidth / 2,
                 pageHeight - 7,
                 {align:"center"}
@@ -9122,10 +9121,10 @@ async function downloadReportPDF(){
         },15000);
 
         sellerBooksAlert(
-            "✅ PDF laporan berhasil dibuat.\n\n" +
-            sellerBooksReportsText("period") + ": " periodLabel + "\n" +
-            sellerBooksReportsText("marketplace") + ": " marketplaceLabel + "\n" +
-            sellerBooksReportsText("storeAccount") + ": " storeLabel
+            sellerBooksReportsText("pdfSuccess") + "\n\n" +
+            sellerBooksReportsText("period") + ": " + periodLabel + "\n" +
+            sellerBooksReportsText("marketplace") + ": " + marketplaceLabel + "\n" +
+            sellerBooksReportsText("storeAccount") + ": " + storeLabel
         );
 
     }catch(error){
