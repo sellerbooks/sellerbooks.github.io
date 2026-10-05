@@ -154,6 +154,10 @@ if(markerPos < 0){
       if(!/[A-Za-zÀ-ÿ]/.test(value)) return false;
       if(/^[A-Za-z0-9_.$:/#%+\-]+$/.test(value)) return false;
       if(/^https?:\/\//i.test(value)) return false;
+      if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return false;
+      if(/^©\s*\d{4}\s+All Rights Reserved by$/i.test(value)) return false;
+      if(/^PT\s+Adiimasa Distribusi Indonesia$/i.test(value)) return false;
+      if(/^Contoh:\s*PT\s+Adiimasa Distribusi Indonesia$/i.test(value)) return false;
       if(ignored.has(value)) return false;
       return true;
     }
