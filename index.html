@@ -18218,12 +18218,12 @@ function renderMarketplacePerformance(){
         const language = typeof sellerBooksCurrentLanguage === "function" ? sellerBooksCurrentLanguage() : "id";
         const dashboardPeriodNames = language === "en"
             ? {today:"Today",yesterday:"Yesterday",week:"This Week",lastWeek:"Last Week",month:"This Month",lastMonth:"Last Month",last3Months:"Last 3 Months",year:"This Year",all:"All Periods"}
-            : {today:"Hari Ini",yesterday:"Kemarin",week:"Minggu Ini",lastWeek:"Minggu Lalu",month:"Bulan Ini",lastMonth:"Bulan Lalu",last3Months:"3 Bulan Terakhir",year:"Tahun Ini",all:"Semua Periode"};
-        const dashboardPeriodLabel = dashboardPeriodNames[currentDashboardPeriod] || (language === "en" ? "Today" : "Hari Ini");
+            : {today:"Today",yesterday:"Yesterday",week:"This Week",lastWeek:"Last Week",month:"This Month",lastMonth:"Last Month",last3Months:"Last 3 Months",year:"This Year",all:"All Periods"};
+        const dashboardPeriodLabel = dashboardPeriodNames[currentDashboardPeriod] || (language === "en" ? "Today" : "Today");
         if(salesInfo){
             salesInfo.textContent = transactions.length
                 ? (language === "en" ? "Total sales across all marketplaces • " + dashboardPeriodLabel : "Total semua marketplace • " + dashboardPeriodLabel)
-                : (language === "en" ? "No sales • " + dashboardPeriodLabel : "Tidak ada penjualan • " + dashboardPeriodLabel);
+                : (language === "en" ? "No sales • " + dashboardPeriodLabel : "No sales • " + dashboardPeriodLabel);
         }
         if(qtyInfo){
             qtyInfo.textContent = language === "en"
@@ -33627,95 +33627,12 @@ Object.assign(SELLERBOOKS_ID_FALLBACK,{
     "popup/tab":"popup/tab"
 });;
 
-/* =====================================================
-   STRICT EN/ID RELEASE DICTIONARY
-   Covers UI strings that can be emitted dynamically and
-   prevents mixed-language regressions in future renders.
-===================================================== */
-const SELLERBOOKS_STRICT_EN_ID = {
-    en: {
-        "Tambah Account Toko":"Add Store Account",
-        "+ Tambah Account Toko":"+ Add Store Account",
-        "Tambah Accounts Toko":"Add Store Account",
-        "+ Tambah Accounts Toko":"+ Add Store Account",
-        "Kelola all sales marketplace, product, store account, dan profit bisnis Anda in satu sistem.":"Manage all marketplace sales, products, store accounts, and business profit in one system.",
-        "Kelola all sales marketplace, product, store account, and profit bisnis Anda in satu sistem.":"Manage all marketplace sales, products, store accounts, and business profit in one system.",
-        "No sales data.":"No sales data yet.",
-        "No sales data":"No sales data yet",
-        "No sales data for this period":"No sales data for this period",
-        "No sales • ":"No sales • ",
-        "Tidak ada penjualan • ":"No sales • ",
-        "Tidak ada penjualan hari ini":"No sales today",
-        "Tidak ada penjualan":"No sales",
-        "Hari Ini":"Today",
-        "Kemarin":"Yesterday",
-        "Minggu Ini":"This Week",
-        "Minggu Lalu":"Last Week",
-        "Bulan Ini":"This Month",
-        "Bulan Lalu":"Last Month",
-        "3 Bulan Terakhir":"Last 3 Months",
-        "Semua Periode":"All Periods",
-        "Manage all products, SKUs, costs, and basic product data for your business.":"Manage all products, SKUs, costs, and basic product data for your business.",
-        "Akun Toko":"Store Accounts",
-        "Tambah Akun Toko":"Add Store Account",
-        "Simpan Akun Toko":"Save Store Account",
-        "Hapus":"Delete",
-        "Hapus Logo":"Delete Logo",
-        "Kembali ke beranda":"Back to Home",
-        "Kembali ke Beranda":"Back to Home",
-        "Kelola Toko":"Manage Store",
-        "Tidak ada data":"No data",
-        "Belum ada data":"No data yet",
-        "Belum ada transaksi":"No transactions yet",
-        "Belum ada produk":"No products yet",
-        "Belum ada akun":"No accounts yet",
-        "Belum ada akun toko":"No store accounts yet"
-    },
-    id: {
-        "No sales data.":"Belum ada data penjualan.",
-        "No sales data":"Belum ada data penjualan",
-        "No sales data for this period":"Belum ada data penjualan untuk periode ini",
-        "No sales • ":"Tidak ada penjualan • ",
-        "No sales today":"Tidak ada penjualan hari ini",
-        "No sales":"Tidak ada penjualan",
-        "Today":"Hari Ini",
-        "Yesterday":"Kemarin",
-        "This Week":"Minggu Ini",
-        "Last Week":"Minggu Lalu",
-        "This Month":"Bulan Ini",
-        "Last Month":"Bulan Lalu",
-        "Last 3 Months":"3 Bulan Terakhir",
-        "All Periods":"Semua Periode",
-        "Add Store Account":"Tambah Akun Toko",
-        "+ Add Store Account":"+ Tambah Akun Toko",
-        "Store Accounts":"Akun Toko",
-        "Save Store Account":"Simpan Akun Toko",
-        "Delete":"Hapus",
-        "Delete Logo":"Hapus Logo",
-        "Back to Home":"Kembali ke Beranda",
-        "Manage Store":"Kelola Toko",
-        "No data":"Tidak ada data",
-        "No data yet":"Belum ada data",
-        "No transactions":"Tidak ada transaksi",
-        "No transactions yet":"Belum ada transaksi",
-        "No products yet":"Belum ada produk",
-        "No accounts yet":"Belum ada akun",
-        "No store accounts yet":"Belum ada akun toko"
-    }
-};
-
 function sellerBooksTranslateUserText(value, language){
     const text = String(value ?? "");
     if(!text) return text;
 
     const dictionary = SELLERBOOKS_I18N[language] || SELLERBOOKS_I18N.id;
-    const strictDictionary = SELLERBOOKS_STRICT_EN_ID[language] || {};
     const trimmed = text.trim();
-
-    // Strict release dictionary has priority for known UI regressions.
-    if(strictDictionary[trimmed] !== undefined){
-        return text.replace(trimmed, strictDictionary[trimmed]);
-    }
 
     // Exact dictionary translation always wins.
     if(dictionary[trimmed] !== undefined){
@@ -33883,18 +33800,6 @@ function applySellerBooksLanguage(){
     }
     }finally{
         sellerBooksI18nApplying = false;
-        // Final pass catches text generated by the current render cycle.
-        setTimeout(function(){
-            if(typeof sellerBooksAuthUser === "undefined" || !sellerBooksAuthUser) return;
-            if(typeof sellerBooksCloudReady !== "undefined" && !sellerBooksCloudReady) return;
-            if(typeof sellerBooksCloudLoading !== "undefined" && sellerBooksCloudLoading) return;
-            try{
-                sellerBooksTranslateTextNodes(document.body, sellerBooksCurrentLanguage());
-                sellerBooksTranslateAttributes(document.body, sellerBooksCurrentLanguage());
-            }catch(error){
-                console.warn("Strict EN/ID final pass failed:", error);
-            }
-        },0);
     }
 }
 
