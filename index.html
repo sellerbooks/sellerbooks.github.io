@@ -24095,22 +24095,45 @@ const stock = Math.max(
 
 async function exportProducts(){
 
+    /*
+       EXPORT MASTER PRODUK
+       Jalur utama menggunakan SheetJS (XLSX) karena library ini
+       sudah dimuat oleh halaman dan lebih stabil untuk download
+       langsung di browser/WebView.
+       ExcelJS tetap dimuat untuk fitur lain/kompatibilitas, tetapi
+       TIDAK menjadi dependency wajib untuk proses download ini.
+    */
+
     try{
 
-        if(!(await sellerBooksEnsureExcelJS())){
-            return;
+        if(typeof XLSX==="undefined"){
+
+            if(typeof sellerBooksEnsureXLSX==="function"){
+                const ready=await sellerBooksEnsureXLSX();
+                if(!ready){
+                    sellerBooksAlert(
+                        sellerBooksProductText("exportError") ||
+                        "Export Excel gagal. Silakan coba lagi."
+                    );
+                    return;
+                }
+            }
+
         }
 
-        const t = function(key){
+        if(typeof XLSX==="undefined"){
+            throw new Error("XLSX library tidak tersedia.");
+        }
+
+        const t=function(key){
             return sellerBooksProductText(key);
         };
 
-        const language = sellerBooksCurrentLanguage();
-        const workbook = new ExcelJS.Workbook();
+        const language=sellerBooksCurrentLanguage();
 
-        const worksheet = workbook.addWorksheet(t("exportMaster"));
+        const rows=[];
 
-        worksheet.addRow([
+        rows.push([
             t("sku"),
             t("productName"),
             t("category"),
@@ -24121,11 +24144,11 @@ async function exportProducts(){
             t("status")
         ]);
 
-        if(Array.isArray(products) && products.length > 0){
+        if(Array.isArray(products) && products.length>0){
 
             products.forEach(function(product){
 
-                worksheet.addRow([
+                rows.push([
                     product.sku || "",
                     product.name || "",
                     product.category || "",
@@ -24146,10 +24169,16 @@ async function exportProducts(){
 
         }else{
 
-            worksheet.addRow([
-                language === "en" ? "EXAMPLE-SKU-001" : "CONTOH-SKU-001",
-                language === "en" ? "Example Product Name" : "Contoh Nama Produk",
-                language === "en" ? "Example Category" : "Contoh Kategori",
+            rows.push([
+                language==="en"
+                    ? "EXAMPLE-SKU-001"
+                    : "CONTOH-SKU-001",
+                language==="en"
+                    ? "Example Product Name"
+                    : "Contoh Nama Produk",
+                language==="en"
+                    ? "Example Category"
+                    : "Contoh Kategori",
                 10000,
                 5000,
                 "",
@@ -24159,192 +24188,178 @@ async function exportProducts(){
 
         }
 
-        worksheet.getRow(1).font = {bold:true};
+        const workbook=XLSX.utils.book_new();
 
-        worksheet.getColumn(1).width = 22;
-        worksheet.getColumn(2).width = 35;
-        worksheet.getColumn(3).width = 22;
-        worksheet.getColumn(4).width = 18;
-        worksheet.getColumn(5).width = 18;
-        worksheet.getColumn(6).width = 16;
-        worksheet.getColumn(7).width = 15;
-        worksheet.getColumn(8).width = 20;
+        const worksheet=XLSX.utils.aoa_to_sheet(rows);
 
-        worksheet.getColumn(4).numFmt = '#,##0';
-        worksheet.getColumn(5).numFmt = '#,##0';
-        worksheet.getColumn(6).numFmt = '0.0#';
-        worksheet.getColumn(7).numFmt = '0.##';
+        worksheet["!cols"]=[
+            {wch:22},
+            {wch:35},
+            {wch:22},
+            {wch:18},
+            {wch:18},
+            {wch:16},
+            {wch:15},
+            {wch:20}
+        ];
 
-        const statusFormula =
-            language === "en"
-                ? '"Active,Inactive"'
-                : '"Aktif,Tidak Aktif"';
+        /*
+           Format angka agar tetap nyaman dibaca di Excel.
+        */
+        for(let row=2;row<=rows.length;row++){
 
-        for(let row=2; row<=1000; row++){
+            const priceCell=worksheet["D"+row];
+            const costCell=worksheet["E"+row];
+            const adminCell=worksheet["F"+row];
+            const stockCell=worksheet["G"+row];
 
-            worksheet.getCell(row,8).dataValidation = {
-                type:"list",
-                allowBlank:true,
-                formulae:[statusFormula],
-                showErrorMessage:true,
-                errorTitle:t("statusInvalidTitle"),
-                error:t("statusInvalid"),
-                showInputMessage:true,
-                promptTitle:t("statusPromptTitle"),
-                prompt:t("statusPrompt")
-            };
+            if(priceCell)priceCell.z="#,##0";
+            if(costCell)costCell.z="#,##0";
+            if(adminCell)adminCell.z="0.0#";
+            if(stockCell)stockCell.z="0.##";
 
         }
 
-        const instructionSheet =
-            workbook.addWorksheet(t("exportInstructions"));
+        /*
+           Auto filter pada tabel Master Produk.
+        */
+        worksheet["!autofilter"]={
+            ref:"A1:H"+rows.length
+        };
 
-        instructionSheet.addRow([
-            t("exportColumn"),
-            t("exportGuide")
-        ]);
+        XLSX.utils.book_append_sheet(
+            workbook,
+            worksheet,
+            t("exportMaster")
+        );
 
-        instructionSheet.addRow([
-            t("sku"),
-            t("requiredSku")
-        ]);
+        /*
+           Sheet petunjuk export.
+        */
+        const instructionRows=[
+            [t("exportColumn"),t("exportGuide")],
+            [t("sku"),t("requiredSku")],
+            [t("productName"),t("requiredName")],
+            [t("category"),t("optionalCategory")],
+            [t("sellingPrice"),t("priceGuide")],
+            [t("cost"),t("costGuide")],
+            [t("stock"),t("stockGuide")],
+            [t("status"),t("statusGuide")],
+            [],
+            [t("exportRules"),""],
+            ["1",t("rule1")],
+            ["2",t("rule2")],
+            ["3",t("rule3")],
+            ["4",t("rule4")],
+            ["5",t("rule5")],
+            ["6",t("rule6")]
+        ];
 
-        instructionSheet.addRow([
-            t("productName"),
-            t("requiredName")
-        ]);
+        const instructionSheet=
+            XLSX.utils.aoa_to_sheet(instructionRows);
 
-        instructionSheet.addRow([
-            t("category"),
-            t("optionalCategory")
-        ]);
+        instructionSheet["!cols"]=[
+            {wch:25},
+            {wch:90}
+        ];
 
-        instructionSheet.addRow([
-            t("sellingPrice"),
-            t("priceGuide")
-        ]);
+        XLSX.utils.book_append_sheet(
+            workbook,
+            instructionSheet,
+            t("exportInstructions")
+        );
 
-        instructionSheet.addRow([
-            t("cost"),
-            t("costGuide")
-        ]);
+        /*
+           Sheet README.
+        */
+        const readmeRows=[
+            [t("exportTemplateTitle")],
+            [],
+            [t("exportTemplateDescription")],
+            [],
+            [t("howTo")],
+            ["1. "+t("how1")],
+            ["2. "+t("how2")],
+            ["3. "+t("how3")],
+            ["4. "+t("how4")],
+            ["5. "+t("how5")],
+            ["6. "+t("how6")],
+            ["7. "+t("how7")],
+            ["8. "+t("how8")],
+            ["9. "+t("how9")],
+            ["10. "+t("how10")],
+            [],
+            [t("importantNotes")],
+            [t("note1")],
+            [t("note2")],
+            [t("note3")],
+            [t("note4")]
+        ];
 
-        instructionSheet.addRow([
-            t("stock"),
-            t("stockGuide")
-        ]);
+        const readmeSheet=
+            XLSX.utils.aoa_to_sheet(readmeRows);
 
-        instructionSheet.addRow([
-            t("status"),
-            t("statusGuide")
-        ]);
+        readmeSheet["!cols"]=[
+            {wch:100}
+        ];
 
-        instructionSheet.addRow([]);
+        XLSX.utils.book_append_sheet(
+            workbook,
+            readmeSheet,
+            t("exportReadme")
+        );
 
-        instructionSheet.addRow([
-            t("exportRules"),
-            ""
-        ]);
+        const fileName="MASTER_PRODUK_SELLERBOOKS.xlsx";
 
-        instructionSheet.addRow(["1",t("rule1")]);
-        instructionSheet.addRow(["2",t("rule2")]);
-        instructionSheet.addRow(["3",t("rule3")]);
-        instructionSheet.addRow(["4",t("rule4")]);
-        instructionSheet.addRow(["5",t("rule5")]);
-        instructionSheet.addRow(["6",t("rule6")]);
+        /*
+           Generate XLSX sebagai ArrayBuffer lalu download sendiri.
+           Cara ini lebih aman daripada XLSX.writeFile() pada WebView.
+        */
+        const output=XLSX.write(
+            workbook,
+            {
+                bookType:"xlsx",
+                type:"array"
+            }
+        );
 
-        instructionSheet.getColumn(1).width = 25;
-        instructionSheet.getColumn(2).width = 90;
-
-        const readmeSheet =
-            workbook.addWorksheet(t("exportReadme"));
-
-        readmeSheet.addRow([
-            t("exportTemplateTitle")
-        ]);
-
-        readmeSheet.addRow([]);
-
-        readmeSheet.addRow([
-            t("exportTemplateDescription")
-        ]);
-
-        readmeSheet.addRow([]);
-
-        readmeSheet.addRow([
-            t("howTo")
-        ]);
-
-        readmeSheet.addRow(["1. " + t("how1")]);
-        readmeSheet.addRow(["2. " + t("how2")]);
-        readmeSheet.addRow(["3. " + t("how3")]);
-        readmeSheet.addRow(["4. " + t("how4")]);
-        readmeSheet.addRow(["5. " + t("how5")]);
-        readmeSheet.addRow(["6. " + t("how6")]);
-        readmeSheet.addRow(["7. " + t("how7")]);
-        readmeSheet.addRow(["8. " + t("how8")]);
-        readmeSheet.addRow(["9. " + t("how9")]);
-        readmeSheet.addRow(["10. " + t("how10")]);
-
-        readmeSheet.addRow([]);
-
-        readmeSheet.addRow([
-            t("importantNotes")
-        ]);
-
-        readmeSheet.addRow([t("note1")]);
-        readmeSheet.addRow([t("note2")]);
-        readmeSheet.addRow([t("note3")]);
-        readmeSheet.addRow([t("note4")]);
-
-        readmeSheet.getColumn(1).width = 100;
-
-        const buffer = await workbook.xlsx.writeBuffer();
-
-        const blob = new Blob(
-            [buffer],
+        const blob=new Blob(
+            [output],
             {
                 type:
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             }
         );
 
-        const fileName = "MASTER_PRODUK_SELLERBOOKS.xlsx";
-
         /*
-         * Desktop: selalu download langsung.
-         * Mobile: gunakan native share hanya jika memang tersedia.
-         * Jangan biarkan navigator.share menghalangi proses download desktop.
-         */
-        const isMobile =
+           Mobile: tawarkan native share/file save jika tersedia.
+           Jika dibatalkan/tidak tersedia, lanjut ke download.
+        */
+        const isMobile=
             /Android|iPhone|iPad|iPod/i.test(
                 navigator.userAgent || ""
             );
 
         if(
             isMobile &&
-            navigator.share &&
-            typeof File !== "undefined" &&
-            typeof navigator.canShare === "function"
+            typeof navigator.share==="function" &&
+            typeof File!=="undefined" &&
+            typeof navigator.canShare==="function"
         ){
 
             try{
 
-                const file =
-                    new File(
-                        [blob],
-                        fileName,
-                        {type:blob.type}
-                    );
+                const file=new File(
+                    [blob],
+                    fileName,
+                    {type:blob.type}
+                );
 
-                if(
-                    navigator.canShare({
-                        files:[file]
-                    })
-                ){
+                if(navigator.canShare({files:[file]})){
 
                     await navigator.share({
-                        files:[file]
+                        files:[file],
+                        title:fileName
                     });
 
                     return;
@@ -24353,41 +24368,56 @@ async function exportProducts(){
 
             }catch(shareError){
 
-                /*
-                 * Jika share dibatalkan/gagal,
-                 * lanjutkan ke download biasa.
-                 */
+                console.warn(
+                    "Native share export gagal, lanjut download:",
+                    shareError
+                );
 
             }
 
         }
 
-        const url =
-            URL.createObjectURL(blob);
+        /*
+           Download langsung.
+        */
+        const url=URL.createObjectURL(blob);
+        const anchor=document.createElement("a");
 
-        const a =
-            document.createElement("a");
+        anchor.href=url;
+        anchor.download=fileName;
+        anchor.setAttribute("download",fileName);
+        anchor.style.position="fixed";
+        anchor.style.left="-9999px";
+        anchor.style.top="0";
+        anchor.style.width="1px";
+        anchor.style.height="1px";
+        anchor.style.opacity="0";
 
-        a.href = url;
-        a.download = fileName;
-        a.style.display = "none";
-        a.rel = "noopener";
+        document.body.appendChild(anchor);
 
-        document.body.appendChild(a);
+        try{
 
-        a.click();
+            anchor.click();
 
-        setTimeout(function(){
+        }finally{
 
-            try{
-                document.body.removeChild(a);
-            }catch(e){}
+            setTimeout(function(){
 
-            try{
-                URL.revokeObjectURL(url);
-            }catch(e){}
+                try{
+                    anchor.remove();
+                }catch(e){
+                    try{
+                        document.body.removeChild(anchor);
+                    }catch(e2){}
+                }
 
-        },1500);
+                try{
+                    URL.revokeObjectURL(url);
+                }catch(e3){}
+
+            },3000);
+
+        }
 
     }catch(error){
 
