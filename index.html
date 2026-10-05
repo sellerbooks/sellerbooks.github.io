@@ -17601,7 +17601,7 @@ function renderMarketplaces(){
                     onclick="deleteMarketplace('${marketplace.id}')"
                 >
 
-                    Hapus
+                    ${sellerBooksCurrentLanguage() === "en" ? "Delete" : "Hapus"}
 
                 </button>
 
@@ -18660,6 +18660,29 @@ function openMarketplaceModal(){
         "marketplaceName"
     ).value = "";
 
+
+    const uiLanguage = sellerBooksCurrentLanguage();
+
+    const modalNameLabel = document.querySelector('#marketplaceModal label span[data-marketplace-i18n="name"]');
+    if(modalNameLabel) modalNameLabel.textContent = uiLanguage === "en" ? "Marketplace Name" : "Nama Marketplace";
+
+    const modalNameInput = document.getElementById("marketplaceName");
+    if(modalNameInput) modalNameInput.placeholder = uiLanguage === "en" ? "Example: Shopee" : "Contoh: Shopee";
+
+    const modalStatusLabel = document.querySelector("#marketplaceModal .form-group:nth-child(2) label");
+    if(modalStatusLabel) modalStatusLabel.textContent = uiLanguage === "en" ? "Status" : "Status";
+
+    const modalStatus = document.getElementById("marketplaceStatus");
+    if(modalStatus){
+        modalStatus.options[0].textContent = uiLanguage === "en" ? "Active" : "Aktif";
+        modalStatus.options[1].textContent = uiLanguage === "en" ? "Inactive" : "Tidak Aktif";
+    }
+
+    const modalCancel = document.querySelector("#marketplaceModal .cancel-button");
+    if(modalCancel) modalCancel.textContent = uiLanguage === "en" ? "Cancel" : "Batal";
+
+    const modalSave = document.querySelector("#marketplaceModal .modal-footer .primary-button");
+    if(modalSave) modalSave.textContent = uiLanguage === "en" ? "Save Marketplace" : "Simpan Marketplace";
 
     document.getElementById(
         "marketplaceStatus"
