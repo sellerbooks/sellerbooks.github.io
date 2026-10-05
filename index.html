@@ -8761,7 +8761,7 @@ async function downloadReportPDF(){
 
                 row.name = row.product
                     ? (row.product.name || row.sku)
-                    : "SKU belum ada di Master Produk";
+                    : sellerBooksReportsText("missingSku");
                 row.profit = row.sales - row.admin - row.hpp;
                 row.isLoss = row.profit < 0;
                 return row;
