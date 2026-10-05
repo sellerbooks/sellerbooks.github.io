@@ -17275,6 +17275,13 @@ function showView(viewId, button, saveHistory = true){
         sellerBooksApplyStoreLanguage();
     }
 
+    if(
+        viewId === "products" &&
+        typeof sellerBooksApplyProductLanguage === "function"
+    ){
+        sellerBooksApplyProductLanguage();
+    }
+
 
     /* =========================================
        TUTUP SIDEBAR DI HP
@@ -31607,6 +31614,10 @@ function sellerBooksSyncLanguageControl(){
 
     if(typeof sellerBooksApplyStoreLanguage === "function"){
         sellerBooksApplyStoreLanguage();
+    }
+
+    if(typeof sellerBooksApplyProductLanguage === "function"){
+        sellerBooksApplyProductLanguage();
     }
 
     const info = document.getElementById("settingsLanguageInfo");
