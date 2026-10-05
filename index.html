@@ -19085,11 +19085,13 @@ function renderStoreMarketplaceOptions(){
     const currentValue = select.value;
 
 
+    const isEN = sellerBooksCurrentLanguage() === "en";
+
     select.innerHTML = `
 
         <option value="">
 
-            Pilih Marketplace
+            ${isEN ? "Select Marketplace" : "Pilih Marketplace"}
 
         </option>
 
