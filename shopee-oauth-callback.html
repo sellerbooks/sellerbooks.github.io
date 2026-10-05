@@ -28,6 +28,10 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
             : "id";
     document.documentElement.lang = language === "en" ? "en" : "id";
     const EN = language === "en";
+    const titleEl=document.getElementById("title");
+    const messageEl=document.getElementById("message");
+    titleEl.textContent=EN ? "Shopee connected successfully" : "Shopee berhasil terhubung";
+    messageEl.textContent=EN ? "Returning you to SellerBooks..." : "Mengembalikan Anda ke SellerBooks...";
 
     const params=new URLSearchParams(window.location.search);
     const result=params.get("sellerbooks_shopee_oauth")||"error";
