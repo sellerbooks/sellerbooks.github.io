@@ -23668,7 +23668,7 @@ async function importProducts(input){
             if(excelData.length === 0){
 
                 sellerBooksAlert(
-                    "File Excel tidak memiliki data."
+                    sellerBooksProductText("importEmpty")
                 );
 
                 return;
@@ -23710,7 +23710,7 @@ async function importProducts(input){
 
                 const name = String(
 
-                    row["Nama Produk"]
+                    row["Nama Produk"] || row["Product Name"]
 
                     ||
 
@@ -23734,7 +23734,7 @@ async function importProducts(input){
 
                 const category = String(
 
-                    row["Kategori"]
+                    row["Kategori"] || row["Category"]
 
                     ||
 
@@ -23841,7 +23841,7 @@ function parseExcelPrice(value){
 /* HARGA JUAL */
 
 const price = parseExcelPrice(
-    row["Harga Jual"]
+    row["Harga Jual"] || row["Selling Price"]
     ||
     row["HARGA JUAL"]
     ||
@@ -23854,20 +23854,20 @@ const price = parseExcelPrice(
 /* HPP / MODAL */
 
 const cost = parseExcelPrice(
-    row["HPP"]
+    row["HPP"] || row["Cost"]
     ||
-    row["Modal"]
+    row["Modal"] || row["Cost"]
     ||
-    row["HPP / Modal"]
+    row["HPP / Modal"] || row["Product Cost"]
     ||
-    row["HPP/MODAL"]
+    row["HPP/MODAL"] || row["Product Cost"]
     ||
     0
 );
 
 
 const adminFeePercentRaw =
-    row["Admin % SKU"] !== undefined ? row["Admin % SKU"] :
+    row["Admin % SKU"] || row["Admin % SKU"] !== undefined ? row["Admin % SKU"] :
     (row["ADMIN % SKU"] !== undefined ? row["ADMIN % SKU"] :
     (row["Admin SKU %"] !== undefined ? row["Admin SKU %"] : ""));
 
@@ -23895,7 +23895,7 @@ const adminFeePercent =
 const stock = Math.max(
     0,
     Number(
-        row["Stok"]
+        row["Stok"] || row["Stock"]
         ||
         row["STOK"]
         ||
@@ -23907,7 +23907,7 @@ const stock = Math.max(
 
                 const importedStatus = String(
 
-                    row["Status Produk"]
+                    row["Status Produk"] || row["Product Status"]
 
                     ||
 
@@ -24059,16 +24059,10 @@ const stock = Math.max(
 
             sellerBooksAlert(
 
-                "Import selesai.\n\n" +
-
-                "Berhasil: " +
-                successCount +
-
-                "\nDuplikat SKU: " +
-                duplicateCount +
-
-                "\nData tidak valid: " +
-                errorCount
+                sellerBooksProductText("importDone")
+                    .replace("{success}",successCount)
+                    .replace("{duplicate}",duplicateCount)
+                    .replace("{error}",errorCount)
 
             );
 
@@ -24083,7 +24077,7 @@ const stock = Math.max(
 
             sellerBooksAlert(
 
-                "Terjadi kesalahan saat membaca file Excel."
+                sellerBooksProductText("importError")
 
             );
 
@@ -24112,58 +24106,29 @@ const stock = Math.max(
 
 async function exportProducts(){
 
-    /* CEK LIBRARY EXCEL */
     if(!(await sellerBooksEnsureExcelJS())){
         return;
     }
 
+    const t = function(key){ return sellerBooksProductText(key); };
+    const language = sellerBooksCurrentLanguage();
+    const workbook = new ExcelJS.Workbook();
 
-    /* =================================================
-       BUAT WORKBOOK
-    ================================================= */
-
-    const workbook =
-        new ExcelJS.Workbook();
-
-
-    /* =================================================
-       SHEET 1
-       MASTER PRODUK
-    ================================================= */
-
-    const worksheet =
-        workbook.addWorksheet(
-            "MASTER PRODUK"
-        );
-
-
-    /* =================================================
-       HEADER
-    ================================================= */
+    const worksheet = workbook.addWorksheet(t("exportMaster"));
 
     worksheet.addRow([
-        "SKU",
-        "Nama Produk",
-        "Kategori",
-        "Harga Jual",
-        "HPP / Modal",
-        "Admin % SKU",
-        "Stok",
-        "Status Produk"
+        t("sku"),
+        t("productName"),
+        t("category"),
+        t("sellingPrice"),
+        t("cost"),
+        t("adminSku"),
+        t("stock"),
+        t("status")
     ]);
 
-
-    /* =================================================
-       DATA PRODUK
-    ================================================= */
-
-    if(
-        Array.isArray(products) &&
-        products.length > 0
-    ){
-
+    if(Array.isArray(products) && products.length > 0){
         products.forEach(function(product){
-
             worksheet.addRow([
                 product.sku || "",
                 product.name || "",
@@ -24172,50 +24137,19 @@ async function exportProducts(){
                 Number(product.cost) || 0,
                 product.adminFeePercent === "" || product.adminFeePercent === undefined || product.adminFeePercent === null ? "" : Number(product.adminFeePercent),
                 Number(product.stock) || 0,
-
-                product.status === "active"
-                    ? "Aktif"
-                    : "Tidak Aktif"
+                product.status === "active" ? t("active") : t("inactive")
             ]);
-
         });
-
-    }
-
-    else{
-
-        /* CONTOH DATA */
-
+    }else{
         worksheet.addRow([
-            "CONTOH-SKU-001",
-            "Contoh Nama Produk",
-            "Contoh Kategori",
-            10000,
-            5000,
-            "",
-            0,
-            "Aktif"
+            language === "en" ? "EXAMPLE-SKU-001" : "CONTOH-SKU-001",
+            language === "en" ? "Example Product Name" : "Contoh Nama Produk",
+            language === "en" ? "Example Category" : "Contoh Kategori",
+            10000, 5000, "", 0, t("active")
         ]);
-
     }
 
-
-    /* =================================================
-       STYLE HEADER
-    ================================================= */
-
-    const headerRow =
-        worksheet.getRow(1);
-
-    headerRow.font = {
-        bold:true
-    };
-
-
-    /* =================================================
-       LEBAR KOLOM
-    ================================================= */
-
+    worksheet.getRow(1).font = {bold:true};
     worksheet.getColumn(1).width = 22;
     worksheet.getColumn(2).width = 35;
     worksheet.getColumn(3).width = 22;
@@ -24224,313 +24158,72 @@ async function exportProducts(){
     worksheet.getColumn(6).width = 16;
     worksheet.getColumn(7).width = 15;
     worksheet.getColumn(8).width = 20;
+    worksheet.getColumn(4).numFmt = '#,##0';
+    worksheet.getColumn(5).numFmt = '#,##0';
+    worksheet.getColumn(6).numFmt = '0.0#';
+    worksheet.getColumn(7).numFmt = '0.##';
 
-
-    /* =================================================
-       FORMAT ANGKA
-    ================================================= */
-
-    worksheet
-        .getColumn(4)
-        .numFmt = '#,##0';
-
-    worksheet
-        .getColumn(5)
-        .numFmt = '#,##0';
-
-    worksheet
-        .getColumn(6)
-        .numFmt = '0.0#';
-
-    worksheet
-        .getColumn(7)
-        .numFmt = '0.##';
-
-
-    /* =================================================
-       DROPDOWN STATUS PRODUK
-       AKTIF / TIDAK AKTIF
-    ================================================= */
-
-    for(
-        let row = 2;
-        row <= 1000;
-        row++
-    ){
-
-        worksheet
-            .getCell(row, 8)
-            .dataValidation = {
-
-                type:"list",
-
-                allowBlank:true,
-
-                formulae:[
-                    '"Aktif,Tidak Aktif"'
-                ],
-
-                showErrorMessage:true,
-
-                errorTitle:
-                    "Status tidak valid",
-
-                error:
-                    "Silakan pilih Aktif atau Tidak Aktif.",
-
-                showInputMessage:true,
-
-                promptTitle:
-                    "Status Produk",
-
-                prompt:
-                    "Pilih Aktif atau Tidak Aktif."
-            };
-
+    const statusFormula = language === "en" ? '"Active,Inactive"' : '"Aktif,Tidak Aktif"';
+    for(let row=2;row<=1000;row++){
+        worksheet.getCell(row,8).dataValidation = {
+            type:"list",
+            allowBlank:true,
+            formulae:[statusFormula],
+            showErrorMessage:true,
+            errorTitle:t("statusInvalidTitle"),
+            error:t("statusInvalid"),
+            showInputMessage:true,
+            promptTitle:t("statusPromptTitle"),
+            prompt:t("statusPrompt")
+        };
     }
 
-
-    /* =================================================
-       SHEET 2
-       PETUNJUK PENGISIAN
-    ================================================= */
-
-    const instructionSheet =
-        workbook.addWorksheet(
-            "PETUNJUK PENGISIAN"
-        );
-
-
-    instructionSheet.addRow([
-        "KOLOM",
-        "PETUNJUK PENGISIAN"
-    ]);
-
-
-    instructionSheet.addRow([
-        "SKU",
-        "Wajib diisi. SKU adalah kode unik produk dan tidak boleh sama dengan produk lain."
-    ]);
-
-
-    instructionSheet.addRow([
-        "Nama Produk",
-        "Wajib diisi. Masukkan nama produk dengan jelas."
-    ]);
-
-
-    instructionSheet.addRow([
-        "Kategori",
-        "Opsional. Contoh: Fashion, Elektronik, Aksesoris, Rumah Tangga."
-    ]);
-
-
-    instructionSheet.addRow([
-        "Harga Jual",
-        "Isi angka saja tanpa tulisan Rp atau tanda titik. Contoh: 25000"
-    ]);
-
-
-    instructionSheet.addRow([
-        "HPP / Modal",
-        "Isi angka biaya modal produk tanpa tulisan Rp. Contoh: 12000"
-    ]);
-
-
-    instructionSheet.addRow([
-        "Stok",
-        "Isi jumlah stok awal produk dalam angka. Contoh: 100."
-    ]);
-
-
-    instructionSheet.addRow([
-        "Status Produk",
-        "Pilih dari dropdown: Aktif atau Tidak Aktif."
-    ]);
-
-
+    const instructionSheet = workbook.addWorksheet(t("exportInstructions"));
+    instructionSheet.addRow([t("exportColumn"),t("exportGuide")]);
+    instructionSheet.addRow([t("sku"),t("requiredSku")]);
+    instructionSheet.addRow([t("productName"),t("requiredName")]);
+    instructionSheet.addRow([t("category"),t("optionalCategory")]);
+    instructionSheet.addRow([t("sellingPrice"),t("priceGuide")]);
+    instructionSheet.addRow([t("cost"),t("costGuide")]);
+    instructionSheet.addRow([t("stock"),t("stockGuide")]);
+    instructionSheet.addRow([t("status"),t("statusGuide")]);
     instructionSheet.addRow([]);
+    instructionSheet.addRow([t("exportRules"),""]);
+    instructionSheet.addRow(["1",t("rule1")]);
+    instructionSheet.addRow(["2",t("rule2")]);
+    instructionSheet.addRow(["3",t("rule3")]);
+    instructionSheet.addRow(["4",t("rule4")]);
+    instructionSheet.addRow(["5",t("rule5")]);
+    instructionSheet.addRow(["6",t("rule6")]);
+    instructionSheet.getColumn(1).width=25;
+    instructionSheet.getColumn(2).width=90;
 
-
-    instructionSheet.addRow([
-        "ATURAN IMPORT",
-        ""
-    ]);
-
-
-    instructionSheet.addRow([
-        "1",
-        "Jangan mengubah nama kolom pada sheet MASTER PRODUK."
-    ]);
-
-
-    instructionSheet.addRow([
-        "2",
-        "SKU tidak boleh kosong dan tidak boleh duplikat."
-    ]);
-
-
-    instructionSheet.addRow([
-        "3",
-        "Harga Jual dan HPP / Modal harus berupa angka."
-    ]);
-
-
-    instructionSheet.addRow([
-        "4",
-        "Stok harus berupa angka. Jika belum memiliki stok, isi 0."
-    ]);
-
-
-    instructionSheet.addRow([
-        "5",
-        "Status Produk cukup dipilih dari dropdown Aktif atau Tidak Aktif."
-    ]);
-
-
-    instructionSheet.addRow([
-        "6",
-        "Isi data hanya pada sheet MASTER PRODUK."
-    ]);
-
-
-    instructionSheet.getColumn(1).width = 25;
-    instructionSheet.getColumn(2).width = 90;
-
-
-    /* =================================================
-       SHEET 3
-       README
-    ================================================= */
-
-    const readmeSheet =
-        workbook.addWorksheet(
-            "README"
-        );
-
-
-    readmeSheet.addRow([
-        "SELLERBOOKS MASTER PRODUK TEMPLATE"
-    ]);
-
-
+    const readmeSheet = workbook.addWorksheet(t("exportReadme"));
+    readmeSheet.addRow([t("exportTemplateTitle")]);
     readmeSheet.addRow([]);
-
-
-    readmeSheet.addRow([
-        "File ini digunakan untuk menambah atau memperbarui data Master Produk di SellerBooks."
-    ]);
-
-
+    readmeSheet.addRow([t("exportTemplateDescription")]);
     readmeSheet.addRow([]);
-
-
-    readmeSheet.addRow([
-        "CARA PENGGUNAAN"
-    ]);
-
-
-    readmeSheet.addRow([
-        "1. Buka sheet MASTER PRODUK."
-    ]);
-
-
-    readmeSheet.addRow([
-        "2. Isi data produk sesuai kolom yang tersedia."
-    ]);
-
-
-    readmeSheet.addRow([
-        "3. Jangan mengubah nama header atau urutan kolom."
-    ]);
-
-
-    readmeSheet.addRow([
-        "4. Isi stok dengan angka. Jika belum ada stok, gunakan 0."
-    ]);
-
-
-    readmeSheet.addRow([
-        "5. Untuk Status Produk, pilih Aktif atau Tidak Aktif dari dropdown."
-    ]);
-
-
-    readmeSheet.addRow([
-        "6. Simpan file setelah selesai diisi."
-    ]);
-
-
-    readmeSheet.addRow([
-        "7. Kembali ke SellerBooks."
-    ]);
-
-
-    readmeSheet.addRow([
-        "8. Buka menu Master Produk."
-    ]);
-
-
-    readmeSheet.addRow([
-        "9. Klik Import Excel."
-    ]);
-
-
-    readmeSheet.addRow([
-        "10. Pilih file yang sudah diisi."
-    ]);
-
-
+    readmeSheet.addRow([t("howTo")]);
+    readmeSheet.addRow(["1. "+t("how1")]);
+    readmeSheet.addRow(["2. "+t("how2")]);
+    readmeSheet.addRow(["3. "+t("how3")]);
+    readmeSheet.addRow(["4. "+t("how4")]);
+    readmeSheet.addRow(["5. "+t("how5")]);
+    readmeSheet.addRow(["6. "+t("how6")]);
+    readmeSheet.addRow(["7. "+t("how7")]);
+    readmeSheet.addRow(["8. "+t("how8")]);
+    readmeSheet.addRow(["9. "+t("how9")]);
+    readmeSheet.addRow(["10. "+t("how10")]);
     readmeSheet.addRow([]);
+    readmeSheet.addRow([t("importantNotes")]);
+    readmeSheet.addRow([t("note1")]);
+    readmeSheet.addRow([t("note2")]);
+    readmeSheet.addRow([t("note3")]);
+    readmeSheet.addRow([t("note4")]);
+    readmeSheet.getColumn(1).width=100;
 
-
-    readmeSheet.addRow([
-        "CATATAN PENTING"
-    ]);
-
-
-    readmeSheet.addRow([
-        "• SKU harus unik."
-    ]);
-
-
-    readmeSheet.addRow([
-        "• Harga diisi dalam angka."
-    ]);
-
-
-    readmeSheet.addRow([
-        "• Stok diisi dalam angka."
-    ]);
-
-
-    readmeSheet.addRow([
-        "• Status Produk menggunakan dropdown Aktif atau Tidak Aktif."
-    ]);
-
-
-    readmeSheet.getColumn(1).width = 100;
-
-
-    /* =================================================
-       DOWNLOAD FILE
-    ================================================= */
-
-    const buffer =
-        await workbook.xlsx.writeBuffer();
-
-
-    const blob =
-        new Blob(
-            [
-                buffer
-            ],
-            {
-                type:
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            }
-        );
-
-
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
     const fileName = "MASTER_PRODUK_SELLERBOOKS.xlsx";
 
     try{
@@ -24555,8 +24248,9 @@ async function exportProducts(){
             try{URL.revokeObjectURL(url);}catch(e){}
         },1000);
     }
-
 }
+
+
 /* =====================================================
    SELLERBOOKS SALES IMPORT ENGINE
 ===================================================== */
