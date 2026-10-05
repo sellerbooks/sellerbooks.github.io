@@ -22,6 +22,13 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
 </div>
 <script>
 (function(){
+    const language =
+        localStorage.getItem("sellerbooks_ui_language") === "en"
+            ? "en"
+            : "id";
+    document.documentElement.lang = language === "en" ? "en" : "id";
+    const EN = language === "en";
+
     const params=new URLSearchParams(window.location.search);
     const result=params.get("sellerbooks_tiktok_oauth")||"error";
     const reason=params.get("reason")||"OAUTH_FAILED";
@@ -45,9 +52,9 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
         };
         document.getElementById("icon").textContent="!";
         document.getElementById("icon").classList.add("error");
-        document.getElementById("title").textContent="TikTok Shop terhubung sebagian";
+        document.getElementById("title").textContent=EN ? "TikTok Shop partially connected" : "TikTok Shop terhubung sebagian";
         document.getElementById("message").textContent=
-            "Ada izin API yang belum diberikan. Kode: "+(missing||"MISSING_SCOPES");
+            EN ? "Some API permissions were not granted. Code: "+(missing||"MISSING_SCOPES") : "Ada izin API yang belum diberikan. Kode: "+(missing||"MISSING_SCOPES");
     }else{
         payload={
             source:"sellerbooks-tiktok-oauth",
@@ -58,12 +65,12 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
         document.getElementById("icon").classList.add("error");
 
         if(reason==="TIKTOK_ACCOUNT_ALREADY_CONNECTED"){
-            document.getElementById("title").textContent="Akun TikTok Shop sudah terhubung";
+            document.getElementById("title").textContent=EN ? "TikTok Shop account is already connected" : "Akun TikTok Shop sudah terhubung";
             document.getElementById("message").textContent=
                 "Akun TikTok Shop ini sudah terhubung ke akun atau toko SellerBooks lain.";
         }else{
-            document.getElementById("title").textContent="Integrasi TikTok Shop gagal";
-            document.getElementById("message").textContent="Kode: "+reason;
+            document.getElementById("title").textContent=EN ? "TikTok Shop integration failed" : "Integrasi TikTok Shop gagal";
+            document.getElementById("message").textContent=EN ? "Code: "+reason : "Kode: "+reason;
         }
     }
 
