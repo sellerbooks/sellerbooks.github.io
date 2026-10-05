@@ -19442,9 +19442,14 @@ async function disconnectStoreAccount(storeId){
     }catch(error){
         console.error("Copot integrasi gagal:",error);
         sellerBooksAlert(
-            "Integrasi gagal dicopot.\n\n" +
-            (error?.message || "Terjadi kesalahan pada server."),
-            "Copot Integrasi"
+            (sellerBooksCurrentLanguage() === "en"
+                ? "Failed to disconnect integration.\n\n"
+                : "Integrasi gagal dicopot.\n\n") +
+            (error?.message ||
+                (sellerBooksCurrentLanguage() === "en"
+                    ? "A server error occurred."
+                    : "Terjadi kesalahan pada server.")),
+            sellerBooksStoreText("disconnectTitle")
         );
     }
 }
