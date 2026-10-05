@@ -33001,6 +33001,7 @@ function sellerBooksSettingsText(key){
             roundingNote:"ℹ️ Pembulatan hanya memengaruhi tampilan angka, bukan data transaksi yang tersimpan.",
             backupTitle:"Backup & Restore Data", backupDesc:"Simpan seluruh data SellerBooks ke file atau pulihkan dari file backup.",
             backup:"⬇️ Backup Data", restore:"⬆️ Restore Data", restoreWarning:"⚠️ Restore akan mengganti data SellerBooks saat ini dengan isi file backup.",
+            backupSuccessTitle:"Backup Berhasil", backupSuccess:"File backup SellerBooks berhasil dibuat dan diunduh ke perangkat Anda.",
             saved:"Pengaturan berhasil disimpan.", packingInfo:"Default packing:", rateInfo:"Kurs tersimpan.",
             logoTooLarge:"Ukuran logo maksimal 1 MB.", logoFormat:"Format logo harus PNG, JPG, atau WEBP.",
             sessionNotReady:"❌ Sesi SellerBooks belum siap. Silakan login kembali.", logoSaved:"✅ Logo bisnis berhasil disimpan.",
@@ -33034,6 +33035,7 @@ function sellerBooksSettingsText(key){
             roundingNote:"ℹ️ Rounding only affects displayed values, not stored transaction data.",
             backupTitle:"Data Backup & Restore", backupDesc:"Save all SellerBooks data to a file or restore it from a backup file.",
             backup:"⬇️ Backup Data", restore:"⬆️ Restore Data", restoreWarning:"⚠️ Restore will replace the current SellerBooks data with the contents of the backup file.",
+            backupSuccessTitle:"Backup Successful", backupSuccess:"The SellerBooks backup file was successfully created and downloaded to your device.",
             saved:"Settings saved successfully.", packingInfo:"Default packing:", rateInfo:"Rates saved.",
             logoTooLarge:"Logo size must not exceed 1 MB.", logoFormat:"Logo format must be PNG, JPG, or WEBP.",
             sessionNotReady:"❌ SellerBooks session is not ready. Please log in again.", logoSaved:"✅ Business logo saved successfully.",
@@ -33783,6 +33785,11 @@ function backupSellerBooksData(){
     setTimeout(function(){
         URL.revokeObjectURL(url);
     },1000);
+
+    sellerBooksAlert(
+        sellerBooksSettingsText("backupSuccess"),
+        sellerBooksSettingsText("backupSuccessTitle")
+    );
 }
 
 async function restoreSellerBooksData(input){
