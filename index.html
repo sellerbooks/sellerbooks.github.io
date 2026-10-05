@@ -17229,6 +17229,13 @@ function showView(viewId, button, saveHistory = true){
         sellerBooksApplyDashboardLanguage();
     }
 
+    if(
+        viewId === "marketplace" &&
+        typeof sellerBooksApplyMarketplaceLanguage === "function"
+    ){
+        sellerBooksApplyMarketplaceLanguage();
+    }
+
 
     /* =========================================
        TUTUP SIDEBAR DI HP
@@ -17499,149 +17506,102 @@ function getMarketplaceLogoHTML(marketplace){
 
 function renderMarketplaces(){
 
-    const grid =
-        document.getElementById("marketplaceGrid");
-
-
-    const count =
-        document.getElementById("marketplaceCount");
-
+    const grid = document.getElementById("marketplaceGrid");
+    const count = document.getElementById("marketplaceCount");
 
     if(!grid) return;
 
-
-    count.innerText =
-        marketplaces.length + " Marketplace";
-
+    if(count){
+        count.textContent = sellerBooksMarketplaceCountText(marketplaces.length);
+    }
 
     grid.innerHTML = "";
 
-
     marketplaces.forEach(function(marketplace){
 
-        const statusText =
-            marketplace.status === "active"
-            ? "Aktif"
-            : "Tidak Aktif";
+        const isActive = marketplace.status === "active";
+        const statusText = isActive
+            ? sellerBooksMarketplaceText("active")
+            : sellerBooksMarketplaceText("inactive");
 
+        const statusClass = isActive ? "active" : "inactive";
 
-        const statusClass =
-            marketplace.status === "active"
-            ? "active"
-            : "inactive";
+        const card = document.createElement("div");
+        card.className = "marketplace-card";
 
-
-        grid.innerHTML += `
-
-        <div class="marketplace-card">
-
+        card.innerHTML = `
             <div class="marketplace-card-top">
-
                 <div class="marketplace-card-icon">
-
                     ${getMarketplaceLogoHTML(marketplace)}
-
                 </div>
 
-
-                <div style="
-                    display:flex;
-                    align-items:center;
-                    gap:8px;
-                ">
-
+                <div style="display:flex;align-items:center;gap:8px;">
                     <span class="status ${statusClass}">
-
                         ${statusText}
-
                     </span>
 
-
                     <button
+                        type="button"
                         class="marketplace-more"
-                        onclick="editMarketplace('${marketplace.id}')"
+                        onclick="editMarketplace('${String(marketplace.id).replace(/'/g,"\\'")}')"
+                        title="${sellerBooksMarketplaceText("more")}"
+                        aria-label="${sellerBooksMarketplaceText("more")}"
                     >
                         ⋮
                     </button>
-
                 </div>
-
             </div>
 
-
-            <h3>
-
-                ${marketplace.name}
-
-            </h3>
-
+            <h3>${escapeHtml(marketplace.name)}</h3>
 
             <p>
-
-                ${
-                    marketplace.status === "active"
-                    ? "Marketplace aktif dan siap digunakan"
-                    : "Marketplace belum digunakan"
-                }
-
-
+                ${isActive
+                    ? sellerBooksMarketplaceText("activeReady")
+                    : sellerBooksMarketplaceText("inactiveUnused")}
             </p>
-
 
             <div class="marketplace-card-actions">
 
-
                 <button
+                    type="button"
                     class="card-button primary"
-                    onclick="goToStores('${marketplace.id}')"
+                    onclick="goToStores('${String(marketplace.id).replace(/'/g,"\\'")}')"
                 >
-
-                    Kelola Toko
-
+                    ${sellerBooksMarketplaceText("manageStores")}
                 </button>
 
-
                 <button
+                    type="button"
                     class="card-button secondary"
-                    onclick="toggleMarketplace('${marketplace.id}')"
+                    onclick="toggleMarketplace('${String(marketplace.id).replace(/'/g,"\\'")}')"
                 >
-
-                    ${
-                        marketplace.status === "active"
-                        ? "Nonaktifkan"
-                        : "Aktifkan"
-                    }
-
+                    ${isActive
+                        ? sellerBooksMarketplaceText("disable")
+                        : sellerBooksMarketplaceText("enable")}
                 </button>
 
                 <button
+                    type="button"
                     class="card-button"
                     style="background:#fef2f2;color:#dc2626;"
-                    onclick="deleteMarketplace('${marketplace.id}')"
+                    onclick="deleteMarketplace('${String(marketplace.id).replace(/'/g,"\\'")}')"
                 >
-
-                    Hapus
-
+                    ${sellerBooksMarketplaceText("delete")}
                 </button>
 
-
             </div>
-
-
-        </div>
-
         `;
 
+        grid.appendChild(card);
     });
-renderMarketplacePerformance();
 
-/* UPDATE MODUL AKUN TOKO */
+    renderMarketplacePerformance();
 
-if(typeof renderStores === "function"){
+    if(typeof renderStores === "function"){
+        renderStores();
+    }
 
-    renderStores();
-
-}
+    sellerBooksApplyMarketplaceLanguage();
 }
 
 /* =====================================================
@@ -18717,7 +18677,7 @@ function saveMarketplace(){
 
     if(name === ""){
 
-        sellerBooksAlert("Nama marketplace wajib diisi.");
+        sellerBooksAlert(sellerBooksMarketplaceText("nameRequired"));
 
         return;
 
@@ -18825,9 +18785,11 @@ async function deleteMarketplace(id){
     if(!marketplace) return;
 
     if(!await sellerBooksConfirm(
-        "Hapus marketplace \"" +
-        (marketplace.name || "Marketplace") +
-        "\"?\n\nData akun toko yang terhubung dengan marketplace ini juga akan dihapus."
+        sellerBooksMarketplaceText("deleteConfirm") +
+        " \"" +
+        (marketplace.name || sellerBooksMarketplaceText("pageTitle")) +
+        "\"?\n\n" +
+        sellerBooksMarketplaceText("deleteWarning")
     )){
         return;
     }
@@ -18902,9 +18864,10 @@ async function deleteMarketplace(id){
         );
 
         sellerBooksAlert(
-            "Marketplace \"" +
-            (marketplace.name || "Marketplace") +
-            "\" berhasil dihapus dan perubahan sudah terverifikasi tersimpan di database."
+            sellerBooksMarketplaceText("deleteSuccess") + " \"" +
+            (marketplace.name || sellerBooksMarketplaceText("pageTitle")) +
+            "\" " +
+            sellerBooksMarketplaceText("deleteSuccessSuffix")
         );
 
     }catch(error){
@@ -18920,9 +18883,10 @@ async function deleteMarketplace(id){
         if(typeof renderStores === "function")renderStores();
 
         sellerBooksAlert(
-            "Marketplace belum jadi dihapus dari database.\n\n" +
-            "Perubahan dibatalkan karena verifikasi Supabase gagal.\n\n" +
-            "Detail: " + (error && error.message ? error.message : error)
+            sellerBooksMarketplaceText("deleteFailedTitle") + "\n\n" +
+            sellerBooksMarketplaceText("deleteFailedBody") + "\n\n" +
+            sellerBooksMarketplaceText("deleteFailedDetail") + " " +
+            (error && error.message ? error.message : error)
         );
     }
 }
@@ -31259,6 +31223,135 @@ function sellerBooksCurrentLanguage(){
     }
 }
 
+function sellerBooksMarketplaceText(key){
+    const language = sellerBooksCurrentLanguage();
+    const translations = {
+        id:{
+            pageTitle:"Marketplace",
+            pageSubtitle:"Kelola marketplace yang digunakan oleh bisnis Anda.",
+            count:"Marketplace",
+            add:"Tambah Marketplace",
+            active:"Aktif",
+            inactive:"Tidak Aktif",
+            activeReady:"Marketplace aktif dan siap digunakan",
+            inactiveUnused:"Marketplace belum digunakan",
+            manageStores:"Kelola Toko",
+            disable:"Nonaktifkan",
+            enable:"Aktifkan",
+            delete:"Hapus",
+            addTitle:"Tambah Marketplace",
+            editTitle:"Edit Marketplace",
+            nameLabel:"Nama Marketplace",
+            namePlaceholder:"Contoh: Shopee",
+            statusLabel:"Status",
+            cancel:"Batal",
+            save:"Simpan Marketplace",
+            nameRequired:"Nama marketplace wajib diisi.",
+            deleteConfirm:"Hapus marketplace",
+            deleteWarning:"Data akun toko yang terhubung dengan marketplace ini juga akan dihapus.",
+            deleteSuccess:"Marketplace",
+            deleteSuccessSuffix:"berhasil dihapus dan perubahan sudah terverifikasi tersimpan di database.",
+            deleteFailedTitle:"Marketplace belum jadi dihapus dari database.",
+            deleteFailedBody:"Perubahan dibatalkan karena verifikasi Supabase gagal.",
+            deleteFailedDetail:"Detail:",
+            more:"Opsi marketplace"
+        },
+        en:{
+            pageTitle:"Marketplace",
+            pageSubtitle:"Manage the marketplaces used by your business.",
+            count:"Marketplaces",
+            add:"Add Marketplace",
+            active:"Active",
+            inactive:"Inactive",
+            activeReady:"Marketplace is active and ready to use",
+            inactiveUnused:"Marketplace is not in use",
+            manageStores:"Manage Stores",
+            disable:"Disable",
+            enable:"Enable",
+            delete:"Delete",
+            addTitle:"Add Marketplace",
+            editTitle:"Edit Marketplace",
+            nameLabel:"Marketplace Name",
+            namePlaceholder:"Example: Shopee",
+            statusLabel:"Status",
+            cancel:"Cancel",
+            save:"Save Marketplace",
+            nameRequired:"Marketplace name is required.",
+            deleteConfirm:"Delete marketplace",
+            deleteWarning:"Store accounts connected to this marketplace will also be deleted.",
+            deleteSuccess:"Marketplace",
+            deleteSuccessSuffix:"was deleted successfully and the change has been verified in the database.",
+            deleteFailedTitle:"Marketplace was not deleted from the database.",
+            deleteFailedBody:"The change was canceled because Supabase verification failed.",
+            deleteFailedDetail:"Details:",
+            more:"Marketplace options"
+        }
+    };
+    return translations[language]?.[key] ?? translations.id[key] ?? key;
+}
+
+function sellerBooksMarketplaceCountText(count){
+    const total = Number(count) || 0;
+    return total + " " + sellerBooksMarketplaceText("count");
+}
+
+function sellerBooksApplyMarketplaceLanguage(){
+    const marketplaceView = document.getElementById("marketplace");
+    if(!marketplaceView) return;
+
+    const title = marketplaceView.querySelector(".page-header h2");
+    const subtitle = marketplaceView.querySelector(".page-header p");
+    if(title) title.textContent = sellerBooksMarketplaceText("pageTitle");
+    if(subtitle) subtitle.textContent = sellerBooksMarketplaceText("pageSubtitle");
+
+    const count = document.getElementById("marketplaceCount");
+    if(count) count.textContent = sellerBooksMarketplaceCountText(marketplaces?.length || 0);
+
+    const addButton = marketplaceView.querySelector('button[onclick="openMarketplaceModal()"]');
+    if(addButton) addButton.textContent = "+ " + sellerBooksMarketplaceText("add");
+
+    const modal = document.getElementById("marketplaceModal");
+    if(modal){
+        const modalTitle = document.getElementById("marketplaceModalTitle");
+        if(modalTitle){
+            modalTitle.textContent = editingMarketplaceId
+                ? sellerBooksMarketplaceText("editTitle")
+                : sellerBooksMarketplaceText("addTitle");
+        }
+
+        const labels = modal.querySelectorAll(".form-group label");
+        if(labels[0]) labels[0].textContent = sellerBooksMarketplaceText("nameLabel");
+        if(labels[1]) labels[1].textContent = sellerBooksMarketplaceText("statusLabel");
+
+        const nameInput = document.getElementById("marketplaceName");
+        if(nameInput) nameInput.placeholder = sellerBooksMarketplaceText("namePlaceholder");
+
+        const statusSelect = document.getElementById("marketplaceStatus");
+        if(statusSelect){
+            const activeOption = statusSelect.querySelector('option[value="active"]');
+            const inactiveOption = statusSelect.querySelector('option[value="inactive"]');
+            if(activeOption) activeOption.textContent = sellerBooksMarketplaceText("active");
+            if(inactiveOption) inactiveOption.textContent = sellerBooksMarketplaceText("inactive");
+        }
+
+        const cancelButton = modal.querySelector('.modal-footer .cancel-button');
+        if(cancelButton) cancelButton.textContent = sellerBooksMarketplaceText("cancel");
+
+        const saveButton = modal.querySelector('.modal-footer .primary-button');
+        if(saveButton) saveButton.textContent = sellerBooksMarketplaceText("save");
+
+        const closeButton = modal.querySelector(".modal-close");
+        if(closeButton) closeButton.setAttribute("aria-label", sellerBooksMarketplaceText("cancel"));
+    }
+
+    const topTitle = document.getElementById("topTitle");
+    const topSubtitle = document.getElementById("topSubtitle");
+    if(topTitle && marketplaceView.classList.contains("active")){
+        topTitle.textContent = sellerBooksMarketplaceText("pageTitle");
+        topSubtitle.textContent = sellerBooksMarketplaceText("pageSubtitle");
+    }
+}
+
 function sellerBooksDashboardText(key){
     const language = sellerBooksCurrentLanguage();
     const translations = {
@@ -31420,6 +31513,10 @@ function sellerBooksSyncLanguageControl(){
 
     if(typeof sellerBooksApplyDashboardLanguage === "function"){
         sellerBooksApplyDashboardLanguage();
+    }
+
+    if(typeof sellerBooksApplyMarketplaceLanguage === "function"){
+        sellerBooksApplyMarketplaceLanguage();
     }
 
     const info = document.getElementById("settingsLanguageInfo");
