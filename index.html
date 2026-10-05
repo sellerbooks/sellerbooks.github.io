@@ -19461,7 +19461,7 @@ async function integrateStoreAccount(storeId){
     });
 
     if(!store){
-        sellerBooksAlert("Akun toko tidak ditemukan.","Integrasikan Akun");
+        sellerBooksAlert(sellerBooksStoreText("storeNotFound"),sellerBooksStoreText("connectTitle"));
         return;
     }
 
@@ -19470,7 +19470,7 @@ async function integrateStoreAccount(storeId){
     });
 
     if(!marketplace){
-        sellerBooksAlert("Marketplace akun toko tidak ditemukan.","Integrasikan Akun");
+        sellerBooksAlert(sellerBooksStoreText("marketplaceNotFound"),sellerBooksStoreText("connectTitle"));
         return;
     }
 
@@ -19516,10 +19516,9 @@ async function integrateStoreAccount(storeId){
     */
     if(!endpoint){
         sellerBooksAlert(
-            "Integrasi " + String(marketplace.name || "marketplace") +
-            " belum tersedia saat ini. Fitur sinkronisasi API akan segera hadir setelah konektor/API resmi SellerBooks siap. " +
-            "Sementara Anda bisa melakukan upload file orderan marketplace secara manual melalui Import Penjualan.",
-            "Segera Hadir"
+            sellerBooksStoreText("integrationUnavailable")
+                .replace("{marketplace}", String(marketplace.name || "marketplace")),
+            sellerBooksStoreText("soonTitle")
         );
         return;
     }
@@ -31320,7 +31319,8 @@ function sellerBooksStoreText(key){
             marketplaceNotFound:"Marketplace akun toko tidak ditemukan.",
             disconnectConfirm:"Copot integrasi",
             disconnectWarning:"Setelah dicopot, akun ini harus diotorisasi ulang jika ingin terhubung kembali.",
-            soonTitle:"Segera Hadir"
+            soonTitle:"Segera Hadir",
+            integrationUnavailable:"Integrasi {marketplace} belum tersedia saat ini. Fitur sinkronisasi API akan segera hadir setelah konektor/API resmi SellerBooks siap. Sementara Anda bisa melakukan upload file orderan marketplace secara manual melalui Import Penjualan."
         },
         en:{
             pageTitle:"Store Accounts",
@@ -31378,7 +31378,8 @@ function sellerBooksStoreText(key){
             marketplaceNotFound:"Store account marketplace not found.",
             disconnectConfirm:"Disconnect integration",
             disconnectWarning:"After disconnecting, this account must be authorized again if you want to reconnect it.",
-            soonTitle:"Coming Soon"
+            soonTitle:"Coming Soon",
+            integrationUnavailable:"Integration for {marketplace} is not available yet. API synchronization will be available after the official SellerBooks connector/API is ready. In the meantime, you can manually upload marketplace order files through Sales Import."
         }
     };
     return translations[language]?.[key] ?? translations.id[key] ?? key;
