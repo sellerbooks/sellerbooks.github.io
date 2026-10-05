@@ -5044,6 +5044,16 @@ function applyReportFilters(){
 
     updateReportCustomDateUI();
 
+    const dateFrom=document.getElementById("reportDateFrom")?.value || "";
+    const dateTo=document.getElementById("reportDateTo")?.value || "";
+    if(period === "custom" && dateFrom && dateTo && dateFrom > dateTo){
+        sellerBooksAlert(
+            sellerBooksReportsText("invalidOrder"),
+            sellerBooksReportsText("deleteConfirmTitle")
+        );
+        return false;
+    }
+
     updateReportFilterInfo(
         period,
         marketplace,
