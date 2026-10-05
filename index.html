@@ -31330,6 +31330,32 @@ function sellerBooksApplyDashboardLanguage(){
         if(headers[index]) headers[index].textContent = sellerBooksDashboardText(key);
     });
 
+    const infos = dashboard.querySelectorAll(".stats-grid .stat-card .stat-info");
+    const periodLabel = sellerBooksDashboardPeriodText(currentDashboardPeriod);
+    const hasSales = getAllReportTransactions().some(function(item){
+        const reportDate = item.reportDate || item.importedAt;
+        return isDateInPeriod(reportDate,currentDashboardPeriod);
+    });
+    if(infos[0]) infos[0].textContent = hasSales
+        ? sellerBooksDashboardText("allMarketplaceTotal") + periodLabel
+        : sellerBooksDashboardText("noSalesPeriodShort") + periodLabel;
+    if(infos[1]) infos[1].textContent = sellerBooksDashboardText("allProductsTotal") + periodLabel;
+    if(infos[2]) infos[2].textContent = sellerBooksDashboardText("allProfitTotal") + periodLabel;
+    if(infos[3]) infos[3].textContent = sellerBooksDashboardText("allMarginTotal") + periodLabel;
+
+    const performanceRows = dashboard.querySelectorAll("#performanceMarketplaceBody tr");
+    performanceRows.forEach(function(row){
+        const accountCell = row.querySelector("td:nth-child(2)");
+        if(accountCell){
+            const strong = accountCell.querySelector("strong");
+            if(strong){
+                accountCell.innerHTML =
+                    "<strong>" + strong.textContent + "</strong> " +
+                    sellerBooksDashboardText("account");
+            }
+        }
+    });
+
     const periodSelect = document.getElementById("dashboardPeriod");
     if(periodSelect){
         Array.from(periodSelect.options).forEach(function(option){
