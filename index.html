@@ -33733,7 +33733,7 @@ document.addEventListener(
             .replace(/'/g,"&#039;");
     }
 
-    window.sbPiutangDelete = function(index){
+    window.sbPiutangDelete = async function(index){
         const data=sbPiutangRead();
         if(index<0 || index>=data.length) return false;
 
@@ -33742,18 +33742,19 @@ document.addEventListener(
         const nama=String(item.nama||"").trim() || "-";
         const jumlah=sbPiutangFormat(item.jumlah);
 
-        const yakin=window.confirm(
+        const yakin=await window.sellerBooksConfirm(
             window.sbPiutangText("deleteReceivable")+"\n\n" +
-            "Tanggal: " + tanggal + "\n" +
-            "Nama: " + nama + "\n" +
-            "Jumlah: " + jumlah + "\n\n" +
-            window.sbPiutangText("deletedReceivableInfo")
+            window.sbPiutangText("date")+": " + tanggal + "\n" +
+            window.sbPiutangText("name")+": " + nama + "\n" +
+            window.sbPiutangText("amount")+": " + jumlah + "\n\n" +
+            window.sbPiutangText("deletedReceivableInfo"),
+            window.sbPiutangText("confirmationTitle")
         );
         if(!yakin) return false;
 
         data.splice(index,1);
         if(!sbPiutangWrite(data)){
-            alert(window.sbPiutangText("browserDeleteFailed"));
+            window.sellerBooksAlert(window.sbPiutangText("browserDeleteFailed"),window.sbPiutangText("errorTitle"));
             return false;
         }
         sbPiutangRender();
@@ -33796,7 +33797,7 @@ document.addEventListener(
         });
 
         if(!sbPiutangWrite(data)){
-            alert(window.sbPiutangText("browserSaveFailed"));
+            window.sellerBooksAlert(window.sbPiutangText("browserSaveFailed"),window.sbPiutangText("errorTitle"));
             return false;
         }
 
@@ -33808,28 +33809,29 @@ document.addEventListener(
         return false;
     };
 
-    window.sbPiutangBayarDelete=function(index){
+    window.sbPiutangBayarDelete=async function(index){
         const data=sbPiutangBayarRead();
         if(index<0 || index>=data.length) return false;
         const item=data[index];
-        const yakin=window.confirm(
+        const yakin=await window.sellerBooksConfirm(
             window.sbPiutangText("deletePayment")+"\n\n"+
-            "Tanggal: "+sbPiutangFormatTanggal(item.tanggal||"")+"\n"+
-            "Nama: "+(String(item.nama||"").trim()||"-")+"\n"+
-            "Jumlah: "+sbPiutangFormat(item.jumlah)+"\n\n"+
-            window.sbPiutangText("paymentDeleteInfo")
+            window.sbPiutangText("date")+": "+sbPiutangFormatTanggal(item.tanggal||"")+"\n"+
+            window.sbPiutangText("name")+": "+(String(item.nama||"").trim()||"-")+"\n"+
+            window.sbPiutangText("amount")+": "+sbPiutangFormat(item.jumlah)+"\n\n"+
+            window.sbPiutangText("paymentDeleteInfo"),
+            window.sbPiutangText("confirmationTitle")
         );
         if(!yakin) return false;
         data.splice(index,1);
         if(!sbPiutangBayarWrite(data)){
-            alert(window.sbPiutangText("browserPaymentDeleteFailed"));
+            window.sellerBooksAlert(window.sbPiutangText("browserPaymentDeleteFailed"),window.sbPiutangText("errorTitle"));
             return false;
         }
         sbPiutangRefreshDashboard();
         return false;
     };
 
-    window.sbPiutangBayarSave=function(event){
+    window.sbPiutangBayarSave=async function(event){
         if(event) event.preventDefault();
         const tanggalEl=document.getElementById("sbPiutangBayarTanggal");
         const namaEl=document.getElementById("sbPiutangBayarNama");
@@ -33845,15 +33847,16 @@ document.addEventListener(
 
         const outstanding=sbPiutangSisaTotal();
         if(jumlah>outstanding){
-            const lanjut=window.confirm(
-                window.sbPiutangText("overpayment").replace("{amount}",sbPiutangFormat(jumlah)).replace("{outstanding}",sbPiutangFormat(outstanding))+"\n\n"+window.sbPiutangText("keepPayment")
+            const lanjut=await window.sellerBooksConfirm(
+                window.sbPiutangText("overpayment").replace("{amount}",sbPiutangFormat(jumlah)).replace("{outstanding}",sbPiutangFormat(outstanding))+"\n\n"+window.sbPiutangText("keepPayment"),
+                window.sbPiutangText("confirmationTitle")
             );
             if(!lanjut) return false;
         }
 
         const data=sbPiutangBayarRead();
         data.push({tanggal:tanggal,nama:nama,jumlah:jumlah,keterangan:keterangan,createdAt:new Date().toISOString()});
-        if(!sbPiutangBayarWrite(data)){alert(window.sbPiutangText("browserPaymentSaveFailed"));return false;}
+        if(!sbPiutangBayarWrite(data)){window.sellerBooksAlert(window.sbPiutangText("browserPaymentSaveFailed"),window.sbPiutangText("errorTitle"));return false;}
         if(tanggalEl) tanggalEl.value="";
         if(namaEl) namaEl.value="";
         if(jumlahEl) jumlahEl.value="";
@@ -34230,7 +34233,15 @@ document.addEventListener(
 
     window.sbPiutangBayarDeleteCloud=async function(id){
         const item=cloudPayments.find(x=>x.id===id); if(!item)return false;
-        if(!confirm(window.sbPiutangText("deletePayment")+"\n\nTanggal: "+piutangDate(item.tanggal)+"\nNama: "+item.nama+"\nJumlah: "+piutangMoney(item.jumlah)+"\n\n"+window.sbPiutangText("paymentDeleteShort")))return false;
+        const confirmed=await window.sellerBooksConfirm(
+             window.sbPiutangText("deletePayment")+"\n\n"+
+             window.sbPiutangText("date")+": "+piutangDate(item.tanggal)+"\n"+
+             window.sbPiutangText("name")+": "+item.nama+"\n"+
+             window.sbPiutangText("amount")+": "+piutangMoney(item.jumlah)+"\n\n"+
+             window.sbPiutangText("paymentDeleteShort"),
+             window.sbPiutangText("confirmationTitle")
+         );
+         if(!confirmed)return false;
         const r=await sellerBooksSupabase.rpc("piutang_delete_payment",{p_id:id});
         if(r.error){window.sellerBooksAlert(window.sbPiutangText("paymentDeleteFailed"),window.sbPiutangText("errorTitle"));return false;}
         await piutangCloudList(); piutangRenderCloud(); return false;
