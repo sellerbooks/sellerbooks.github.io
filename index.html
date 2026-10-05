@@ -8138,7 +8138,7 @@ function renderReportTransactionTable(){
                     class="report-transaction-page-button"
                     onclick="goToReportTransactionPage(${reportTransactionPage - 1})"
                     ${reportTransactionPage <= 1 ? "disabled" : ""}
-                    aria-label="Halaman sebelumnya"
+                    aria-label="${sellerBooksProductText("previous")}"
                 >
                     ‹
                 </button>
@@ -22270,6 +22270,128 @@ let productPage = 1;
 let productPageSize = 20;
 let productPaginationFilterKey = "";
 
+function sellerBooksProductText(key){
+    const language = sellerBooksCurrentLanguage();
+    const translations = {
+        id:{
+            pageTitle:"Master Produk", pageSubtitle:"Kelola seluruh produk, SKU, modal, dan data dasar produk bisnis Anda.",
+            count:"Produk", importExcel:"Import Excel", exportExcel:"Export Excel", addProduct:"Tambah Produk",
+            deleteSelected:"Hapus Terpilih", searchPlaceholder:"🔍 Cari SKU atau nama produk...", allStatus:"Semua Status",
+            active:"Aktif", inactive:"Tidak Aktif", sku:"SKU", productName:"Nama Produk", category:"Kategori",
+            sellingPrice:"Harga Jual", cost:"HPP / Modal", adminSku:"Admin % SKU", stock:"Stok", status:"Status", actions:"Aksi",
+            rowsLabel:"Tampilkan", rowsSuffix:"baris", rowsAria:"Jumlah baris Master Produk", noProducts:"Belum Ada Produk",
+            noProductsText:"Tambahkan produk secara manual atau import menggunakan Excel.", disable:"Nonaktifkan", enable:"Aktifkan",
+            edit:"Edit", delete:"Hapus", range:"{start}-{end} dari {total}", previous:"Halaman sebelumnya", next:"Halaman berikutnya",
+            addTitle:"Tambah Produk", editTitle:"Edit Produk", skuLabel:"SKU Produk *", skuPlaceholder:"Contoh: TAS-BIRU-001",
+            nameLabel:"Nama Produk *", namePlaceholder:"Contoh: Tas Biru Premium", categoryLabel:"Kategori", categoryPlaceholder:"Contoh: Tas",
+            priceLabel:"Harga Jual", pricePlaceholder:"Contoh: 50000", costLabel:"HPP / Modal Produk *", costPlaceholder:"Contoh: 25000",
+            stockLabel:"Stok Produk", stockPlaceholder:"Contoh: 100", adminLabel:"Admin % SKU", adminPlaceholder:"Contoh: 15",
+            statusLabel:"Status Produk", optional:"Opsional", cancel:"Batal", save:"Simpan Produk",
+            adminInvalid:"Admin % SKU harus antara 0 sampai 100.", skuRequired:"SKU produk wajib diisi.", nameRequired:"Nama produk wajib diisi.",
+            costRequired:"HPP / Modal produk wajib diisi.", duplicateEdit:"SKU sudah digunakan oleh produk lain.", duplicateAdd:"SKU sudah terdaftar.",
+            deleteSelectedConfirm:"Hapus {count} produk yang dipilih?
+
+Data yang dihapus tidak dapat dikembalikan.", deleteConfirm:"Hapus produk",
+            importEmpty:"File Excel tidak memiliki data.", importDone:"Import selesai.
+
+Berhasil: {success}
+Duplikat SKU: {duplicate}
+Data tidak valid: {error}",
+            importError:"Terjadi kesalahan saat membaca file Excel.",
+            exportMaster:"MASTER PRODUK", exportInstructions:"PETUNJUK PENGISIAN", exportReadme:"README", exportColumn:"KOLOM",
+            exportGuide:"PETUNJUK PENGISIAN", exportRules:"ATURAN IMPORT", exportTemplateTitle:"SELLERBOOKS MASTER PRODUK TEMPLATE",
+            exportTemplateDescription:"File ini digunakan untuk menambah atau memperbarui data Master Produk di SellerBooks.",
+            howTo:"CARA PENGGUNAAN", importantNotes:"CATATAN PENTING", requiredSku:"Wajib diisi. SKU adalah kode unik produk dan tidak boleh sama dengan produk lain.",
+            requiredName:"Wajib diisi. Masukkan nama produk dengan jelas.", optionalCategory:"Opsional. Contoh: Fashion, Elektronik, Aksesoris, Rumah Tangga.",
+            priceGuide:"Isi angka saja tanpa tulisan Rp atau tanda titik. Contoh: 25000", costGuide:"Isi angka biaya modal produk tanpa tulisan Rp. Contoh: 12000",
+            stockGuide:"Isi jumlah stok awal produk dalam angka. Contoh: 100.", statusGuide:"Pilih dari dropdown: Aktif atau Tidak Aktif.",
+            rule1:"Jangan mengubah nama kolom pada sheet MASTER PRODUK.", rule2:"SKU tidak boleh kosong dan tidak boleh duplikat.",
+            rule3:"Harga Jual dan HPP / Modal harus berupa angka.", rule4:"Stok harus berupa angka. Jika belum memiliki stok, isi 0.",
+            rule5:"Status Produk cukup dipilih dari dropdown Aktif atau Tidak Aktif.", rule6:"Isi data hanya pada sheet MASTER PRODUK.",
+            how1:"Buka sheet MASTER PRODUK.", how2:"Isi data produk sesuai kolom yang tersedia.", how3:"Jangan mengubah nama header atau urutan kolom.",
+            how4:"Isi stok dengan angka. Jika belum ada stok, gunakan 0.", how5:"Untuk Status Produk, pilih Aktif atau Tidak Aktif dari dropdown.",
+            how6:"Simpan file setelah selesai diisi.", how7:"Kembali ke SellerBooks.", how8:"Buka menu Master Produk.", how9:"Klik Import Excel.", how10:"Pilih file yang sudah diisi.",
+            note1:"• SKU harus unik.", note2:"• Harga diisi dalam angka.", note3:"• Stok diisi dalam angka.", note4:"• Status Produk menggunakan dropdown Aktif atau Tidak Aktif.",
+            statusInvalidTitle:"Status tidak valid", statusInvalid:"Silakan pilih Aktif atau Tidak Aktif.", statusPromptTitle:"Status Produk", statusPrompt:"Pilih Aktif atau Tidak Aktif."
+        },
+        en:{
+            pageTitle:"Master Products", pageSubtitle:"Manage all products, SKUs, costs, and basic product data for your business.",
+            count:"Products", importExcel:"Import Excel", exportExcel:"Export Excel", addProduct:"Add Product",
+            deleteSelected:"Delete Selected", searchPlaceholder:"🔍 Search SKU or product name...", allStatus:"All Statuses",
+            active:"Active", inactive:"Inactive", sku:"SKU", productName:"Product Name", category:"Category", sellingPrice:"Selling Price",
+            cost:"Cost", adminSku:"Admin % SKU", stock:"Stock", status:"Status", actions:"Actions", rowsLabel:"Show", rowsSuffix:"rows",
+            rowsAria:"Master Products rows per page", noProducts:"No Products Yet", noProductsText:"Add products manually or import them using Excel.",
+            disable:"Disable", enable:"Enable", edit:"Edit", delete:"Delete", range:"{start}-{end} of {total}", previous:"Previous page", next:"Next page",
+            addTitle:"Add Product", editTitle:"Edit Product", skuLabel:"Product SKU *", skuPlaceholder:"Example: TAS-BIRU-001",
+            nameLabel:"Product Name *", namePlaceholder:"Example: Premium Blue Bag", categoryLabel:"Category", categoryPlaceholder:"Example: Bags",
+            priceLabel:"Selling Price", pricePlaceholder:"Example: 50000", costLabel:"Product Cost *", costPlaceholder:"Example: 25000",
+            stockLabel:"Product Stock", stockPlaceholder:"Example: 100", adminLabel:"Admin % SKU", adminPlaceholder:"Example: 15",
+            statusLabel:"Product Status", optional:"Optional", cancel:"Cancel", save:"Save Product",
+            adminInvalid:"Admin % SKU must be between 0 and 100.", skuRequired:"Product SKU is required.", nameRequired:"Product name is required.",
+            costRequired:"Product cost is required.", duplicateEdit:"This SKU is already used by another product.", duplicateAdd:"This SKU is already registered.",
+            deleteSelectedConfirm:"Delete {count} selected products?
+
+Deleted data cannot be recovered.", deleteConfirm:"Delete product",
+            importEmpty:"The Excel file contains no data.", importDone:"Import completed.
+
+Successful: {success}
+Duplicate SKUs: {duplicate}
+Invalid data: {error}",
+            importError:"An error occurred while reading the Excel file.", exportMaster:"MASTER PRODUCTS", exportInstructions:"FILLING INSTRUCTIONS",
+            exportReadme:"README", exportColumn:"COLUMN", exportGuide:"FILLING INSTRUCTIONS", exportRules:"IMPORT RULES",
+            exportTemplateTitle:"SELLERBOOKS MASTER PRODUCTS TEMPLATE", exportTemplateDescription:"This file is used to add or update Master Products data in SellerBooks.",
+            howTo:"HOW TO USE", importantNotes:"IMPORTANT NOTES", requiredSku:"Required. SKU is the unique product code and must not duplicate another product.",
+            requiredName:"Required. Enter the product name clearly.", optionalCategory:"Optional. Example: Fashion, Electronics, Accessories, Home & Living.",
+            priceGuide:"Enter numbers only without Rp or separators. Example: 25000", costGuide:"Enter the product cost as a number without Rp. Example: 12000",
+            stockGuide:"Enter the initial product stock as a number. Example: 100.", statusGuide:"Select from the dropdown: Active or Inactive.",
+            rule1:"Do not change the column names in the MASTER PRODUCTS sheet.", rule2:"SKU cannot be empty or duplicated.", rule3:"Selling Price and Cost must be numeric.",
+            rule4:"Stock must be numeric. If there is no stock yet, enter 0.", rule5:"Select Product Status from the Active or Inactive dropdown.", rule6:"Enter data only in the MASTER PRODUCTS sheet.",
+            how1:"Open the MASTER PRODUCTS sheet.", how2:"Enter product data according to the available columns.", how3:"Do not change the header names or column order.",
+            how4:"Enter stock as a number. If there is no stock, use 0.", how5:"For Product Status, select Active or Inactive from the dropdown.",
+            how6:"Save the file after completing the data.", how7:"Return to SellerBooks.", how8:"Open the Master Products menu.", how9:"Click Import Excel.", how10:"Select the completed file.",
+            note1:"• SKU must be unique.", note2:"• Enter prices as numbers.", note3:"• Enter stock as a number.", note4:"• Product Status uses the Active or Inactive dropdown.",
+            statusInvalidTitle:"Invalid status", statusInvalid:"Please select Active or Inactive.", statusPromptTitle:"Product Status", statusPrompt:"Select Active or Inactive."
+        }
+    };
+    return translations[language]?.[key] ?? translations.id[key] ?? key;
+}
+function sellerBooksProductCountText(count){ return (Number(count)||0) + " " + sellerBooksProductText("count"); }
+function sellerBooksApplyProductLanguage(){
+    const view=document.getElementById("products"); if(!view) return;
+    const title=view.querySelector(".page-header h2"), subtitle=view.querySelector(".page-header p");
+    if(title) title.textContent=sellerBooksProductText("pageTitle");
+    if(subtitle) subtitle.textContent=sellerBooksProductText("pageSubtitle");
+    const buttons=view.querySelectorAll(".product-toolbar-right button");
+    if(buttons[0]) buttons[0].textContent="📥 "+sellerBooksProductText("importExcel");
+    if(buttons[1]) buttons[1].textContent="📤 "+sellerBooksProductText("exportExcel");
+    if(buttons[2]) buttons[2].textContent="+ "+sellerBooksProductText("addProduct");
+    const bulk=document.getElementById("deleteSelectedProductsButton");
+    if(bulk) bulk.innerHTML="🗑️ "+sellerBooksProductText("deleteSelected")+' (<span id="selectedProductCount">'+getSelectedProductIds().length+"</span>)";
+    const search=document.getElementById("productSearch"); if(search) search.placeholder=sellerBooksProductText("searchPlaceholder");
+    const filter=document.getElementById("productStatusFilter");
+    if(filter){
+        const all=filter.querySelector('option[value="all"]'), active=filter.querySelector('option[value="active"]'), inactive=filter.querySelector('option[value="inactive"]');
+        if(all) all.textContent=sellerBooksProductText("allStatus"); if(active) active.textContent=sellerBooksProductText("active"); if(inactive) inactive.textContent=sellerBooksProductText("inactive");
+    }
+    const headers=view.querySelectorAll(".product-table thead th");
+    ["sku","productName","category","sellingPrice","cost","adminSku","stock","status","actions"].forEach(function(key,index){ if(headers[index+1]) headers[index+1].textContent=sellerBooksProductText(key); });
+    const pageSize=document.getElementById("productPageSize"); if(pageSize) pageSize.setAttribute("aria-label",sellerBooksProductText("rowsAria"));
+    const pageWrap=view.querySelector(".product-page-size");
+    if(pageWrap){ const spans=pageWrap.querySelectorAll("span"); if(spans[0]) spans[0].textContent=sellerBooksProductText("rowsLabel"); if(spans[1]) spans[1].textContent=sellerBooksProductText("rowsSuffix"); }
+    const modal=document.getElementById("productModal");
+    if(modal){
+        const titleEl=document.getElementById("productModalTitle"); if(titleEl) titleEl.textContent=editingProductId?sellerBooksProductText("editTitle"):sellerBooksProductText("addTitle");
+        const labels=modal.querySelectorAll(".form-group label"), keys=["skuLabel","nameLabel","categoryLabel","priceLabel","costLabel","stockLabel","adminLabel","statusLabel"];
+        labels.forEach(function(label,index){ const key=keys[index]; if(!key)return; const optional=["categoryLabel","priceLabel","adminLabel"].includes(key)?' <span style="color:#94a3b8;">('+sellerBooksProductText("optional")+')</span>':""; label.innerHTML=sellerBooksProductText(key)+optional; });
+        [["productSKU","skuPlaceholder"],["productName","namePlaceholder"],["productCategory","categoryPlaceholder"],["productPrice","pricePlaceholder"],["productCost","costPlaceholder"],["productStock","stockPlaceholder"],["productAdminFeePercent","adminPlaceholder"]].forEach(function(item){const el=document.getElementById(item[0]);if(el)el.placeholder=sellerBooksProductText(item[1]);});
+        const status=document.getElementById("productStatus");
+        if(status){const active=status.querySelector('option[value="active"]'), inactive=status.querySelector('option[value="inactive"]'); if(active)active.textContent=sellerBooksProductText("active"); if(inactive)inactive.textContent=sellerBooksProductText("inactive");}
+        const footer=modal.querySelectorAll(".modal-footer button"); if(footer[0])footer[0].textContent=sellerBooksProductText("cancel"); if(footer[1])footer[1].textContent=sellerBooksProductText("save");
+        const close=modal.querySelector(".modal-close"); if(close)close.setAttribute("aria-label",sellerBooksProductText("cancel"));
+    }
+    const topTitle=document.getElementById("topTitle"), topSubtitle=document.getElementById("topSubtitle");
+    if(topTitle&&view.classList.contains("active")){topTitle.textContent=sellerBooksProductText("pageTitle");topSubtitle.textContent=sellerBooksProductText("pageSubtitle");}
+}
 function renderProducts(){
 
     const tableBody =
@@ -22397,10 +22519,7 @@ function renderProducts(){
 
     if(productCount){
 
-        productCount.innerText =
-
-            filteredProducts.length +
-            " Produk";
+        productCount.innerText = sellerBooksProductCountText(filteredProducts.length);
 
     }
 
@@ -22452,15 +22571,14 @@ function renderProducts(){
 
                         <h3>
 
-                            Belum Ada Produk
+                            ${sellerBooksProductText("noProducts")}
 
                         </h3>
 
 
                         <p>
 
-                            Tambahkan produk secara manual
-                            atau import menggunakan Excel.
+                            ${sellerBooksProductText("noProductsText")}
 
                         </p>
 
@@ -22702,7 +22820,7 @@ function renderProducts(){
     if(productPaginationControls){
         let controlsHtml = "";
 
-        controlsHtml += `<span class="product-page-info">${productStartIndex + 1}-${productEndIndex} dari ${filteredProducts.length}</span>`;
+        controlsHtml += `<span class="product-page-info">${sellerBooksProductText("range").replace("{start}",productStartIndex + 1).replace("{end}",productEndIndex).replace("{total}",filteredProducts.length)}</span>`;
 
         controlsHtml += `
             <button type="button" class="product-page-button" onclick="goToProductPage(${productPage - 1})" ${productPage <= 1 ? "disabled" : ""} aria-label="Halaman sebelumnya">‹</button>
@@ -22731,7 +22849,7 @@ function renderProducts(){
             controlsHtml += `<button type="button" class="product-page-button" onclick="goToProductPage(${productTotalPages})">${productTotalPages}</button>`;
         }
 
-        controlsHtml += `<button type="button" class="product-page-button" onclick="goToProductPage(${productPage + 1})" ${productPage >= productTotalPages ? "disabled" : ""} aria-label="Halaman berikutnya">Next ›</button>`;
+        controlsHtml += `<button type="button" class="product-page-button" onclick="goToProductPage(${productPage + 1})" ${productPage >= productTotalPages ? "disabled" : ""} aria-label="${sellerBooksProductText("next")}">${sellerBooksProductText("next")} ›</button>`;
 
         productPaginationControls.innerHTML = controlsHtml;
     }
@@ -22777,9 +22895,7 @@ function openProductModal(){
 
     document.getElementById(
         "productModalTitle"
-    ).innerText =
-
-        "Tambah Produk";
+    ).innerText = sellerBooksProductText("addTitle");
 
 
     document.getElementById(
@@ -22928,7 +23044,7 @@ async function saveProduct(){
 
 
     if(adminFeePercent !== "" && (!Number.isFinite(adminFeePercent) || adminFeePercent < 0 || adminFeePercent > 100)){
-        sellerBooksAlert("Admin % SKU harus antara 0 sampai 100.");
+        sellerBooksAlert(sellerBooksProductText("adminInvalid"));
         return;
     }
 
@@ -22938,7 +23054,7 @@ async function saveProduct(){
     if(!sku){
 
         sellerBooksAlert(
-            "SKU produk wajib diisi."
+            sellerBooksProductText("skuRequired")
         );
 
         return;
@@ -22952,7 +23068,7 @@ async function saveProduct(){
     if(!name){
 
         sellerBooksAlert(
-            "Nama produk wajib diisi."
+            sellerBooksProductText("nameRequired")
         );
 
         return;
@@ -22972,7 +23088,7 @@ async function saveProduct(){
     ){
 
         sellerBooksAlert(
-            "HPP / Modal produk wajib diisi."
+            sellerBooksProductText("costRequired")
         );
 
         return;
@@ -23012,7 +23128,7 @@ async function saveProduct(){
         if(duplicateSKU){
 
             sellerBooksAlert(
-                "SKU sudah digunakan oleh produk lain."
+                sellerBooksProductText("duplicateEdit")
             );
 
             return;
@@ -23082,7 +23198,7 @@ async function saveProduct(){
         if(duplicateSKU){
 
             sellerBooksAlert(
-                "SKU sudah terdaftar."
+                sellerBooksProductText("duplicateAdd")
             );
 
             return;
@@ -23201,9 +23317,7 @@ function editProduct(id){
 
     document.getElementById(
         "productModalTitle"
-    ).innerText =
-
-        "Edit Produk";
+    ).innerText = sellerBooksProductText("editTitle");
 
 
     document.getElementById(
