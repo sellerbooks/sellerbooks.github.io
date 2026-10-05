@@ -21293,7 +21293,7 @@ function renderStores(skipIntegrationRefresh){
                         type="button"
                         class="store-action-button store-integrate-button"
                         onclick="syncShopeeOrdersNow('${store.id}')"
-                        title="${sellerBooksCurrentLanguage() === "en" ? "Pull Shopee orders" : "Tarik order Shopee"}"
+                        aria-label="${sellerBooksCurrentLanguage() === "en" ? "Pull Shopee orders" : "Tarik order Shopee"}"
                     >
                         🔄 ${sellerBooksCurrentLanguage() === "en" ? "Pull Orders" : "Tarik Order"}
                     </button>
@@ -21305,9 +21305,9 @@ function renderStores(skipIntegrationRefresh){
                         type="button"
                         class="store-action-button store-integrate-button"
                         onclick="syncLazadaOrdersNow('${store.id}')"
-                        title="${sellerBooksCurrentLanguage() === "en" ? "Pull Lazada orders" : "Tarik order Lazada"}"
+                        aria-label="${sellerBooksCurrentLanguage() === "en" ? "Pull Lazada orders" : "Tarik order Lazada"}"
                     >
-                        🔄 Tarik Order
+                        🔄 ${sellerBooksCurrentLanguage() === "en" ? "Pull Orders" : "Tarik Order"}
                     </button>
                 </div>`;
         }
