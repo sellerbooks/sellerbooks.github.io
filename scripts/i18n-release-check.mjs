@@ -14,8 +14,7 @@
 import fs from "node:fs";
 import vm from "node:vm";
 
-const file = "index.html";
-const source = fs.readFileSync(file, "utf8");
+const source = fs.readFileSync("index.html", "utf8");
 const failures = [];
 
 function fail(type, detail){
@@ -26,31 +25,25 @@ function extractBalancedObject(text, start){
   let depth = 0;
   let quote = null;
   let escaped = false;
-  let started = false;
 
   for(let i = start; i < text.length; i++){
     const ch = text[i];
 
     if(quote){
-      if(escaped){
-        escaped = false;
-      }else if(ch === "\\\\"){
-        escaped = true;
-      }else if(ch === quote){
-        quote = null;
-      }
+      if(escaped) escaped = false;
+      else if(ch === "\\") escaped = true;
+      else if(ch === quote) quote = null;
       continue;
     }
 
-    if(ch === '"' || ch === "'" || ch === "`"){
+    if(ch === '"' || ch === "'" || ch === "\`"){
       quote = ch;
       continue;
     }
 
     if(ch === "{"){
       depth++;
-      started = true;
-    }else if(ch === "}" && started){
+    }else if(ch === "}" && depth > 0){
       depth--;
       if(depth === 0) return text.slice(start, i + 1);
     }
@@ -59,8 +52,9 @@ function extractBalancedObject(text, start){
   throw new Error("Could not parse SELLERBOOKS_I18N object.");
 }
 
-const i18nMarker = "const SELLERBOOKS_I18N =";
-const markerPos = source.indexOf(i18nMarker);
+const marker = "const SELLERBOOKS_I18N =";
+const markerPos = source.indexOf(marker);
+
 if(markerPos < 0){
   fail("missing-i18n-object", "SELLERBOOKS_I18N was not found.");
 }else{
@@ -75,21 +69,15 @@ if(markerPos < 0){
     const enKeys = new Set(Object.keys(en));
 
     for(const key of idKeys){
-      if(!enKeys.has(key)){
-        fail("missing-en-key", key);
-      }
-      if(String(id[key] ?? "").trim() === ""){
-        fail("empty-id-translation", key);
-      }
+      if(!enKeys.has(key)) fail("missing-en-key", key);
+      if(String(id[key] ?? "").trim() === "") fail("empty-id-translation", key);
       if(enKeys.has(key) && String(en[key] ?? "").trim() === ""){
         fail("empty-en-translation", key);
       }
     }
 
     for(const key of enKeys){
-      if(!idKeys.has(key)){
-        fail("missing-id-key", key);
-      }
+      if(!idKeys.has(key)) fail("missing-id-key", key);
     }
 
     const idWords = [
@@ -118,7 +106,7 @@ if(markerPos < 0){
     function hasToken(value, words){
       const lower = String(value).toLowerCase();
       return words.some(word => {
-        const escaped = word.replace(/[.*+?^$()|[\\]\\\\]/g, "\\\\$&");
+        const escaped = word.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
         return new RegExp("(^|[^a-z0-9])" + escaped + "([^a-z0-9]|$)", "i").test(lower);
       });
     }
@@ -144,10 +132,9 @@ if(markerPos < 0){
 
     // Remove non-user-facing code before checking static HTML text.
     const html = source
-      .replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, "")
-      .replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, "")
-      .replace(/<!-->[\\s\\S]*?-->/g, "")
-      .replace(/<!--[\\s\\S]*?-->/g, "");
+      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<!--[\s\S]*?-->/g, "");
 
     const ignored = new Set([
       "SellerBooks","SB","Marketplace","SKU","QTY","Excel","CSV","API",
@@ -158,15 +145,15 @@ if(markerPos < 0){
       return String(value)
         .replace(/&nbsp;/gi," ")
         .replace(/&amp;/gi,"&")
-        .replace(/\\s+/g," ")
+        .replace(/\s+/g," ")
         .trim();
     }
 
     function looksLikeUiText(value){
       if(!value || value.length < 2) return false;
       if(!/[A-Za-zÀ-ÿ]/.test(value)) return false;
-      if(/^[A-Za-z0-9_.$:/#%+\\-]+$/.test(value)) return false;
-      if(/^https?:\\/\\//i.test(value)) return false;
+      if(/^[A-Za-z0-9_.$:/#%+\-]+$/.test(value)) return false;
+      if(/^https?:\/\//i.test(value)) return false;
       if(ignored.has(value)) return false;
       return true;
     }
@@ -174,12 +161,14 @@ if(markerPos < 0){
     const visibleText = [];
     const textRe = />([^<>]+)</g;
     let match;
+
     while((match = textRe.exec(html))){
       const value = clean(match[1]);
       if(looksLikeUiText(value)) visibleText.push(value);
     }
 
-    const attrRe = /\\b(?:placeholder|title|aria-label|data-tooltip)\\s*=\\s*["']([^"']+)["']/gi;
+    const attrRe = /\b(?:placeholder|title|aria-label|data-tooltip)\s*=\s*["']([^"']+)["']/gi;
+
     while((match = attrRe.exec(html))){
       const value = clean(match[1]);
       if(looksLikeUiText(value)) visibleText.push(value);
@@ -187,9 +176,7 @@ if(markerPos < 0){
 
     for(const value of new Set(visibleText)){
       if(dictionaryKeys.has(value) || dictionaryValues.has(value)) continue;
-
-      // Dynamic template placeholders and pure code-like fragments are not UI strings.
-      if(/^\\$?\\{?[A-Za-z0-9_.()[\\]-]+\\}?$/.test(value)) continue;
+      if(/^\$?\{?[A-Za-z0-9_.()[\]-]+\}?$/.test(value)) continue;
       if(/^(?:true|false|null|undefined)$/i.test(value)) continue;
 
       fail("hard-coded-ui-string", value);
@@ -200,8 +187,8 @@ if(markerPos < 0){
 }
 
 if(failures.length){
-  console.error("\\nSellerBooks EN/ID RELEASE CHECK: FAIL");
-  console.error("Release is blocked because " + failures.length + " issue(s) were found.\\n");
+  console.error("\nSellerBooks EN/ID RELEASE CHECK: FAIL");
+  console.error("Release is blocked because " + failures.length + " issue(s) were found.\n");
 
   for(const [index,item] of failures.entries()){
     console.error((index + 1) + ". [" + item.type + "] " + item.detail);
