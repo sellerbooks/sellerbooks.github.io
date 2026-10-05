@@ -15426,6 +15426,8 @@ async function sellerBooksLoadProfile(user){
 }
 async function sellerBooksCheckApproval(showAlert){
     if(!sellerBooksAuthUser)return;
+    if(sellerBooksAuthCheckInProgress)return;
+    sellerBooksAuthCheckInProgress = true;
     try{
         sellerBooksProfile=await sellerBooksLoadProfile(sellerBooksAuthUser);
         if(!sellerBooksProfile){ sellerBooksShowApproval("Akun berhasil login, tetapi profile SellerBooks belum terbentuk. Silakan coba lagi beberapa saat lagi."); return; }
@@ -15453,6 +15455,9 @@ async function sellerBooksCheckApproval(showAlert){
         sellerBooksShowApproval("Akun Anda sudah berhasil login. Silakan menunggu persetujuan dari Core Adiimasa sebelum menggunakan SellerBooks.");
         if(showAlert)sellerBooksAlert("Status accounts masih menunggu persetujuan Core Adiimasa.");
     }catch(error){console.error(error);sellerBooksShowApproval("Tidak dapat membaca status accounts saat ini. Periksa koneksi internet lalu coba lagi.");}
+    finally{
+        sellerBooksAuthCheckInProgress = false;
+    }
 }
 function sellerBooksOpenApplication(){
     const ownerName = String(sellerBooksProfile?.owner_name || "").trim();
@@ -15498,9 +15503,8 @@ async function loginGoogle(){
                 options:{
                     redirectTo:"https://sellerbooks.github.io/",
                     skipBrowserRedirect:true,
-                    queryParams:{
-                        prompt:"select_account"
-                    }
+                    queryParams:{}
+
                 }
             });
 
@@ -15528,9 +15532,8 @@ async function loginGoogle(){
             options:{
                 redirectTo:"https://sellerbooks.github.io/",
 
-                queryParams:{
-                    prompt:"select_account"
-                }
+                queryParams:{}
+
             }
         });
 
