@@ -24315,6 +24315,16 @@ function sellerBooksApplySalesImportLanguage(){
         [t("fileName"),t("format"),t("rowCount"),t("columnCount")].forEach((v,i)=>{if(labels[i])labels[i].textContent=v;});
         const recognition=root.querySelectorAll(".recognition-title");
         [t("skuRecognition"),t("qtyRecognition"),t("sellingPriceRecognition")].forEach((v,i)=>{if(recognition[i]){const icon=recognition[i].querySelector(".recognition-icon"); recognition[i].lastChild.textContent=" "+v; if(icon)recognition[i].prepend(icon);}});
+        const recognitionResults=[
+            document.getElementById("skuRecognitionResult"),
+            document.getElementById("qtyRecognitionResult"),
+            document.getElementById("lazadaPriceRecognitionResult")
+        ];
+        recognitionResults.forEach(el=>{
+            if(el && el.textContent.trim()==="Belum ditemukan"){
+                el.textContent=t("notFound");
+            }
+        });
         if(q(".headers-section h4"))q(".headers-section h4").textContent=t("foundColumns");
         const foot=root.querySelectorAll(".analysis-footer button");
         if(foot[0])foot[0].textContent=t("cancel");
