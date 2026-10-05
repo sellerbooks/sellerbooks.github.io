@@ -5922,24 +5922,14 @@ async function deleteReportsByDateRange(){
 
     const confirmed =
         await sellerBooksConfirm(
-            "HAPUS LAPORAN PERMANEN?
-
-" +
-            "Rentang: " + fromText + " s/d " + toText + "
-" +
-            "Marketplace: " + marketplaceSelectText + "
-" +
-            "Store Accounts: " + storeSelectText + "
-" +
+            "HAPUS LAPORAN PERMANEN?\n\n" +
+            "Rentang: " + fromText + " s/d " + toText + "\n" +
+            "Marketplace: " + marketplaceSelectText + "\n" +
+            "Store Accounts: " + storeSelectText + "\n" +
             "Jumlah data import: " + deleted +
-            "
-
-" +
-            "Hanya laporan yang sesuai dengan filter di atas yang akan dihapus.
-" +
-            "Stok produk akan DIKEMBALIKAN sesuai jumlah stok yang sebelumnya dipotong oleh laporan tersebut.
-
-" +
+            "\n\n" +
+            "Hanya laporan yang sesuai dengan filter di atas yang akan dihapus.\n" +
+            "Stok produk akan DIKEMBALIKAN sesuai jumlah stok yang sebelumnya dipotong oleh laporan tersebut.\n\n" +
             "Data yang dihapus tidak dapat dikembalikan."
         );
 
@@ -5964,19 +5954,14 @@ async function deleteReportsByDateRange(){
     updateReports();
 
     sellerBooksAlert(
-        "Laporan berhasil dihapus.
-" +
+        "Laporan berhasil dihapus.\n" +
         deleted + " data import telah dihapus." +
         (
             stockRestoreResult.restoredQty > 0
-                ? "
-
-Stok dikembalikan: " +
+                ? "\n\nStok dikembalikan: " +
                   stockRestoreResult.restoredQty +
                   " pcs."
-                : "
-
-Tidak ada stok yang perlu dikembalikan."
+                : "\n\nTidak ada stok yang perlu dikembalikan."
         )
     );
 }
@@ -8988,13 +8973,9 @@ async function downloadReportPDF(){
         },15000);
 
         sellerBooksAlert(
-            "✅ PDF laporan berhasil dibuat.
-
-" +
-            "Periode: " + periodLabel + "
-" +
-            "Marketplace: " + marketplaceLabel + "
-" +
+            "✅ PDF laporan berhasil dibuat.\n\n" +
+            "Periode: " + periodLabel + "\n" +
+            "Marketplace: " + marketplaceLabel + "\n" +
             "Store Accounts: " + storeLabel
         );
 
@@ -9006,9 +8987,7 @@ async function downloadReportPDF(){
         );
 
         sellerBooksAlert(
-            "❌ PDF gagal dibuat.
-
-" +
+            "❌ PDF gagal dibuat.\n\n" +
             (
                 error && error.message
                     ? error.message
@@ -15527,9 +15506,7 @@ async function loginGoogle(){
 
             if(error){
                 console.error("Google Login gagal:",error);
-                sellerBooksAlert("❌ Login Google gagal.
-
-"+error.message);
+                sellerBooksAlert("❌ Login Google gagal.\n\n"+error.message);
                 return;
             }
 
@@ -15559,9 +15536,7 @@ async function loginGoogle(){
 
         if(error){
             console.error("Google Login gagal:",error);
-            sellerBooksAlert("❌ Login Google gagal.
-
-"+error.message);
+            sellerBooksAlert("❌ Login Google gagal.\n\n"+error.message);
         }
 
     }catch(error){
@@ -15861,9 +15836,7 @@ function sellerBooksHandleRealtimeAccountAction(status){
         sellerBooksProfile=null;
         sellerBooksStorage.removeItem("sellerbooks_owner_name");
         sellerBooksShowOnly("loginPage");
-        sellerBooksAlert("⚠️ Akses Accounts Berubah
-
-"+message);
+        sellerBooksAlert("⚠️ Akses Accounts Berubah\n\n"+message);
         sellerBooksAccountRealtimeHandling=false;
     });
 }
@@ -16009,12 +15982,8 @@ async function saveOwnerName(){
         document.getElementById("ownerSetupPage").style.display="none";
         document.getElementById("loginPage").style.display="none";
         document.getElementById("app").style.display="block";
-        sellerBooksAlert("✅ Data berhasil disimpan!
-
-Selamat datang, "+ownerName);
-    }catch(error){console.error("Gagal menyimpan Nama Pemilik:",error);sellerBooksAlert("❌ Nama Pemilik gagal disimpan ke server.
-
-"+error.message);}
+        sellerBooksAlert("✅ Data berhasil disimpan!\n\nSelamat datang, "+ownerName);
+    }catch(error){console.error("Gagal menyimpan Nama Pemilik:",error);sellerBooksAlert("❌ Nama Pemilik gagal disimpan ke server.\n\n"+error.message);}
 }
 
 /* =====================================================
@@ -18868,9 +18837,7 @@ async function deleteMarketplace(id){
     if(!await sellerBooksConfirm(
         "Hapus marketplace \"" +
         (marketplace.name || "Marketplace") +
-        "\"?
-
-Data accounts toko yang terhubung dengan marketplace ini juga akan dihapus."
+        "\"?\n\nData accounts toko yang terhubung dengan marketplace ini juga akan dihapus."
     )){
         return;
     }
@@ -18963,12 +18930,8 @@ Data accounts toko yang terhubung dengan marketplace ini juga akan dihapus."
         if(typeof renderStores === "function")renderStores();
 
         sellerBooksAlert(
-            "Marketplace belum jadi dihapus dari database.
-
-" +
-            "Perubahan dibatalkan karena verifikasi Supabase gagal.
-
-" +
+            "Marketplace belum jadi dihapus dari database.\n\n" +
+            "Perubahan dibatalkan karena verifikasi Supabase gagal.\n\n" +
             "Detail: " + (error && error.message ? error.message : error)
         );
     }
@@ -19435,9 +19398,7 @@ async function disconnectStoreAccount(storeId){
     }
 
     const confirmed = await sellerBooksConfirm(
-        "Copot integrasi " + marketplace.name + " dari accounts toko \"" + store.name + "\"?
-
-Setelah dicopot, accounts ini harus diotorisasi ulang jika ingin terhubung kembali.",
+        "Copot integrasi " + marketplace.name + " dari accounts toko \"" + store.name + "\"?\n\nSetelah dicopot, accounts ini harus diotorisasi ulang jika ingin terhubung kembali.",
         "Copot Integrasi"
     );
 
@@ -19483,9 +19444,7 @@ Setelah dicopot, accounts ini harus diotorisasi ulang jika ingin terhubung kemba
     }catch(error){
         console.error("Copot integrasi gagal:",error);
         sellerBooksAlert(
-            "Integrasi gagal dicopot.
-
-" +
+            "Integrasi gagal dicopot.\n\n" +
             (error?.message || "Terjadi kesalahan pada server."),
             "Copot Integrasi"
         );
@@ -19734,9 +19693,7 @@ async function integrateStoreAccount(storeId){
 
         sellerBooksAlert(
             "Integrasi " + String(marketplace.name || "Marketplace") +
-            " gagal dimulai.
-
-" +
+            " gagal dimulai.\n\n" +
             (error?.message || "Terjadi kesalahan saat menyiapkan OAuth."),
             "Integrasikan Accounts"
         );
@@ -19862,22 +19819,15 @@ async function sellerBooksDispatchExcelToImportSales(queueItem,showResult){
         const title="Hasil Tarik Order "+marketplaceName;
         if(result.new_transactions>0){
             sellerBooksAlert(
-                "Order "+marketplaceName+" berhasil diproses oleh mesin Import Sales.
-
-"+
-                "Packing baru: "+result.new_packing_count.toLocaleString("id-ID")+"
-"+
-                "PCS baru: "+result.new_qty.toLocaleString("id-ID")+"
-
-"+
+                "Order "+marketplaceName+" berhasil diproses oleh mesin Import Sales.\n\n"+
+                "Packing baru: "+result.new_packing_count.toLocaleString("id-ID")+"\n"+
+                "PCS baru: "+result.new_qty.toLocaleString("id-ID")+"\n\n"+
                 "Perhitungan, HPP, admin, packing, snapshot dan laporan dikerjakan oleh mesin Import Sales SellerBooks.",
                 title
             );
         }else{
             sellerBooksAlert(
-                "Data "+marketplaceName+" sudah ada / tidak menghasilkan transaksi baru.
-
-"+
+                "Data "+marketplaceName+" sudah ada / tidak menghasilkan transaksi baru.\n\n"+
                 "Mesin Import Sales melewati data duplikat.",
                 title
             );
@@ -19978,11 +19928,8 @@ async function syncTikTokOrdersNow(storeId){
         const timeFrom=now-(7*24*60*60);
 
         sellerBooksAlert(
-            "Sedang mengambil order TikTok Shop 7 hari terakhir...
-
-"+
-            "API hanya mengambil data mentah order.
-"+
+            "Sedang mengambil order TikTok Shop 7 hari terakhir...\n\n"+
+            "API hanya mengambil data mentah order.\n"+
             "Setelah itu data akan diproses oleh mesin Import Sales yang sama seperti upload Excel manual.",
             "Tarik Order TikTok"
         );
@@ -20017,10 +19964,7 @@ async function syncTikTokOrdersNow(storeId){
 
             if(data.diagnostic){
                 message+=
-                    "
-
-DIAGNOSTIC:
-"+
+                    "\n\nDIAGNOSTIC:\n"+
                     JSON.stringify(
                         data.diagnostic,
                         null,
@@ -20055,9 +19999,7 @@ DIAGNOSTIC:
 
         if(result.status==="NO_ORDERS"){
             sellerBooksAlert(
-                "Tidak ada data order TikTok pada periode yang diperiksa.
-
-"+
+                "Tidak ada data order TikTok pada periode yang diperiksa.\n\n"+
                 "Order ditemukan: "+
                 Number(result.orders_found||0),
                 "Hasil Tarik Order TikTok"
@@ -20083,9 +20025,7 @@ DIAGNOSTIC:
         );
 
         sellerBooksAlert(
-            "Tarik order TikTok gagal.
-
-"+
+            "Tarik order TikTok gagal.\n\n"+
             (error?.message||
                 "Terjadi kesalahan saat mengambil data."),
             "Tarik Order TikTok"
@@ -20110,21 +20050,14 @@ async function syncShopeeOrdersNow(storeId){
         const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
         if(!session?.access_token)throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
         const now=Date.now(),timeFrom=new Date(now-7*86400000).toISOString(),timeTo=new Date(now).toISOString();
-        sellerBooksAlert("Sedang mengambil order Shopee 7 hari terakhir...
-
-API hanya mengambil data mentah.
-Setelah itu data masuk ke mesin Import Sales yang sama seperti upload Excel manual.","Sinkronisasi Shopee");
+        sellerBooksAlert("Sedang mengambil order Shopee 7 hari terakhir...\n\nAPI hanya mengambil data mentah.\nSetelah itu data masuk ke mesin Import Sales yang sama seperti upload Excel manual.","Sinkronisasi Shopee");
         const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-sync-orders",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id),time_from:timeFrom,time_to:timeTo})});
         const data=await response.json().catch(()=>({}));
         if(!response.ok||!data.ok)throw new Error(data.error||"Pengambilan data Shopee gagal.");
-        if(data.status==="NO_ORDERS"){sellerBooksAlert("Tidak ada order Shopee pada periode yang diperiksa.
-
-Order ditemukan: "+Number(data.orders_found||0),"Hasil Tarik Order Shopee");return;}
+        if(data.status==="NO_ORDERS"){sellerBooksAlert("Tidak ada order Shopee pada periode yang diperiksa.\n\nOrder ditemukan: "+Number(data.orders_found||0),"Hasil Tarik Order Shopee");return;}
         if(data.status==="RAW_FILE_READY"){await sellerBooksDispatchExcelQueue({showResult:true});return;}
         throw new Error("Status API Shopee: "+String(data.status||"UNKNOWN"));
-    }catch(error){console.error("Tarik order Shopee gagal:",error);sellerBooksAlert("Tarik order Shopee gagal.
-
-"+(error?.message||"Terjadi kesalahan."),"Sinkronisasi Shopee");}
+    }catch(error){console.error("Tarik order Shopee gagal:",error);sellerBooksAlert("Tarik order Shopee gagal.\n\n"+(error?.message||"Terjadi kesalahan."),"Sinkronisasi Shopee");}
 }
 
 /* =====================================================
@@ -20144,24 +20077,17 @@ async function syncLazadaOrdersNow(storeId){
         const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
         if(!session?.access_token)throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
         const now=Math.floor(Date.now()/1000),timeFrom=now-7*86400,timeTo=now;
-        sellerBooksAlert("Sedang mengambil order Lazada 7 hari terakhir...
-
-API hanya mengambil data mentah.
-Setelah itu data masuk ke mesin Import Sales yang sama seperti upload Excel manual.","Sinkronisasi Lazada");
+        sellerBooksAlert("Sedang mengambil order Lazada 7 hari terakhir...\n\nAPI hanya mengambil data mentah.\nSetelah itu data masuk ke mesin Import Sales yang sama seperti upload Excel manual.","Sinkronisasi Lazada");
         const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-lazada-sync-orders",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id),time_from:timeFrom,time_to:timeTo})});
         const data=await response.json().catch(()=>({}));
         if(!response.ok||!data.ok)throw new Error(data.error||"Pengambilan data Lazada gagal.");
         const result=Array.isArray(data.results)?data.results.find(x=>String(x.connection_id||"")===String(connection.id))||data.results[0]:null;
         if(!result)throw new Error("Koneksi Lazada tidak menghasilkan file data.");
         if(result.status==="ERROR")throw new Error(String(result.error||"Lazada API mengembalikan error."));
-        if(result.status==="NO_ORDERS"){sellerBooksAlert("Tidak ada order Lazada pada periode yang diperiksa.
-
-Order ditemukan: "+Number(result.orders_found||0),"Hasil Tarik Order Lazada");return;}
+        if(result.status==="NO_ORDERS"){sellerBooksAlert("Tidak ada order Lazada pada periode yang diperiksa.\n\nOrder ditemukan: "+Number(result.orders_found||0),"Hasil Tarik Order Lazada");return;}
         if(result.status==="RAW_FILE_READY"){await sellerBooksDispatchExcelQueue({showResult:true});return;}
         throw new Error("Status API Lazada: "+String(result.status||"UNKNOWN"));
-    }catch(error){console.error("Tarik order Lazada gagal:",error);sellerBooksAlert("Tarik order Lazada gagal.
-
-"+(error?.message||"Terjadi kesalahan."),"Sinkronisasi Lazada");}
+    }catch(error){console.error("Tarik order Lazada gagal:",error);sellerBooksAlert("Tarik order Lazada gagal.\n\n"+(error?.message||"Terjadi kesalahan."),"Sinkronisasi Lazada");}
 }
 
 /* =====================================================
@@ -20220,9 +20146,7 @@ function handleShopeeOAuthResult(){
     const reason = params.get("reason") || "OAUTH_FAILED";
 
     sellerBooksAlert(
-        "Integrasi Shopee gagal.
-
-" +
+        "Integrasi Shopee gagal.\n\n" +
         "Kode: " + reason,
         "Integrasikan Accounts"
     );
@@ -20351,9 +20275,7 @@ if(!window.sellerBooksMarketplaceOAuthMessageHandler){
 
             sellerBooksAlert(
                 "Integrasi " + marketplaceLabel +
-                " gagal.
-
-Kode: " + reason,
+                " gagal.\n\nKode: " + reason,
                 "Integrasikan Accounts"
             );
 
@@ -20452,9 +20374,7 @@ window.onMarketplaceOAuthReturn = function(marketplace, status, reason, connecti
 
     sellerBooksAlert(
         "Integrasi " + errorLabel + " gagal." +
-        (reason ? "
-
-Kode: " + reason : ""),
+        (reason ? "\n\nKode: " + reason : ""),
         "Integrasikan Accounts"
     );
 
@@ -23485,9 +23405,7 @@ async function deleteSelectedProducts(){
     const confirmation = await sellerBooksConfirm(
         "Hapus " +
         selectedIds.length +
-        " produk yang dipilih?
-
-" +
+        " produk yang dipilih?\n\n" +
         "Data yang dihapus tidak dapat dikembalikan."
     );
 
@@ -24031,19 +23949,15 @@ const stock = Math.max(
 
             sellerBooksAlert(
 
-                "Import selesai.
-
-" +
+                "Import selesai.\n\n" +
 
                 "Berhasil: " +
                 successCount +
 
-                "
-Duplikat SKU: " +
+                "\nDuplikat SKU: " +
                 duplicateCount +
 
-                "
-Data tidak valid: " +
+                "\nData tidak valid: " +
                 errorCount
 
             );
@@ -26531,18 +26445,13 @@ async function analyzeSalesFile(input){
 
         sellerBooksAlert(
 
-            "Format file tidak didukung.
+            "Format file tidak didukung.\n\n" +
 
-" +
+            "Gunakan:\n" +
 
-            "Gunakan:
-" +
+            "XLSX\n" +
 
-            "XLSX
-" +
-
-            "XLS
-" +
+            "XLS\n" +
 
             "CSV"
 
@@ -27107,9 +27016,7 @@ async function analyzeSalesFile(input){
 
             sellerBooksAlert(
 
-                "SellerBooks tidak dapat membaca file ini.
-
-" +
+                "SellerBooks tidak dapat membaca file ini.\n\n" +
 
                 "Pastikan file tidak rusak."
 
@@ -28718,9 +28625,7 @@ function confirmSalesColumns(){
         console.error("SellerBooks: saveSalesImportData gagal:", error);
 
         sellerBooksAlert(
-            "Data penjualan gagal disimpan.
-
-" +
+            "Data penjualan gagal disimpan.\n\n" +
             (error?.message || String(error))
         );
 
@@ -28750,27 +28655,21 @@ function confirmSalesColumns(){
     */
 
     sellerBooksAlert(
-        "Import berhasil disimpan ✓
-
-" +
+        "Import berhasil disimpan ✓\n\n" +
 
         "Marketplace: " +
         record.marketplace +
 
-        "
-Akun: " +
+        "\nAkun: " +
         record.storeName +
 
-        "
-Data transaksi: " +
+        "\nData transaksi: " +
         record.rowCount.toLocaleString("id-ID") +
 
-        "
-Packing unik: " +
+        "\nPacking unik: " +
         record.uniquePackingCount.toLocaleString("id-ID") +
 
-        "
-Biaya packing: " +
+        "\nBiaya packing: " +
         formatRupiah(
             record.totalPackingCost
         )
@@ -29053,9 +28952,7 @@ async function logoutSellerBooks(){
         );
 
         sellerBooksAlert(
-            "❌ Logout gagal.
-
-" +
+            "❌ Logout gagal.\n\n" +
             error.message
         );
     }
@@ -29083,13 +28980,9 @@ async function resetIdentity(){
         return;
     }
     const confirmReset = await sellerBooksConfirm(
-        "Reset Nama Pemilik?
-
-" +
+        "Reset Nama Pemilik?\n\n" +
         "Nama Pemilik akan dikosongkan dan Anda " +
-        "akan kembali ke halaman pengisian Nama Pemilik.
-
-" +
+        "akan kembali ke halaman pengisian Nama Pemilik.\n\n" +
         "Akun Gmail dan status persetujuan Core Adiimasa " +
         "tetap tersimpan."
     );
@@ -29199,13 +29092,9 @@ async function resetIdentity(){
         }
 
         sellerBooksAlert(
-            "✅ Nama Pemilik berhasil direset.
-
-" +
+            "✅ Nama Pemilik berhasil direset.\n\n" +
             "Akun Gmail dan persetujuan Core Adiimasa " +
-            "tetap tersimpan.
-
-" +
+            "tetap tersimpan.\n\n" +
             "Silakan masukkan Nama Pemilik yang baru."
         );
 
@@ -29217,9 +29106,7 @@ async function resetIdentity(){
         );
 
         sellerBooksAlert(
-            "❌ Nama Pemilik gagal direset.
-
-" +
+            "❌ Nama Pemilik gagal direset.\n\n" +
             error.message
         );
     }
@@ -33295,9 +33182,7 @@ function handleSettingsLogoUpload(input){
             );
             input.value = "";
             sellerBooksAlert(
-                "❌ Logo gagal disimpan ke Supabase.
-
-" +
+                "❌ Logo gagal disimpan ke Supabase.\n\n" +
                 error.message
             );
         }
@@ -33348,9 +33233,7 @@ async function removeSettingsLogo(){
             error
         );
         sellerBooksAlert(
-            "❌ Logo gagal dihapus dari Supabase.
-
-"+
+            "❌ Logo gagal dihapus dari Supabase.\n\n"+
             error.message
         );
     }
@@ -34126,16 +34009,10 @@ document.addEventListener(
         const jumlah=sbPiutangFormat(item.jumlah);
 
         const yakin=window.confirm(
-            "Hapus piutang ini?
-
-" +
-            "Tanggal: " + tanggal + "
-" +
-            "Nama: " + nama + "
-" +
-            "Jumlah: " + jumlah + "
-
-" +
+            "Hapus piutang ini?\n\n" +
+            "Tanggal: " + tanggal + "\n" +
+            "Nama: " + nama + "\n" +
+            "Jumlah: " + jumlah + "\n\n" +
             "Data yang dihapus tidak akan dihitung lagi dalam Total Piutang."
         );
         if(!yakin) return false;
@@ -34202,16 +34079,10 @@ document.addEventListener(
         if(index<0 || index>=data.length) return false;
         const item=data[index];
         const yakin=window.confirm(
-            "Hapus catatan pembayaran ini?
-
-"+
-            "Tanggal: "+sbPiutangFormatTanggal(item.tanggal||"")+"
-"+
-            "Nama: "+(String(item.nama||"").trim()||"-")+"
-"+
-            "Jumlah: "+sbPiutangFormat(item.jumlah)+"
-
-"+
+            "Hapus catatan pembayaran ini?\n\n"+
+            "Tanggal: "+sbPiutangFormatTanggal(item.tanggal||"")+"\n"+
+            "Nama: "+(String(item.nama||"").trim()||"-")+"\n"+
+            "Jumlah: "+sbPiutangFormat(item.jumlah)+"\n\n"+
             "Jika dihapus, jumlah pembayaran ini akan kembali menjadi piutang."
         );
         if(!yakin) return false;
@@ -34241,9 +34112,7 @@ document.addEventListener(
         const outstanding=sbPiutangSisaTotal();
         if(jumlah>outstanding){
             const lanjut=window.confirm(
-                "Jumlah pembayaran ("+sbPiutangFormat(jumlah)+") lebih besar dari sisa piutang ("+sbPiutangFormat(outstanding)+").
-
-Tetap simpan pembayaran ini?"
+                "Jumlah pembayaran ("+sbPiutangFormat(jumlah)+") lebih besar dari sisa piutang ("+sbPiutangFormat(outstanding)+").\n\nTetap simpan pembayaran ini?"
             );
             if(!lanjut) return false;
         }
@@ -34598,11 +34467,7 @@ Tetap simpan pembayaran ini?"
 
     window.sbPiutangDeleteCloud=async function(id){
         const item=cloudEntries.find(x=>x.id===id); if(!item)return false;
-        if(!confirm("Hapus piutang ini?
-
-Tanggal: "+piutangDate(item.tanggal)+"
-Nama: "+item.nama+"
-Jumlah: "+piutangMoney(item.jumlah)))return false;
+        if(!confirm("Hapus piutang ini?\n\nTanggal: "+piutangDate(item.tanggal)+"\nNama: "+item.nama+"\nJumlah: "+piutangMoney(item.jumlah)))return false;
         const r=await sellerBooksSupabase.rpc("piutang_delete_entry",{p_id:id});
         if(r.error){alert("Piutang gagal dihapus.");return false;}
         await piutangCloudList(); piutangRenderCloud(); return false;
@@ -34622,13 +34487,7 @@ Jumlah: "+piutangMoney(item.jumlah)))return false;
 
     window.sbPiutangBayarDeleteCloud=async function(id){
         const item=cloudPayments.find(x=>x.id===id); if(!item)return false;
-        if(!confirm("Hapus catatan pembayaran ini?
-
-Tanggal: "+piutangDate(item.tanggal)+"
-Nama: "+item.nama+"
-Jumlah: "+piutangMoney(item.jumlah)+"
-
-Nominal akan kembali menjadi sisa piutang."))return false;
+        if(!confirm("Hapus catatan pembayaran ini?\n\nTanggal: "+piutangDate(item.tanggal)+"\nNama: "+item.nama+"\nJumlah: "+piutangMoney(item.jumlah)+"\n\nNominal akan kembali menjadi sisa piutang."))return false;
         const r=await sellerBooksSupabase.rpc("piutang_delete_payment",{p_id:id});
         if(r.error){alert("Pembayaran gagal dihapus.");return false;}
         await piutangCloudList(); piutangRenderCloud(); return false;
