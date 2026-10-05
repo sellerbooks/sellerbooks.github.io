@@ -4529,11 +4529,38 @@ td{
         const cancel = document.getElementById("sellerBooksDialogCancel");
         const icon = document.getElementById("sellerBooksDialogIcon");
 
-        title.textContent = item.title;
+        const dialogLanguage =
+            typeof sellerBooksCurrentLanguage === "function"
+                ? sellerBooksCurrentLanguage()
+                : "id";
+
+        const dialogTranslations = dialogLanguage === "en"
+            ? {
+                confirmation:"Confirmation",
+                cancel:"Cancel",
+                continue:"Continue",
+                ok:"OK"
+            }
+            : {
+                confirmation:"Konfirmasi",
+                cancel:"Batal",
+                continue:"Lanjutkan",
+                ok:"OK"
+            };
+
+        title.textContent =
+            item.title ||
+            (item.confirm
+                ? dialogTranslations.confirmation
+                : "SellerBooks");
+
         body.textContent = item.message;
         icon.textContent = item.confirm ? "?" : "✓";
         cancel.style.display = item.confirm ? "" : "none";
-        ok.textContent = item.confirm ? "Lanjutkan" : "OK";
+        cancel.textContent = dialogTranslations.cancel;
+        ok.textContent = item.confirm
+            ? dialogTranslations.continue
+            : dialogTranslations.ok;
 
         overlay.classList.add("show");
         overlay.setAttribute("aria-hidden","false");
@@ -4589,8 +4616,13 @@ td{
     };
 
     window.sellerBooksConfirm = function(message, title){
+        const language =
+            typeof sellerBooksCurrentLanguage === "function"
+                ? sellerBooksCurrentLanguage()
+                : "id";
+
         return sellerBooksShowDialog(message, {
-            title:title || "Konfirmasi",
+            title:title || (language === "en" ? "Confirmation" : "Konfirmasi"),
             confirm:true
         });
     };
