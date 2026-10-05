@@ -22,6 +22,13 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
 </div>
 <script>
 (function(){
+    const language =
+        localStorage.getItem("sellerbooks_ui_language") === "en"
+            ? "en"
+            : "id";
+    document.documentElement.lang = language === "en" ? "en" : "id";
+    const EN = language === "en";
+
     const params=new URLSearchParams(window.location.search);
     const result=params.get("sellerbooks_lazada_oauth")||"error";
     const reason=params.get("reason")||"OAUTH_FAILED";
@@ -47,12 +54,12 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
         document.getElementById("icon").classList.add("error");
 
         if(reason==="LAZADA_ACCOUNT_ALREADY_CONNECTED"){
-            document.getElementById("title").textContent="Akun Lazada sudah terhubung";
+            document.getElementById("title").textContent=EN ? "Lazada account is already connected" : "Akun Lazada sudah terhubung";
             document.getElementById("message").textContent=
-                "Akun Lazada ini sudah terhubung ke akun atau toko SellerBooks lain.";
+                EN ? "This Lazada account is already connected to another SellerBooks account or store." : "Akun Lazada ini sudah terhubung ke akun atau toko SellerBooks lain.";
         }else{
-            document.getElementById("title").textContent="Integrasi Lazada gagal";
-            document.getElementById("message").textContent="Kode: "+reason;
+            document.getElementById("title").textContent=EN ? "Lazada integration failed" : "Integrasi Lazada gagal";
+            document.getElementById("message").textContent=EN ? "Code: "+reason : "Kode: "+reason;
         }
     }
 
