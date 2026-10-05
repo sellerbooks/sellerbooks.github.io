@@ -14808,7 +14808,18 @@ document.addEventListener(
 ===================================================== */
 const SELLERBOOKS_SUPABASE_URL="https://fysaxpqpqexjnlpkbwap.supabase.co";
 const SELLERBOOKS_SUPABASE_KEY="sb_publishable_DWRaEZTcNMjhglwN3nqCOw_pua8rsjD";
-const sellerBooksSupabase=window.supabase.createClient(SELLERBOOKS_SUPABASE_URL,SELLERBOOKS_SUPABASE_KEY);
+const sellerBooksSupabase=window.supabase.createClient(
+    SELLERBOOKS_SUPABASE_URL,
+    SELLERBOOKS_SUPABASE_KEY,
+    {
+        auth:{
+            autoRefreshToken:true,
+            persistSession:true,
+            detectSessionInUrl:true,
+            flowType:"pkce"
+        }
+    }
+);
 
 /* =====================================================
    SELLERBOOKS CLOUD STORAGE
