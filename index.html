@@ -24095,149 +24095,316 @@ const stock = Math.max(
 
 async function exportProducts(){
 
-    if(!(await sellerBooksEnsureExcelJS())){
-        return;
-    }
-
-    const t = function(key){ return sellerBooksProductText(key); };
-    const language = sellerBooksCurrentLanguage();
-    const workbook = new ExcelJS.Workbook();
-
-    const worksheet = workbook.addWorksheet(t("exportMaster"));
-
-    worksheet.addRow([
-        t("sku"),
-        t("productName"),
-        t("category"),
-        t("sellingPrice"),
-        t("cost"),
-        t("adminSku"),
-        t("stock"),
-        t("status")
-    ]);
-
-    if(Array.isArray(products) && products.length > 0){
-        products.forEach(function(product){
-            worksheet.addRow([
-                product.sku || "",
-                product.name || "",
-                product.category || "",
-                Number(product.price) || 0,
-                Number(product.cost) || 0,
-                product.adminFeePercent === "" || product.adminFeePercent === undefined || product.adminFeePercent === null ? "" : Number(product.adminFeePercent),
-                Number(product.stock) || 0,
-                product.status === "active" ? t("active") : t("inactive")
-            ]);
-        });
-    }else{
-        worksheet.addRow([
-            language === "en" ? "EXAMPLE-SKU-001" : "CONTOH-SKU-001",
-            language === "en" ? "Example Product Name" : "Contoh Nama Produk",
-            language === "en" ? "Example Category" : "Contoh Kategori",
-            10000, 5000, "", 0, t("active")
-        ]);
-    }
-
-    worksheet.getRow(1).font = {bold:true};
-    worksheet.getColumn(1).width = 22;
-    worksheet.getColumn(2).width = 35;
-    worksheet.getColumn(3).width = 22;
-    worksheet.getColumn(4).width = 18;
-    worksheet.getColumn(5).width = 18;
-    worksheet.getColumn(6).width = 16;
-    worksheet.getColumn(7).width = 15;
-    worksheet.getColumn(8).width = 20;
-    worksheet.getColumn(4).numFmt = '#,##0';
-    worksheet.getColumn(5).numFmt = '#,##0';
-    worksheet.getColumn(6).numFmt = '0.0#';
-    worksheet.getColumn(7).numFmt = '0.##';
-
-    const statusFormula = language === "en" ? '"Active,Inactive"' : '"Aktif,Tidak Aktif"';
-    for(let row=2;row<=1000;row++){
-        worksheet.getCell(row,8).dataValidation = {
-            type:"list",
-            allowBlank:true,
-            formulae:[statusFormula],
-            showErrorMessage:true,
-            errorTitle:t("statusInvalidTitle"),
-            error:t("statusInvalid"),
-            showInputMessage:true,
-            promptTitle:t("statusPromptTitle"),
-            prompt:t("statusPrompt")
-        };
-    }
-
-    const instructionSheet = workbook.addWorksheet(t("exportInstructions"));
-    instructionSheet.addRow([t("exportColumn"),t("exportGuide")]);
-    instructionSheet.addRow([t("sku"),t("requiredSku")]);
-    instructionSheet.addRow([t("productName"),t("requiredName")]);
-    instructionSheet.addRow([t("category"),t("optionalCategory")]);
-    instructionSheet.addRow([t("sellingPrice"),t("priceGuide")]);
-    instructionSheet.addRow([t("cost"),t("costGuide")]);
-    instructionSheet.addRow([t("stock"),t("stockGuide")]);
-    instructionSheet.addRow([t("status"),t("statusGuide")]);
-    instructionSheet.addRow([]);
-    instructionSheet.addRow([t("exportRules"),""]);
-    instructionSheet.addRow(["1",t("rule1")]);
-    instructionSheet.addRow(["2",t("rule2")]);
-    instructionSheet.addRow(["3",t("rule3")]);
-    instructionSheet.addRow(["4",t("rule4")]);
-    instructionSheet.addRow(["5",t("rule5")]);
-    instructionSheet.addRow(["6",t("rule6")]);
-    instructionSheet.getColumn(1).width=25;
-    instructionSheet.getColumn(2).width=90;
-
-    const readmeSheet = workbook.addWorksheet(t("exportReadme"));
-    readmeSheet.addRow([t("exportTemplateTitle")]);
-    readmeSheet.addRow([]);
-    readmeSheet.addRow([t("exportTemplateDescription")]);
-    readmeSheet.addRow([]);
-    readmeSheet.addRow([t("howTo")]);
-    readmeSheet.addRow(["1. "+t("how1")]);
-    readmeSheet.addRow(["2. "+t("how2")]);
-    readmeSheet.addRow(["3. "+t("how3")]);
-    readmeSheet.addRow(["4. "+t("how4")]);
-    readmeSheet.addRow(["5. "+t("how5")]);
-    readmeSheet.addRow(["6. "+t("how6")]);
-    readmeSheet.addRow(["7. "+t("how7")]);
-    readmeSheet.addRow(["8. "+t("how8")]);
-    readmeSheet.addRow(["9. "+t("how9")]);
-    readmeSheet.addRow(["10. "+t("how10")]);
-    readmeSheet.addRow([]);
-    readmeSheet.addRow([t("importantNotes")]);
-    readmeSheet.addRow([t("note1")]);
-    readmeSheet.addRow([t("note2")]);
-    readmeSheet.addRow([t("note3")]);
-    readmeSheet.addRow([t("note4")]);
-    readmeSheet.getColumn(1).width=100;
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
-    const fileName = "MASTER_PRODUK_SELLERBOOKS.xlsx";
-
     try{
-        if(navigator.share && typeof File!=="undefined" && navigator.canShare){
-            const file=new File([blob],fileName,{type:blob.type});
-            if(navigator.canShare({files:[file]})){
-                await navigator.share({files:[file]});
-                return;
-            }
-        }
-    }catch(e){}
 
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement("a");
-    a.href=url;
-    a.download=fileName;
-    a.style.display="none";
-    document.body.appendChild(a);
-    try{a.click();}finally{
+        if(!(await sellerBooksEnsureExcelJS())){
+            return;
+        }
+
+        const t = function(key){
+            return sellerBooksProductText(key);
+        };
+
+        const language = sellerBooksCurrentLanguage();
+        const workbook = new ExcelJS.Workbook();
+
+        const worksheet = workbook.addWorksheet(t("exportMaster"));
+
+        worksheet.addRow([
+            t("sku"),
+            t("productName"),
+            t("category"),
+            t("sellingPrice"),
+            t("cost"),
+            t("adminSku"),
+            t("stock"),
+            t("status")
+        ]);
+
+        if(Array.isArray(products) && products.length > 0){
+
+            products.forEach(function(product){
+
+                worksheet.addRow([
+                    product.sku || "",
+                    product.name || "",
+                    product.category || "",
+                    Number(product.price) || 0,
+                    Number(product.cost) || 0,
+                    product.adminFeePercent === "" ||
+                    product.adminFeePercent === undefined ||
+                    product.adminFeePercent === null
+                        ? ""
+                        : Number(product.adminFeePercent),
+                    Number(product.stock) || 0,
+                    product.status === "active"
+                        ? t("active")
+                        : t("inactive")
+                ]);
+
+            });
+
+        }else{
+
+            worksheet.addRow([
+                language === "en" ? "EXAMPLE-SKU-001" : "CONTOH-SKU-001",
+                language === "en" ? "Example Product Name" : "Contoh Nama Produk",
+                language === "en" ? "Example Category" : "Contoh Kategori",
+                10000,
+                5000,
+                "",
+                0,
+                t("active")
+            ]);
+
+        }
+
+        worksheet.getRow(1).font = {bold:true};
+
+        worksheet.getColumn(1).width = 22;
+        worksheet.getColumn(2).width = 35;
+        worksheet.getColumn(3).width = 22;
+        worksheet.getColumn(4).width = 18;
+        worksheet.getColumn(5).width = 18;
+        worksheet.getColumn(6).width = 16;
+        worksheet.getColumn(7).width = 15;
+        worksheet.getColumn(8).width = 20;
+
+        worksheet.getColumn(4).numFmt = '#,##0';
+        worksheet.getColumn(5).numFmt = '#,##0';
+        worksheet.getColumn(6).numFmt = '0.0#';
+        worksheet.getColumn(7).numFmt = '0.##';
+
+        const statusFormula =
+            language === "en"
+                ? '"Active,Inactive"'
+                : '"Aktif,Tidak Aktif"';
+
+        for(let row=2; row<=1000; row++){
+
+            worksheet.getCell(row,8).dataValidation = {
+                type:"list",
+                allowBlank:true,
+                formulae:[statusFormula],
+                showErrorMessage:true,
+                errorTitle:t("statusInvalidTitle"),
+                error:t("statusInvalid"),
+                showInputMessage:true,
+                promptTitle:t("statusPromptTitle"),
+                prompt:t("statusPrompt")
+            };
+
+        }
+
+        const instructionSheet =
+            workbook.addWorksheet(t("exportInstructions"));
+
+        instructionSheet.addRow([
+            t("exportColumn"),
+            t("exportGuide")
+        ]);
+
+        instructionSheet.addRow([
+            t("sku"),
+            t("requiredSku")
+        ]);
+
+        instructionSheet.addRow([
+            t("productName"),
+            t("requiredName")
+        ]);
+
+        instructionSheet.addRow([
+            t("category"),
+            t("optionalCategory")
+        ]);
+
+        instructionSheet.addRow([
+            t("sellingPrice"),
+            t("priceGuide")
+        ]);
+
+        instructionSheet.addRow([
+            t("cost"),
+            t("costGuide")
+        ]);
+
+        instructionSheet.addRow([
+            t("stock"),
+            t("stockGuide")
+        ]);
+
+        instructionSheet.addRow([
+            t("status"),
+            t("statusGuide")
+        ]);
+
+        instructionSheet.addRow([]);
+
+        instructionSheet.addRow([
+            t("exportRules"),
+            ""
+        ]);
+
+        instructionSheet.addRow(["1",t("rule1")]);
+        instructionSheet.addRow(["2",t("rule2")]);
+        instructionSheet.addRow(["3",t("rule3")]);
+        instructionSheet.addRow(["4",t("rule4")]);
+        instructionSheet.addRow(["5",t("rule5")]);
+        instructionSheet.addRow(["6",t("rule6")]);
+
+        instructionSheet.getColumn(1).width = 25;
+        instructionSheet.getColumn(2).width = 90;
+
+        const readmeSheet =
+            workbook.addWorksheet(t("exportReadme"));
+
+        readmeSheet.addRow([
+            t("exportTemplateTitle")
+        ]);
+
+        readmeSheet.addRow([]);
+
+        readmeSheet.addRow([
+            t("exportTemplateDescription")
+        ]);
+
+        readmeSheet.addRow([]);
+
+        readmeSheet.addRow([
+            t("howTo")
+        ]);
+
+        readmeSheet.addRow(["1. " + t("how1")]);
+        readmeSheet.addRow(["2. " + t("how2")]);
+        readmeSheet.addRow(["3. " + t("how3")]);
+        readmeSheet.addRow(["4. " + t("how4")]);
+        readmeSheet.addRow(["5. " + t("how5")]);
+        readmeSheet.addRow(["6. " + t("how6")]);
+        readmeSheet.addRow(["7. " + t("how7")]);
+        readmeSheet.addRow(["8. " + t("how8")]);
+        readmeSheet.addRow(["9. " + t("how9")]);
+        readmeSheet.addRow(["10. " + t("how10")]);
+
+        readmeSheet.addRow([]);
+
+        readmeSheet.addRow([
+            t("importantNotes")
+        ]);
+
+        readmeSheet.addRow([t("note1")]);
+        readmeSheet.addRow([t("note2")]);
+        readmeSheet.addRow([t("note3")]);
+        readmeSheet.addRow([t("note4")]);
+
+        readmeSheet.getColumn(1).width = 100;
+
+        const buffer = await workbook.xlsx.writeBuffer();
+
+        const blob = new Blob(
+            [buffer],
+            {
+                type:
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            }
+        );
+
+        const fileName = "MASTER_PRODUK_SELLERBOOKS.xlsx";
+
+        /*
+         * Desktop: selalu download langsung.
+         * Mobile: gunakan native share hanya jika memang tersedia.
+         * Jangan biarkan navigator.share menghalangi proses download desktop.
+         */
+        const isMobile =
+            /Android|iPhone|iPad|iPod/i.test(
+                navigator.userAgent || ""
+            );
+
+        if(
+            isMobile &&
+            navigator.share &&
+            typeof File !== "undefined" &&
+            typeof navigator.canShare === "function"
+        ){
+
+            try{
+
+                const file =
+                    new File(
+                        [blob],
+                        fileName,
+                        {type:blob.type}
+                    );
+
+                if(
+                    navigator.canShare({
+                        files:[file]
+                    })
+                ){
+
+                    await navigator.share({
+                        files:[file]
+                    });
+
+                    return;
+
+                }
+
+            }catch(shareError){
+
+                /*
+                 * Jika share dibatalkan/gagal,
+                 * lanjutkan ke download biasa.
+                 */
+
+            }
+
+        }
+
+        const url =
+            URL.createObjectURL(blob);
+
+        const a =
+            document.createElement("a");
+
+        a.href = url;
+        a.download = fileName;
+        a.style.display = "none";
+        a.rel = "noopener";
+
+        document.body.appendChild(a);
+
+        a.click();
+
         setTimeout(function(){
-            try{document.body.removeChild(a);}catch(e){}
-            try{URL.revokeObjectURL(url);}catch(e){}
-        },1000);
+
+            try{
+                document.body.removeChild(a);
+            }catch(e){}
+
+            try{
+                URL.revokeObjectURL(url);
+            }catch(e){}
+
+        },1500);
+
+    }catch(error){
+
+        console.error(
+            "SellerBooks Export Master Produk Error:",
+            error
+        );
+
+        sellerBooksAlert(
+            sellerBooksProductText("exportError") ||
+            "Export Excel gagal. Silakan coba lagi."
+        );
+
     }
+
 }
+
 
 
 /* =====================================================
