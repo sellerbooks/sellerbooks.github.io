@@ -16877,7 +16877,7 @@ function renderProductAnalysis(){
                             class="analysis-fix-button"
                             onclick="fixProductFromAnalysis('${String(row.product.id).replace(/'/g,"\\'") }')"
                         >
-                            ✏️ Perbaiki
+                            ${sellerBooksDetailsText("fix")}
                         </button>
                     `
                     : `
