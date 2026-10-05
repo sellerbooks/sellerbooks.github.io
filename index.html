@@ -8460,7 +8460,7 @@ function sellerBooksPdfGetPeriodLabel(){
         if(from || to){
             label += " (" +
                 (from ? from.split("-").reverse().join("/") : "...") +
-                 " + sellerBooksReportsText("dateSeparator") + "  +
+                " " + sellerBooksReportsText("dateSeparator") + " " +
                 (to ? to.split("-").reverse().join("/") : "...") +
                 ")";
         }
