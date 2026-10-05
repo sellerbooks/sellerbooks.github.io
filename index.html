@@ -9668,7 +9668,7 @@ document.addEventListener(
      LOGIN PAGE
 ===================================================== -->
 
-<section id="loginPage">
+<section id="loginPage" data-sellerbooks-language-lock="id">
 
     <div class="login-wrapper">
 
@@ -31191,6 +31191,32 @@ document.addEventListener(
 
 const SELLERBOOKS_LANGUAGE_KEY = "sellerbooks_language";
 const SELLERBOOKS_DEFAULT_LANGUAGE = "id";
+
+ /*
+    HALAMAN LOGIN DIKUNCI BAHASA INDONESIA.
+    Engine EN/ID SellerBooks wajib melewati root yang memiliki
+    data-sellerbooks-language-lock="id".
+    Preferensi bahasa akun TIDAK berlaku pada halaman login.
+ */
+const SELLERBOOKS_LANGUAGE_LOCK_ATTRIBUTE = "data-sellerbooks-language-lock";
+
+function sellerBooksIsLanguageLocked(element){
+    try{
+        const node = element && element.nodeType === 1
+            ? element
+            : element?.parentElement;
+
+        if(!node || typeof node.closest !== "function"){
+            return false;
+        }
+
+        return !!node.closest(
+            "[" + SELLERBOOKS_LANGUAGE_LOCK_ATTRIBUTE + "]"
+        );
+    }catch(error){
+        return false;
+    }
+}
 
 function sellerBooksNormalizeLanguage(value){
     return String(value || "").toLowerCase() === "en" ? "en" : "id";
