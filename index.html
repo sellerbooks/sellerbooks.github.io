@@ -9367,6 +9367,36 @@ document.addEventListener(
     color:var(--muted);
 }
 
+/* LANGUAGE SWITCH - responsif dan terasa instan */
+#settingsLanguage{
+    cursor:pointer;
+    transition:none !important;
+    -webkit-tap-highlight-color:transparent;
+}
+
+#settingsLanguage:focus{
+    outline:2px solid rgba(37,99,235,.22);
+    outline-offset:1px;
+}
+
+#settingsLanguage:active{
+    transform:scale(.99);
+}
+
+.settings-language-button{
+    transition:transform .08s ease,box-shadow .08s ease,background-color .08s ease !important;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+}
+
+.settings-language-button:hover{
+    transform:translateY(-1px);
+}
+
+.settings-language-button:active{
+    transform:scale(.96);
+}
+
 .settings-note{
     margin-top:14px;
     padding:11px 13px;
@@ -13251,7 +13281,7 @@ document.addEventListener(
                         </span>
                         <button
                             type="button"
-                            class="primary-button"
+                            class="primary-button settings-language-button"
                             onclick="sellerBooksSaveLanguage(document.getElementById('settingsLanguage')?.value || 'id')"
                         >
                             💾 Simpan Bahasa
@@ -31265,37 +31295,58 @@ async function sellerBooksSaveLanguage(value){
     }
 
     try{
+        /*
+           Terapkan pilihan secara lokal TERLEBIH DAHULU.
+           Jangan menunggu round-trip Supabase sebelum UI merespons.
+           Ini membuat perpindahan bahasa terasa instan saat user
+           berpindah ID <-> EN.
+        */
         sellerBooksStorageSetItem(
             SELLERBOOKS_LANGUAGE_KEY,
             language
         );
 
+        sellerBooksSyncLanguageControl();
+
         const info = document.getElementById("settingsLanguageInfo");
         if(info){
             info.textContent =
                 language === "en"
-                    ? "Language saved to your account."
-                    : "Bahasa tersimpan pada akun Anda.";
+                    ? "Saving English..."
+                    : "Menyimpan Bahasa Indonesia...";
         }
 
         /*
-           Penyimpanan cloud mengikuti mekanisme sinkronisasi akun SellerBooks
-           yang sudah ada. Tidak membuat localStorage sebagai sumber utama.
+           Simpan ke Supabase di background. Mekanisme cloud yang sudah ada
+           tetap menjadi sumber penyimpanan akun, tetapi tidak menghambat
+           respons tombol/dropdown.
         */
-        await sellerBooksPersistCloudDataNow();
+        sellerBooksPersistCloudDataNow()
+            .then(function(){
+                const latest = sellerBooksCurrentLanguage();
+                if(info && latest === language){
+                    info.textContent =
+                        language === "en"
+                            ? "English saved to your account."
+                            : "Bahasa Indonesia tersimpan pada akun Anda.";
+                }
+            })
+            .catch(function(error){
+                console.error("Gagal menyimpan bahasa SellerBooks:",error);
+                if(info && sellerBooksCurrentLanguage() === language){
+                    info.textContent =
+                        "Bahasa gagal disimpan. Silakan coba lagi.";
+                }
+            });
 
         /*
            Tahap berikutnya akan memakai nilai ini untuk menerapkan seluruh
-           terjemahan UI secara global. Untuk tahap fondasi ini, tampilan
-           tetap Bahasa Indonesia sampai engine terjemahan selesai.
+           terjemahan UI secara global.
         */
         return true;
     }catch(error){
-        console.error("Gagal menyimpan bahasa SellerBooks:",error);
-        const info = document.getElementById("settingsLanguageInfo");
-        if(info){
-            info.textContent = "Bahasa gagal disimpan. Silakan coba lagi.";
-        }
+        console.error("Gagal menerapkan bahasa SellerBooks:",error);
+        sellerBooksSyncLanguageControl();
         return false;
     }
 }
