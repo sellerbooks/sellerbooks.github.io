@@ -32876,8 +32876,12 @@ function sellerBooksSyncLanguageControl(){
     if(info){
         info.textContent =
             sellerBooksCloudReady
-                ? "Bahasa tersimpan pada akun Anda."
-                : "Menyiapkan bahasa akun...";
+                ? sellerBooksSettingsText("languageSaved")
+                : (
+                    sellerBooksCurrentLanguage() === "en"
+                        ? "Preparing account language..."
+                        : "Menyiapkan bahasa akun..."
+                );
     }
 }
 
@@ -32948,7 +32952,7 @@ async function sellerBooksSaveLanguage(value){
                 console.error("Gagal menyimpan bahasa SellerBooks:",error);
                 if(info && sellerBooksCurrentLanguage() === language){
                     info.textContent =
-                        "Bahasa gagal disimpan. Silakan coba lagi.";
+                        sellerBooksSettingsText("languageSaveFailed");
                 }
             });
 
