@@ -32261,6 +32261,7 @@ function sellerBooksReportsText(key){
             toDate:"Sampai Dengan",
             maxRange:"Maksimal rentang tanggal 3 bulan terakhir.",
             allMarketplaces:"Semua Marketplace",
+            marketplace:"Marketplace",
             storeAccount:"Akun Toko",
             allStoreAccounts:"Semua Akun Toko",
             showingAllSales:"Menampilkan semua data penjualan.",
@@ -32360,6 +32361,7 @@ function sellerBooksReportsText(key){
             toDate:"To Date",
             maxRange:"Maximum date range: the last 3 months.",
             allMarketplaces:"All Marketplaces",
+            marketplace:"Marketplace",
             storeAccount:"Store Account",
             allStoreAccounts:"All Store Accounts",
             showingAllSales:"Showing all sales data.",
@@ -32494,7 +32496,7 @@ function sellerBooksApplyReportsLanguage(){
 
         const labels = filterSection.querySelectorAll(".report-filter-grid > div > label");
         if(labels[0]) labels[0].textContent = sellerBooksReportsText("period");
-        if(labels[1]) labels[1].textContent = sellerBooksReportsText("storeAccount");
+        if(labels[1]) labels[1].textContent = sellerBooksReportsText("marketplace");
         if(labels[2]) labels[2].textContent = sellerBooksReportsText("storeAccount");
 
         const period = document.getElementById("reportPeriod");
