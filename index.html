@@ -31311,6 +31311,17 @@ function sellerBooksApplyDashboardLanguage(){
 
     setText(".dashboard-chart-card:nth-child(1) h3","salesChart");
     setText(".dashboard-chart-card:nth-child(1) p","salesMovement");
+    const chartInfo = document.getElementById("dashboardSalesChartInfo");
+    if(chartInfo) chartInfo.textContent =
+        sellerBooksDashboardText("periodMovement") +
+        sellerBooksDashboardPeriodText(currentDashboardPeriod);
+
+    dashboard.querySelectorAll(".dashboard-chart-empty").forEach(function(el){
+        const hasPeriodSuffix = /period|periode/i.test(el.textContent || "");
+        el.textContent = hasPeriodSuffix
+            ? sellerBooksDashboardText("noSalesPeriod")
+            : sellerBooksDashboardText("noSales");
+    });
     setText(".dashboard-chart-card:nth-child(2) h3","marketplaceSales");
     setText(".dashboard-chart-card:nth-child(2) p","marketplaceComparison");
     setText(".content-section .section-header h3","marketplacePerformance");
