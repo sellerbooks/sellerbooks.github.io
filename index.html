@@ -24182,9 +24182,15 @@ function sellerBooksSalesImportText(key){
 
 function sellerBooksApplySalesImportLanguage(){
     const root=document.getElementById("import");
+    const topTitle=document.getElementById("topTitle");
+    const topSubtitle=document.getElementById("topSubtitle");
     const modal=document.getElementById("salesPreviewModal");
     if(!root && !modal)return;
     const t=sellerBooksSalesImportText;
+
+    /* Topbar harus mengikuti bahasa akun yang sama dengan halaman Sales Import. */
+    if(topTitle) topTitle.textContent=t("pageTitle");
+    if(topSubtitle) topSubtitle.textContent=t("pageSubtitle");
 
     if(root){
         const q=(s)=>root.querySelector(s);
