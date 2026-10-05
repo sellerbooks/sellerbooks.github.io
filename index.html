@@ -19369,7 +19369,7 @@ async function disconnectStoreAccount(storeId){
     });
 
     if(!store){
-        sellerBooksAlert("Akun toko tidak ditemukan.","Copot Integrasi");
+        sellerBooksAlert(sellerBooksStoreText("storeNotFound"),sellerBooksStoreText("disconnectTitle"));
         return;
     }
 
@@ -19378,7 +19378,7 @@ async function disconnectStoreAccount(storeId){
     });
 
     if(!marketplace){
-        sellerBooksAlert("Marketplace akun toko tidak ditemukan.","Copot Integrasi");
+        sellerBooksAlert(sellerBooksStoreText("marketplaceNotFound"),sellerBooksStoreText("disconnectTitle"));
         return;
     }
 
@@ -19391,8 +19391,11 @@ async function disconnectStoreAccount(storeId){
     }
 
     const confirmed = await sellerBooksConfirm(
-        "Copot integrasi " + marketplace.name + " dari akun toko \"" + store.name + "\"?\n\nSetelah dicopot, akun ini harus diotorisasi ulang jika ingin terhubung kembali.",
-        "Copot Integrasi"
+        sellerBooksStoreText("disconnectConfirm") + " " + marketplace.name + " " +
+        (sellerBooksCurrentLanguage() === "en" ? "from store account \"" : "dari akun toko \"") +
+        store.name + "\"?\n\n" +
+        sellerBooksStoreText("disconnectWarning"),
+        sellerBooksStoreText("disconnectTitle")
     );
 
     if(!confirmed) return;
@@ -19431,8 +19434,10 @@ async function disconnectStoreAccount(storeId){
         await refreshStoreIntegrationStates(true);
 
         sellerBooksAlert(
-            "Integrasi " + marketplace.name + " berhasil dicopot.",
-            "Copot Integrasi"
+            (sellerBooksCurrentLanguage() === "en" ? "Integration for " : "Integrasi ") +
+            marketplace.name +
+            (sellerBooksCurrentLanguage() === "en" ? " was disconnected successfully." : " berhasil dicopot."),
+            sellerBooksStoreText("disconnectTitle")
         );
     }catch(error){
         console.error("Copot integrasi gagal:",error);
