@@ -11776,7 +11776,7 @@ document.addEventListener(
             </div>
             <div class="column-selection-card" style="background:#f8fafc;">
                 <label>🧮 Hasil Perhitungan Packing</label>
-                <div style="font-size:13px;line-height:1.8;">Order/Resi unik: <strong id="uniquePackingCount">0</strong><br>Total biaya packing: <strong id="totalPackingImportCost">Rp 0</strong></div>
+                <div style="font-size:13px;line-height:1.8;"><span id="uniquePackingLabelText">Order/Resi unik:</span> <strong id="uniquePackingCount">0</strong><br><span id="totalPackingLabelText">Total biaya packing:</span> <strong id="totalPackingImportCost">Rp 0</strong></div>
                 <small id="packingIdentifierInfo">Identitas packing akan dipilih otomatis sesuai marketplace.</small>
             </div>
         </div>
@@ -24340,6 +24340,8 @@ function sellerBooksApplySalesImportLanguage(){
             if(label)label.textContent=t(cardData[i][0]);
             if(small)small.textContent=t(cardData[i][1]);
         });
+        const uniquePackingLabel=document.getElementById("uniquePackingLabelText"); if(uniquePackingLabel)uniquePackingLabel.textContent=t("uniquePacking");
+        const totalPackingLabel=document.getElementById("totalPackingLabelText"); if(totalPackingLabel)totalPackingLabel.textContent=t("totalPacking");
         const input=document.getElementById("packingCostPerOrder"); if(input)input.placeholder=t("packingPlaceholder");
         const sku=document.getElementById("manualSkuColumn"), qty=document.getElementById("manualQtyColumn");
         if(sku && sku.options[0])sku.options[0].textContent=t("chooseSku");
