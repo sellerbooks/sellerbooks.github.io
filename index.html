@@ -10736,7 +10736,7 @@ document.addEventListener(
                     </tr>
                 </thead>
                 <tbody id="sbPiutangTableBody">
-                    <tr><td colspan="5" style="text-align:center;color:var(--muted);">'+window.sbPiutangText("noReceivables")+'</td></tr>
+                    <tr><td colspan="5" style="text-align:center;color:var(--muted);">Belum ada piutang.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -10805,7 +10805,7 @@ document.addEventListener(
                     </tr>
                 </thead>
                 <tbody id="sbPiutangBayarTableBody">
-                    <tr><td colspan="5" style="text-align:center;color:var(--muted);">'+window.sbPiutangText("noPayments")+'</td></tr>
+                    <tr><td colspan="5" style="text-align:center;color:var(--muted);">Belum ada pembayaran.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -33376,27 +33376,27 @@ document.addEventListener(
             totalReceivables:"TOTAL PIUTANG",totalReceivablesNote:"Total seluruh piutang sesuai daftar piutang. Pembayaran ditampilkan terpisah.",
             listTitle:"Daftar Piutang",listSubtitle:"Seluruh piutang yang sudah dicatat.",selectName:"Pilih Nama",allNames:"Semua Nama",
             tableDate:"Tanggal",tableName:"Nama",tableAmount:"Jumlah",tableDescription:"Keterangan",actions:"Aksi",edit:"Edit",delete:"Hapus",
-            noReceivables:"'+window.sbPiutangText("noReceivables")+'",noReceivablesForName:"'+window.sbPiutangText("noReceivablesForName")+'",
+            noReceivables:"Belum ada piutang.",noReceivablesForName:"'+window.sbPiutangText("noReceivablesForName")+'",
             paymentTitle:"Bayar Piutang",paymentInfo:"Catat pembayaran piutang. Pembayaran akan mengurangi sisa piutang.",
             paymentNamePlaceholder:"Nama pelanggan / pihak",paymentAmountPlaceholder:"Contoh: 500000",paymentPlaceholder:"Keterangan pembayaran",savePayment:"+ Simpan Pembayaran",
             totalPaid:"TOTAL SUDAH DIBAYAR",totalPaidNote:"Total pembayaran yang sudah dicatat dari seluruh nama.",
             paymentReport:"Raport Pembayaran Piutang",paymentReportSubtitle:"Riwayat pembayaran yang sudah diterima.",
-            noPayments:"'+window.sbPiutangText("noPayments")+'",noPaymentsForName:"'+window.sbPiutangText("noPaymentsForName")+'",
+            noPayments:"Belum ada pembayaran.",noPaymentsForName:"'+window.sbPiutangText("noPaymentsForName")+'",
             remainingTitle:"Sisa Piutang Per Reseller",remainingSubtitle:"Total piutang dikurangi total pembayaran berdasarkan nama yang dipilih.",
             remaining:"SISA HUTANG",breakdown:"Total piutang {receivable} − Total sudah dibayar {paid}",
             editReceivable:"Edit Piutang",editPayment:"Edit Pembayaran Piutang",cancel:"Batal",saveChanges:"Simpan Perubahan",
-            requiredFields:window.sbPiutangText("requiredFields"),requiredPaymentFields:window.sbPiutangText("requiredPaymentFields"),
-            cloudUnavailable:window.sbPiutangText("cloudUnavailable"),paymentCloudUnavailable:window.sbPiutangText("paymentCloudUnavailable"),
-            saveFailed:window.sbPiutangText("saveFailed"),paymentSaveFailed:window.sbPiutangText("paymentSaveFailed"),
-            editFailed:window.sbPiutangText("editFailed"),paymentEditFailed:window.sbPiutangText("paymentEditFailed"),deleteFailed:window.sbPiutangText("deleteFailed"),paymentDeleteFailed:window.sbPiutangText("paymentDeleteFailed"),
+            requiredFields:"Tanggal, Nama, dan Jumlah wajib diisi dengan benar.",requiredPaymentFields:"Tanggal, Nama, dan Jumlah pembayaran wajib diisi dengan benar.",
+            cloudUnavailable:"Piutang belum tersambung ke Supabase. Coba lagi sebentar.",paymentCloudUnavailable:"Pembayaran belum tersambung ke Supabase. Coba lagi sebentar.",
+            saveFailed:"Piutang gagal disimpan ke Supabase.",paymentSaveFailed:"Pembayaran gagal disimpan ke Supabase.",
+            editFailed:"Piutang gagal diedit.",paymentEditFailed:"Pembayaran gagal diedit.",deleteFailed:"Piutang gagal dihapus.",paymentDeleteFailed:"Pembayaran gagal dihapus.",
             deleteReceivable:"Hapus piutang ini?",deletePayment:"Hapus catatan pembayaran ini?",
-            deletedReceivableInfo:window.sbPiutangText("deletedReceivableInfo"),
-            paymentDeleteInfo:window.sbPiutangText("paymentDeleteInfo"),
-            paymentDeleteShort:window.sbPiutangText("paymentDeleteShort"),
+            deletedReceivableInfo:"Data yang dihapus tidak akan dihitung lagi dalam Total Piutang.",
+            paymentDeleteInfo:"Jika dihapus, jumlah pembayaran ini akan kembali menjadi piutang.",
+            paymentDeleteShort:"Nominal akan kembali menjadi sisa piutang.",
             overpayment:"Jumlah pembayaran ({amount}) lebih besar dari sisa piutang ({outstanding}).",
-            keepPayment:"Tetap simpan pembayaran ini?",browserDeleteFailed:window.sbPiutangText("browserDeleteFailed"),
-            browserSaveFailed:window.sbPiutangText("browserSaveFailed"),browserPaymentDeleteFailed:window.sbPiutangText("browserPaymentDeleteFailed"),
-            browserPaymentSaveFailed:window.sbPiutangText("browserPaymentSaveFailed"),
+            keepPayment:"Tetap simpan pembayaran ini?",browserDeleteFailed:"Piutang tidak dapat dihapus di browser ini.",
+            browserSaveFailed:"Piutang tidak dapat disimpan di browser ini.",browserPaymentDeleteFailed:"Pembayaran tidak dapat dihapus di browser ini.",
+            browserPaymentSaveFailed:"Pembayaran tidak dapat disimpan di browser ini.",
             dashboardLabel:"TOTAL PIUTANG RESELLER",dashboardInfo:"Total piutang dikurangi pembayaran yang sudah masuk",dashboardButton:"Lihat Piutang →"
         };
         const enMap={
