@@ -19082,7 +19082,7 @@ function renderStoreMarketplaceOptions(){
 
         <option value="">
 
-            Pilih Marketplace
+            ${sellerBooksStoreText("chooseMarketplace")}
 
         </option>
 
@@ -19166,7 +19166,7 @@ function renderStoreMarketplaceFilter(){
 
         <option value="all">
 
-            Semua Marketplace
+            ${sellerBooksStoreText("allMarketplaces")}
 
         </option>
 
@@ -19245,7 +19245,7 @@ function renderStoreMarketplaceFilter(){
                 <span style="font-size:15px;">▦</span>
             </span>
             <span class="store-marketplace-custom-label">
-                Semua Marketplace
+                ${sellerBooksStoreText("allMarketplaces")}
             </span>
         `;
 
@@ -19261,7 +19261,7 @@ function renderStoreMarketplaceFilter(){
                 <span style="font-size:15px;">▦</span>
             </span>
             <span class="store-marketplace-custom-label">
-                Semua Marketplace
+                ${sellerBooksStoreText("allMarketplaces")}
             </span>
         </button>
 
@@ -21563,6 +21563,7 @@ document.getElementById(
 
 
     renderStoreMarketplaceOptions();
+    sellerBooksApplyStoreLanguage();
 
 
     /*
@@ -31438,6 +31439,8 @@ function sellerBooksApplyStoreLanguage(){
         const feeInput = document.getElementById("storeFeePercent");
         if(feeInput) feeInput.placeholder = sellerBooksStoreText("feePlaceholder");
 
+        const feeHelp = modal.querySelector(".form-group small");
+        if(feeHelp) feeHelp.textContent = sellerBooksStoreText("feeHelp");
         const descriptionInput = document.getElementById("storeDescription");
         if(descriptionInput) descriptionInput.placeholder = sellerBooksStoreText("descriptionPlaceholder");
 
