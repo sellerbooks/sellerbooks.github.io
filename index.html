@@ -4654,7 +4654,7 @@ function sellerBooksReportsText(key){
         deleteMissing:"Silakan pilih Dari Tanggal dan Sampai Dengan terlebih dahulu.",invalidRange:"Rentang tanggal tidak valid.",invalidOrder:"Dari Tanggal tidak boleh lebih besar dari Sampai Dengan.",maxDeleteRange:"Penghapusan hanya dapat dilakukan untuk rentang maksimal 3 bulan terakhir sampai hari ini.",noDeleteMatch:"Tidak ada laporan yang cocok dengan tanggal, marketplace, dan akun toko yang dipilih.",
         deleteConfirmTitle:"Konfirmasi Penghapusan",deleteConfirm:"HAPUS LAPORAN PERMANEN?",range:"Rentang",selectedMarketplace:"Marketplace",selectedStore:"Akun Toko",importCount:"Jumlah data import",onlyFiltered:"Hanya laporan yang sesuai dengan filter di atas yang akan dihapus.",restore:"Stok produk akan DIKEMBALIKAN sesuai jumlah stok yang sebelumnya dipotong oleh laporan tersebut.",irreversible:"Data yang dihapus tidak dapat dikembalikan.",
         deleteSuccess:"Laporan berhasil dihapus.",deletedImports:"data import telah dihapus.",restored:"Stok dikembalikan",noRestore:"Tidak ada stok yang perlu dikembalikan.",pdfSuccess:"✅ PDF laporan berhasil dibuat.",pdfFailed:"❌ PDF gagal dibuat.",tryAgain:"Silakan coba lagi.",
-        pdfTitle:"SellerBooks - Laporan Bisnis",printed:"Dicetak",financialSummary:"Ringkasan Keuangan",component:"Komponen",value:"Nilai",skuDetails:"Rincian Penjualan per SKU",productName:"Nama Produk",sellingPrice:"Harga Jual",totalSalesHeader:"Penjualan",hpp:"HPP",admin:"Admin",productProfit:"Laba Produk",loss:"MINUS",gain:"UNTUNG",marketplaceSummaryPdf:"Ringkasan Marketplace",noData:"Tidak ada data",page:"Halaman",of:"dari"
+        pdfTitle:"SellerBooks - Laporan Bisnis",no:"No",printed:"Dicetak",financialSummary:"Ringkasan Keuangan",component:"Komponen",value:"Nilai",skuDetails:"Rincian Penjualan per SKU",productName:"Nama Produk",sellingPrice:"Harga Jual",totalSalesHeader:"Penjualan",hpp:"HPP",admin:"Admin",productProfit:"Laba Produk",loss:"MINUS",gain:"UNTUNG",marketplaceSummaryPdf:"Ringkasan Marketplace",noData:"Tidak ada data",page:"Halaman",of:"dari"
       },
       en:{
         pageTitle:"Business Reports",pageSubtitle:"Analyze sales, costs, and profit across all marketplaces and store accounts.",
@@ -4677,7 +4677,7 @@ function sellerBooksReportsText(key){
         deleteMissing:"Please select From Date and To Date first.",invalidRange:"Invalid date range.",invalidOrder:"From Date cannot be later than To Date.",maxDeleteRange:"Deletion is only allowed for a maximum range of the last 3 months through today.",noDeleteMatch:"No reports match the selected date, marketplace, and store account.",
         deleteConfirmTitle:"Delete Confirmation",deleteConfirm:"PERMANENTLY DELETE REPORTS?",range:"Range",selectedMarketplace:"Marketplace",selectedStore:"Store Account",importCount:"Import data count",onlyFiltered:"Only reports matching the filters above will be deleted.",restore:"Product stock will be RESTORED according to the stock quantity previously deducted by those reports.",irreversible:"Deleted data cannot be recovered.",
         deleteSuccess:"Reports deleted successfully.",deletedImports:"import records were deleted.",restored:"Stock restored",noRestore:"No stock needed to be restored.",pdfSuccess:"✅ Report PDF created successfully.",pdfFailed:"❌ Failed to create report PDF.",tryAgain:"Please try again.",
-        pdfTitle:"SellerBooks - Business Report",printed:"Printed",financialSummary:"Financial Summary",component:"Component",value:"Value",skuDetails:"Sales Details by SKU",productName:"Product Name",sellingPrice:"Selling Price",totalSalesHeader:"Sales",hpp:"COGS",admin:"Admin",productProfit:"Product Profit",loss:"LOSS",gain:"PROFIT",marketplaceSummaryPdf:"Marketplace Summary",noData:"No data",page:"Page",of:"of"
+        pdfTitle:"SellerBooks - Business Report",no:"No",printed:"Printed",financialSummary:"Financial Summary",component:"Component",value:"Value",skuDetails:"Sales Details by SKU",productName:"Product Name",sellingPrice:"Selling Price",totalSalesHeader:"Sales",hpp:"COGS",admin:"Admin",productProfit:"Product Profit",loss:"LOSS",gain:"PROFIT",marketplaceSummaryPdf:"Marketplace Summary",noData:"No data",page:"Page",of:"of"
       }
     };
     return tr[lang]?.[key] ?? tr.id[key] ?? key;
@@ -4695,6 +4695,13 @@ function sellerBooksApplyReportsLanguage(){
     }
     const download=document.getElementById("downloadReportPDFButton");
     if(download)download.textContent=t("download");
+
+    const filterCard=Array.from(view.querySelectorAll(".content-section")).find(x=>x.querySelector("#reportPeriod"));
+    if(filterCard){
+        const h=filterCard.querySelector("h3"),p=filterCard.querySelector("p");
+        if(h)h.textContent=t("filterTitle");
+        if(p)p.textContent=t("filterSubtitle");
+    }
 
     const period=document.getElementById("reportPeriod");
     if(period){
@@ -8820,8 +8827,8 @@ async function downloadReportPDF(){
 
         /* RINGKASAN KEUANGAN */
         const summaryRows = [
-            [sellerBooksReportsText("totalSales").replace("TOTAL ",""), sellerBooksPdfFormatRupiah(financial.totalSales)],
-            [sellerBooksReportsText("netSales").replace("NET ",""), sellerBooksPdfFormatRupiah(financial.netSales)],
+            [sellerBooksReportsText("sales"), sellerBooksPdfFormatRupiah(financial.totalSales)],
+            [sellerBooksReportsText("netSalesHeader"), sellerBooksPdfFormatRupiah(financial.netSales)],
             [sellerBooksReportsText("soldProducts"), sellerBooksPdfFormatNumber(financial.totalQty) + " PCS"],
             [sellerBooksReportsText("hpp"), sellerBooksPdfFormatRupiah(financial.totalHpp)],
             [sellerBooksReportsText("admin"), sellerBooksPdfFormatRupiah(financial.totalAdmin)],
