@@ -8807,16 +8807,16 @@ async function downloadReportPDF(){
         doc.setFont("helvetica","normal");
         doc.setFontSize(9);
         doc.text(
-            sellerBooksReportsText("printed") + ": " sellerBooksPdfFormatDateNow(),
+            sellerBooksReportsText("printed") + ": " + sellerBooksPdfFormatDateNow(),
             pageWidth - 14,
             16,
             {align:"right"}
         );
 
         doc.setFontSize(10);
-        doc.text(sellerBooksReportsText("period") + ": " periodLabel,14,23);
-        doc.text(sellerBooksReportsText("marketplace") + ": " marketplaceLabel,14,29);
-        doc.text(sellerBooksReportsText("storeAccount") + ": " storeLabel,14,35);
+        doc.text(sellerBooksReportsText("period") + ": " + periodLabel,14,23);
+        doc.text(sellerBooksReportsText("marketplace") + ": " + marketplaceLabel,14,29);
+        doc.text(sellerBooksReportsText("storeAccount") + ": " + storeLabel,14,35);
 
         /* RINGKASAN KEUANGAN */
         const summaryRows = [
@@ -8825,7 +8825,7 @@ async function downloadReportPDF(){
             [sellerBooksReportsText("soldProducts"), sellerBooksPdfFormatNumber(financial.totalQty) + " PCS"],
             [sellerBooksReportsText("hpp"), sellerBooksPdfFormatRupiah(financial.totalHpp)],
             [sellerBooksReportsText("admin"), sellerBooksPdfFormatRupiah(financial.totalAdmin)],
-            ["Packing", sellerBooksPdfFormatRupiah(financial.totalPacking)],
+            [sellerBooksReportsText("packing"), sellerBooksPdfFormatRupiah(financial.totalPacking)],
             [sellerBooksReportsText("otherCosts"), sellerBooksPdfFormatRupiah(financial.otherCosts)],
             [sellerBooksReportsText("grossProfit"), sellerBooksPdfFormatRupiah(financial.grossProfit)],
             [sellerBooksReportsText("netProfit"), sellerBooksPdfFormatRupiah(financial.netProfit)],
@@ -8896,10 +8896,10 @@ async function downloadReportPDF(){
             margin:{left:14,right:14},
             theme:"grid",
             head:[[
-                "No",
+                sellerBooksReportsText("no"),
                 "SKU",
                 sellerBooksReportsText("productName"),
-                "QTY",
+                sellerBooksReportsText("qty"),
                 sellerBooksReportsText("sellingPrice"),
                 sellerBooksReportsText("totalSalesHeader"),
                 sellerBooksReportsText("hpp"),
@@ -8934,7 +8934,7 @@ async function downloadReportPDF(){
                 if(
                     data.section === "body" &&
                     data.column.index === 9 &&
-                    String(data.cell.raw) === "MINUS"
+                    String(data.cell.raw) === sellerBooksReportsText("loss")
                 ){
                     data.cell.styles.fontStyle = "bold";
                 }
@@ -8962,7 +8962,7 @@ async function downloadReportPDF(){
 
             if(!marketplaceMap.has(key)){
                 marketplaceMap.set(key,{
-                    name:String(item.marketplace || key || "Lainnya"),
+                    name:String(item.marketplace || key || sellerBooksReportsText("noData")),
                     sales:0,
                     qty:0,
                     hpp:0,
@@ -9027,8 +9027,8 @@ async function downloadReportPDF(){
             margin:{left:14,right:14},
             theme:"grid",
             head:[[
-                "Marketplace",
-                "QTY",
+                sellerBooksReportsText("marketplace"),
+                sellerBooksReportsText("qty"),
                 sellerBooksReportsText("totalSalesHeader"),
                 sellerBooksReportsText("admin"),
                 sellerBooksReportsText("hpp"),
