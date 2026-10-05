@@ -4821,9 +4821,7 @@ function loadReportMarketplaceFilter(){
 
 
     select.innerHTML = `
-        <option value="all">
-            Semua Marketplace
-        </option>
+        <option value="all">${sellerBooksReportsText("allMarketplaces")}</option>
     `;
 
 
@@ -4921,9 +4919,7 @@ function loadReportStoreFilter(){
 
 
     storeSelect.innerHTML = `
-        <option value="all">
-            Semua Akun Toko
-        </option>
+        <option value="all">${sellerBooksReportsText("allStoreAccounts")}</option>
     `;
 
 
@@ -5864,7 +5860,7 @@ function updateReportCustomDateUI(){
 
     const info = document.getElementById("reportDateRangeInfo");
     if(info){
-        info.textContent = "Rentang tanggal maksimal: 3 bulan terakhir sampai hari ini (" + minDate.split("-").reverse().join("/") + " s/d " + maxDate.split("-").reverse().join("/") + ").";
+        info.textContent = sellerBooksReportsText("maxRange") + " (" + minDate.split("-").reverse().join("/") + " " + sellerBooksReportsText("dateSeparator") + " " + maxDate.split("-").reverse().join("/") + ").";
     }
 }
 
@@ -5879,7 +5875,7 @@ function loadDeleteReportMarketplaceFilter(){
     const currentValue = select.value || "all";
 
     select.innerHTML = `
-        <option value="all">Semua Marketplace</option>
+        <option value="all">${sellerBooksReportsText("allMarketplaces")}</option>
     `;
 
     let marketplaceData = [];
@@ -5929,7 +5925,7 @@ function loadDeleteReportStoreFilter(){
     const currentStore = storeSelect.value || "all";
 
     storeSelect.innerHTML = `
-        <option value="all">Semua Akun Toko</option>
+        <option value="all">${sellerBooksReportsText("allStoreAccounts")}</option>
     `;
 
     let storesData = [];
@@ -7966,10 +7962,7 @@ function renderReportFinancial(){
     if(salesInfo){
 
         salesInfo.textContent =
-            "Admin marketplace " +
-            formatRupiah(
-                data.totalAdmin
-            );
+            sellerBooksReportsText("admin") + " " + formatRupiah(data.totalAdmin);
 
     }
 
@@ -11090,11 +11083,7 @@ document.addEventListener(
             tabindex="-1"
         >
 
-            <option value="all">
-
-                Semua Marketplace
-
-            </option>
+            <option value="all">${sellerBooksReportsText("allMarketplaces")}</option>
 
         </select>
 
@@ -12285,7 +12274,7 @@ document.addEventListener(
                         class="form-control"
                         onchange="onProductAnalysisMarketplaceChange()"
                     >
-                        <option value="all">Semua Marketplace</option>
+                        <option value="all">${sellerBooksReportsText("allMarketplaces")}</option>
                     </select>
                 </div>
 
@@ -12296,7 +12285,7 @@ document.addEventListener(
                         class="form-control"
                         onchange="applyProductAnalysisFilters()"
                     >
-                        <option value="all">Semua Akun Toko</option>
+                        <option value="all">${sellerBooksReportsText("allStoreAccounts")}</option>
                     </select>
                 </div>
 
@@ -12580,9 +12569,7 @@ document.addEventListener(
                     onchange="onReportMarketplaceChange()"
                 >
 
-                    <option value="all">
-                        Semua Marketplace
-                    </option>
+                    <option value="all">${sellerBooksReportsText("allMarketplaces")}</option>
 
                 </select>
 
@@ -12609,9 +12596,7 @@ document.addEventListener(
                     onchange="applyReportFilters()"
                 >
 
-                    <option value="all">
-                        Semua Akun Toko
-                    </option>
+                    <option value="all">${sellerBooksReportsText("allStoreAccounts")}</option>
 
                 </select>
 
@@ -12664,14 +12649,14 @@ document.addEventListener(
                 <div>
                     <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;">Marketplace</label>
                     <select id="deleteReportMarketplace" class="form-control" onchange="loadDeleteReportStoreFilter()">
-                        <option value="all">Semua Marketplace</option>
+                        <option value="all">${sellerBooksReportsText("allMarketplaces")}</option>
                     </select>
                 </div>
 
                 <div>
                     <label style="display:block;margin-bottom:6px;font-size:12px;font-weight:600;">Akun Toko</label>
                     <select id="deleteReportStore" class="form-control">
-                        <option value="all">Semua Akun Toko</option>
+                        <option value="all">${sellerBooksReportsText("allStoreAccounts")}</option>
                     </select>
                 </div>
 
