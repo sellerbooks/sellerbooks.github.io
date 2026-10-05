@@ -22,6 +22,13 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
 </div>
 <script>
 (function(){
+    const language =
+        localStorage.getItem("sellerbooks_ui_language") === "en"
+            ? "en"
+            : "id";
+    document.documentElement.lang = language === "en" ? "en" : "id";
+    const EN = language === "en";
+
     const params=new URLSearchParams(window.location.search);
     const result=params.get("sellerbooks_shopee_oauth")||"error";
     const reason=params.get("reason")||"OAUTH_FAILED";
@@ -35,8 +42,8 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
     if(result!=="success"){
         document.getElementById("icon").textContent="!";
         document.getElementById("icon").classList.add("error");
-        document.getElementById("title").textContent="Integrasi Shopee gagal";
-        document.getElementById("message").textContent="Kode: "+reason;
+        document.getElementById("title").textContent=EN ? "Shopee integration failed" : "Integrasi Shopee gagal";
+        document.getElementById("message").textContent=EN ? "Code: "+reason : "Kode: "+reason;
     }
 
     try{
