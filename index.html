@@ -22875,6 +22875,68 @@ function changeProductPageSize(value){
    BUKA MODAL TAMBAH PRODUK
 ===================================================== */
 
+function applyProductModalLanguage(){
+    const isEN = sellerBooksCurrentLanguage() === "en";
+    const setText = function(id, en, idText){
+        const el = document.getElementById(id);
+        if(el) el.textContent = isEN ? en : idText;
+    };
+    const setPlaceholder = function(id, en, idText){
+        const el = document.getElementById(id);
+        if(el) el.placeholder = isEN ? en : idText;
+    };
+
+    setText("productModalTitle", "Add Product", "Tambah Produk");
+
+    const modal = document.getElementById("productModal");
+    if(!modal) return;
+
+    const labels = modal.querySelectorAll(".form-group > label");
+    const labelMap = [
+        ["Product SKU *","SKU Produk *"],
+        ["Product Name *","Nama Produk *"],
+        ["Category","Kategori"],
+        ["Selling Price","Harga Jual"],
+        ["COGS / Product Cost *","HPP / Modal Produk *"],
+        ["Product Stock","Stok Produk"],
+        ["Admin % SKU","Admin % SKU"],
+        ["Product Status","Status Produk"]
+    ];
+    labels.forEach(function(label, index){
+        if(!labelMap[index]) return;
+        const pair = labelMap[index];
+        const optional = label.querySelector("span");
+        label.textContent = isEN ? pair[0] : pair[1];
+        if(optional){
+            optional.textContent = isEN ? "(Optional)" : "(Opsional)";
+            label.appendChild(optional);
+        }
+    });
+
+    setPlaceholder("productSKU", "Example: TAS-BIRU-001", "Contoh: TAS-BIRU-001");
+    setPlaceholder("productName", "Example: Blue Premium Bag", "Contoh: Tas Biru Premium");
+    setPlaceholder("productCategory", "Example: Bag", "Contoh: Tas");
+    setPlaceholder("productPrice", "Example: 50000", "Contoh: 50000");
+    setPlaceholder("productCost", "Example: 25000", "Contoh: 25000");
+    setPlaceholder("productStock", "Example: 100", "Contoh: 100");
+    setPlaceholder("productAdminFeePercent", "Example: 15", "Contoh: 15");
+
+    const status = document.getElementById("productStatus");
+    if(status){
+        const current = status.value || "active";
+        status.innerHTML = isEN
+            ? '<option value="active">Active</option><option value="inactive">Inactive</option>'
+            : '<option value="active">Aktif</option><option value="inactive">Tidak Aktif</option>';
+        status.value = current;
+    }
+
+    const cancel = modal.querySelector(".cancel-button");
+    if(cancel) cancel.textContent = isEN ? "Cancel" : "Batal";
+
+    const save = modal.querySelector(".primary-button");
+    if(save) save.textContent = isEN ? "Save Product" : "Simpan Produk";
+}
+
 function openProductModal(){
 
     editingProductId = null;
@@ -22884,7 +22946,9 @@ function openProductModal(){
         "productModalTitle"
     ).innerText =
 
-        "Tambah Produk";
+        sellerBooksCurrentLanguage() === "en"
+            ? "Add Product"
+            : "Tambah Produk";
 
 
     document.getElementById(
@@ -22925,6 +22989,8 @@ function openProductModal(){
         "productStatus"
     ).value = "active";
 
+
+    applyProductModalLanguage();
 
     document
         .getElementById("productModal")
@@ -23308,7 +23374,9 @@ function editProduct(id){
         "productModalTitle"
     ).innerText =
 
-        "Edit Produk";
+        sellerBooksCurrentLanguage() === "en"
+            ? "Edit Product"
+            : "Edit Produk";
 
 
     document.getElementById(
@@ -23350,6 +23418,8 @@ document.getElementById(
         "productStatus"
     ).value = product.status;
 
+
+    applyProductModalLanguage();
 
     document
         .getElementById("productModal")
