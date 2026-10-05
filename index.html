@@ -4533,7 +4533,7 @@ td{
         body.textContent = item.message;
         icon.textContent = item.confirm ? "?" : "✓";
         cancel.style.display = item.confirm ? "" : "none";
-        ok.textContent = item.confirm ? "Lanjutkan" : "OK";
+        ok.textContent = sellerBooksTranslateUserText(item.confirm ? "Lanjutkan" : "OK", sellerBooksCurrentLanguage());
 
         overlay.classList.add("show");
         overlay.setAttribute("aria-hidden","false");
