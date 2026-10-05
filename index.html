@@ -33452,6 +33452,8 @@ document.addEventListener(
         if(dashButton)dashButton.textContent=t("dashboardButton");
 
         if(view){
+            const topTitle=document.getElementById("topTitle"), topSubtitle=document.getElementById("topSubtitle");
+            if(view.classList.contains("active")){if(topTitle)topTitle.textContent=t("pageTitle");if(topSubtitle)topSubtitle.textContent=t("pageSubtitle");}
             const ph=view.querySelector(".page-header h2"), ps=view.querySelector(".page-header p");
             if(ph)ph.textContent=t("pageTitle"); if(ps)ps.textContent=t("pageSubtitle");
 
@@ -33639,7 +33641,7 @@ document.addEventListener(
             if(name && !seen.has(key)){ seen.add(key); names.push(name); }
         });
         names.sort(function(a,b){return a.localeCompare(b,"id",{sensitivity:"base"});});
-        select.innerHTML='<option value="">Semua Nama</option>'+names.map(function(name){
+        select.innerHTML='<option value="">'+window.sbPiutangText("allNames")+'</option>'+names.map(function(name){
             return '<option value="'+sbPiutangEscape(name)+'">'+sbPiutangEscape(name)+'</option>';
         }).join("");
         if(names.some(function(n){return n.toLowerCase()===current.toLowerCase();})) select.value=current;
@@ -33662,7 +33664,7 @@ document.addEventListener(
         const tbody=document.getElementById("sbPiutangTableBody");
         if(!tbody) return;
         if(!filtered.length){
-            tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(data.length?''+window.sbPiutangText("noReceivablesForName")+'':'Belum ada piutang.')+'</td></tr>';
+            tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(data.length?''+window.sbPiutangText("noReceivablesForName")+'':''+window.sbPiutangText("noReceivables")+'')+'</td></tr>';
             return;
         }
         tbody.innerHTML=filtered.map(function(item){
@@ -33687,7 +33689,7 @@ document.addEventListener(
             if(name && !seen.has(key)){seen.add(key);names.push(name);}
         });
         names.sort(function(a,b){return a.localeCompare(b,"id",{sensitivity:"base"});});
-        select.innerHTML='<option value="">Semua Nama</option>'+names.map(function(name){
+        select.innerHTML='<option value="">'+window.sbPiutangText("allNames")+'</option>'+names.map(function(name){
             return '<option value="'+sbPiutangEscape(name)+'">'+sbPiutangEscape(name)+'</option>';
         }).join("");
         if(names.some(function(n){return n.toLowerCase()===current.toLowerCase();})) select.value=current;
@@ -33705,7 +33707,7 @@ document.addEventListener(
         const tbody=document.getElementById("sbPiutangBayarTableBody");
         if(!tbody) return;
         if(!filtered.length){
-            tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(data.length?''+window.sbPiutangText("noPaymentsForName")+'':'Belum ada pembayaran.')+'</td></tr>';
+            tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(data.length?''+window.sbPiutangText("noPaymentsForName")+'':''+window.sbPiutangText("noPayments")+'')+'</td></tr>';
             return;
         }
         tbody.innerHTML=filtered.map(function(item){
@@ -34088,7 +34090,7 @@ document.addEventListener(
         if(p)p.textContent=piutangMoney(displayedPiutangTotal);
         const tbody=document.getElementById("sbPiutangTableBody");
         if(tbody){
-            tbody.innerHTML=e.length?e.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangEsc(x.keterangan||"-")+'</td><td><button type="button" class="sb-piutang-edit-button" onclick="sbPiutangEditCloud(\''+piutangEsc(x.id)+'\')">'+window.sbPiutangText("edit")+'</button><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangDeleteCloud(\''+piutangEsc(x.id)+'\')">Hapus</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudEntries.length?'Tidak ada piutang untuk nama tersebut.':'Belum ada piutang.')+'</td></tr>');
+            tbody.innerHTML=e.length?e.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangEsc(x.keterangan||"-")+'</td><td><button type="button" class="sb-piutang-edit-button" onclick="sbPiutangEditCloud(\''+piutangEsc(x.id)+'\')">'+window.sbPiutangText("edit")+'</button><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangDeleteCloud(\''+piutangEsc(x.id)+'\')">'+window.sbPiutangText("delete")+'</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudEntries.length?''+window.sbPiutangText("noReceivablesForName")+'':''+window.sbPiutangText("noReceivables")+'')+'</td></tr>');
         }
 
         const f2=(document.getElementById("sbPiutangBayarNamaFilter")?.value||"").toLowerCase();
@@ -34111,7 +34113,7 @@ document.addEventListener(
         if(bt)bt.textContent=piutangMoney(displayedBayarTotal);
         const pt=document.getElementById("sbPiutangBayarTableBody");
         if(pt){
-            pt.innerHTML=pay.length?pay.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangKeterangan(x.keterangan)+'</td><td><button type="button" class="sb-piutang-edit-button" onclick="sbPiutangBayarEditCloud(\''+piutangEsc(x.id)+'\')">Edit</button><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangBayarDeleteCloud(\''+piutangEsc(x.id)+'\')">Hapus</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudPayments.length?'Tidak ada pembayaran untuk nama tersebut.':'Belum ada pembayaran.')+'</td></tr>');
+            pt.innerHTML=pay.length?pay.map(x=>'<tr><td>'+piutangDate(x.tanggal)+'</td><td>'+piutangEsc(x.nama)+'</td><td>'+piutangMoney(x.jumlah)+'</td><td>'+piutangKeterangan(x.keterangan)+'</td><td><button type="button" class="sb-piutang-edit-button" onclick="sbPiutangBayarEditCloud(\''+piutangEsc(x.id)+'\')">'+window.sbPiutangText("edit")+'</button><button type="button" class="sb-piutang-delete-button" onclick="sbPiutangBayarDeleteCloud(\''+piutangEsc(x.id)+'\')">'+window.sbPiutangText("delete")+'</button></td></tr>').join(""):('<tr><td colspan="5" style="text-align:center;color:var(--muted);">'+(cloudPayments.length?''+window.sbPiutangText("noPaymentsForName")+'':''+window.sbPiutangText("noPayments")+'')+'</td></tr>');
         }
     }
 
