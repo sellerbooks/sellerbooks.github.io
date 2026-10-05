@@ -32981,7 +32981,7 @@ function sellerBooksTranslateUserText(value, language){
         .forEach(function(pair){
             const source = pair[0];
             const target = pair[1];
-            const escaped = source.replace(/[.*+?^$()|[\\]\\]/g, "\\$&");
+            const escaped = source.replace(/[.*+?^${}()|[\]\\]/g, "\\const escaped = source.replace(/[.*+?^$()|[\\]\\]/g, "\\$&");");
             result = result.replace(new RegExp("\\b" + escaped + "\\b","gi"), target);
         });
     return result;
