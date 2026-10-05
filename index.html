@@ -22417,6 +22417,7 @@ function sellerBooksProductText(key){
             deleteSelectedConfirm:"Hapus {count} produk yang dipilih?\n\nData yang dihapus tidak dapat dikembalikan.", deleteConfirm:"Hapus produk",
             importEmpty:"File Excel tidak memiliki data.", importDone:"Import selesai.\n\nBerhasil: {success}\nDuplikat SKU: {duplicate}\nData tidak valid: {error}",
             importError:"Terjadi kesalahan saat membaca file Excel.", exportError:"Export Excel gagal. Silakan coba lagi.",
+            exportSuccessTitle:"Export Berhasil", exportSuccess:"File Excel Master Produk berhasil dibuat dan diunduh ke perangkat Anda.",
             exportMaster:"MASTER PRODUK", exportInstructions:"PETUNJUK PENGISIAN", exportReadme:"README", exportColumn:"KOLOM",
             exportGuide:"PETUNJUK PENGISIAN", exportRules:"ATURAN IMPORT", exportTemplateTitle:"SELLERBOOKS MASTER PRODUK TEMPLATE",
             exportTemplateDescription:"File ini digunakan untuk menambah atau memperbarui data Master Produk di SellerBooks.",
@@ -22450,7 +22451,8 @@ function sellerBooksProductText(key){
             costRequired:"Product cost is required.", duplicateEdit:"This SKU is already used by another product.", duplicateAdd:"This SKU is already registered.",
             deleteSelectedConfirm:"Delete {count} selected products?\n\nDeleted data cannot be recovered.", deleteConfirm:"Delete product",
             importEmpty:"The Excel file contains no data.", importDone:"Import completed.\n\nSuccessful: {success}\nDuplicate SKUs: {duplicate}\nInvalid data: {error}",
-            importError:"An error occurred while reading the Excel file.", exportError:"Excel export failed. Please try again.", exportMaster:"MASTER PRODUCTS", exportInstructions:"FILLING INSTRUCTIONS",
+            importError:"An error occurred while reading the Excel file.", exportError:"Excel export failed. Please try again.",
+            exportSuccessTitle:"Export Successful", exportSuccess:"The Master Products Excel file was successfully created and downloaded to your device.", exportMaster:"MASTER PRODUCTS", exportInstructions:"FILLING INSTRUCTIONS",
             exportReadme:"README", exportColumn:"COLUMN", exportGuide:"FILLING INSTRUCTIONS", exportRules:"IMPORT RULES",
             exportTemplateTitle:"SELLERBOOKS MASTER PRODUCTS TEMPLATE", exportTemplateDescription:"This file is used to add or update Master Products data in SellerBooks.",
             howTo:"HOW TO USE", importantNotes:"IMPORTANT NOTES", requiredSku:"Required. SKU is the unique product code and must not duplicate another product.",
@@ -24557,6 +24559,11 @@ async function exportProducts(){
                     fileName
                 );
 
+                sellerBooksAlert(
+                    sellerBooksProductText("exportSuccess"),
+                    sellerBooksProductText("exportSuccessTitle")
+                );
+
                 return;
 
             }catch(excelJsError){
@@ -24734,6 +24741,11 @@ async function exportProducts(){
                 }
             ),
             fileName
+        );
+
+        sellerBooksAlert(
+            sellerBooksProductText("exportSuccess"),
+            sellerBooksProductText("exportSuccessTitle")
         );
 
     }catch(error){
