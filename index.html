@@ -21299,7 +21299,7 @@ function renderStores(skipIntegrationRefresh){
                     onclick="disconnectStoreAccount('${store.id}')"
                     title="${sellerBooksStoreText("disconnectIntegration")}"
                 >
-                    ⛓ Copot Integrasi
+                    ⛓ ${sellerBooksStoreText("disconnectIntegration")}
                 </button>
                 ${orderSyncButtonHtml}
               `
@@ -21973,13 +21973,10 @@ async function deleteStore(id){
 
 
     const confirmation = await sellerBooksConfirm(
-
-        'Hapus akun toko "' +
-
+        sellerBooksStoreText("deleteQuestion") +
+        ' "' +
         store.name +
-
         '"?'
-
     );
 
 
@@ -31309,6 +31306,7 @@ function sellerBooksStoreText(key){
             marketplaceInactive:"Marketplace ini sudah tidak aktif. Silakan pilih marketplace aktif.",
             duplicate:"Nama toko ini sudah terdaftar di marketplace yang dipilih.",
             deleteConfirm:"Hapus akun toko",
+            deleteQuestion:"Hapus akun toko",
             deleteWarning:"?",
             connectTitle:"Integrasikan Akun",
             disconnectTitle:"Copot Integrasi",
@@ -31366,6 +31364,7 @@ function sellerBooksStoreText(key){
             marketplaceInactive:"This marketplace is no longer active. Please select an active marketplace.",
             duplicate:"This store name is already registered in the selected marketplace.",
             deleteConfirm:"Delete store account",
+            deleteQuestion:"Delete store account",
             deleteWarning:"?",
             connectTitle:"Integrate Account",
             disconnectTitle:"Disconnect Integration",
@@ -31457,6 +31456,33 @@ function sellerBooksApplyStoreLanguage(){
         const closeButton = modal.querySelector(".modal-close");
         if(closeButton) closeButton.setAttribute("aria-label", sellerBooksStoreText("cancel"));
     }
+
+    /* Translate the persistent SellerBooks sidebar together with the active Store Accounts page. */
+    const sidebarLanguage = sellerBooksCurrentLanguage();
+    const sidebarTitles = sidebarLanguage === "en"
+        ? ["Main Menu","Business Data","Analysis","System"]
+        : ["Menu Utama","Data Bisnis","Analisis","Sistem"];
+    document.querySelectorAll(".sidebar-menu .menu-title").forEach(function(el,index){
+        if(sidebarTitles[index]) el.textContent = sidebarTitles[index];
+    });
+
+    const sidebarMenuTexts = sidebarLanguage === "en"
+        ? ["Dashboard","Marketplace","Store Accounts","Master Products","Sales Import","Other Costs","Receivables","Details","Reports","Settings"]
+        : ["Dashboard","Marketplace","Akun Toko","Master Produk","Import Penjualan","Biaya Lain","Piutang","Rincian","Laporan","Pengaturan"];
+    document.querySelectorAll(".sidebar-menu .menu-item").forEach(function(button,index){
+        const icon = button.querySelector(".menu-icon");
+        if(!icon || !sidebarMenuTexts[index]) return;
+        Array.from(button.childNodes).filter(function(node){
+            return node.nodeType === 3 && String(node.textContent || "").trim();
+        }).forEach(function(node){
+            node.textContent = " " + sidebarMenuTexts[index] + " ";
+        });
+    });
+
+    const resetIdentity = document.querySelector(".reset-identity-button span");
+    if(resetIdentity) resetIdentity.textContent = sidebarLanguage === "en" ? "Reset Identity" : "Reset Identitas";
+    const logout = document.querySelector(".logout-button span");
+    if(logout) logout.textContent = "Logout";
 
     const topTitle = document.getElementById("topTitle");
     const topSubtitle = document.getElementById("topSubtitle");
