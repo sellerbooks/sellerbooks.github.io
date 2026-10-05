@@ -4682,6 +4682,121 @@ function sellerBooksReportsText(key){
     };
     return tr[lang]?.[key] ?? tr.id[key] ?? key;
 }
+
+function sellerBooksApplyReportsLanguage(){
+    const view=document.getElementById("reports");
+    if(!view)return;
+    const t=sellerBooksReportsText;
+    const header=view.querySelector(".page-header");
+    if(header){
+        const h=header.querySelector("h2"),p=header.querySelector("p");
+        if(h)h.textContent=t("pageTitle");
+        if(p)p.textContent=t("pageSubtitle");
+    }
+    const download=document.getElementById("downloadReportPDFButton");
+    if(download)download.textContent=t("download");
+
+    const period=document.getElementById("reportPeriod");
+    if(period){
+        const keys={today:"today",yesterday:"yesterday",week:"week",lastWeek:"lastWeek",month:"month",lastMonth:"lastMonth",last3Months:"last3Months",year:"year",custom:"custom",all:"all"};
+        Array.from(period.options).forEach(o=>{if(keys[o.value])o.textContent=t(keys[o.value]);});
+    }
+    const allM=document.querySelector("#reportMarketplace option[value='all']");
+    const allS=document.querySelector("#reportStore option[value='all']");
+    const delM=document.querySelector("#deleteReportMarketplace option[value='all']");
+    const delS=document.querySelector("#deleteReportStore option[value='all']");
+    if(allM)allM.textContent=t("allMarketplaces");
+    if(allS)allS.textContent=t("allStoreAccounts");
+    if(delM)delM.textContent=t("allMarketplaces");
+    if(delS)delS.textContent=t("allStoreAccounts");
+
+    const labels=view.querySelectorAll("label");
+    const labelMap={
+        reportPeriod:t("period"),reportMarketplace:t("marketplace"),reportStore:t("storeAccount"),
+        reportDateFrom:t("fromDate"),reportDateTo:t("toDate"),
+        deleteReportDateFrom:t("fromDate"),deleteReportDateTo:t("toDate"),
+        deleteReportMarketplace:t("marketplace"),deleteReportStore:t("storeAccount")
+    };
+    labels.forEach(label=>{
+        const target=label.getAttribute("for");
+        if(target&&labelMap[target])label.textContent=labelMap[target];
+    });
+    const customLabels=document.querySelectorAll("#reportCustomDateRange label");
+    if(customLabels[0])customLabels[0].textContent=t("fromDate");
+    if(customLabels[1])customLabels[1].textContent=t("toDate");
+    const rangeInfo=document.getElementById("reportDateRangeInfo");
+    if(rangeInfo)updateReportCustomDateUI();
+
+    const contentSections=view.querySelectorAll(".content-section");
+    contentSections.forEach(section=>{
+        const h=section.querySelector("h3");
+        const p=section.querySelector("p");
+        const text=section.textContent||"";
+        if(text.includes("Hapus Laporan")||text.includes("Delete Reports")){
+            if(h)h.textContent=t("deleteTitle");
+            if(p)p.textContent=t("deleteDescription");
+            const b=section.querySelector('button[onclick="deleteReportsByDateRange()"]');
+            if(b)b.textContent=t("deleteButton");
+            const small=section.querySelector("small");
+            if(small)small.textContent=t("deleteNote");
+        }
+        if(section.querySelector("#reportProfitMargin")){
+            if(h)h.textContent=t("marginTitle");
+            if(p)p.textContent=t("marginDescription");
+        }
+        if(section.querySelector("#reportMarketplaceBody")){
+            if(h)h.textContent=t("marketplacePerformance");
+            if(p)p.textContent=t("marketplaceSummary");
+            const th=section.querySelectorAll("thead th");
+            [t("marketplace"),t("storeAccount"),t("sales"),t("netSalesHeader"),t("soldProducts"),t("packing"),t("profit"),t("margin")]
+              .forEach((v,i)=>{if(th[i])th[i].textContent=v;});
+        }
+        if(section.querySelector("#reportStoreBody")){
+            if(h)h.textContent=t("storePerformance");
+            if(p)p.textContent=t("storeSummary");
+            const th=section.querySelectorAll("thead th");
+            [t("marketplace"),t("storeAccount"),t("sales"),t("netSalesHeader"),t("soldProducts"),t("packing"),t("profit"),t("margin")]
+              .forEach((v,i)=>{if(th[i])th[i].textContent=v;});
+        }
+        if(section.querySelector("#reportTransactionBody")){
+            if(h)h.textContent=t("transactionDetail");
+            if(p)p.textContent=t("transactionDescription");
+            const th=section.querySelectorAll("thead th");
+            [t("date"),t("marketplace"),t("storeAccount"),t("order"),t("orderId"),t("sellerSku"),t("qty"),t("sales"),t("status")]
+              .forEach((v,i)=>{if(th[i])th[i].textContent=v;});
+            const ps=document.getElementById("reportTransactionPageSize");
+            if(ps){
+                const spans=ps.parentElement?.querySelectorAll("span")||[];
+                if(spans[0])spans[0].textContent=t("show");
+                if(spans[1])spans[1].textContent=t("rowLabel");
+                ps.setAttribute("aria-label",t("show")+" "+t("rowLabel")+" "+t("transactionDetail"));
+            }
+        }
+        if(section.querySelector("#reportUnmatchedSkuSection")){
+            const th=section.querySelectorAll("thead th");
+            [t("sku"),t("rowCount"),t("qty")].forEach((v,i)=>{if(th[i])th[i].textContent=v;});
+        }
+    });
+    const stats=view.querySelectorAll("#reportStatsGrid .stat-label");
+    ["totalSales","netSales","totalProducts","totalPacking","totalHpp","otherCosts","grossProfit","netProfit"]
+      .forEach((k,i)=>{if(stats[i])stats[i].textContent=t(k);});
+    const infos=view.querySelectorAll("#reportStatsGrid .stat-info");
+    ["salesInfo","netSalesInfo","totalProductsInfo","totalPackingInfo","totalHppInfo","otherCostsInfo","grossProfitInfo","netProfitInfo"]
+      .forEach((k,i)=>{if(infos[i])infos[i].textContent=t(k);});
+
+    const unmatched=document.getElementById("reportUnmatchedSkuSection");
+    if(unmatched){
+        const h=unmatched.querySelector("h3"),p=unmatched.querySelector("p");
+        if(h)h.textContent=t("unmatchedTitle");
+        if(p)p.textContent=t("unmatchedDescription");
+    }
+
+    if(document.getElementById("reports").classList.contains("active")){
+        const topTitle=document.getElementById("topTitle"),topSubtitle=document.getElementById("topSubtitle");
+        if(topTitle)topTitle.textContent=t("pageTitle");
+        if(topSubtitle)topSubtitle.textContent=t("pageSubtitle");
+    }
+}
 function loadReportMarketplaceFilter(){
 
     const select =
