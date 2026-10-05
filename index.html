@@ -10343,7 +10343,7 @@ document.addEventListener(
 
         <div class="notification-header">
 
-            <strong>Notifikasi</strong>
+            <strong id="notificationPanelTitle">Notifikasi</strong>
 
             <button
                 onclick="closeNotifications()"
@@ -17404,6 +17404,9 @@ function showView(viewId, button, saveHistory = true){
     }
     if(viewId === "settings" && typeof sellerBooksApplySettingsLanguage === "function"){
         sellerBooksApplySettingsLanguage();
+    }
+    if(typeof sellerBooksApplyNotificationLanguage === "function"){
+        sellerBooksApplyNotificationLanguage();
     }
 
 
@@ -30367,6 +30370,53 @@ function getLowStockProducts(){
    BUAT NOTIFIKASI
 ========================================= */
 
+function sellerBooksNotificationText(key, count){
+    const language = sellerBooksCurrentLanguage();
+    const translations = {
+        id:{
+            header:"Notifikasi",
+            safeTitle:"Semua aman",
+            safeText:sellerBooksNotificationText("safeText"),
+            productsEmptyTitle:"Master Produk masih kosong",
+            productsEmptyText:sellerBooksNotificationText("productsEmptyText"),
+            identityTitle:"Identitas belum diatur",
+            identityText:sellerBooksNotificationText("identityText"),
+            importTitle:"Import penjualan belum selesai",
+            importText:sellerBooksNotificationText("importText"),
+            lowStockTitle:function(n){return n+" produk stok menipis";},
+            lowStockText:"Ada produk dengan stok 5 atau kurang. Segera lakukan pengisian ulang."
+        },
+        en:{
+            header:"Notifications",
+            safeTitle:"All Clear",
+            safeText:"There are no important notifications at this time.",
+            productsEmptyTitle:"Master Products is empty",
+            productsEmptyText:"Add products first so sales data can be calculated.",
+            identityTitle:"Identity is not set",
+            identityText:"Please complete the SellerBooks owner name.",
+            importTitle:"Sales import is incomplete",
+            importText:"The SKU and QTY from the sales file need to be confirmed.",
+            lowStockTitle:function(n){return n+" products are low in stock";},
+            lowStockText:"Some products have 5 or fewer units in stock. Please restock them soon."
+        }
+    };
+    const t=translations[language]||translations.id;
+    if(key==="lowStockTitle") return t.lowStockTitle(Number(count)||0);
+    return t[key] ?? key;
+}
+
+function sellerBooksApplyNotificationLanguage(){
+    const header=document.getElementById("notificationPanelTitle");
+    if(header) header.textContent=sellerBooksNotificationText("header");
+
+    const button=document.getElementById("notificationButton");
+    if(button) button.setAttribute("title",sellerBooksNotificationText("header"));
+
+    if(typeof renderNotifications==="function"){
+        renderNotifications();
+    }
+}
+
 function getSellerBooksNotifications(){
 
     const notifications = [];
@@ -30400,7 +30450,7 @@ function getSellerBooksNotifications(){
 
             icon:"📦",
 
-            title:"Master Produk masih kosong",
+            title:sellerBooksNotificationText("productsEmptyTitle"),
 
             text:
                 "Tambahkan produk terlebih dahulu agar data penjualan dapat dihitung."
@@ -30426,7 +30476,7 @@ function getSellerBooksNotifications(){
 
             icon:"👤",
 
-            title:"Identitas belum diatur",
+            title:sellerBooksNotificationText("identityTitle"),
 
             text:
                 "Silakan lengkapi nama pemilik SellerBooks."
@@ -30455,7 +30505,7 @@ function getSellerBooksNotifications(){
 
                 icon:"📥",
 
-                title:"Import penjualan belum selesai",
+                title:sellerBooksNotificationText("importTitle"),
 
                 text:
                     "SKU dan QTY dari file penjualan perlu dikonfirmasi."
@@ -30481,12 +30531,10 @@ if(lowStockProducts.length > 0){
         icon:"⚠️",
 
         title:
-            lowStockProducts.length +
-            " produk stok menipis",
+            sellerBooksNotificationText("lowStockTitle",lowStockProducts.length),
 
         text:
-            "Ada produk dengan stok 5 atau kurang. " +
-            "Segera lakukan pengisian ulang."
+            sellerBooksNotificationText("lowStockText")
 
     });
 
@@ -30501,7 +30549,7 @@ if(lowStockProducts.length > 0){
 
             icon:"✅",
 
-            title:"Semua aman",
+            title:sellerBooksNotificationText("safeTitle"),
 
             text:
                 "Tidak ada notifikasi penting untuk saat ini."
@@ -32877,6 +32925,9 @@ function sellerBooksSyncLanguageControl(){
     }
     if(typeof sellerBooksApplySettingsLanguage === "function"){
         sellerBooksApplySettingsLanguage();
+    }
+    if(typeof sellerBooksApplyNotificationLanguage === "function"){
+        sellerBooksApplyNotificationLanguage();
     }
 
     const info = document.getElementById("settingsLanguageInfo");
