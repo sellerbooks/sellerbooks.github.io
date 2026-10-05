@@ -32227,7 +32227,7 @@ const SELLERBOOKS_I18N = {
         "Nama Pemilik berhasil direset.":"Nama Pemilik berhasil direset.",
         "Gagal mereset Nama Pemilik:":"Gagal mereset Nama Pemilik:",
         "Nama Pemilik gagal disimpan ke server.":"Nama Pemilik gagal disimpan ke server.",
-        "Accounts Toko":"Accounts Toko",
+        "Accounts Toko":"Akun Toko",
         "User SellerBooks":"User SellerBooks",
         "Kelola seluruh penjualan marketplace, produk, accounts toko, dan laba bisnis Anda dalam satu sistem.":"Kelola seluruh penjualan marketplace, produk, accounts toko, dan laba bisnis Anda dalam satu sistem.",
         "NET MARGIN":"MARGIN BERSIH",
@@ -32821,9 +32821,8 @@ function sellerBooksTranslateTextNodes(root, language){
         if(!core) return;
         const dictionary = SELLERBOOKS_I18N[language] || SELLERBOOKS_I18N.id;
         let translated = dictionary[core];
-        if(translated === undefined && language === "en"){
+        if(translated === undefined){
             translated = sellerBooksTranslateUserText(core, language);
-            if(translated !== core) translated = sellerBooksTranslateUserText(translated, language);
         }
         if(translated === undefined) return;
         const leading = String(original).match(/^\s*/)?.[0] || "";
@@ -32933,6 +32932,30 @@ const SELLERBOOKS_EN_PHRASES = {
     "Hapus biaya \\\"":"Delete cost \\\"",
     "Pengaturan berhasil disimpan.":"Settings saved successfully.",
     "Bahasa tersimpan di accounts Anda.":"Language saved to your account.",
+    "Tidak ada laporan yang cocok dengan tanggal, marketplace, dan accounts toko yang dipilih.":"No report matches the selected date, marketplace, and store account.",
+    "Tarik Order TikTok":"Pull TikTok Orders",
+    "Tarik Order Shopee":"Pull Shopee Orders",
+    "Tarik Order Lazada":"Pull Lazada Orders",
+    "Integrasi Berhasil":"Integration Successful",
+    "Simpan Marketplace":"Save Marketplace",
+    "Simpan Produk":"Save Product",
+    "Simpan Accounts Toko":"Save Store Account",
+    "Simpan Pembayaran":"Save Payment",
+    "Tambah Marketplace":"Add Marketplace",
+    "Tambah Produk":"Add Product",
+    "Tambah Accounts Toko":"Add Store Account",
+    "Upload Laporan Sales":"Upload Sales Report",
+    "Upload Laporan Penjualan":"Upload Sales Report",
+    "All Store Accounts":"All Store Accounts",
+    "Semua Accounts Toko":"All Store Accounts",
+    "Accounts Toko":"Store Accounts",
+    "Save Marketplace":"Save Marketplace",
+    "Save Product":"Save Product",
+    "Save Store Account":"Save Store Account",
+    "Save Payment":"Save Payment",
+    "Add Marketplace":"Add Marketplace",
+    "Add Product":"Add Product",
+    "Add Store Account":"Add Store Account",
 };
 
 const SELLERBOOKS_EN_FALLBACK = {
@@ -33260,12 +33283,7 @@ function sellerBooksStartLanguageObserver(){
             if((m.type === "childList" && (m.addedNodes?.length || 0)) || m.type === "characterData") needsTranslate = true;
         });
         if(!needsTranslate) return;
-        sellerBooksI18nApplying = true;
-        try{
-            applySellerBooksLanguage();
-        }finally{
-            sellerBooksI18nApplying = false;
-        }
+        applySellerBooksLanguage();
     });
     sellerBooksI18nObserver.observe(document.body,{childList:true,subtree:true});
 }
