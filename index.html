@@ -23520,10 +23520,7 @@ async function deleteSelectedProducts(){
     }
 
     const confirmation = await sellerBooksConfirm(
-        "Hapus " +
-        selectedIds.length +
-        " produk yang dipilih?\n\n" +
-        "Data yang dihapus tidak dapat dikembalikan."
+        sellerBooksProductText("deleteSelectedConfirm").replace("{count}",selectedIds.length)
     );
 
     if(!confirmation){
@@ -23570,13 +23567,10 @@ async function deleteProduct(id){
 
 
     const confirmation = await sellerBooksConfirm(
-
-        'Hapus produk "' +
-
+        sellerBooksProductText("deleteConfirm") +
+        ' "' +
         product.name +
-
         '"?'
-
     );
 
 
@@ -23874,7 +23868,7 @@ const cost = parseExcelPrice(
 
 
 const adminFeePercentRaw =
-    row["Admin % SKU"] || row["Admin % SKU"] !== undefined ? row["Admin % SKU"] :
+    row["Admin % SKU"] !== undefined ? row["Admin % SKU"] :
     (row["ADMIN % SKU"] !== undefined ? row["ADMIN % SKU"] :
     (row["Admin SKU %"] !== undefined ? row["Admin SKU %"] : ""));
 
