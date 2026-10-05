@@ -25651,7 +25651,7 @@ function populateSalesStoreAccounts(){
     ========================================= */
 
     select.innerHTML =
-        '<option value="">-- Pilih Akun Toko --</option>';
+        '<option value="">'+sellerBooksSalesImportText("chooseStore")+'</option>';
 
 
     /* =========================================
@@ -25783,7 +25783,7 @@ function populateSalesStoreAccounts(){
         if(info){
 
             info.innerText =
-                "Marketplace tidak ditemukan di database.";
+                sellerBooksSalesImportText("marketplaceUnknown");
 
             info.style.color =
                 "#dc2626";
@@ -25859,7 +25859,7 @@ function populateSalesStoreAccounts(){
 
             info.innerText =
                 list.length +
-                " akun toko aktif tersedia.";
+                (sellerBooksCurrentLanguage()==="en" ? " active store accounts available." : " akun toko aktif tersedia.");
 
             info.style.color =
                 "";
@@ -25867,7 +25867,7 @@ function populateSalesStoreAccounts(){
         }else{
 
             info.innerText =
-                "Belum ada akun toko aktif untuk marketplace ini.";
+                sellerBooksCurrentLanguage()==="en" ? "No active store accounts are available for this marketplace." : "Belum ada akun toko aktif untuk marketplace ini.";
 
             info.style.color =
                 "#dc2626";
@@ -25877,7 +25877,7 @@ function populateSalesStoreAccounts(){
     }
 
 }
-function updatePackingCalculation(){if(!currentSalesImport)return;const r=calculateUniquePacking(currentSalesImport),unit=Math.max(0,Number(document.getElementById("packingCostPerOrder")?.value)||0);const c=document.getElementById("uniquePackingCount"),t=document.getElementById("totalPackingImportCost"),i=document.getElementById("packingIdentifierInfo");if(c)c.innerText=r.count.toLocaleString("id-ID");if(t)t.innerText=formatRupiah(r.count*unit);if(i)i.innerText=r.column?"Identitas packing: "+r.column+" • 1 packing dihitung 1 ID unik.":"Identitas packing belum ditemukan pada file.";}
+function updatePackingCalculation(){if(!currentSalesImport)return;const r=calculateUniquePacking(currentSalesImport),unit=Math.max(0,Number(document.getElementById("packingCostPerOrder")?.value)||0);const c=document.getElementById("uniquePackingCount"),t=document.getElementById("totalPackingImportCost"),i=document.getElementById("packingIdentifierInfo");if(c)c.innerText=r.count.toLocaleString("id-ID");if(t)t.innerText=formatRupiah(r.count*unit);if(i)i.innerText=r.column?sellerBooksSalesImportText("packingIdentity")+" "+r.column+sellerBooksSalesImportText("uniquePackingSuffix"):sellerBooksSalesImportText("packingNotFound");}
 function buildSalesImportFingerprint(currentImport, storeId, transactions){
     /*
        IDENTITAS FILE/ISI IMPORT.
@@ -27855,7 +27855,7 @@ function resetSalesImport(){
     if(analysisStatus){
 
         analysisStatus.innerText =
-            "Menunggu Analisis";
+            sellerBooksSalesImportText("waitingAnalysis");
 
     }
 
@@ -32119,6 +32119,17 @@ async function sellerBooksSaveLanguage(value){
         }
         if(typeof sellerBooksApplySalesImportLanguage === "function"){
             sellerBooksApplySalesImportLanguage();
+        }
+        if(typeof currentSalesImport !== "undefined" && currentSalesImport){
+            if(typeof populateSalesStoreAccounts === "function"){
+                populateSalesStoreAccounts();
+            }
+            if(typeof updatePackingCalculation === "function"){
+                updatePackingCalculation();
+            }
+            if(typeof updatePreviewColumns === "function" && document.getElementById("salesPreviewModal")?.classList.contains("active")){
+                updatePreviewColumns();
+            }
         }
 
         const info = document.getElementById("settingsLanguageInfo");
