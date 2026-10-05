@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SellerBooks - Integrasi Marketplace</title>
+<title>SellerBooks - Marketplace Integration</title>
 <style>
 html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#0f172a}
 body{display:flex;align-items:center;justify-content:center;min-height:100vh}
@@ -32,6 +32,63 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
 </div>
 <script>
 (function(){
+  const initialParams=new URLSearchParams(location.search);
+  const language =
+    initialParams.get("lang") === "en"
+      ? "en"
+      : (localStorage.getItem("sellerbooks_ui_language") === "en" ? "en" : "id");
+
+  try{
+    localStorage.setItem("sellerbooks_ui_language", language);
+  }catch(e){}
+
+  document.documentElement.lang = language === "en" ? "en" : "id";
+
+  const T = language === "en"
+    ? {
+        loadingTitle:"Preparing marketplace integration",
+        loadingMessage:"Checking your SellerBooks account connection...",
+        errorTitle:"Integration could not be started",
+        comingTitle:"Coming Soon",
+        comingText:(name)=>"Integration for " + (name||"this marketplace") + " is not available yet. API synchronization will be available after the official SellerBooks connector/API is ready. For now, you can manually upload marketplace order files through Sales Import.",
+        connecting:(name)=>"Connecting to " + name,
+        preparing:(name)=>"Preparing official " + name + " authentication...",
+        sessionMissing:"SellerBooks session is not available. Please sign in again.",
+        sessionExpired:"Your SellerBooks session has expired. Please sign in again.",
+        marketplaceMissing:"Store ID and marketplace ID are not available.",
+        marketplaceUnknown:"Marketplace could not be identified.",
+        oauthStartFailed:(name)=>name + " OAuth could not be started.",
+        opening:(name)=>"Opening " + name,
+        loadingLogin:(name)=>"Loading the official " + name + " login page...",
+        preparingAuth:"Preparing authorization page",
+        connectingOfficial:"Connecting to the official marketplace login page...",
+        invalidAuthUrl:"The marketplace authorization URL is invalid.",
+        technicalError:"The marketplace integration could not be started."
+      }
+    : {
+        loadingTitle:"Menyiapkan integrasi marketplace",
+        loadingMessage:"Memeriksa koneksi akun SellerBooks...",
+        errorTitle:"Integrasi gagal dimulai",
+        comingTitle:"Segera Hadir",
+        comingText:(name)=>"Integrasi " + (name||"marketplace") + " belum tersedia saat ini. Fitur sinkronisasi API akan tersedia setelah konektor/API resmi SellerBooks siap. Sementara Anda bisa melakukan upload file order marketplace secara manual melalui Import Penjualan.",
+        connecting:(name)=>"Menghubungkan ke " + name,
+        preparing:(name)=>"Menyiapkan autentikasi resmi " + name + "...",
+        sessionMissing:"Sesi SellerBooks tidak tersedia. Silakan login kembali.",
+        sessionExpired:"Sesi SellerBooks sudah berakhir. Silakan login kembali.",
+        marketplaceMissing:"Store ID dan Marketplace ID tidak tersedia.",
+        marketplaceUnknown:"Marketplace tidak dikenali.",
+        oauthStartFailed:(name)=>"OAuth " + name + " tidak dapat dimulai.",
+        opening:(name)=>"Membuka " + name,
+        loadingLogin:(name)=>"Memuat halaman login resmi " + name + "...",
+        preparingAuth:"Menyiapkan halaman otorisasi",
+        connectingOfficial:"Menghubungkan ke halaman login resmi marketplace...",
+        invalidAuthUrl:"URL otorisasi marketplace tidak valid.",
+        technicalError:"Integrasi marketplace tidak dapat dimulai."
+      };
+
+  document.getElementById("title").textContent=T.loadingTitle;
+  document.getElementById("message").textContent=T.loadingMessage;
+
   const SUPABASE_URL="https://fysaxpqpqexjnlpkbwap.supabase.co";
   const SUPABASE_KEY="sb_publishable_DWRaEZTcNMjhglwN3nqCOw_pua8rsjD";
   const PROJECT_REF="fysaxpqpqexjnlpkbwap";
@@ -45,17 +102,16 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
   function fail(message){
     document.getElementById("loading").style.display="none";
     document.getElementById("errorBox").style.display="block";
-    document.getElementById("errorText").textContent=message||"Integrasi marketplace tidak dapat dimulai.";
+    document.querySelector("#errorBox h1").textContent=T.errorTitle;
+    document.getElementById("errorText").textContent=message||T.technicalError;
   }
 
   function showComingSoon(name){
     document.getElementById("loading").style.display="none";
     document.getElementById("errorBox").style.display="none";
     document.getElementById("comingBox").style.display="block";
-    document.getElementById("comingText").textContent=
-      "Integrasi " + (name||"marketplace") +
-      " belum tersedia saat ini. Fitur sinkronisasi API akan segera hadir setelah konektor/API resmi SellerBooks siap. " +
-      "Sementara Anda bisa melakukan upload file orderan marketplace secara manual melalui Import Penjualan.";
+    document.querySelector("#comingBox h1").textContent=T.comingTitle;
+    document.getElementById("comingText").textContent=T.comingText(name);
   }
 
   function detectMarketplace(name){
@@ -99,10 +155,10 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
       const marketplaceId=params.get("marketplace_id")||"";
       const marketplaceName=params.get("marketplace_name")||"";
 
-      if(!storeId||!marketplaceId)throw new Error("store_id dan marketplace_id tidak tersedia.");
+      if(!storeId||!marketplaceId)throw new Error(T.marketplaceMissing);
 
       const type=detectMarketplace(marketplaceName);
-      if(!type)throw new Error("Marketplace tidak dikenali.");
+      if(!type)throw new Error(T.marketplaceUnknown);
 
       // Hanya TikTok Shop dan Lazada yang saat ini sudah aktif.
       // Shopee, Blibli, Toco, Tokopedia, dan marketplace lain yang belum
@@ -119,15 +175,15 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
         return;
       }
 
-      document.getElementById("title").textContent="Menghubungkan "+provider.label;
-      document.getElementById("message").textContent="Menyiapkan autentikasi resmi "+provider.label+"...";
+      document.getElementById("title").textContent=T.connecting(provider.label);
+      document.getElementById("message").textContent=T.preparing(provider.label);
 
       // Jangan memuat SDK Supabase di popup. Launcher ini satu-origin dengan
       // sellerbooks.github.io, jadi session Supabase yang dibuat halaman utama
       // dapat dibaca langsung dari localStorage. Ini menghindari error
       // "s.createClient is not a function" dari dynamic import CDN.
       const accessToken=readSellerBooksAccessToken();
-      if(!accessToken)throw new Error("Sesi SellerBooks tidak tersedia. Silakan login kembali.");
+      if(!accessToken)throw new Error(T.sessionMissing);
 
       // Pastikan token masih valid sebelum memanggil Edge Function.
       const userResponse=await fetch(SUPABASE_URL+"/auth/v1/user",{
@@ -136,7 +192,7 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
           "Authorization":"Bearer "+accessToken
         }
       });
-      if(!userResponse.ok)throw new Error("Sesi SellerBooks sudah berakhir. Silakan login kembali.");
+      if(!userResponse.ok)throw new Error(T.sessionExpired);
 
       const response=await fetch(
         SUPABASE_URL+"/functions/v1/"+provider.endpoint+"?action=init",
@@ -157,7 +213,7 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
 
       const data=await response.json().catch(()=>({}));
       if(!response.ok||!data.authorization_url){
-        throw new Error(data.error||("OAuth "+provider.label+" tidak dapat dimulai."));
+        throw new Error(T.oauthStartFailed(provider.label));
       }
 
       location.replace(data.authorization_url);
@@ -206,17 +262,17 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
   if(handoff === "windows" && authorizationUrl){
     try{
       const auth = new URL(authorizationUrl);
-      if(auth.protocol !== "https:") throw new Error("URL otorisasi marketplace tidak valid.");
+      if(auth.protocol !== "https:") throw new Error(T.invalidAuthUrl);
       const marketplaceName = params.get("marketplace_name") || "Marketplace";
-      document.getElementById("title").textContent="Membuka " + marketplaceName;
-      document.getElementById("message").textContent="Memuat halaman login resmi " + marketplaceName + "...";
+      document.getElementById("title").textContent=T.opening(marketplaceName);
+      document.getElementById("message").textContent=T.loadingLogin(marketplaceName);
       window.location.replace(auth.href);
     }catch(error){
-      fail(error?.message || "URL otorisasi marketplace tidak valid.");
+      fail(error?.message || T.invalidAuthUrl);
     }
   }else if(handoff === "pending"){
-    document.getElementById("title").textContent="Menyiapkan halaman otorisasi";
-    document.getElementById("message").textContent="Menghubungkan ke halaman login resmi marketplace...";
+    document.getElementById("title").textContent=T.preparingAuth;
+    document.getElementById("message").textContent=T.connectingOfficial;
   }else{
     start();
   }
