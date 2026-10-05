@@ -1,0 +1,25 @@
+name: SellerBooks EN ID Release Gate
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  translation-release-check:
+    name: EN ID Translation Release Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run strict EN ID translation release check
+        run: node scripts/i18n-release-check.mjs
