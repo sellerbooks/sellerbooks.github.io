@@ -21278,9 +21278,9 @@ function renderStores(skipIntegrationRefresh){
                         type="button"
                         class="store-action-button store-integrate-button"
                         onclick="syncShopeeOrdersNow('${store.id}')"
-                        title="Tarik order Shopee"
+                        title="${sellerBooksCurrentLanguage() === "en" ? "Pull Shopee orders" : "Tarik order Shopee"}"
                     >
-                        🔄 Tarik Order
+                        🔄 ${sellerBooksCurrentLanguage() === "en" ? "Pull Orders" : "Tarik Order"}
                     </button>
                 </div>`;
         }else if(isLazadaStore){
@@ -21290,7 +21290,7 @@ function renderStores(skipIntegrationRefresh){
                         type="button"
                         class="store-action-button store-integrate-button"
                         onclick="syncLazadaOrdersNow('${store.id}')"
-                        title="Tarik order Lazada"
+                        title="${sellerBooksCurrentLanguage() === "en" ? "Pull Lazada orders" : "Tarik order Lazada"}"
                     >
                         🔄 Tarik Order
                     </button>
