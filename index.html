@@ -17564,6 +17564,9 @@ function showView(viewId, button, saveHistory = true){
     if(viewId === "productAnalysis" && typeof sellerBooksApplyDetailsLanguage === "function"){
         sellerBooksApplyDetailsLanguage();
     }
+    if(viewId === "reports" && typeof sellerBooksApplyReportsLanguage === "function"){
+        sellerBooksApplyReportsLanguage();
+    }
 
 
     /* =========================================
@@ -32422,6 +32425,9 @@ function sellerBooksSyncLanguageControl(){
     }
     if(typeof sellerBooksApplyDetailsLanguage === "function"){
         sellerBooksApplyDetailsLanguage();
+    }
+    if(typeof sellerBooksApplyReportsLanguage === "function"){
+        sellerBooksApplyReportsLanguage();
     }
 
     const info = document.getElementById("settingsLanguageInfo");
