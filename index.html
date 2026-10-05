@@ -17399,6 +17399,9 @@ function showView(viewId, button, saveHistory = true){
     if(viewId === "productAnalysis" && typeof sellerBooksApplyDetailsLanguage === "function"){
         sellerBooksApplyDetailsLanguage();
     }
+    if(viewId === "reports" && typeof sellerBooksApplyReportsLanguage === "function"){
+        sellerBooksApplyReportsLanguage();
+    }
 
 
     /* =========================================
@@ -32292,6 +32295,7 @@ function sellerBooksReportsText(key){
             storeAccount:"Akun Toko",
             allStoreAccounts:"Semua Akun Toko",
             showingAllSales:"Menampilkan semua data penjualan.",
+            downloadPdf:"📄 Download PDF Laporan",
             deleteTitle:"Hapus Laporan",
             deleteSubtitle:"Hapus data import penjualan secara spesifik berdasarkan tanggal, marketplace, dan akun toko.",
             deleteScope:"Penghapusan hanya menyentuh laporan yang sesuai dengan tanggal + marketplace + akun toko yang dipilih.",
@@ -32392,6 +32396,7 @@ function sellerBooksReportsText(key){
             storeAccount:"Store Account",
             allStoreAccounts:"All Store Accounts",
             showingAllSales:"Showing all sales data.",
+            downloadPdf:"📄 Download PDF Report",
             deleteTitle:"Delete Reports",
             deleteSubtitle:"Delete sales import data specifically by date, marketplace, and store account.",
             deleteScope:"Deletion only affects reports matching the selected date, marketplace, and store account.",
@@ -32513,6 +32518,11 @@ function sellerBooksApplyReportsLanguage(){
         topSubtitle.textContent = language === "en"
             ? "Analyze sales, costs, and profit across all marketplaces and store accounts."
             : "Analisis penjualan, biaya, dan laba seluruh marketplace serta akun toko.";
+    }
+
+    const pdfButton = document.getElementById("downloadReportPDFButton");
+    if(pdfButton){
+        pdfButton.textContent = sellerBooksReportsText("downloadPdf");
     }
 
     /* FILTER */
