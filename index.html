@@ -15704,6 +15704,18 @@ function sellerBooksRefreshActiveView(){
 }
 function sellerBooksRefreshAllViewsFromCloud(){
     if(typeof sellerBooksRefreshRuntimeFromCloud==="function")sellerBooksRefreshRuntimeFromCloud();
+    /*
+       Language is part of the authenticated user's cloud settings.
+       Re-apply it whenever Supabase realtime replaces cloud state so a
+       language change on another device immediately becomes authoritative
+       for this same Gmail account.
+    */
+    if(typeof applySellerBooksLanguage==="function" &&
+       sellerBooksAuthUser &&
+       sellerBooksCloudReady &&
+       !sellerBooksCloudLoading){
+        applySellerBooksLanguage();
+    }
     sellerBooksRefreshActiveView();
 }
 
@@ -31553,7 +31565,9 @@ function saveSellerBooksSettings(){
 
     if(nameInfo){
         nameInfo.textContent =
-            "Pengaturan berhasil disimpan.";
+            language === "en"
+                ? "Settings saved successfully."
+                : "Pengaturan berhasil disimpan.";
     }
 
     const packingInfo =
@@ -31563,9 +31577,9 @@ function saveSellerBooksSettings(){
 
     if(packingInfo){
         packingInfo.textContent =
-            "Default packing: " +
-            formatRupiah(packingCost) +
-            " / order.";
+            language === "en"
+                ? "Default packing: " + formatRupiah(packingCost) + " / order."
+                : "Default packing: " + formatRupiah(packingCost) + " / order.";
     }
 
     const currencyInfo =
@@ -31587,13 +31601,19 @@ function saveSellerBooksSettings(){
 
     if(currencyInfo){
         currencyInfo.textContent =
-            "Kurs tersimpan. " +
-            "1 USD = Rp" +
-            Number(exchangeRates.USD).toLocaleString("id-ID") +
-            " • 1 SGD = Rp" +
-            Number(exchangeRates.SGD).toLocaleString("id-ID") +
-            " • 1 MYR = Rp" +
-            Number(exchangeRates.MYR).toLocaleString("id-ID");
+            language === "en"
+                ? "Exchange rates saved. 1 USD = Rp" +
+                  Number(exchangeRates.USD).toLocaleString("id-ID") +
+                  " • 1 SGD = Rp" +
+                  Number(exchangeRates.SGD).toLocaleString("id-ID") +
+                  " • 1 MYR = Rp" +
+                  Number(exchangeRates.MYR).toLocaleString("id-ID")
+                : "Kurs tersimpan. 1 USD = Rp" +
+                  Number(exchangeRates.USD).toLocaleString("id-ID") +
+                  " • 1 SGD = Rp" +
+                  Number(exchangeRates.SGD).toLocaleString("id-ID") +
+                  " • 1 MYR = Rp" +
+                  Number(exchangeRates.MYR).toLocaleString("id-ID");
     }
 }
 
