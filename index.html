@@ -33678,6 +33678,14 @@ function applySellerBooksSettings(){
         if(typeof renderProductAnalysis === "function"){
             renderProductAnalysis();
         }
+
+        /*
+           Piutang adalah modul terpisah, tetapi seluruh nominal
+           tampilannya harus mengikuti mata uang/kurs Settings.
+        */
+        if(typeof window.sbPiutangCloudRender === "function"){
+            window.sbPiutangCloudRender();
+        }
     }catch(error){
         console.warn(
             "Refresh tampilan mata uang gagal:",
@@ -35082,6 +35090,15 @@ document.addEventListener(
     }
 
     function piutangMoney(v){
+        /*
+           Modul Piutang tetap menyimpan nominal dalam basis IDR,
+           tetapi tampilan mengikuti mata uang yang dipilih di
+           Pengaturan SellerBooks, sama seperti modul utama.
+        */
+        if(typeof formatRupiah === "function"){
+            return formatRupiah(v);
+        }
+
         return "Rp"+new Intl.NumberFormat("id-ID",{maximumFractionDigits:0}).format(Number(v)||0);
     }
     function piutangDate(v){
