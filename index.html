@@ -17218,6 +17218,17 @@ function showView(viewId, button, saveHistory = true){
 
     }
 
+    /*
+       Dashboard memakai bahasa akun aktif.
+       Halaman login tetap berada di luar engine i18n.
+    */
+    if(
+        viewId === "dashboard" &&
+        typeof sellerBooksApplyDashboardLanguage === "function"
+    ){
+        sellerBooksApplyDashboardLanguage();
+    }
+
 
     /* =========================================
        TUTUP SIDEBAR DI HP
