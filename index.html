@@ -13318,7 +13318,7 @@ document.addEventListener(
                                     class="settings-remove-button"
                                     onclick="removeSettingsLogo()"
                                 >
-                                    Hapus Logo
+                                    ${sellerBooksCurrentLanguage() === "en" ? "Delete" : "Hapus"} Logo
                                 </button>
 
                                 <small>
@@ -14461,7 +14461,7 @@ document.addEventListener(
             <div class="form-group">
 
                 <label>
-                    Nama Marketplace
+                    <span data-marketplace-i18n="name">Marketplace Name</span>
                 </label>
 
                 <input
@@ -14486,11 +14486,11 @@ document.addEventListener(
                 >
 
                     <option value="active">
-                        Aktif
+                        Active
                     </option>
 
                     <option value="inactive">
-                        Tidak Aktif
+                        Inactive
                     </option>
 
                 </select>
@@ -14515,7 +14515,7 @@ document.addEventListener(
                 class="primary-button"
                 onclick="saveMarketplace()"
             >
-                Simpan Marketplace
+                Save Marketplace
             </button>
 
         </div>
@@ -14769,7 +14769,7 @@ document.addEventListener(
                     class="secondary-button"
                     onclick="closeCostModal()"
                 >
-                    Batal
+                    Cancel
                 </button>
 
                 <button
@@ -18650,7 +18650,10 @@ function openMarketplaceModal(){
 
     document.getElementById(
         "marketplaceModalTitle"
-    ).innerText = "Tambah Marketplace";
+    ).innerText =
+        sellerBooksCurrentLanguage() === "en"
+            ? "Add Marketplace"
+            : "Tambah Marketplace";
 
 
     document.getElementById(
@@ -31339,6 +31342,15 @@ function saveSellerBooksSettings(){
     );
 
     applySellerBooksSettings();
+
+    try{
+        if(typeof renderMarketplaces === "function") renderMarketplaces();
+        if(typeof renderStores === "function") renderStores(true);
+        if(typeof loadReportMarketplaceFilter === "function") loadReportMarketplaceFilter();
+        if(typeof loadReportStoreFilter === "function") loadReportStoreFilter();
+    }catch(error){
+        console.warn("Language UI refresh failed:", error);
+    }
 
     const nameInfo =
         document.getElementById(
