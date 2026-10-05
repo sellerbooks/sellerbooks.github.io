@@ -19573,12 +19573,18 @@ async function integrateStoreAccount(storeId){
        Setelah itu kita boleh menunggu auth.getSession() dan backend init.
        Popup sementara tetap berada pada launcher/loading page.
     */
+    const uiLanguage = sellerBooksCurrentLanguage();
+    try{
+        window.localStorage.setItem("sellerbooks_ui_language", uiLanguage);
+    }catch(e){}
+
     const launcherUrl = new URL(
         "marketplace-oauth-launcher.html" +
-        "?v=20260930-session-bridge" +
+        "?v=20261005-language-bridge" +
         "&store_id=" + encodeURIComponent(String(store.id)) +
         "&marketplace_id=" + encodeURIComponent(String(store.marketplaceId || "")) +
         "&marketplace_name=" + encodeURIComponent(String(marketplace.name || "")) +
+        "&lang=" + encodeURIComponent(uiLanguage) +
         "&handoff=pending",
         window.location.href
     ).href;
