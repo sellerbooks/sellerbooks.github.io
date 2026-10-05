@@ -21507,6 +21507,80 @@ function renderStores(skipIntegrationRefresh){
    BUKA MODAL TAMBAH TOKO
 ===================================================== */
 
+function applyStoreModalLanguage(){
+
+    const isEN = sellerBooksCurrentLanguage() === "en";
+
+    const modal = document.getElementById("storeModal");
+    if(!modal) return;
+
+    const title = document.getElementById("storeModalTitle");
+    if(title){
+        title.innerText = isEN ? "Add Store Account" : "Tambah Accounts Toko";
+    }
+
+    const groups = modal.querySelectorAll(".form-group");
+    if(groups[0]){
+        const label = groups[0].querySelector("label");
+        if(label) label.textContent = isEN ? "Marketplace" : "Marketplace";
+        const select = document.getElementById("storeMarketplace");
+        if(select && select.options.length){
+            select.options[0].textContent = isEN ? "Select Marketplace" : "Pilih Marketplace";
+        }
+    }
+
+    if(groups[1]){
+        const label = groups[1].querySelector("label");
+        if(label) label.textContent = isEN ? "Store Account Name" : "Nama Accounts Toko";
+        const input = document.getElementById("storeName");
+        if(input) input.placeholder = isEN ? "Example: Adimasa Official Store" : "Contoh: Adimasa Official Store";
+    }
+
+    if(groups[2]){
+        const label = groups[2].querySelector("label");
+        if(label) label.innerHTML = isEN ? 'Store Code <span style="color:#94a3b8;">(Optional)</span>' : 'Kode Toko <span style="color:#94a3b8;">(Opsional)</span>';
+        const input = document.getElementById("storeCode");
+        if(input) input.placeholder = isEN ? "Example: SHOPEE-001" : "Contoh: SHOPEE-001";
+    }
+
+    if(groups[3]){
+        const label = groups[3].querySelector("label");
+        if(label) label.textContent = isEN ? "Marketplace Fee (%)" : "Biaya Admin Marketplace (%)";
+        const input = document.getElementById("storeFeePercent");
+        if(input) input.placeholder = isEN ? "Enter admin fee percentage" : "Masukkan persentase admin";
+        const small = groups[3].querySelector("small");
+        if(small) small.textContent = isEN
+            ? "Enter the marketplace fee for this store account."
+            : "Isi sesuai biaya admin accounts toko ini.";
+    }
+
+    if(groups[4]){
+        const label = groups[4].querySelector("label");
+        if(label) label.innerHTML = isEN ? 'Description <span style="color:#94a3b8;">(Optional)</span>' : 'Keterangan <span style="color:#94a3b8;">(Opsional)</span>';
+        const input = document.getElementById("storeDescription");
+        if(input) input.placeholder = isEN ? "Example: Main Shopee Account" : "Contoh: Accounts utama Shopee";
+    }
+
+    if(groups[5]){
+        const label = groups[5].querySelector("label");
+        if(label) label.textContent = isEN ? "Store Account Status" : "Status Accounts Toko";
+        const select = document.getElementById("storeStatus");
+        if(select && select.options.length >= 2){
+            select.options[0].textContent = isEN ? "Active" : "Aktif";
+            select.options[1].textContent = isEN ? "Inactive" : "Tidak Aktif";
+        }
+    }
+
+    const cancel = modal.querySelector(".modal-footer .cancel-button");
+    if(cancel) cancel.textContent = isEN ? "Cancel" : "Batal";
+
+    const save = modal.querySelector(".modal-footer .primary-button");
+    if(save) save.textContent = isEN
+        ? (editingStoreId ? "Save Changes" : "Save Store Account")
+        : (editingStoreId ? "Simpan Perubahan" : "Simpan Accounts Toko");
+}
+
+
 function openStoreModal(){
 
     const activeMarketplaces =
@@ -21534,12 +21608,7 @@ function openStoreModal(){
 
     editingStoreId = null;
 
-
-    document.getElementById(
-        "storeModalTitle"
-    ).innerText =
-
-        "Tambah Accounts Toko";
+    applyStoreModalLanguage();
 
 
     /*
@@ -21873,12 +21942,7 @@ function editStore(id){
 
     selectedMarketplaceId = null;
 
-
-    document.getElementById(
-        "storeModalTitle"
-    ).innerText =
-
-        "Edit Accounts Toko";
+    applyStoreModalLanguage();
 
 
     renderStoreMarketplaceOptions();
