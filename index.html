@@ -15513,6 +15513,9 @@ function sellerBooksOpenApplication(){
     }else{
         sellerBooksStorage.removeItem("sellerbooks_owner_name");
         sellerBooksShowOnly("ownerSetupPage");
+        if(typeof sellerBooksApplyOwnerSetupLanguage==="function"){
+            sellerBooksApplyOwnerSetupLanguage();
+        }
 
         const input=document.getElementById("ownerNameInput");
         if(input){
@@ -16017,8 +16020,8 @@ async function sellerBooksLogout(){
 async function saveOwnerName(){
     const input=document.getElementById("ownerNameInput");
     const ownerName=input.value.trim();
-    if(!ownerName){sellerBooksAlert("Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu.");input.focus();return;}
-    if(!sellerBooksAuthUser){sellerBooksAlert("Sesi login tidak ditemukan. Silakan login kembali.");sellerBooksShowOnly("loginPage");return;}
+    if(!ownerName){sellerBooksAlert(sellerBooksOwnerSetupText("nameRequired"),sellerBooksOwnerSetupText("title"));input.focus();return;}
+    if(!sellerBooksAuthUser){sellerBooksAlert(sellerBooksOwnerSetupText("session"),sellerBooksOwnerSetupText("title"));sellerBooksShowOnly("loginPage");return;}
     try{
         const {error}=await sellerBooksSupabase.from("sellerbooks_profiles").update({owner_name:ownerName,contact_name:ownerName,updated_at:new Date().toISOString()}).eq("user_id",sellerBooksAuthUser.id);
         if(error)throw error;
@@ -16028,8 +16031,8 @@ async function saveOwnerName(){
         document.getElementById("ownerSetupPage").style.display="none";
         document.getElementById("loginPage").style.display="none";
         document.getElementById("app").style.display="block";
-        sellerBooksAlert("✅ Data berhasil disimpan!\n\nSelamat datang, "+ownerName);
-    }catch(error){console.error("Gagal menyimpan Nama Pemilik:",error);sellerBooksAlert("❌ Nama Pemilik gagal disimpan ke server.\n\n"+error.message);}
+        sellerBooksAlert(sellerBooksOwnerSetupText("success")+ownerName,sellerBooksOwnerSetupText("title"));
+    }catch(error){console.error("Gagal menyimpan Nama Pemilik:",error);sellerBooksAlert(sellerBooksOwnerSetupText("failed")+"\n\n"+error.message,sellerBooksOwnerSetupText("title"));}
 }
 
 /* =====================================================
@@ -29516,6 +29519,10 @@ async function resetIdentity(){
             "ownerSetupPage"
         );
 
+        if(typeof sellerBooksApplyOwnerSetupLanguage==="function"){
+            sellerBooksApplyOwnerSetupLanguage();
+        }
+
         /*
            KOSONGKAN INPUT NAMA
         */
@@ -32951,6 +32958,9 @@ function sellerBooksSyncLanguageControl(){
     if(typeof sellerBooksApplySettingsLanguage === "function"){
         sellerBooksApplySettingsLanguage();
     }
+    if(typeof sellerBooksApplyOwnerSetupLanguage === "function"){
+        sellerBooksApplyOwnerSetupLanguage();
+    }
     if(typeof sellerBooksApplyNotificationLanguage === "function"){
         sellerBooksApplyNotificationLanguage();
     }
@@ -33242,6 +33252,53 @@ function sellerBooksApplySettingsLanguage(){
 
     const topTitle=document.getElementById("topTitle"),topSubtitle=document.getElementById("topSubtitle");
     if(topTitle && view.classList.contains("active")){topTitle.textContent=t("pageTitle");topSubtitle.textContent=t("pageSubtitle");}
+}
+
+function sellerBooksOwnerSetupText(key){
+    const language = sellerBooksCurrentLanguage();
+    const translations = {
+        id:{
+            title:"Lengkapi Data Pemilik",
+            description:"Sebelum masuk ke SellerBooks, silakan masukkan nama pemilik atau nama usaha Anda.",
+            label:"Nama Pemilik / Nama Usaha",
+            placeholder:"Contoh: Adiimasa",
+            save:"💾 Simpan & Masuk SellerBooks",
+            note:"Data ini akan digunakan sebagai identitas pemilik akun SellerBooks Anda.",
+            nameRequired:"Silakan isi Nama Pemilik atau Nama Usaha terlebih dahulu.",
+            session:"Sesi login tidak ditemukan. Silakan login kembali.",
+            success:"✅ Data berhasil disimpan!\n\nSelamat datang, ",
+            failed:"❌ Nama Pemilik gagal disimpan ke server."
+        },
+        en:{
+            title:"Complete Owner Information",
+            description:"Before entering SellerBooks, please enter the owner's name or your business name.",
+            label:"Owner Name / Business Name",
+            placeholder:"Example: Adiimasa",
+            save:"💾 Save & Enter SellerBooks",
+            note:"This information will be used as the identity of your SellerBooks account.",
+            nameRequired:"Please enter the Owner Name or Business Name first.",
+            session:"Login session not found. Please log in again.",
+            success:"✅ Information saved successfully!\n\nWelcome, ",
+            failed:"❌ Failed to save the Owner Name to the server."
+        }
+    };
+    return translations[language]?.[key] ?? translations.id[key] ?? key;
+}
+
+function sellerBooksApplyOwnerSetupLanguage(){
+    const view=document.getElementById("ownerSetupPage");
+    if(!view) return;
+    const setText=(selector,key)=>{
+        const el=view.querySelector(selector);
+        if(el) el.textContent=sellerBooksOwnerSetupText(key);
+    };
+    setText("h2","title");
+    setText("p","description");
+    setText(".owner-setup-label","label");
+    setText(".owner-save-button","save");
+    setText(".owner-setup-note","note");
+    const input=document.getElementById("ownerNameInput");
+    if(input) input.placeholder=sellerBooksOwnerSetupText("placeholder");
 }
 
 function sellerBooksEnsureDefaultLanguage(){
