@@ -24307,9 +24307,16 @@ function sellerBooksApplySalesImportLanguage(){
     if(!root && !modal)return;
     const t=sellerBooksSalesImportText;
 
-    /* Topbar harus mengikuti bahasa akun yang sama dengan halaman Sales Import. */
-    if(topTitle) topTitle.textContent=t("pageTitle");
-    if(topSubtitle) topSubtitle.textContent=t("pageSubtitle");
+    /*
+       Hanya ubah topbar jika Sales Import memang sedang aktif.
+       Saat bahasa diganti dari Settings, halaman aktif harus tetap Settings
+       dan topbar tidak boleh berpindah sementara ke Sales Import.
+    */
+    const importViewActive = document.getElementById("import")?.classList.contains("active");
+    if(importViewActive){
+        if(topTitle) topTitle.textContent=t("pageTitle");
+        if(topSubtitle) topSubtitle.textContent=t("pageSubtitle");
+    }
 
     if(root){
         const q=(s)=>root.querySelector(s);
