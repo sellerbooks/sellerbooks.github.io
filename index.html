@@ -4533,7 +4533,16 @@ td{
         body.textContent = item.message;
         icon.textContent = item.confirm ? "?" : "✓";
         cancel.style.display = item.confirm ? "" : "none";
-        ok.textContent = item.confirm ? "Lanjutkan" : "OK";
+        const dialogLanguage =
+            typeof sellerBooksCurrentLanguage === "function"
+                ? sellerBooksCurrentLanguage()
+                : "id";
+        ok.textContent =
+            item.confirm
+                ? (dialogLanguage === "en" ? "Continue" : "Lanjutkan")
+                : "OK";
+        cancel.textContent =
+            dialogLanguage === "en" ? "Cancel" : "Batal";
 
         overlay.classList.add("show");
         overlay.setAttribute("aria-hidden","false");
@@ -18834,10 +18843,15 @@ async function deleteMarketplace(id){
 
     if(!marketplace) return;
 
+    const isEN = sellerBooksCurrentLanguage() === "en";
+    const marketplaceName = marketplace.name || "Marketplace";
+    const deleteConfirmMessage = isEN
+        ? "Delete marketplace \"" + marketplaceName + "\"?\n\nStore account data connected to this marketplace will also be deleted."
+        : "Hapus marketplace \"" + marketplaceName + "\"?\n\nData accounts toko yang terhubung dengan marketplace ini juga akan dihapus.";
+
     if(!await sellerBooksConfirm(
-        "Hapus marketplace \"" +
-        (marketplace.name || "Marketplace") +
-        "\"?\n\nData accounts toko yang terhubung dengan marketplace ini juga akan dihapus."
+        deleteConfirmMessage,
+        isEN ? "Confirm" : "Konfirmasi"
     )){
         return;
     }
@@ -18912,9 +18926,10 @@ async function deleteMarketplace(id){
         );
 
         sellerBooksAlert(
-            "Marketplace \"" +
-            (marketplace.name || "Marketplace") +
-            "\" berhasil dihapus dan perubahan sudah terverifikasi tersimpan di database."
+            isEN
+                ? "Marketplace \"" + marketplaceName + "\" was successfully deleted and the change was verified as saved to the database."
+                : "Marketplace \"" + marketplaceName + "\" berhasil dihapus dan perubahan sudah terverifikasi tersimpan di database.",
+            isEN ? "SellerBooks" : "SellerBooks"
         );
 
     }catch(error){
@@ -18930,9 +18945,9 @@ async function deleteMarketplace(id){
         if(typeof renderStores === "function")renderStores();
 
         sellerBooksAlert(
-            "Marketplace belum jadi dihapus dari database.\n\n" +
-            "Perubahan dibatalkan karena verifikasi Supabase gagal.\n\n" +
-            "Detail: " + (error && error.message ? error.message : error)
+            isEN
+                ? "The marketplace was not deleted from the database.\n\nThe change was rolled back because database verification failed.\n\nDetails: " + (error && error.message ? error.message : error)
+                : "Marketplace belum jadi dihapus dari database.\n\nPerubahan dibatalkan karena verifikasi Supabase gagal.\n\nDetail: " + (error && error.message ? error.message : error)
         );
     }
 }
