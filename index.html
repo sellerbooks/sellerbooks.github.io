@@ -15399,7 +15399,14 @@ async function sellerBooksLoadCloudData(){
     sellerBooksCloudReady=true;
     sellerBooksCloudLoading=false;
 
-    sellerBooksEnsureDefaultLanguage();
+    await sellerBooksEnsureDefaultLanguage();
+
+    /* Bahasa bukan bagian dari sellerbooks_user_data. Hapus key bahasa lama
+       dari state user bila masih ada, tanpa menyentuh setting aplikasi lain. */
+    if(Object.prototype.hasOwnProperty.call(sellerBooksCloudState,SELLERBOOKS_LANGUAGE_KEY)){
+        delete sellerBooksCloudState[SELLERBOOKS_LANGUAGE_KEY];
+        sellerBooksCloudDirtyKeys.delete(SELLERBOOKS_LANGUAGE_KEY);
+    }
 
     /* Migrasikan logo data-url lama ke Supabase Storage bila masih ada. */
     try{
@@ -15416,8 +15423,7 @@ async function sellerBooksLoadCloudData(){
     }
 
     if(shouldMigrateLegacy ||
-       sellerBooksCloudState["sellerbooks_settings"]!==existingCloudData["sellerbooks_settings"] ||
-       sellerBooksCloudState[SELLERBOOKS_LANGUAGE_KEY]!==existingCloudData[SELLERBOOKS_LANGUAGE_KEY]){
+       sellerBooksCloudState["sellerbooks_settings"]!==existingCloudData["sellerbooks_settings"]){
         await sellerBooksPersistCloudDataNow();
     }
 
@@ -31849,6 +31855,47 @@ document.addEventListener(
 
 const SELLERBOOKS_LANGUAGE_KEY = "sellerbooks_language";
 const SELLERBOOKS_DEFAULT_LANGUAGE = "id";
+let sellerBooksGlobalLanguage = SELLERBOOKS_DEFAULT_LANGUAGE;
+let sellerBooksGlobalLanguageReady = false;
+
+async function sellerBooksLoadGlobalLanguage(){
+    try{
+        const {data,error}=await sellerBooksSupabase
+            .from("sellerbooks_language_settings")
+            .select("language")
+            .eq("id",1)
+            .maybeSingle();
+        if(error) throw error;
+        sellerBooksGlobalLanguage = sellerBooksNormalizeLanguage(
+            data?.language || SELLERBOOKS_DEFAULT_LANGUAGE
+        );
+        sellerBooksGlobalLanguageReady = true;
+        return sellerBooksGlobalLanguage;
+    }catch(error){
+        console.warn("Bahasa global SellerBooks gagal dimuat:",error);
+        sellerBooksGlobalLanguageReady = false;
+        return sellerBooksGlobalLanguage;
+    }
+}
+
+async function sellerBooksSaveGlobalLanguage(value){
+    const language=sellerBooksNormalizeLanguage(value);
+    const {data,error}=await sellerBooksSupabase
+        .from("sellerbooks_language_settings")
+        .update({
+            language:language,
+            updated_at:new Date().toISOString()
+        })
+        .eq("id",1)
+        .select("language")
+        .maybeSingle();
+    if(error) throw error;
+    sellerBooksGlobalLanguage=sellerBooksNormalizeLanguage(
+        data?.language || language
+    );
+    sellerBooksGlobalLanguageReady=true;
+    return sellerBooksGlobalLanguage;
+}
 
  /*
     LANGUAGE SELECTION
@@ -31895,13 +31942,11 @@ function sellerBooksSetLoginLanguage(value){
 
 function sellerBooksCurrentLanguage(){
     try{
-        if(sellerBooksAuthUser && sellerBooksCloudReady){
+        if(sellerBooksGlobalLanguageReady){
             return sellerBooksNormalizeLanguage(
-                sellerBooksStorageGetItem(SELLERBOOKS_LANGUAGE_KEY) ||
-                SELLERBOOKS_DEFAULT_LANGUAGE
+                sellerBooksGlobalLanguage || SELLERBOOKS_DEFAULT_LANGUAGE
             );
         }
-
         return sellerBooksGetLoginLanguagePreference();
     }catch(error){
         return SELLERBOOKS_DEFAULT_LANGUAGE;
@@ -31952,7 +31997,9 @@ function sellerBooksApplyLoginLanguage(){
         if(el) el.textContent=sellerBooksLoginText(key);
     };
 
-    const language=sellerBooksGetLoginLanguagePreference();
+    const language=sellerBooksGlobalLanguageReady
+        ? sellerBooksGlobalLanguage
+        : sellerBooksGetLoginLanguagePreference();
     const select=document.getElementById("loginLanguage");
     if(select) select.value=language;
 
@@ -33114,23 +33161,19 @@ function sellerBooksSyncLanguageControl(){
 async function sellerBooksSaveLanguage(value){
     const language = sellerBooksNormalizeLanguage(value);
 
-    if(!sellerBooksAuthUser || !sellerBooksCloudReady){
+    if(!sellerBooksAuthUser){
         sellerBooksSyncLanguageControl();
         return false;
     }
 
     try{
         /*
-           Terapkan pilihan secara lokal TERLEBIH DAHULU.
-           Jangan menunggu round-trip Supabase sebelum UI merespons.
-           Ini membuat perpindahan bahasa terasa instan saat user
-           berpindah ID <-> EN.
+           Bahasa sekarang disimpan sebagai setting global SellerBooks
+           di Supabase, BUKAN di sellerbooks_user_data dan BUKAN pada
+           akun Gmail/user_id.
         */
-        sellerBooksStorageSetItem(
-            SELLERBOOKS_LANGUAGE_KEY,
-            language
-        );
-
+        sellerBooksGlobalLanguage=language;
+        sellerBooksGlobalLanguageReady=true;
         sellerBooksSyncLanguageControl();
 
         if(typeof sellerBooksApplyDashboardLanguage === "function"){
@@ -33164,14 +33207,14 @@ async function sellerBooksSaveLanguage(value){
            tetap menjadi sumber penyimpanan akun, tetapi tidak menghambat
            respons tombol/dropdown.
         */
-        sellerBooksPersistCloudDataNow()
+        sellerBooksSaveGlobalLanguage(language)
             .then(function(){
                 const latest = sellerBooksCurrentLanguage();
                 if(info && latest === language){
                     info.textContent =
                         language === "en"
-                            ? "English saved to your account."
-                            : "Bahasa Indonesia tersimpan pada akun Anda.";
+                            ? "English saved to SellerBooks."
+                            : "Bahasa Indonesia tersimpan di SellerBooks.";
                 }
             })
             .catch(function(error){
@@ -33434,32 +33477,32 @@ function sellerBooksApplyOwnerSetupLanguage(){
     if(input) input.placeholder=sellerBooksOwnerSetupText("placeholder");
 }
 
-function sellerBooksEnsureDefaultLanguage(){
-    if(!sellerBooksAuthUser || !sellerBooksCloudReady) return;
+async function sellerBooksEnsureDefaultLanguage(){
+    if(!sellerBooksAuthUser) return;
 
-    const current = sellerBooksStorageGetItem(SELLERBOOKS_LANGUAGE_KEY);
     const preferred = sellerBooksGetLoginLanguagePreference();
-
     let loginLanguageWasChosen = false;
     try{
         loginLanguageWasChosen =
             window.localStorage.getItem(SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY) === "1";
     }catch(error){}
 
+    try{
+        await sellerBooksLoadGlobalLanguage();
+    }catch(error){}
+
     /*
-       PENTING:
-       Setelah login, gunakan ENGINE YANG SAMA dengan dropdown Settings lama.
-       sellerBooksSaveLanguage() tetap menjadi satu-satunya jalur perubahan bahasa
-       sehingga seluruh apply-language function + cloud persistence tetap berjalan
-       sama persis seperti sebelum kontrol dipindahkan ke Login.
+       Jika user memilih bahasa di Login, pilihan tersebut menjadi perubahan
+       setting global SellerBooks setelah autentikasi. Jika tidak memilih,
+       gunakan bahasa yang sudah tersimpan di Supabase.
     */
-    if(!current || loginLanguageWasChosen){
-        sellerBooksSaveLanguage(
-            preferred || SELLERBOOKS_DEFAULT_LANGUAGE
+    if(loginLanguageWasChosen){
+        await sellerBooksSaveGlobalLanguage(
+            preferred || sellerBooksGlobalLanguage || SELLERBOOKS_DEFAULT_LANGUAGE
         );
-    }else{
-        sellerBooksSyncLanguageControl();
     }
+
+    sellerBooksSyncLanguageControl();
 
     try{
         window.localStorage.removeItem(SELLERBOOKS_LOGIN_LANGUAGE_KEY);
@@ -34179,7 +34222,8 @@ async function restoreSellerBooksData(input){
 
 document.addEventListener(
     "DOMContentLoaded",
-    function(){
+    async function(){
+        await sellerBooksLoadGlobalLanguage();
         sellerBooksApplyLoginLanguage();
         loadSellerBooksSettings();
         sellerBooksHandleAuthSession();
