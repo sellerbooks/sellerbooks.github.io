@@ -15683,6 +15683,7 @@ async function sellerBooksHandleAuthSession(){
 
             sellerBooksAuthUser = null;
             sellerBooksProfile = null;
+            sellerBooksLoginLanguageOverrideActive = false;
 
             if(sellerBooksApprovalTimer){
                 clearInterval(
@@ -16069,6 +16070,7 @@ function sellerBooksStopAccountPolling(){
 }
 
 async function sellerBooksLogout(){
+    sellerBooksLoginLanguageOverrideActive = false;
     try{await sellerBooksSupabase.auth.signOut();}catch(error){console.error("Logout gagal:",error);}
     if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
     sellerBooksStorage.removeItem("sellerbooks_owner_name");
@@ -31866,7 +31868,25 @@ const SELLERBOOKS_DEFAULT_LANGUAGE = "id";
 let sellerBooksGlobalLanguage = SELLERBOOKS_DEFAULT_LANGUAGE;
 let sellerBooksGlobalLanguageReady = false;
 
+/*
+   Session language lock.
+   Setelah user memilih bahasa di Login, pilihan tersebut tidak boleh
+   ditimpa oleh approval check, warm cache, cloud reload, atau auth event
+   yang berjalan ulang beberapa detik kemudian.
+*/
+let sellerBooksLoginLanguageOverrideActive = false;
+
 async function sellerBooksLoadGlobalLanguage(){
+    /*
+       Jangan pernah membaca Supabase untuk menimpa pilihan Login yang
+       sedang dikunci pada sesi ini. Ini penting karena ada beberapa
+       approval/auth/cloud callback yang dapat berjalan berurutan.
+    */
+    if(sellerBooksLoginLanguageOverrideActive){
+        sellerBooksGlobalLanguageReady = true;
+        return sellerBooksGlobalLanguage;
+    }
+
     try{
         const {data,error}=await sellerBooksSupabase
             .from("sellerbooks_language_settings")
@@ -31955,6 +31975,11 @@ function sellerBooksSetLoginLanguage(value){
         );
     }catch(error){}
 
+    /*
+       Kunci pilihan user untuk seluruh proses login/session.
+       Callback lain tidak boleh menggantinya kembali ke ID.
+    */
+    sellerBooksLoginLanguageOverrideActive = true;
     sellerBooksGlobalLanguage = language;
     sellerBooksGlobalLanguageReady = true;
 
@@ -33532,9 +33557,10 @@ async function sellerBooksEnsureDefaultLanguage(){
     if(!sellerBooksAuthUser) return;
 
     const preferred = sellerBooksGetLoginLanguagePreference();
-    let loginLanguageWasChosen = false;
+    let loginLanguageWasChosen = sellerBooksLoginLanguageOverrideActive;
     try{
         loginLanguageWasChosen =
+            loginLanguageWasChosen ||
             window.localStorage.getItem(SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY) === "1";
     }catch(error){}
 
@@ -33555,9 +33581,12 @@ async function sellerBooksEnsureDefaultLanguage(){
     if(loginLanguageWasChosen){
         const selectedLanguage =
             sellerBooksNormalizeLanguage(
-                preferred || SELLERBOOKS_DEFAULT_LANGUAGE
+                sellerBooksLoginLanguageOverrideActive
+                    ? sellerBooksGlobalLanguage
+                    : (preferred || SELLERBOOKS_DEFAULT_LANGUAGE)
             );
 
+        sellerBooksLoginLanguageOverrideActive = true;
         sellerBooksGlobalLanguage = selectedLanguage;
         sellerBooksGlobalLanguageReady = true;
 
@@ -33600,6 +33629,12 @@ async function sellerBooksEnsureDefaultLanguage(){
         window.localStorage.removeItem(SELLERBOOKS_LOGIN_LANGUAGE_KEY);
         window.localStorage.removeItem(SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY);
     }catch(error){}
+
+    /*
+       Jangan reset sellerBooksLoginLanguageOverrideActive di sini.
+       Lock ini harus bertahan selama sesi login agar callback kedua/ketiga
+       tidak membaca ID lama dari Supabase dan mengubah UI kembali.
+    */
 }
 
 const SELLERBOOKS_SETTINGS_KEY = "sellerbooks_settings";
