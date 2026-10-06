@@ -31936,6 +31936,14 @@ function sellerBooksGetLoginLanguagePreference(){
 
 function sellerBooksSetLoginLanguage(value){
     const language = sellerBooksNormalizeLanguage(value);
+
+    /*
+       Dropdown Login = pengganti langsung dropdown Bahasa di Pengaturan.
+       Sebelum autentikasi, pilihan hanya ditahan sementara di localStorage
+       karena user belum mempunyai sesi untuk menulis ke Supabase.
+       Setelah login, sellerBooksEnsureDefaultLanguage() menyimpannya ke
+       sellerbooks_language_settings.
+    */
     try{
         window.localStorage.setItem(
             SELLERBOOKS_LOGIN_LANGUAGE_KEY,
@@ -31947,7 +31955,14 @@ function sellerBooksSetLoginLanguage(value){
         );
     }catch(error){}
 
-    sellerBooksApplyLoginLanguage();
+    sellerBooksGlobalLanguage = language;
+    sellerBooksGlobalLanguageReady = true;
+
+    /*
+       Terapkan engine bahasa lama secara penuh, bukan hanya halaman Login.
+    */
+    sellerBooksApplyAllLanguage();
+
     return language;
 }
 
@@ -33113,36 +33128,42 @@ function sellerBooksApplyDateInputLanguage(){
     });
 }
 
-function sellerBooksSyncLanguageControl(){
-    const select = document.getElementById("settingsLanguage");
-
+function sellerBooksApplyAllLanguage(){
+    /*
+       MASTER LANGUAGE ENGINE
+       Seluruh modul SellerBooks wajib melewati satu jalur ini.
+       Dropdown Login sekarang memakai engine yang sama dengan
+       dropdown Bahasa yang dahulu berada di Pengaturan.
+    */
     const language = sellerBooksCurrentLanguage();
-    sellerBooksApplyDateInputLanguage();
 
-    if(!select) return;
-
-    select.value = language;
-    select.disabled = !sellerBooksCloudReady;
-
+    if(typeof sellerBooksApplyDateInputLanguage === "function"){
+        sellerBooksApplyDateInputLanguage();
+    }
+    if(typeof sellerBooksApplyLoginLanguage === "function"){
+        sellerBooksApplyLoginLanguage();
+    }
     if(typeof sellerBooksApplyDashboardLanguage === "function"){
         sellerBooksApplyDashboardLanguage();
     }
-
     if(typeof sellerBooksApplyMarketplaceLanguage === "function"){
         sellerBooksApplyMarketplaceLanguage();
     }
-
     if(typeof sellerBooksApplyStoreLanguage === "function"){
         sellerBooksApplyStoreLanguage();
     }
-
     if(typeof sellerBooksApplyProductLanguage === "function"){
         sellerBooksApplyProductLanguage();
     }
     if(typeof sellerBooksApplyDetailsLanguage === "function"){
         sellerBooksApplyDetailsLanguage();
     }
-
+    if(typeof sellerBooksApplySalesImportLanguage === "function"){
+        sellerBooksApplySalesImportLanguage();
+    }
+    if(typeof sellerBooksApplyCostLanguage === "function"){
+        sellerBooksApplyCostLanguage();
+    }
     if(typeof sellerBooksApplyReportsLanguage === "function"){
         sellerBooksApplyReportsLanguage();
     }
@@ -33155,6 +33176,21 @@ function sellerBooksSyncLanguageControl(){
     if(typeof sellerBooksApplyNotificationLanguage === "function"){
         sellerBooksApplyNotificationLanguage();
     }
+    if(typeof window.sbPiutangApplyLanguage === "function"){
+        window.sbPiutangApplyLanguage();
+    }
+
+    return language;
+}
+
+function sellerBooksSyncLanguageControl(){
+    const select = document.getElementById("settingsLanguage");
+    const language = sellerBooksApplyAllLanguage();
+
+    if(select){
+        select.value = language;
+        select.disabled = !sellerBooksCloudReady;
+    }
 
     const info = document.getElementById("settingsLanguageInfo");
     if(info){
@@ -33162,9 +33198,9 @@ function sellerBooksSyncLanguageControl(){
             sellerBooksCloudReady
                 ? sellerBooksSettingsText("languageSaved")
                 : (
-                    sellerBooksCurrentLanguage() === "en"
-                        ? "Preparing account language..."
-                        : "Menyiapkan bahasa akun..."
+                    language === "en"
+                        ? "Preparing language..."
+                        : "Menyiapkan bahasa..."
                 );
     }
 }
@@ -33185,14 +33221,13 @@ async function sellerBooksSaveLanguage(value){
         */
         sellerBooksGlobalLanguage=language;
         sellerBooksGlobalLanguageReady=true;
-        sellerBooksSyncLanguageControl();
 
-        if(typeof sellerBooksApplyDashboardLanguage === "function"){
-            sellerBooksApplyDashboardLanguage();
-        }
-        if(typeof sellerBooksApplySalesImportLanguage === "function"){
-            sellerBooksApplySalesImportLanguage();
-        }
+        /*
+           Jalankan SATU master engine yang sebelumnya dipicu dari
+           Pengaturan. Tidak ada modul yang boleh tertinggal.
+        */
+        sellerBooksApplyAllLanguage();
+
         if(typeof currentSalesImport !== "undefined" && currentSalesImport){
             if(typeof populateSalesStoreAccounts === "function"){
                 populateSalesStoreAccounts();
