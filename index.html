@@ -31910,6 +31910,28 @@ async function sellerBooksLoadGlobalLanguage(){
             sellerBooksGlobalLanguageReady = true;
             return sellerBooksGlobalLanguage;
         }
+
+        /*
+           OAuth dapat kembali melalui browsing context yang tidak membawa
+           sessionStorage. Karena itu pilihan Login yang belum dikonsumsi
+           harus tetap diprioritaskan dari localStorage.
+        */
+        const loginTouched =
+            window.localStorage.getItem(
+                SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY
+            ) === "1";
+        const loginLanguage =
+            window.localStorage.getItem(
+                SELLERBOOKS_LOGIN_LANGUAGE_KEY
+            );
+
+        if(loginTouched && loginLanguage){
+            sellerBooksLoginLanguageOverrideActive = true;
+            sellerBooksGlobalLanguage =
+                sellerBooksNormalizeLanguage(loginLanguage);
+            sellerBooksGlobalLanguageReady = true;
+            return sellerBooksGlobalLanguage;
+        }
     }catch(error){}
 
     if(sellerBooksLoginLanguageOverrideActive){
@@ -32049,6 +32071,23 @@ function sellerBooksCurrentLanguage(){
             return sellerBooksNormalizeLanguage(sessionLanguage);
         }
 
+        /*
+           Jika user baru saja memilih bahasa di Login, pilihan tersebut
+           mengalahkan bahasa global lama sampai autentikasi selesai.
+        */
+        const loginTouched =
+            window.localStorage.getItem(
+                SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY
+            ) === "1";
+        const loginLanguage =
+            window.localStorage.getItem(
+                SELLERBOOKS_LOGIN_LANGUAGE_KEY
+            );
+
+        if(loginTouched && loginLanguage){
+            return sellerBooksNormalizeLanguage(loginLanguage);
+        }
+
         if(sellerBooksGlobalLanguageReady){
             return sellerBooksNormalizeLanguage(
                 sellerBooksGlobalLanguage || SELLERBOOKS_DEFAULT_LANGUAGE
@@ -32114,9 +32153,7 @@ function sellerBooksApplyLoginLanguage(){
         if(el) el.textContent=sellerBooksLoginText(key);
     };
 
-    const language=sellerBooksGlobalLanguageReady
-        ? sellerBooksGlobalLanguage
-        : sellerBooksGetLoginLanguagePreference();
+    const language = sellerBooksCurrentLanguage();
     const select=document.getElementById("loginLanguage");
     if(select) select.value=language;
 
