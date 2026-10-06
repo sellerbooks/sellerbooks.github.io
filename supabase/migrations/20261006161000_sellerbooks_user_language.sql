@@ -38,3 +38,6 @@ with check (auth.uid() = user_id);
 
 create index if not exists idx_sellerbooks_user_language_user_id
 on public.sellerbooks_user_language(user_id);
+
+-- Expose only the required Data API operations; RLS still enforces per-user access.
+grant select, insert, update on public.sellerbooks_user_language to authenticated;
