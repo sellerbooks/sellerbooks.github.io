@@ -33538,27 +33538,60 @@ async function sellerBooksEnsureDefaultLanguage(){
             window.localStorage.getItem(SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY) === "1";
     }catch(error){}
 
-    try{
-        await sellerBooksLoadGlobalLanguage();
-    }catch(error){}
-
     /*
-       Jika user memilih bahasa di Login, pilihan tersebut menjadi perubahan
-       setting global SellerBooks setelah autentikasi. Jika tidak memilih,
-       gunakan bahasa yang sudah tersimpan di Supabase.
+       PENTING:
+       Jika user memilih bahasa di halaman Login, pilihan tersebut adalah
+       keputusan terbaru user dan TIDAK BOLEH ditimpa oleh nilai lama dari
+       Supabase saat proses login.
+
+       Sebelumnya urutannya:
+       Login EN -> load Supabase(ID) -> EN baru disimpan.
+       Jika save gagal/terlambat, UI sudah terlanjur kembali ID.
+
+       Sekarang:
+       Login EN -> kunci runtime ke EN -> terapkan seluruh engine ->
+       baru simpan EN ke Supabase.
     */
     if(loginLanguageWasChosen){
-        try{
-            await sellerBooksSaveGlobalLanguage(
-                preferred || sellerBooksGlobalLanguage || SELLERBOOKS_DEFAULT_LANGUAGE
+        const selectedLanguage =
+            sellerBooksNormalizeLanguage(
+                preferred || SELLERBOOKS_DEFAULT_LANGUAGE
             );
+
+        sellerBooksGlobalLanguage = selectedLanguage;
+        sellerBooksGlobalLanguageReady = true;
+
+        /*
+           Terapkan seluruh fungsi bahasa lama SEBELUM cloud data/approval
+           melanjutkan proses. Tidak boleh ada fase kembali ke ID.
+        */
+        sellerBooksApplyAllLanguage();
+
+        try{
+            await sellerBooksSaveGlobalLanguage(selectedLanguage);
         }catch(error){
             /*
-               Jangan pernah menganggap akun belum approved hanya karena
-               penyimpanan bahasa gagal. Login/approval tetap dilanjutkan.
+               Kegagalan penyimpanan tidak boleh mengubah tampilan yang
+               sudah dipilih user. Runtime tetap menggunakan selectedLanguage.
             */
+            sellerBooksGlobalLanguage = selectedLanguage;
+            sellerBooksGlobalLanguageReady = true;
             console.warn("Penyimpanan bahasa global SellerBooks gagal:",error);
         }
+    }else{
+        /*
+           Tidak ada pilihan baru dari Login -> baru baca bahasa tersimpan
+           di Supabase. Default Supabase adalah ID.
+        */
+        try{
+            await sellerBooksLoadGlobalLanguage();
+        }catch(error){
+            sellerBooksGlobalLanguage =
+                SELLERBOOKS_DEFAULT_LANGUAGE;
+            sellerBooksGlobalLanguageReady = true;
+        }
+
+        sellerBooksApplyAllLanguage();
     }
 
     sellerBooksSyncLanguageControl();
