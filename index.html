@@ -15773,8 +15773,20 @@ sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
         sellerBooksAuthUser=session.user;
         setTimeout(function(){sellerBooksCheckApproval(false);},0);
     }else{
-        sellerBooksAuthUser=null;
-        sellerBooksProfile=null;
+        /*
+           Jangan menganggap event null sementara sebagai logout.
+           Hanya SIGNED_OUT yang boleh menghapus language lock.
+        */
+        if(event === "SIGNED_OUT"){
+            sellerBooksAuthUser=null;
+            sellerBooksProfile=null;
+            sellerBooksLoginLanguageOverrideActive=false;
+            try{
+                window.sessionStorage.removeItem(
+                    SELLERBOOKS_SESSION_LANGUAGE_KEY
+                );
+            }catch(error){}
+        }
         applyBusinessLogoToInterface("");
         sellerBooksShowOnly("loginPage");
         sellerBooksApplyLoginLanguage();
@@ -16071,6 +16083,9 @@ function sellerBooksStopAccountPolling(){
 
 async function sellerBooksLogout(){
     sellerBooksLoginLanguageOverrideActive = false;
+    try{
+        window.sessionStorage.removeItem(SELLERBOOKS_SESSION_LANGUAGE_KEY);
+    }catch(error){}
     try{await sellerBooksSupabase.auth.signOut();}catch(error){console.error("Logout gagal:",error);}
     if(sellerBooksApprovalTimer){clearInterval(sellerBooksApprovalTimer);sellerBooksApprovalTimer=null;}
     sellerBooksStorage.removeItem("sellerbooks_owner_name");
@@ -31882,6 +31897,21 @@ async function sellerBooksLoadGlobalLanguage(){
        sedang dikunci pada sesi ini. Ini penting karena ada beberapa
        approval/auth/cloud callback yang dapat berjalan berurutan.
     */
+    try{
+        const sessionLanguage =
+            window.sessionStorage.getItem(
+                SELLERBOOKS_SESSION_LANGUAGE_KEY
+            );
+
+        if(sessionLanguage){
+            sellerBooksLoginLanguageOverrideActive = true;
+            sellerBooksGlobalLanguage =
+                sellerBooksNormalizeLanguage(sessionLanguage);
+            sellerBooksGlobalLanguageReady = true;
+            return sellerBooksGlobalLanguage;
+        }
+    }catch(error){}
+
     if(sellerBooksLoginLanguageOverrideActive){
         sellerBooksGlobalLanguageReady = true;
         return sellerBooksGlobalLanguage;
@@ -31938,6 +31968,7 @@ async function sellerBooksSaveGlobalLanguage(value){
  */
 const SELLERBOOKS_LOGIN_LANGUAGE_KEY = "sb_login_language";
 const SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY = "sb_login_language_touched";
+const SELLERBOOKS_SESSION_LANGUAGE_KEY = "sb_session_language";
 
 function sellerBooksNormalizeLanguage(value){
     return String(value || "").toLowerCase() === "en" ? "en" : "id";
@@ -31973,6 +32004,15 @@ function sellerBooksSetLoginLanguage(value){
             SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY,
             "1"
         );
+        /*
+           sessionStorage menjadi sumber paling kuat selama tab/session ini.
+           Ini bertahan melewati redirect Google dan mencegah callback lain
+           mengembalikan bahasa ke default ID.
+        */
+        window.sessionStorage.setItem(
+            SELLERBOOKS_SESSION_LANGUAGE_KEY,
+            language
+        );
     }catch(error){}
 
     /*
@@ -31993,14 +32033,35 @@ function sellerBooksSetLoginLanguage(value){
 
 function sellerBooksCurrentLanguage(){
     try{
+        /*
+           Urutan sumber bahasa:
+           1. sessionStorage pilihan Login (paling kuat selama sesi)
+           2. runtime global language
+           3. preferensi Login sementara
+           4. default ID
+        */
+        const sessionLanguage =
+            window.sessionStorage.getItem(
+                SELLERBOOKS_SESSION_LANGUAGE_KEY
+            );
+
+        if(sessionLanguage){
+            return sellerBooksNormalizeLanguage(sessionLanguage);
+        }
+
         if(sellerBooksGlobalLanguageReady){
             return sellerBooksNormalizeLanguage(
                 sellerBooksGlobalLanguage || SELLERBOOKS_DEFAULT_LANGUAGE
             );
         }
+
         return sellerBooksGetLoginLanguagePreference();
     }catch(error){
-        return SELLERBOOKS_DEFAULT_LANGUAGE;
+        return sellerBooksGlobalLanguageReady
+            ? sellerBooksNormalizeLanguage(
+                sellerBooksGlobalLanguage || SELLERBOOKS_DEFAULT_LANGUAGE
+              )
+            : SELLERBOOKS_DEFAULT_LANGUAGE;
     }
 }
 
@@ -33558,9 +33619,15 @@ async function sellerBooksEnsureDefaultLanguage(){
 
     const preferred = sellerBooksGetLoginLanguagePreference();
     let loginLanguageWasChosen = sellerBooksLoginLanguageOverrideActive;
+    let sessionLanguage = "";
     try{
+        sessionLanguage =
+            window.sessionStorage.getItem(
+                SELLERBOOKS_SESSION_LANGUAGE_KEY
+            ) || "";
         loginLanguageWasChosen =
             loginLanguageWasChosen ||
+            !!sessionLanguage ||
             window.localStorage.getItem(SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY) === "1";
     }catch(error){}
 
@@ -33581,14 +33648,24 @@ async function sellerBooksEnsureDefaultLanguage(){
     if(loginLanguageWasChosen){
         const selectedLanguage =
             sellerBooksNormalizeLanguage(
-                sellerBooksLoginLanguageOverrideActive
-                    ? sellerBooksGlobalLanguage
-                    : (preferred || SELLERBOOKS_DEFAULT_LANGUAGE)
+                sessionLanguage
+                    ? sessionLanguage
+                    : (
+                        sellerBooksLoginLanguageOverrideActive
+                            ? sellerBooksGlobalLanguage
+                            : (preferred || SELLERBOOKS_DEFAULT_LANGUAGE)
+                      )
             );
 
         sellerBooksLoginLanguageOverrideActive = true;
         sellerBooksGlobalLanguage = selectedLanguage;
         sellerBooksGlobalLanguageReady = true;
+        try{
+            window.sessionStorage.setItem(
+                SELLERBOOKS_SESSION_LANGUAGE_KEY,
+                selectedLanguage
+            );
+        }catch(error){}
 
         /*
            Terapkan seluruh fungsi bahasa lama SEBELUM cloud data/approval
