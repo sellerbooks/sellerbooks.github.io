@@ -31859,6 +31859,7 @@ const SELLERBOOKS_DEFAULT_LANGUAGE = "id";
       dan kemudian disimpan ke sellerbooks_user_data.
  */
 const SELLERBOOKS_LOGIN_LANGUAGE_KEY = "sb_login_language";
+const SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY = "sb_login_language_touched";
 
 function sellerBooksNormalizeLanguage(value){
     return String(value || "").toLowerCase() === "en" ? "en" : "id";
@@ -31881,6 +31882,10 @@ function sellerBooksSetLoginLanguage(value){
         window.localStorage.setItem(
             SELLERBOOKS_LOGIN_LANGUAGE_KEY,
             language
+        );
+        window.localStorage.setItem(
+            SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY,
+            "1"
         );
     }catch(error){}
 
@@ -33433,14 +33438,21 @@ function sellerBooksEnsureDefaultLanguage(){
     if(!sellerBooksAuthUser || !sellerBooksCloudReady) return;
 
     const current = sellerBooksStorageGetItem(SELLERBOOKS_LANGUAGE_KEY);
+    const preferred = sellerBooksGetLoginLanguagePreference();
 
-    if(!current){
-        /*
-           Jika akun belum pernah menyimpan bahasa, gunakan pilihan yang
-           dibuat user pada halaman login. Jika tidak ada pilihan, default ID.
-        */
-        const preferred = sellerBooksGetLoginLanguagePreference();
+    let loginLanguageWasChosen = false;
+    try{
+        loginLanguageWasChosen =
+            window.localStorage.getItem(SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY) === "1";
+    }catch(error){}
 
+    /*
+       Jika akun sudah memiliki bahasa, pertahankan bahasa akun secara default.
+       Namun jika user sengaja memilih bahasa pada halaman login, pilihan tersebut
+       menjadi permintaan perubahan bahasa dan ditulis ke akun setelah autentikasi.
+       Akun yang belum memiliki bahasa memakai pilihan login, atau default ID.
+    */
+    if(!current || loginLanguageWasChosen){
         sellerBooksStorageSetItem(
             SELLERBOOKS_LANGUAGE_KEY,
             preferred || SELLERBOOKS_DEFAULT_LANGUAGE
@@ -33449,6 +33461,7 @@ function sellerBooksEnsureDefaultLanguage(){
 
     try{
         window.localStorage.removeItem(SELLERBOOKS_LOGIN_LANGUAGE_KEY);
+        window.localStorage.removeItem(SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY);
     }catch(error){}
 
     sellerBooksSyncLanguageControl();
