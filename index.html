@@ -31962,10 +31962,12 @@ async function sellerBooksSaveGlobalLanguage(value){
     const language=sellerBooksNormalizeLanguage(value);
 
     /*
-       UPDATE saja. Tidak meminta row hasil UPDATE kembali, sehingga
-       kegagalan SELECT/RLS pada response tidak ikut menggagalkan proses.
+       PERSISTENCE LANGUAGE SAJA.
+       Setelah UPDATE, baca kembali row yang sama untuk memastikan nilai
+       benar-benar tersimpan di Supabase. Jangan menganggap UPDATE berhasil
+       hanya karena tidak mengembalikan error.
     */
-    const {error}=await sellerBooksSupabase
+    const {error:updateError}=await sellerBooksSupabase
         .from("sellerbooks_language_settings")
         .update({
             language:language,
@@ -31973,7 +31975,25 @@ async function sellerBooksSaveGlobalLanguage(value){
         })
         .eq("id",1);
 
-    if(error) throw error;
+    if(updateError) throw updateError;
+
+    const {data:verifyData,error:verifyError}=await sellerBooksSupabase
+        .from("sellerbooks_language_settings")
+        .select("language")
+        .eq("id",1)
+        .maybeSingle();
+
+    if(verifyError) throw verifyError;
+
+    const savedLanguage=sellerBooksNormalizeLanguage(
+        verifyData?.language || ""
+    );
+
+    if(!verifyData || savedLanguage !== language){
+        throw new Error(
+            "Bahasa SellerBooks belum terkonfirmasi tersimpan di Supabase."
+        );
+    }
 
     sellerBooksGlobalLanguage=language;
     sellerBooksGlobalLanguageReady=true;
@@ -33654,6 +33674,7 @@ function sellerBooksApplyOwnerSetupLanguage(){
 async function sellerBooksEnsureDefaultLanguage(){
     if(!sellerBooksAuthUser) return;
 
+    let languagePersistenceCommitted = false;
     const preferred = sellerBooksGetLoginLanguagePreference();
     let loginLanguageWasChosen = sellerBooksLoginLanguageOverrideActive;
     let sessionLanguage = "";
@@ -33712,10 +33733,13 @@ async function sellerBooksEnsureDefaultLanguage(){
 
         try{
             await sellerBooksSaveGlobalLanguage(selectedLanguage);
+            languagePersistenceCommitted = true;
         }catch(error){
             /*
                Kegagalan penyimpanan tidak boleh mengubah tampilan yang
                sudah dipilih user. Runtime tetap menggunakan selectedLanguage.
+               Handoff localStorage sengaja dipertahankan agar restart APK
+               tetap memakai pilihan terakhir sampai Supabase berhasil.
             */
             sellerBooksGlobalLanguage = selectedLanguage;
             sellerBooksGlobalLanguageReady = true;
@@ -33728,10 +33752,12 @@ async function sellerBooksEnsureDefaultLanguage(){
         */
         try{
             await sellerBooksLoadGlobalLanguage();
+            languagePersistenceCommitted = sellerBooksGlobalLanguageReady === true;
         }catch(error){
             sellerBooksGlobalLanguage =
                 SELLERBOOKS_DEFAULT_LANGUAGE;
             sellerBooksGlobalLanguageReady = true;
+            languagePersistenceCommitted = false;
         }
 
         sellerBooksApplyAllLanguage();
@@ -33739,10 +33765,17 @@ async function sellerBooksEnsureDefaultLanguage(){
 
     sellerBooksSyncLanguageControl();
 
-    try{
-        window.localStorage.removeItem(SELLERBOOKS_LOGIN_LANGUAGE_KEY);
-        window.localStorage.removeItem(SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY);
-    }catch(error){}
+    /*
+       HANYA hapus handoff Login setelah Supabase benar-benar terverifikasi.
+       Jika penyimpanan gagal, biarkan EN/ID tetap tersimpan di localStorage
+       sebagai fallback agar restart APK tidak mengembalikan bahasa ke default.
+    */
+    if(languagePersistenceCommitted){
+        try{
+            window.localStorage.removeItem(SELLERBOOKS_LOGIN_LANGUAGE_KEY);
+            window.localStorage.removeItem(SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY);
+        }catch(error){}
+    }
 
     /*
        Jangan reset sellerBooksLoginLanguageOverrideActive di sini.
