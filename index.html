@@ -33447,24 +33447,24 @@ function sellerBooksEnsureDefaultLanguage(){
     }catch(error){}
 
     /*
-       Jika akun sudah memiliki bahasa, pertahankan bahasa akun secara default.
-       Namun jika user sengaja memilih bahasa pada halaman login, pilihan tersebut
-       menjadi permintaan perubahan bahasa dan ditulis ke akun setelah autentikasi.
-       Akun yang belum memiliki bahasa memakai pilihan login, atau default ID.
+       PENTING:
+       Setelah login, gunakan ENGINE YANG SAMA dengan dropdown Settings lama.
+       sellerBooksSaveLanguage() tetap menjadi satu-satunya jalur perubahan bahasa
+       sehingga seluruh apply-language function + cloud persistence tetap berjalan
+       sama persis seperti sebelum kontrol dipindahkan ke Login.
     */
     if(!current || loginLanguageWasChosen){
-        sellerBooksStorageSetItem(
-            SELLERBOOKS_LANGUAGE_KEY,
+        sellerBooksSaveLanguage(
             preferred || SELLERBOOKS_DEFAULT_LANGUAGE
         );
+    }else{
+        sellerBooksSyncLanguageControl();
     }
 
     try{
         window.localStorage.removeItem(SELLERBOOKS_LOGIN_LANGUAGE_KEY);
         window.localStorage.removeItem(SELLERBOOKS_LOGIN_LANGUAGE_TOUCHED_KEY);
     }catch(error){}
-
-    sellerBooksSyncLanguageControl();
 }
 
 const SELLERBOOKS_SETTINGS_KEY = "sellerbooks_settings";
