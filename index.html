@@ -429,17 +429,20 @@ body{
 
 
 .login-language-control{
+    position:absolute;
+    top:24px;
+    right:24px;
+    z-index:5;
     display:flex;
     align-items:center;
     justify-content:flex-end;
     gap:10px;
-    margin-bottom:22px;
 }
 
 .login-language-control label{
     font-size:12px;
     font-weight:700;
-    color:var(--muted);
+    color:rgba(255,255,255,.88);
 }
 
 .login-language-select{
@@ -3983,6 +3986,19 @@ td{
 
 
 @media(max-width:650px){
+
+    .login-language-control{
+        right:20px;
+        top:20px;
+    }
+
+    .login-language-control label{
+        display:none;
+    }
+
+    .login-language-select{
+        min-width:145px;
+    }
 
     #loginPage{
 
@@ -9783,6 +9799,18 @@ document.addEventListener(
 
         <div class="login-brand">
 
+                <div class="login-language-control">
+                    <label for="loginLanguage" id="loginLanguageLabel">Bahasa</label>
+                    <select
+                        id="loginLanguage"
+                        class="login-language-select"
+                        onchange="sellerBooksSetLoginLanguage(this.value)"
+                    >
+                        <option value="id">Bahasa Indonesia</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+
             <div class="login-brand-content">
 
                 <div class="login-logo">
@@ -9868,18 +9896,6 @@ document.addEventListener(
         <div class="login-form-area">
 
             <div class="login-box">
-
-                <div class="login-language-control">
-                    <label for="loginLanguage" id="loginLanguageLabel">Bahasa</label>
-                    <select
-                        id="loginLanguage"
-                        class="login-language-select"
-                        onchange="sellerBooksSetLoginLanguage(this.value)"
-                    >
-                        <option value="id">Bahasa Indonesia</option>
-                        <option value="en">English</option>
-                    </select>
-                </div>
 
                 <h2 id="loginTitle">
                     Selamat Datang 👋
