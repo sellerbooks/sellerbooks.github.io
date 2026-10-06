@@ -15399,7 +15399,15 @@ async function sellerBooksLoadCloudData(){
     sellerBooksCloudReady=true;
     sellerBooksCloudLoading=false;
 
-    await sellerBooksEnsureDefaultLanguage();
+    /*
+       Bahasa adalah konfigurasi tambahan. Kegagalan membaca/menyimpan
+       bahasa tidak boleh memblokir akun yang sudah APPROVED.
+    */
+    try{
+        await sellerBooksEnsureDefaultLanguage();
+    }catch(languageError){
+        console.warn("Sinkronisasi bahasa SellerBooks dilewati:",languageError);
+    }
 
     /* Bahasa bukan bagian dari sellerbooks_user_data. Hapus key bahasa lama
        dari state user bila masih ada, tanpa menyentuh setting aplikasi lain. */
@@ -31880,19 +31888,22 @@ async function sellerBooksLoadGlobalLanguage(){
 
 async function sellerBooksSaveGlobalLanguage(value){
     const language=sellerBooksNormalizeLanguage(value);
-    const {data,error}=await sellerBooksSupabase
+
+    /*
+       UPDATE saja. Tidak meminta row hasil UPDATE kembali, sehingga
+       kegagalan SELECT/RLS pada response tidak ikut menggagalkan proses.
+    */
+    const {error}=await sellerBooksSupabase
         .from("sellerbooks_language_settings")
         .update({
             language:language,
             updated_at:new Date().toISOString()
         })
-        .eq("id",1)
-        .select("language")
-        .maybeSingle();
+        .eq("id",1);
+
     if(error) throw error;
-    sellerBooksGlobalLanguage=sellerBooksNormalizeLanguage(
-        data?.language || language
-    );
+
+    sellerBooksGlobalLanguage=language;
     sellerBooksGlobalLanguageReady=true;
     return sellerBooksGlobalLanguage;
 }
@@ -33497,9 +33508,17 @@ async function sellerBooksEnsureDefaultLanguage(){
        gunakan bahasa yang sudah tersimpan di Supabase.
     */
     if(loginLanguageWasChosen){
-        await sellerBooksSaveGlobalLanguage(
-            preferred || sellerBooksGlobalLanguage || SELLERBOOKS_DEFAULT_LANGUAGE
-        );
+        try{
+            await sellerBooksSaveGlobalLanguage(
+                preferred || sellerBooksGlobalLanguage || SELLERBOOKS_DEFAULT_LANGUAGE
+            );
+        }catch(error){
+            /*
+               Jangan pernah menganggap akun belum approved hanya karena
+               penyimpanan bahasa gagal. Login/approval tetap dilanjutkan.
+            */
+            console.warn("Penyimpanan bahasa global SellerBooks gagal:",error);
+        }
     }
 
     sellerBooksSyncLanguageControl();
