@@ -428,6 +428,39 @@ body{
 }
 
 
+.login-language-control{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:10px;
+    margin-bottom:22px;
+}
+
+.login-language-control label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--muted);
+}
+
+.login-language-select{
+    min-width:150px;
+    height:40px;
+    padding:0 36px 0 12px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#fff;
+    color:#0f172a;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    outline:none;
+}
+
+.login-language-select:focus{
+    border-color:#2563eb;
+    box-shadow:0 0 0 3px rgba(37,99,235,.12);
+}
+
 .login-description{
 
     color:var(--muted);
@@ -9731,7 +9764,7 @@ document.addEventListener(
      LOGIN PAGE
 ===================================================== -->
 
-<section id="loginPage" data-sellerbooks-language-lock="id">
+<section id="loginPage">
 
     <div class="login-wrapper">
 
@@ -9765,11 +9798,11 @@ document.addEventListener(
 
                 <div class="login-hero">
 
-                    <h1>
+                    <h1 id="loginHeroTitle">
                         Kelola Marketplace Lebih Cerdas.
                     </h1>
 
-                    <p>
+                    <p id="loginHeroDescription">
                         Pantau penjualan, produk keluar,
                         akun toko dan laba bisnis Anda
                         dalam satu sistem.
@@ -9782,7 +9815,7 @@ document.addEventListener(
 
                             <div class="check">✓</div>
 
-                            Multi Marketplace
+                            <span id="loginFeatureMarketplace">Multi Marketplace</span>
 
                         </div>
 
@@ -9791,7 +9824,7 @@ document.addEventListener(
 
                             <div class="check">✓</div>
 
-                            Multi Akun Toko
+                            <span id="loginFeatureStores">Multi Akun Toko</span>
 
                         </div>
 
@@ -9800,7 +9833,7 @@ document.addEventListener(
 
                             <div class="check">✓</div>
 
-                            Analisis Laba Bisnis
+                            <span id="loginFeatureProfit">Analisis Laba Bisnis</span>
 
                         </div>
 
@@ -9811,7 +9844,7 @@ document.addEventListener(
             </div>
 
 
-            <div class="login-brand-footer">
+            <div class="login-brand-footer" id="loginBrandFooter">
 
                 MBI — Semua Angka Bisnis, Dalam Satu Kendali.
 
@@ -9826,11 +9859,23 @@ document.addEventListener(
 
             <div class="login-box">
 
-                <h2>
+                <div class="login-language-control">
+                    <label for="loginLanguage" id="loginLanguageLabel">Bahasa</label>
+                    <select
+                        id="loginLanguage"
+                        class="login-language-select"
+                        onchange="sellerBooksSetLoginLanguage(this.value)"
+                    >
+                        <option value="id">Bahasa Indonesia</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+
+                <h2 id="loginTitle">
                     Selamat Datang 👋
                 </h2>
 
-                <p class="login-description">
+                <p class="login-description" id="loginDescription">
 
                     Masuk menggunakan akun Google
                     untuk mengakses SellerBooks.
@@ -9863,7 +9908,7 @@ document.addEventListener(
 
                     </svg>
 
-                    Masuk dengan Google
+                    <span id="loginGoogleText">Masuk dengan Google</span>
 
                 </button>
 
@@ -9875,11 +9920,11 @@ document.addEventListener(
 
                     <div>
 
-                        <h4>
+                        <h4 id="loginSecurityTitle">
                             Data bisnis Anda terlindungi
                         </h4>
 
-                        <p>
+                        <p id="loginSecurityDescription">
                             Setiap pengguna hanya dapat
                             mengakses data bisnis yang
                             memiliki izin untuknya.
@@ -13285,8 +13330,10 @@ document.addEventListener(
 
                 </div>
 
-                <!-- BAHASA SELLERBOOKS -->
-                <div class="content-section settings-card">
+                <!-- BAHASA SELLERBOOKS
+                     Dipindahkan ke halaman login. Engine penyimpanan tetap dipertahankan
+                     agar data bahasa akun lama tetap kompatibel. -->
+                <div id="settingsLanguageCard" class="content-section settings-card" style="display:none;">
                     <div class="settings-card-header">
                         <div class="settings-card-icon">🌐</div>
                         <div>
@@ -15715,6 +15762,7 @@ sellerBooksSupabase.auth.onAuthStateChange(function(event,session){
         sellerBooksProfile=null;
         applyBusinessLogoToInterface("");
         sellerBooksShowOnly("loginPage");
+        sellerBooksApplyLoginLanguage();
     }
 });
 /* =====================================================
@@ -15885,6 +15933,7 @@ function sellerBooksHandleRealtimeAccountAction(status){
         sellerBooksProfile=null;
         sellerBooksStorage.removeItem("sellerbooks_owner_name");
         sellerBooksShowOnly("loginPage");
+        sellerBooksApplyLoginLanguage();
         sellerBooksAlert("⚠️ Akses Akun Berubah\n\n"+message);
         sellerBooksAccountRealtimeHandling=false;
     });
@@ -16011,6 +16060,7 @@ async function sellerBooksLogout(){
     sellerBooksStorage.removeItem("sellerbooks_owner_name");
     applyBusinessLogoToInterface("");
     sellerBooksShowOnly("loginPage");
+        sellerBooksApplyLoginLanguage();
 }
 
 /* =====================================================
@@ -16021,7 +16071,8 @@ async function saveOwnerName(){
     const input=document.getElementById("ownerNameInput");
     const ownerName=input.value.trim();
     if(!ownerName){sellerBooksAlert(sellerBooksOwnerSetupText("nameRequired"),sellerBooksOwnerSetupText("title"));input.focus();return;}
-    if(!sellerBooksAuthUser){sellerBooksAlert(sellerBooksOwnerSetupText("session"),sellerBooksOwnerSetupText("title"));sellerBooksShowOnly("loginPage");return;}
+    if(!sellerBooksAuthUser){sellerBooksAlert(sellerBooksOwnerSetupText("session"),sellerBooksOwnerSetupText("title"));sellerBooksShowOnly("loginPage");
+        sellerBooksApplyLoginLanguage();return;}
     try{
         const {error}=await sellerBooksSupabase.from("sellerbooks_profiles").update({owner_name:ownerName,contact_name:ownerName,updated_at:new Date().toISOString()}).eq("user_id",sellerBooksAuthUser.id);
         if(error)throw error;
@@ -31800,45 +31851,122 @@ const SELLERBOOKS_LANGUAGE_KEY = "sellerbooks_language";
 const SELLERBOOKS_DEFAULT_LANGUAGE = "id";
 
  /*
-    HALAMAN LOGIN DIKUNCI BAHASA INDONESIA.
-    Engine EN/ID SellerBooks wajib melewati root yang memiliki
-    data-sellerbooks-language-lock="id".
-    Preferensi bahasa akun TIDAK berlaku pada halaman login.
+    LANGUAGE SELECTION
+    - Login menyediakan pilihan ID / EN sebelum autentikasi.
+    - Pilihan pra-login hanya menjadi preferensi sementara.
+    - Setelah akun berhasil dimuat, bahasa akun di Supabase tetap menjadi sumber utama.
+    - Untuk akun yang belum memiliki bahasa, pilihan pra-login akan menjadi bahasa akun
+      dan kemudian disimpan ke sellerbooks_user_data.
  */
-const SELLERBOOKS_LANGUAGE_LOCK_ATTRIBUTE = "data-sellerbooks-language-lock";
-
-function sellerBooksIsLanguageLocked(element){
-    try{
-        const node = element && element.nodeType === 1
-            ? element
-            : element?.parentElement;
-
-        if(!node || typeof node.closest !== "function"){
-            return false;
-        }
-
-        return !!node.closest(
-            "[" + SELLERBOOKS_LANGUAGE_LOCK_ATTRIBUTE + "]"
-        );
-    }catch(error){
-        return false;
-    }
-}
+const SELLERBOOKS_LOGIN_LANGUAGE_KEY = "sb_login_language";
 
 function sellerBooksNormalizeLanguage(value){
     return String(value || "").toLowerCase() === "en" ? "en" : "id";
 }
 
-function sellerBooksCurrentLanguage(){
+function sellerBooksGetLoginLanguagePreference(){
     try{
         return sellerBooksNormalizeLanguage(
-            sellerBooksStorageGetItem(SELLERBOOKS_LANGUAGE_KEY) ||
+            window.localStorage.getItem(SELLERBOOKS_LOGIN_LANGUAGE_KEY) ||
             SELLERBOOKS_DEFAULT_LANGUAGE
         );
     }catch(error){
         return SELLERBOOKS_DEFAULT_LANGUAGE;
     }
 }
+
+function sellerBooksSetLoginLanguage(value){
+    const language = sellerBooksNormalizeLanguage(value);
+    try{
+        window.localStorage.setItem(
+            SELLERBOOKS_LOGIN_LANGUAGE_KEY,
+            language
+        );
+    }catch(error){}
+
+    sellerBooksApplyLoginLanguage();
+    return language;
+}
+
+function sellerBooksCurrentLanguage(){
+    try{
+        if(sellerBooksAuthUser && sellerBooksCloudReady){
+            return sellerBooksNormalizeLanguage(
+                sellerBooksStorageGetItem(SELLERBOOKS_LANGUAGE_KEY) ||
+                SELLERBOOKS_DEFAULT_LANGUAGE
+            );
+        }
+
+        return sellerBooksGetLoginLanguagePreference();
+    }catch(error){
+        return SELLERBOOKS_DEFAULT_LANGUAGE;
+    }
+}
+
+function sellerBooksLoginText(key){
+    const language = sellerBooksGetLoginLanguagePreference();
+    const translations = {
+        id:{
+            language:"Bahasa",
+            heroTitle:"Kelola Marketplace Lebih Cerdas.",
+            heroDescription:"Pantau penjualan, produk keluar, akun toko dan laba bisnis Anda dalam satu sistem.",
+            marketplace:"Multi Marketplace",
+            stores:"Multi Akun Toko",
+            profit:"Analisis Laba Bisnis",
+            footer:"MBI — Semua Angka Bisnis, Dalam Satu Kendali.",
+            title:"Selamat Datang 👋",
+            description:"Masuk menggunakan akun Google untuk mengakses SellerBooks.",
+            google:"Masuk dengan Google",
+            securityTitle:"Data bisnis Anda terlindungi",
+            securityDescription:"Setiap pengguna hanya dapat mengakses data bisnis yang memiliki izin untuknya."
+        },
+        en:{
+            language:"Language",
+            heroTitle:"Manage Your Marketplace Smarter.",
+            heroDescription:"Monitor sales, outgoing products, store accounts, and business profit in one system.",
+            marketplace:"Multi Marketplace",
+            stores:"Multiple Store Accounts",
+            profit:"Business Profit Analysis",
+            footer:"MBI — All Your Business Numbers, Under One Control.",
+            title:"Welcome 👋",
+            description:"Sign in with your Google account to access SellerBooks.",
+            google:"Sign in with Google",
+            securityTitle:"Your business data is protected",
+            securityDescription:"Each user can only access business data they are authorized to access."
+        }
+    };
+    return translations[language]?.[key] ?? translations.id[key] ?? key;
+}
+
+function sellerBooksApplyLoginLanguage(){
+    const root = document.getElementById("loginPage");
+    if(!root) return;
+
+    const setText = function(id,key){
+        const el=document.getElementById(id);
+        if(el) el.textContent=sellerBooksLoginText(key);
+    };
+
+    const language=sellerBooksGetLoginLanguagePreference();
+    const select=document.getElementById("loginLanguage");
+    if(select) select.value=language;
+
+    setText("loginLanguageLabel","language");
+    setText("loginHeroTitle","heroTitle");
+    setText("loginHeroDescription","heroDescription");
+    setText("loginFeatureMarketplace","marketplace");
+    setText("loginFeatureStores","stores");
+    setText("loginFeatureProfit","profit");
+    setText("loginBrandFooter","footer");
+    setText("loginTitle","title");
+    setText("loginDescription","description");
+    setText("loginGoogleText","google");
+    setText("loginSecurityTitle","securityTitle");
+    setText("loginSecurityDescription","securityDescription");
+
+    document.documentElement.lang = language === "en" ? "en" : "id-ID";
+}
+
 
 function sellerBooksStoreText(key){
     const language = sellerBooksCurrentLanguage();
@@ -33308,14 +33436,20 @@ function sellerBooksEnsureDefaultLanguage(){
 
     if(!current){
         /*
-           Akun lama yang belum memiliki preferensi bahasa dan akun baru
-           selalu dimulai dari Bahasa Indonesia.
+           Jika akun belum pernah menyimpan bahasa, gunakan pilihan yang
+           dibuat user pada halaman login. Jika tidak ada pilihan, default ID.
         */
+        const preferred = sellerBooksGetLoginLanguagePreference();
+
         sellerBooksStorageSetItem(
             SELLERBOOKS_LANGUAGE_KEY,
-            SELLERBOOKS_DEFAULT_LANGUAGE
+            preferred || SELLERBOOKS_DEFAULT_LANGUAGE
         );
     }
+
+    try{
+        window.localStorage.removeItem(SELLERBOOKS_LOGIN_LANGUAGE_KEY);
+    }catch(error){}
 
     sellerBooksSyncLanguageControl();
 }
@@ -34033,6 +34167,7 @@ async function restoreSellerBooksData(input){
 document.addEventListener(
     "DOMContentLoaded",
     function(){
+        sellerBooksApplyLoginLanguage();
         loadSellerBooksSettings();
         sellerBooksHandleAuthSession();
     }
