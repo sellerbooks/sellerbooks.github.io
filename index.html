@@ -31980,7 +31980,12 @@ function sellerBooksCurrentLanguage(){
 }
 
 function sellerBooksLoginText(key){
-    const language = sellerBooksGetLoginLanguagePreference();
+    /*
+       Gunakan sumber bahasa yang sama dengan seluruh SellerBooks.
+       Setelah autentikasi, jangan kembali membaca preferensi sementara
+       localStorage karena pilihan permanen berasal dari Supabase.
+    */
+    const language = sellerBooksCurrentLanguage();
     const translations = {
         id:{
             language:"Bahasa",
