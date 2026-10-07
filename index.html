@@ -15600,9 +15600,10 @@ async function sellerBooksReadCloudRow(){
     };
 }
 
-async function sellerBooksWriteCloudSnapshot(snapshot,expectedUpdatedAt,allowInsert){
+async function sellerBooksWriteCloudSnapshot(snapshot,expectedUpdatedAt,allowInsert,returnSavedData){
     const userId=sellerBooksAuthUser.id;
     const nextUpdatedAt=new Date().toISOString();
+    const responseFields=returnSavedData ? "data,updated_at" : "updated_at";
 
     if(expectedUpdatedAt){
         const {data,error}=await sellerBooksSupabase
@@ -15610,10 +15611,16 @@ async function sellerBooksWriteCloudSnapshot(snapshot,expectedUpdatedAt,allowIns
             .update({data:snapshot,updated_at:nextUpdatedAt})
             .eq("user_id",userId)
             .eq("updated_at",expectedUpdatedAt)
-            .select("data,updated_at");
+            .select(responseFields);
         if(error)throw error;
         if(!data||data.length===0)return {conflict:true};
-        return {conflict:false,updatedAt:data[0].updated_at||nextUpdatedAt,data:data[0].data||{}};
+
+        const result={
+            conflict:false,
+            updatedAt:data[0].updated_at||nextUpdatedAt
+        };
+        if(returnSavedData)result.data=data[0].data||{};
+        return result;
     }
 
     if(!allowInsert)return {conflict:true};
@@ -15621,12 +15628,18 @@ async function sellerBooksWriteCloudSnapshot(snapshot,expectedUpdatedAt,allowIns
     const {data,error}=await sellerBooksSupabase
         .from("sellerbooks_user_data")
         .insert({user_id:userId,data:snapshot,updated_at:nextUpdatedAt})
-        .select("data,updated_at");
+        .select(responseFields);
     if(error){
         if(String(error.code||"")==="23505")return {conflict:true};
         throw error;
     }
-    return {conflict:false,updatedAt:data?.[0]?.updated_at||nextUpdatedAt,data:data?.[0]?.data||snapshot};
+
+    const result={
+        conflict:false,
+        updatedAt:data?.[0]?.updated_at||nextUpdatedAt
+    };
+    if(returnSavedData)result.data=data?.[0]?.data||snapshot;
+    return result;
 }
 
 async function sellerBooksReloadCloudAfterConflict(){
@@ -15717,7 +15730,7 @@ async function sellerBooksPersistCloudDataStrict(expectedSnapshot,verification){
 
     sellerBooksCloudSavePromise=sellerBooksCloudSavePromise.then(async function(){
         const result=await sellerBooksWriteCloudSnapshot(
-            snapshot,expectedUpdatedAt,!expectedUpdatedAt
+            snapshot,expectedUpdatedAt,!expectedUpdatedAt,true
         );
 
         if(result.conflict){
