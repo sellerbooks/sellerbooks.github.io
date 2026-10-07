@@ -32842,7 +32842,7 @@ function sellerBooksApplyStoreLanguage(){
     const resetIdentity = document.querySelector(".reset-identity-button span");
     if(resetIdentity) resetIdentity.textContent = sidebarLanguage === "en" ? "Reset Identity" : "Reset Identitas";
     const logout = document.querySelector(".logout-button span");
-    if(logout) logout.textContent = "Logout";
+    if(logout) logout.textContent = sidebarLanguage === "en" ? "Logout" : "Keluar";
 
     sellerBooksApplyDateInputLanguage();
 
