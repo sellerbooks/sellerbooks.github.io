@@ -5631,6 +5631,288 @@ function getIndonesiaDateString(value){
     return map.year + "-" + map.month + "-" + map.day;
 }
 
+
+/* =========================================================
+   DAILY MASTER SNAPSHOT
+   TODAY = LIVE / EDITABLE
+   00:00 = FINAL SNAPSHOT
+   HISTORICAL DAYS = LOCKED / IMMUTABLE
+   Only HPP, selling price, SKU admin %, store admin %, and stock.
+========================================================= */
+const SELLERBOOKS_DAILY_SNAPSHOT_KEY = "sellerbooks_daily_snapshots_v1";
+let sellerBooksDailySnapshotTimer = null;
+
+function sellerBooksReadDailySnapshots(){
+    try{
+        const raw = sellerBooksStorage.getItem(SELLERBOOKS_DAILY_SNAPSHOT_KEY) || "{}";
+        const parsed = JSON.parse(raw);
+        if(parsed && typeof parsed === "object"){
+            if(!parsed.days || typeof parsed.days !== "object") parsed.days = {};
+            return parsed;
+        }
+    }catch(error){}
+    return {version:1,days:{}};
+}
+
+function sellerBooksWriteDailySnapshots(state){
+    try{
+        sellerBooksStorage.setItem(
+            SELLERBOOKS_DAILY_SNAPSHOT_KEY,
+            JSON.stringify(state || {version:1,days:{}})
+        );
+    }catch(error){
+        console.error("Gagal menyimpan daily snapshot SellerBooks:",error);
+    }
+}
+
+function sellerBooksSnapshotSkuKey(sku){
+    return String(sku || "").trim().toLowerCase();
+}
+
+function sellerBooksEnsureTodaySnapshot(){
+    if(typeof sellerBooksStorage === "undefined") return;
+    const today = getIndonesiaTodayKey();
+    if(!today) return;
+
+    const state = sellerBooksReadDailySnapshots();
+    state.version = 1;
+    if(!state.days[today]){
+        state.days[today] = {
+            locked:false,
+            products:{},
+            stores:{}
+        };
+    }
+
+    const day = state.days[today];
+    if(day.locked) return;
+
+    let changed = false;
+
+    let currentProducts = [];
+    try{
+        currentProducts = JSON.parse(
+            sellerBooksStorage.getItem("sellerbooks_products") || "[]"
+        ) || [];
+    }catch(error){
+        currentProducts = [];
+    }
+
+    if(Array.isArray(currentProducts)){
+        currentProducts.forEach(function(product){
+            const key = sellerBooksSnapshotSkuKey(product && product.sku);
+            if(!key || day.products[key]) return;
+            day.products[key] = {
+                productId: product.id || "",
+                sku: product.sku || "",
+                price: Number(product.price) || 0,
+                cost: Number(product.cost) || 0,
+                adminFeePercent:
+                    product.adminFeePercent === "" ||
+                    product.adminFeePercent === undefined ||
+                    product.adminFeePercent === null
+                        ? ""
+                        : Number(product.adminFeePercent),
+                stock: Math.max(0, Number(product.stock) || 0),
+                capturedAt: new Date().toISOString()
+            };
+            changed = true;
+        });
+    }
+
+    let currentStores = [];
+    try{
+        currentStores = JSON.parse(
+            sellerBooksStorage.getItem("sellerbooks_stores") || "[]"
+        ) || [];
+    }catch(error){
+        currentStores = [];
+    }
+
+    if(Array.isArray(currentStores)){
+        currentStores.forEach(function(store){
+            const key = String(store && store.id || "").trim();
+            if(!key || day.stores[key]) return;
+            day.stores[key] = {
+                storeId: store.id || "",
+                feePercent: Number(store.feePercent) || 0,
+                capturedAt: new Date().toISOString()
+            };
+            changed = true;
+        });
+    }
+
+    if(changed){
+        sellerBooksWriteDailySnapshots(state);
+    }
+}
+
+function sellerBooksRecordTodayProductSnapshots(){
+    if(typeof sellerBooksStorage === "undefined") return;
+    const today = getIndonesiaTodayKey();
+    if(!today) return;
+
+    const state = sellerBooksReadDailySnapshots();
+    state.version = 1;
+    if(!state.days[today]){
+        state.days[today] = {
+            locked:false,
+            products:{},
+            stores:{}
+        };
+    }
+
+    const day = state.days[today];
+    if(day.locked) return;
+
+    let currentProducts = [];
+    try{
+        currentProducts = JSON.parse(
+            sellerBooksStorage.getItem("sellerbooks_products") || "[]"
+        ) || [];
+    }catch(error){
+        currentProducts = [];
+    }
+
+    if(!Array.isArray(currentProducts)) return;
+
+    currentProducts.forEach(function(product){
+        const key = sellerBooksSnapshotSkuKey(product && product.sku);
+        if(!key) return;
+        day.products[key] = {
+            productId: product.id || "",
+            sku: product.sku || "",
+            price: Number(product.price) || 0,
+            cost: Number(product.cost) || 0,
+            adminFeePercent:
+                product.adminFeePercent === "" ||
+                product.adminFeePercent === undefined ||
+                product.adminFeePercent === null
+                    ? ""
+                    : Number(product.adminFeePercent),
+            stock: Math.max(0, Number(product.stock) || 0),
+            capturedAt: new Date().toISOString()
+        };
+    });
+
+    sellerBooksWriteDailySnapshots(state);
+}
+
+function sellerBooksRecordTodayStoreSnapshots(){
+    if(typeof sellerBooksStorage === "undefined") return;
+    const today = getIndonesiaTodayKey();
+    if(!today) return;
+
+    const state = sellerBooksReadDailySnapshots();
+    state.version = 1;
+    if(!state.days[today]){
+        state.days[today] = {
+            locked:false,
+            products:{},
+            stores:{}
+        };
+    }
+
+    const day = state.days[today];
+    if(day.locked) return;
+
+    let currentStores = [];
+    try{
+        currentStores = JSON.parse(
+            sellerBooksStorage.getItem("sellerbooks_stores") || "[]"
+        ) || [];
+    }catch(error){
+        currentStores = [];
+    }
+
+    if(!Array.isArray(currentStores)) return;
+
+    currentStores.forEach(function(store){
+        const key = String(store && store.id || "").trim();
+        if(!key) return;
+        day.stores[key] = {
+            storeId: store.id || "",
+            feePercent: Number(store.feePercent) || 0,
+            capturedAt: new Date().toISOString()
+        };
+    });
+
+    sellerBooksWriteDailySnapshots(state);
+}
+
+function sellerBooksGetDailyProductSnapshot(sku, reportDate){
+    const key = sellerBooksSnapshotSkuKey(sku);
+    const dateKey = getIndonesiaDateString(reportDate);
+    if(!key || !dateKey) return null;
+
+    const state = sellerBooksReadDailySnapshots();
+    const day = state.days && state.days[dateKey];
+    if(!day || !day.products) return null;
+
+    return day.products[key] || null;
+}
+
+function sellerBooksGetDailyStoreSnapshot(storeId, reportDate){
+    const key = String(storeId || "").trim();
+    const dateKey = getIndonesiaDateString(reportDate);
+    if(!key || !dateKey) return null;
+
+    const state = sellerBooksReadDailySnapshots();
+    const day = state.days && state.days[dateKey];
+    if(!day || !day.stores) return null;
+
+    return day.stores[key] || null;
+}
+
+function sellerBooksLockPreviousDays(){
+    if(typeof sellerBooksStorage === "undefined") return;
+    const today = getIndonesiaTodayKey();
+    if(!today) return;
+
+    const state = sellerBooksReadDailySnapshots();
+    let changed = false;
+
+    Object.keys(state.days || {}).forEach(function(dateKey){
+        if(dateKey < today && !state.days[dateKey].locked){
+            state.days[dateKey].locked = true;
+            changed = true;
+        }
+    });
+
+    if(changed){
+        sellerBooksWriteDailySnapshots(state);
+    }
+}
+
+function sellerBooksRunDailySnapshotClock(){
+    if(typeof sellerBooksCloudReady !== "undefined" && !sellerBooksCloudReady){
+        return;
+    }
+
+    /*
+       Nilai hari berjalan sudah direkam setiap kali Master Produk/Akun Toko
+       disimpan. Ketika kalender masuk hari baru, bucket hari sebelumnya
+       langsung menjadi immutable. Jika aplikasi sempat tertutup tepat 00:00,
+       hasilnya tetap sama karena nilai terakhir sebelum 00:00 sudah tersimpan.
+    */
+    sellerBooksEnsureTodaySnapshot();
+    sellerBooksLockPreviousDays();
+}
+
+function sellerBooksStartDailySnapshotClock(){
+    sellerBooksRunDailySnapshotClock();
+
+    if(sellerBooksDailySnapshotTimer){
+        clearInterval(sellerBooksDailySnapshotTimer);
+    }
+
+    sellerBooksDailySnapshotTimer = setInterval(
+        sellerBooksRunDailySnapshotClock,
+        30000
+    );
+}
+
+
 function getIndonesiaTodayKey(){
     return getIndonesiaDateString(new Date());
 }
@@ -7181,13 +7463,38 @@ function getReportTransactionCost(transaction){
         return 0;
     }
 
-    if(!isReportTransactionToday(transaction) &&
-       transaction.costSnapshot !== undefined &&
-       transaction.costSnapshot !== null &&
-       transaction.costSnapshot !== ""){
-        const snapshotCost = Number(transaction.costSnapshot);
-        if(Number.isFinite(snapshotCost)){
-            return snapshotCost;
+    if(!isReportTransactionToday(transaction)){
+        const historicalProduct =
+            sellerBooksGetDailyProductSnapshot(
+                transaction.sku,
+                transaction.reportDate || transaction.importedAt
+            );
+
+        /*
+           SNAPSHOT HARIAN:
+           Prioritas utama adalah nilai TERAKHIR Master Produk
+           pada hari transaksi, bukan nilai saat import pertama.
+        */
+        if(
+            historicalProduct &&
+            Object.prototype.hasOwnProperty.call(historicalProduct,"cost")
+        ){
+            return Number(historicalProduct.cost) || 0;
+        }
+
+        /*
+           Kompatibilitas transaksi lama yang belum memiliki
+           daily snapshot baru.
+        */
+        if(
+            transaction.costSnapshot !== undefined &&
+            transaction.costSnapshot !== null &&
+            transaction.costSnapshot !== ""
+        ){
+            const snapshotCost = Number(transaction.costSnapshot);
+            if(Number.isFinite(snapshotCost)){
+                return snapshotCost;
+            }
         }
     }
 
@@ -7201,13 +7508,33 @@ function getReportTransactionPrice(transaction){
         return 0;
     }
 
-    if(!isReportTransactionToday(transaction) &&
-       transaction.priceSnapshot !== undefined &&
-       transaction.priceSnapshot !== null &&
-       transaction.priceSnapshot !== ""){
-        const snapshotPrice = Number(transaction.priceSnapshot);
-        if(Number.isFinite(snapshotPrice)){
-            return snapshotPrice;
+    if(!isReportTransactionToday(transaction)){
+        const historicalProduct =
+            sellerBooksGetDailyProductSnapshot(
+                transaction.sku,
+                transaction.reportDate || transaction.importedAt
+            );
+
+        /*
+           SNAPSHOT HARIAN:
+           Gunakan harga jual TERAKHIR pada hari transaksi.
+        */
+        if(
+            historicalProduct &&
+            Object.prototype.hasOwnProperty.call(historicalProduct,"price")
+        ){
+            return Number(historicalProduct.price) || 0;
+        }
+
+        if(
+            transaction.priceSnapshot !== undefined &&
+            transaction.priceSnapshot !== null &&
+            transaction.priceSnapshot !== ""
+        ){
+            const snapshotPrice = Number(transaction.priceSnapshot);
+            if(Number.isFinite(snapshotPrice)){
+                return snapshotPrice;
+            }
         }
     }
 
@@ -7241,6 +7568,52 @@ function getReportTransactionFeePercent(transaction){
        baru tersedia.
     */
     if(!transactionIsToday){
+
+        const historicalProduct =
+            sellerBooksGetDailyProductSnapshot(
+                transaction.sku,
+                transaction.reportDate || transaction.importedAt
+            );
+
+        /*
+           SNAPSHOT HARIAN:
+           Admin % SKU memakai nilai TERAKHIR Master Produk
+           pada hari transaksi. Nilai 0% tetap dianggap valid.
+        */
+        if(
+            historicalProduct &&
+            Object.prototype.hasOwnProperty.call(historicalProduct,"adminFeePercent")
+        ){
+            const dailySkuFee = historicalProduct.adminFeePercent;
+            if(
+                dailySkuFee !== "" &&
+                dailySkuFee !== null &&
+                dailySkuFee !== undefined &&
+                Number.isFinite(Number(dailySkuFee))
+            ){
+                return Number(dailySkuFee);
+            }
+        }
+
+        const historicalStore =
+            sellerBooksGetDailyStoreSnapshot(
+                transaction.storeId,
+                transaction.reportDate || transaction.importedAt
+            );
+
+        /*
+           Jika Admin % SKU tidak tersedia, gunakan Admin % Akun Toko
+           TERAKHIR pada hari transaksi. Nilai 0% tetap valid.
+        */
+        if(
+            historicalStore &&
+            Object.prototype.hasOwnProperty.call(historicalStore,"feePercent")
+        ){
+            const dailyAccountFee = Number(historicalStore.feePercent);
+            if(Number.isFinite(dailyAccountFee)){
+                return dailyAccountFee;
+            }
+        }
 
         const historicalSkuFee =
             transaction.adminFeeSkuSnapshot !== undefined &&
@@ -15459,6 +15832,14 @@ async function sellerBooksLoadCloudData(){
     /* Setelah data berhasil berada di Supabase, hapus salinan data aplikasi lama. */
     sellerBooksClearLegacyLocalData();
     sellerBooksSaveFastCache();
+
+    /*
+       Inisialisasi bucket hari berjalan setelah data cloud benar-benar
+       tersedia. Edit berikutnya akan terus memperbarui bucket hari ini.
+    */
+    sellerBooksEnsureTodaySnapshot();
+    sellerBooksStartDailySnapshotClock();
+
     sellerBooksCloudReady=true;
     sellerBooksCloudLoading=false;
     }catch(error){
@@ -19279,6 +19660,13 @@ function saveStoreData(){
 
     );
 
+    /*
+       DAILY SNAPSHOT:
+       Simpan Admin % Akun Toko TERAKHIR pada hari berjalan.
+       Setelah tanggal berganti, snapshot hari tersebut immutable.
+    */
+    sellerBooksRecordTodayStoreSnapshots();
+
 }
 
 
@@ -22334,6 +22722,14 @@ function saveProductData(){
         JSON.stringify(products)
 
     );
+
+    /*
+       DAILY SNAPSHOT:
+       Simpan kondisi TERAKHIR Master Produk pada hari berjalan.
+       Setelah tanggal berganti, bucket hari tersebut tidak pernah
+       ditimpa lagi.
+    */
+    sellerBooksRecordTodayProductSnapshots();
 
 }
 
