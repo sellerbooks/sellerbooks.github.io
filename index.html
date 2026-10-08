@@ -16940,29 +16940,99 @@ function calculateProductAnalysisRows(){
 
     /*
        PATCH B:
-       Bangun index Master Produk sekali agar setiap transaksi tidak
-       memanggil getMasterProductBySku() berulang-ulang.
-       Ini hanya optimasi lookup; rumus sales/HPP/admin/profit tetap sama.
+       Bangun index Master Produk sekali agar setiap SKU cukup dicari
+       satu kali, bukan memanggil getMasterProductBySku() berulang-ulang
+       untuk setiap transaksi.
+       
+       Penting: sumber data dan aturan penggabungan tetap mengikuti
+       getMasterProductBySku(): storage + runtime products, termasuk
+       fallback dan koreksi field cost/price/adminFeePercent.
+       Jadi optimasi ini tidak mengubah hasil bisnis.
     */
     const productMap = new Map();
 
-    let masterProducts = [];
+    let storedProducts = [];
     try{
-        masterProducts = JSON.parse(
+        storedProducts = JSON.parse(
             sellerBooksStorage.getItem("sellerbooks_products") || "[]"
         );
     }catch(error){
-        masterProducts = [];
+        storedProducts = [];
     }
 
-    if(Array.isArray(masterProducts)){
-        masterProducts.forEach(function(product){
-            const sku = String(product?.sku || "").trim().toLowerCase();
+    const storedProductMap = new Map();
+
+    if(Array.isArray(storedProducts)){
+        storedProducts.forEach(function(product){
+            const sku = String(product?.sku || "")
+                .trim()
+                .toLowerCase();
+
             if(sku){
-                productMap.set(sku, product);
+                storedProductMap.set(sku, product);
             }
         });
     }
+
+    const runtimeProductMap = new Map();
+
+    try{
+        if(Array.isArray(products)){
+            products.forEach(function(product){
+                const sku = String(product?.sku || "")
+                    .trim()
+                    .toLowerCase();
+
+                if(sku){
+                    runtimeProductMap.set(sku, product);
+                }
+            });
+        }
+    }catch(error){}
+
+    const allProductKeys = new Set([
+        ...storedProductMap.keys(),
+        ...runtimeProductMap.keys()
+    ]);
+
+    allProductKeys.forEach(function(key){
+        const storedProduct = storedProductMap.get(key) || null;
+        const runtimeProduct = runtimeProductMap.get(key) || null;
+
+        if(!storedProduct && !runtimeProduct){
+            return;
+        }
+
+        if(!storedProduct){
+            productMap.set(key,{...runtimeProduct});
+            return;
+        }
+
+        if(!runtimeProduct){
+            productMap.set(key,{...storedProduct});
+            return;
+        }
+
+        const merged = {...storedProduct};
+
+        ["cost","price","adminFeePercent"].forEach(function(field){
+            const storedValue = Number(storedProduct[field]);
+            const runtimeValue = Number(runtimeProduct[field]);
+
+            if(
+                Number.isFinite(runtimeValue) &&
+                runtimeValue !== 0 &&
+                (
+                    !Number.isFinite(storedValue) ||
+                    storedValue === 0
+                )
+            ){
+                merged[field] = runtimeValue;
+            }
+        });
+
+        productMap.set(key,merged);
+    });
 
     const rows = new Map();
 
