@@ -9580,13 +9580,25 @@ document.addEventListener(
            Jika kalender berganti hari, filter otomatis kembali ke Hari Ini. */
         if(period){
             const todayKey = getSellerBooksDayKey();
-            const savedDay = sellerBooksStorage.getItem("sellerbooks_report_view_day");
-            const savedPeriod = sellerBooksStorage.getItem("sellerbooks_report_period");
+            const savedDay = sellerBooksGetIndependentViewPreference(
+                "report",
+                "viewDay",
+                ""
+            );
+            const savedPeriod = sellerBooksGetIndependentViewPreference(
+                "report",
+                "period",
+                "today"
+            );
 
             if(savedDay !== todayKey){
                 period.value = "today";
-                sellerBooksStorage.setItem("sellerbooks_report_view_day", todayKey);
-                sellerBooksStorage.setItem("sellerbooks_report_period", "today");
+                sellerBooksWriteIndependentViewPreferences("report",{
+                    viewDay:todayKey,
+                    period:"today",
+                    dateFrom:"",
+                    dateTo:""
+                });
             }else{
                 period.value = savedPeriod || "today";
             }
@@ -9609,8 +9621,10 @@ document.addEventListener(
                 "change",
                 function(){
                     updateReportCustomDateUI();
-                    sellerBooksStorage.setItem("sellerbooks_report_period", period.value);
-                    sellerBooksStorage.setItem("sellerbooks_report_view_day", getSellerBooksDayKey());
+                    sellerBooksWriteIndependentViewPreferences("report",{
+                        period:period.value,
+                        viewDay:getSellerBooksDayKey()
+                    });
                     sellerBooksScheduleDeferredRender(function(){
                         updateReports();
                     });
@@ -9622,12 +9636,39 @@ document.addEventListener(
         const reportDateFrom = document.getElementById("reportDateFrom");
         const reportDateTo = document.getElementById("reportDateTo");
 
+        const savedReportDateFrom =
+            sellerBooksGetIndependentViewPreference(
+                "report",
+                "dateFrom",
+                ""
+            );
+        const savedReportDateTo =
+            sellerBooksGetIndependentViewPreference(
+                "report",
+                "dateTo",
+                ""
+            );
+
         if(reportDateFrom){
-            reportDateFrom.addEventListener("change", updateReports);
+            reportDateFrom.value = savedReportDateFrom || "";
+            reportDateFrom.addEventListener("change", function(){
+                sellerBooksWriteIndependentViewPreferences("report",{
+                    dateFrom:reportDateFrom.value || "",
+                    viewDay:getSellerBooksDayKey()
+                });
+                updateReports();
+            });
         }
 
         if(reportDateTo){
-            reportDateTo.addEventListener("change", updateReports);
+            reportDateTo.value = savedReportDateTo || "";
+            reportDateTo.addEventListener("change", function(){
+                sellerBooksWriteIndependentViewPreferences("report",{
+                    dateTo:reportDateTo.value || "",
+                    viewDay:getSellerBooksDayKey()
+                });
+                updateReports();
+            });
         }
 
         updateReportCustomDateUI();
@@ -15938,6 +15979,21 @@ async function sellerBooksLoadCloudData(){
 
     sellerBooksCloudReady=true;
     sellerBooksCloudLoading=false;
+
+    /*
+       Preferensi tampilan adalah state UI lokal, bukan data cloud.
+       Setelah user diketahui, setiap refresh dimulai dari Hari Ini untuk
+       Dashboard, Laporan, dan Rincian secara independen.
+    */
+    try{
+        prepareDailyViewState(true);
+    }catch(viewPreferenceError){
+        console.warn(
+            "Inisialisasi preferensi tampilan gagal:",
+            viewPreferenceError
+        );
+    }
+
     }catch(error){
         sellerBooksCloudLoading=false;
         sellerBooksCloudReady=false;
@@ -17897,9 +17953,22 @@ function applyProductAnalysisFilters(){
 
     const period = document.getElementById("productAnalysisPeriod");
     if(period){
-        sellerBooksStorage.setItem("sellerbooks_product_analysis_period", period.value);
-        sellerBooksStorage.setItem("sellerbooks_product_analysis_view_day", getSellerBooksDayKey());
+        sellerBooksWriteIndependentViewPreferences("productAnalysis",{
+            period:period.value,
+            viewDay:getSellerBooksDayKey()
+        });
     }
+
+    const productAnalysisDateFrom =
+        document.getElementById("productAnalysisDateFrom");
+    const productAnalysisDateTo =
+        document.getElementById("productAnalysisDateTo");
+
+    sellerBooksWriteIndependentViewPreferences("productAnalysis",{
+        dateFrom:productAnalysisDateFrom?.value || "",
+        dateTo:productAnalysisDateTo?.value || "",
+        viewDay:getSellerBooksDayKey()
+    });
 
     updateProductAnalysisDateUI();
     const dateFrom = document.getElementById("productAnalysisDateFrom")?.value || "";
@@ -17919,10 +17988,7 @@ function applyProductAnalysisFilters(){
     return false;
 }
 
-/* Refresh halaman harus selalu memulai Rincian dari Hari Ini.
-   Setelah reset pertama, perpindahan menu tidak boleh menghapus pilihan periode. */
-let sellerBooksProductAnalysisRefreshResetDone = false;
-
+/* Preferensi Rincian tetap terpisah saat berpindah kartu/menu. */
 function initializeProductAnalysis(){
 
     const period =
@@ -17932,20 +17998,49 @@ function initializeProductAnalysis(){
 
     if(period){
         const todayKey = getSellerBooksDayKey();
-        const savedDay = sellerBooksStorage.getItem("sellerbooks_product_analysis_view_day");
-        const savedPeriod = sellerBooksStorage.getItem("sellerbooks_product_analysis_period");
+        const savedDay = sellerBooksGetIndependentViewPreference(
+            "productAnalysis",
+            "viewDay",
+            ""
+        );
+        const savedPeriod = sellerBooksGetIndependentViewPreference(
+            "productAnalysis",
+            "period",
+            "today"
+        );
+        const savedDateFrom = sellerBooksGetIndependentViewPreference(
+            "productAnalysis",
+            "dateFrom",
+            ""
+        );
+        const savedDateTo = sellerBooksGetIndependentViewPreference(
+            "productAnalysis",
+            "dateTo",
+            ""
+        );
 
-        if(!sellerBooksProductAnalysisRefreshResetDone){
+        if(savedDay !== todayKey){
             period.value = "today";
-            sellerBooksStorage.setItem("sellerbooks_product_analysis_view_day", todayKey);
-            sellerBooksStorage.setItem("sellerbooks_product_analysis_period", "today");
-            sellerBooksProductAnalysisRefreshResetDone = true;
-        }else if(savedDay !== todayKey){
-            period.value = "today";
-            sellerBooksStorage.setItem("sellerbooks_product_analysis_view_day", todayKey);
-            sellerBooksStorage.setItem("sellerbooks_product_analysis_period", "today");
+            sellerBooksWriteIndependentViewPreferences("productAnalysis",{
+                viewDay:todayKey,
+                period:"today",
+                dateFrom:"",
+                dateTo:""
+            });
         }else{
             period.value = savedPeriod || "today";
+
+            const productAnalysisDateFrom =
+                document.getElementById("productAnalysisDateFrom");
+            const productAnalysisDateTo =
+                document.getElementById("productAnalysisDateTo");
+
+            if(productAnalysisDateFrom){
+                productAnalysisDateFrom.value = savedDateFrom || "";
+            }
+            if(productAnalysisDateTo){
+                productAnalysisDateTo.value = savedDateTo || "";
+            }
         }
     }
 
@@ -30934,6 +31029,83 @@ function sellerBooksGetDashboardPreference(key, fallback){
         : fallback;
 }
 
+/* =====================================================
+   INDEPENDENT VIEW PREFERENCES — LAPORAN & RINCIAN
+   Preferensi filter tiap kartu disimpan terpisah dari
+   sellerBooksCloudState / sellerBooksStorage.
+   Jadi perubahan filter satu kartu tidak pernah
+   mengubah filter kartu lain atau data bisnis.
+===================================================== */
+let sellerBooksIndependentViewPreferencesCache = {};
+
+function sellerBooksIndependentViewPreferenceKey(view){
+    const userId = String(sellerBooksAuthUser?.id || "guest");
+    return "sellerbooks_" + view + "_view_prefs_" + userId;
+}
+
+function sellerBooksReadIndependentViewPreferences(view){
+    const cacheKey = sellerBooksIndependentViewPreferenceKey(view);
+
+    if(
+        sellerBooksIndependentViewPreferencesCache[view] &&
+        sellerBooksIndependentViewPreferencesCache[view].key === cacheKey
+    ){
+        return {
+            ...sellerBooksIndependentViewPreferencesCache[view].value
+        };
+    }
+
+    let prefs = {};
+    try{
+        prefs = JSON.parse(
+            window.localStorage.getItem(cacheKey) || "{}"
+        ) || {};
+    }catch(error){
+        prefs = {};
+    }
+
+    sellerBooksIndependentViewPreferencesCache[view] = {
+        key: cacheKey,
+        value: {...prefs}
+    };
+
+    return {...prefs};
+}
+
+function sellerBooksWriteIndependentViewPreferences(view, patch){
+    const prefs = sellerBooksReadIndependentViewPreferences(view);
+
+    Object.keys(patch || {}).forEach(function(key){
+        prefs[key] = patch[key];
+    });
+
+    const cacheKey = sellerBooksIndependentViewPreferenceKey(view);
+
+    sellerBooksIndependentViewPreferencesCache[view] = {
+        key: cacheKey,
+        value: {...prefs}
+    };
+
+    try{
+        window.localStorage.setItem(
+            cacheKey,
+            JSON.stringify(prefs)
+        );
+    }catch(error){
+        console.warn(
+            "Preferensi tampilan " + view + " lokal gagal disimpan:",
+            error
+        );
+    }
+}
+
+function sellerBooksGetIndependentViewPreference(view,key,fallback){
+    const prefs = sellerBooksReadIndependentViewPreferences(view);
+    return prefs[key] !== undefined && prefs[key] !== null
+        ? prefs[key]
+        : fallback;
+}
+
 /* PATCH E: filter Dashboard disimpan di memory, bukan dibaca dari DOM/storage saat render. */
 let sellerBooksDashboardFilterState = {
     period:"today",
@@ -30972,34 +31144,77 @@ function sellerBooksSetDashboardFilterState(patch){
     return sellerBooksDashboardFilterState;
 }
 
-function prepareDailyViewState(forceProductAnalysisToday = false){
+function prepareDailyViewState(forceToday = false){
     const todayKey = getSellerBooksDayKey();
     let dashboardChanged = false;
     let reportChanged = false;
     let productAnalysisChanged = false;
 
     const dashboardDay = sellerBooksGetDashboardPreference("viewDay", "");
-    if(dashboardDay !== todayKey){
-        sellerBooksWriteDashboardPreferences({viewDay:todayKey});
-        sellerBooksWriteDashboardPreferences({period:"today"});
+    if(forceToday || dashboardDay !== todayKey){
+        sellerBooksWriteDashboardPreferences({
+            viewDay:todayKey,
+            period:"today"
+        });
         dashboardChanged = true;
     }
 
-    const reportDay = sellerBooksStorage.getItem("sellerbooks_report_view_day");
-    if(reportDay !== todayKey){
-        sellerBooksStorage.setItem("sellerbooks_report_view_day", todayKey);
-        sellerBooksStorage.setItem("sellerbooks_report_period", "today");
+    const reportDay = sellerBooksGetIndependentViewPreference(
+        "report",
+        "viewDay",
+        ""
+    );
+
+    if(forceToday || reportDay !== todayKey){
+        sellerBooksWriteIndependentViewPreferences("report",{
+            viewDay:todayKey,
+            period:"today",
+            dateFrom:"",
+            dateTo:""
+        });
         reportChanged = true;
     }
 
-    const productAnalysisDay = sellerBooksStorage.getItem("sellerbooks_product_analysis_view_day");
-    if(
-        forceProductAnalysisToday ||
-        productAnalysisDay !== todayKey
-    ){
-        sellerBooksStorage.setItem("sellerbooks_product_analysis_view_day", todayKey);
-        sellerBooksStorage.setItem("sellerbooks_product_analysis_period", "today");
+    const productAnalysisDay = sellerBooksGetIndependentViewPreference(
+        "productAnalysis",
+        "viewDay",
+        ""
+    );
+
+    if(forceToday || productAnalysisDay !== todayKey){
+        sellerBooksWriteIndependentViewPreferences("productAnalysis",{
+            viewDay:todayKey,
+            period:"today",
+            dateFrom:"",
+            dateTo:""
+        });
         productAnalysisChanged = true;
+    }
+
+    if(reportChanged){
+        const reportPeriod =
+            document.getElementById("reportPeriod");
+        if(reportPeriod) reportPeriod.value = "today";
+
+        const reportDateFrom =
+            document.getElementById("reportDateFrom");
+        const reportDateTo =
+            document.getElementById("reportDateTo");
+        if(reportDateFrom) reportDateFrom.value = "";
+        if(reportDateTo) reportDateTo.value = "";
+    }
+
+    if(productAnalysisChanged){
+        const productAnalysisPeriod =
+            document.getElementById("productAnalysisPeriod");
+        if(productAnalysisPeriod) productAnalysisPeriod.value = "today";
+
+        const productAnalysisDateFrom =
+            document.getElementById("productAnalysisDateFrom");
+        const productAnalysisDateTo =
+            document.getElementById("productAnalysisDateTo");
+        if(productAnalysisDateFrom) productAnalysisDateFrom.value = "";
+        if(productAnalysisDateTo) productAnalysisDateTo.value = "";
     }
 
     return {
@@ -31010,9 +31225,8 @@ function prepareDailyViewState(forceProductAnalysisToday = false){
     };
 }
 
-/* Page load: Rincian Produk selalu mulai dari Hari Ini,
-   sama seperti perilaku refresh Dashboard/Laporan. */
-prepareDailyViewState(true);
+/* Preferensi tampilan diinisialisasi setelah Auth + data cloud siap,
+   sehingga key lokal selalu terikat ke user yang sedang login. */
 
 /* =========================================
    DASHBOARD FILTER PERIODE
@@ -31075,6 +31289,13 @@ function sellerBooksCheckWibDayRollover(){
             reportPeriod.value = "today";
         }
 
+        const reportDateFrom =
+            document.getElementById("reportDateFrom");
+        const reportDateTo =
+            document.getElementById("reportDateTo");
+        if(reportDateFrom) reportDateFrom.value = "";
+        if(reportDateTo) reportDateTo.value = "";
+
         if(typeof updateReportCustomDateUI === "function"){
             updateReportCustomDateUI();
         }
@@ -31091,6 +31312,13 @@ function sellerBooksCheckWibDayRollover(){
         if(productAnalysisPeriod){
             productAnalysisPeriod.value = "today";
         }
+
+        const productAnalysisDateFrom =
+            document.getElementById("productAnalysisDateFrom");
+        const productAnalysisDateTo =
+            document.getElementById("productAnalysisDateTo");
+        if(productAnalysisDateFrom) productAnalysisDateFrom.value = "";
+        if(productAnalysisDateTo) productAnalysisDateTo.value = "";
 
         if(typeof updateProductAnalysisCustomDateUI === "function"){
             updateProductAnalysisCustomDateUI();
