@@ -18656,6 +18656,57 @@ function sellerBooksRenderDashboardCharts(transactions){
    MENAMPILKAN MARKETPLACE YANG AKTIF
 ===================================================== */
 
+let sellerBooksDashboardTransactionsCache = {
+    sourceTransactions:null,
+    key:"",
+    transactions:null
+};
+
+function getDashboardTransactionsForPeriod(period){
+
+    const allTransactions =
+        getAllReportTransactions();
+
+    const state =
+        sellerBooksDashboardFilterState || {};
+
+    const key =
+        String(period || "today") +
+        "|" +
+        String(state.dateFrom || "") +
+        "|" +
+        String(state.dateTo || "");
+
+    if(
+        sellerBooksDashboardTransactionsCache.sourceTransactions ===
+            allTransactions &&
+        sellerBooksDashboardTransactionsCache.key === key &&
+        sellerBooksDashboardTransactionsCache.transactions !== null
+    ){
+        return sellerBooksDashboardTransactionsCache.transactions;
+    }
+
+    const transactions =
+        allTransactions.filter(function(item){
+
+            const reportDate =
+                item.reportDate || item.importedAt;
+
+            return isDateInPeriod(
+                reportDate,
+                period
+            );
+        });
+
+    sellerBooksDashboardTransactionsCache = {
+        sourceTransactions:allTransactions,
+        key:key,
+        transactions:transactions
+    };
+
+    return transactions;
+}
+
 function renderMarketplacePerformance(){
 
     /*
@@ -18667,15 +18718,9 @@ function renderMarketplacePerformance(){
     */
 
     const transactions =
-        getAllReportTransactions().filter(function(item){
-            const reportDate =
-                item.reportDate || item.importedAt;
-
-            return isDateInPeriod(
-                reportDate,
-                currentDashboardPeriod
-            );
-        });
+        getDashboardTransactionsForPeriod(
+            currentDashboardPeriod
+        );
 
     let marketplacesData = [];
     let storesData = [];
