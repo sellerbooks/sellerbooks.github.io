@@ -30487,8 +30487,6 @@ function sellerBooksSetDashboardFilterState(patch){
     return sellerBooksDashboardFilterState;
 }
 
-sellerBooksSyncDashboardFilterState();
-
 function prepareDailyViewState(){
     const todayKey = getSellerBooksDayKey();
     let dashboardChanged = false;
@@ -30531,6 +30529,9 @@ prepareDailyViewState();
 ========================================= */
 
 let currentDashboardPeriod = "today";
+
+/* PATCH E: inisialisasi filter setelah currentDashboardPeriod tersedia. */
+sellerBooksSyncDashboardFilterState();
 
 /*
    Cek rollover hari berdasarkan WIB setiap menit.
