@@ -5696,12 +5696,52 @@ function sellerBooksReadDailySnapshots(){
     return {version:1,days:{}};
 }
 
+/* PATCH O: cache snapshot laporan agar JSON snapshot tidak di-parse
+   ulang untuk setiap transaksi historis. Cache ini hanya mempercepat
+   pembacaan data yang sama; tidak mengubah isi atau rumus bisnis. */
+let sellerBooksDailySnapshotReadCacheRaw = null;
+let sellerBooksDailySnapshotReadCacheState = null;
+
+function sellerBooksReadDailySnapshots(){
+    try{
+        const raw = sellerBooksStorage.getItem(SELLERBOOKS_DAILY_SNAPSHOT_KEY) || "{}";
+
+        if(
+            sellerBooksDailySnapshotReadCacheState !== null &&
+            sellerBooksDailySnapshotReadCacheRaw === raw
+        ){
+            return sellerBooksDailySnapshotReadCacheState;
+        }
+
+        const parsed = JSON.parse(raw);
+
+        if(parsed && typeof parsed === "object"){
+            if(!parsed.days || typeof parsed.days !== "object") parsed.days = {};
+
+            sellerBooksDailySnapshotReadCacheRaw = raw;
+            sellerBooksDailySnapshotReadCacheState = parsed;
+
+            return parsed;
+        }
+    }catch(error){}
+
+    sellerBooksDailySnapshotReadCacheRaw = null;
+    sellerBooksDailySnapshotReadCacheState = null;
+    return {version:1,days:{}};
+}
+
 function sellerBooksWriteDailySnapshots(state){
     try{
+        const nextState = state || {version:1,days:{}};
+        const serialized = JSON.stringify(nextState);
+
         sellerBooksStorage.setItem(
             SELLERBOOKS_DAILY_SNAPSHOT_KEY,
-            JSON.stringify(state || {version:1,days:{}})
+            serialized
         );
+
+        sellerBooksDailySnapshotReadCacheRaw = serialized;
+        sellerBooksDailySnapshotReadCacheState = nextState;
     }catch(error){
         console.error("Gagal menyimpan daily snapshot SellerBooks:",error);
     }
@@ -26489,6 +26529,80 @@ function parseSalesDate(value){
    FILE MARKETPLACE HANYA MENYUMBANG SKU + QTY
 ========================================================= */
 
+/* PATCH O: cache lookup Master Produk untuk laporan.
+   Sumber storage dan runtime tetap dibandingkan seperti sebelumnya;
+   yang berubah hanya cara lookup agar tidak JSON.parse + find() berulang. */
+let sellerBooksMasterProductsCacheRaw = null;
+let sellerBooksMasterProductsCacheMap = null;
+let sellerBooksRuntimeProductsCacheSource = null;
+let sellerBooksRuntimeProductsCacheMap = null;
+
+function sellerBooksGetMasterProductsCache(){
+    let storedMap = sellerBooksMasterProductsCacheMap;
+
+    try{
+        const raw =
+            sellerBooksStorage.getItem("sellerbooks_products") || "[]";
+
+        if(
+            sellerBooksMasterProductsCacheMap === null ||
+            sellerBooksMasterProductsCacheRaw !== raw
+        ){
+            const parsed = JSON.parse(raw);
+            const map = new Map();
+
+            if(Array.isArray(parsed)){
+                parsed.forEach(function(product){
+                    const key = String(product?.sku || "")
+                        .trim()
+                        .toLowerCase();
+
+                    if(key){
+                        map.set(key, product);
+                    }
+                });
+            }
+
+            sellerBooksMasterProductsCacheRaw = raw;
+            sellerBooksMasterProductsCacheMap = map;
+        }
+
+        storedMap = sellerBooksMasterProductsCacheMap;
+    }catch(error){
+        storedMap = new Map();
+    }
+
+    return storedMap;
+}
+
+function sellerBooksGetRuntimeMasterProductsCache(){
+    if(
+        sellerBooksRuntimeProductsCacheMap === null ||
+        sellerBooksRuntimeProductsCacheSource !== products
+    ){
+        const map = new Map();
+
+        try{
+            if(Array.isArray(products)){
+                products.forEach(function(product){
+                    const key = String(product?.sku || "")
+                        .trim()
+                        .toLowerCase();
+
+                    if(key){
+                        map.set(key, product);
+                    }
+                });
+            }
+        }catch(error){}
+
+        sellerBooksRuntimeProductsCacheSource = products;
+        sellerBooksRuntimeProductsCacheMap = map;
+    }
+
+    return sellerBooksRuntimeProductsCacheMap;
+}
+
 function getMasterProductBySku(sku){
 
     const normalizedSku =
@@ -26502,53 +26616,22 @@ function getMasterProductBySku(sku){
 
     /*
        SUMBER MASTER PRODUK HARUS KONSISTEN SAAT IMPORT.
-       Sebelumnya fungsi ini hanya membaca sellerBooksStorage.
-       Pada kondisi startup/sync tertentu, storage dapat masih
-       memegang snapshot lama sementara variabel products sudah
-       memiliki Master Produk terbaru. Akibatnya costSnapshot
-       dapat tersimpan 0 walaupun dashboard sesaat kemudian
-       membaca HPP dari Master Produk yang benar.
-
-       Sekarang dua sumber dibandingkan. Jika sumber storage
-       memiliki field kosong/0 tetapi runtime products memiliki
-       nilai Master Produk yang valid, nilai runtime dipakai.
-       Ini khusus untuk snapshot saat transaksi dibuat; setelah
-       snapshot tersimpan, transaksi historis tidak dihitung ulang.
+       Storage dan runtime tetap dibandingkan. Cache hanya
+       menghindari pembacaan/parsing/pencarian berulang.
     */
-
     let storedProduct = null;
+    let runtimeProduct = null;
 
     try{
-        const masterProducts =
-            JSON.parse(
-                sellerBooksStorage.getItem(
-                    "sellerbooks_products"
-                ) || "[]"
-            );
-
-        if(Array.isArray(masterProducts)){
-            storedProduct =
-                masterProducts.find(function(product){
-                    return String(product?.sku || "")
-                        .trim()
-                        .toLowerCase() === normalizedSku;
-                }) || null;
-        }
+        storedProduct =
+            sellerBooksGetMasterProductsCache().get(normalizedSku) || null;
     }catch(error){
         storedProduct = null;
     }
 
-    let runtimeProduct = null;
-
     try{
-        if(Array.isArray(products)){
-            runtimeProduct =
-                products.find(function(product){
-                    return String(product?.sku || "")
-                        .trim()
-                        .toLowerCase() === normalizedSku;
-                }) || null;
-        }
+        runtimeProduct =
+            sellerBooksGetRuntimeMasterProductsCache().get(normalizedSku) || null;
     }catch(error){
         runtimeProduct = null;
     }
@@ -26567,12 +26650,6 @@ function getMasterProductBySku(sku){
 
     const merged = {...storedProduct};
 
-    /*
-       Untuk field yang menjadi snapshot historis, runtime yang
-       mempunyai nilai nyata mengalahkan nilai kosong/0 dari
-       cache lama. Nilai 0 tetap dipertahankan bila kedua sumber
-       memang sama-sama 0.
-    */
     ["cost","price","adminFeePercent"].forEach(function(field){
         const storedValue = Number(storedProduct[field]);
         const runtimeValue = Number(runtimeProduct[field]);
