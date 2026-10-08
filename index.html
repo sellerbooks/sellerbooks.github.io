@@ -19546,18 +19546,6 @@ function renderMarketplacePerformance(){
 
     if(!activeMarketplaces.length){
 
-        if(!marketplaceRowsCacheHit){
-        sellerBooksDashboardMarketplaceRowsCache = {
-            transactions: transactions,
-            marketplaces: marketplacesData,
-            stores: storesData,
-            products: products,
-            costs: costsData,
-            period: String(currentDashboardPeriod || "today"),
-            rows: rows
-        };
-    }
-
     performanceBody.innerHTML = `
             <tr>
                 <td
@@ -19723,6 +19711,18 @@ function renderMarketplacePerformance(){
 
             }
         );
+
+    if(!marketplaceRowsCacheHit){
+        sellerBooksDashboardMarketplaceRowsCache = {
+            transactions: transactions,
+            marketplaces: marketplacesData,
+            stores: storesData,
+            products: products,
+            costs: costsData,
+            period: String(currentDashboardPeriod || "today"),
+            rows: rows
+        };
+    }
 
     performanceBody.innerHTML =
         rows.map(
