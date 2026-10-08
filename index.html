@@ -4933,7 +4933,9 @@ function applyReportFilters(){
         store
     );
 
-    updateReports();
+    sellerBooksScheduleDeferredRender(function(){
+        updateReports();
+    });
 
 }
 
@@ -9568,7 +9570,9 @@ document.addEventListener(
                     updateReportCustomDateUI();
                     sellerBooksStorage.setItem("sellerbooks_report_period", period.value);
                     sellerBooksStorage.setItem("sellerbooks_report_view_day", getSellerBooksDayKey());
-                    updateReports();
+                    sellerBooksScheduleDeferredRender(function(){
+                        updateReports();
+                    });
                 }
             );
 
@@ -17831,7 +17835,11 @@ function applyProductAnalysisFilters(){
         return false;
     }
     updateProductAnalysisFilterInfo();
-    renderProductAnalysis();
+
+    sellerBooksScheduleDeferredRender(function(){
+        renderProductAnalysis();
+    });
+
     return false;
 }
 
@@ -17891,6 +17899,27 @@ function fixProductFromAnalysis(id){
 }
 
 
+/* PATCH K: jadwalkan render berat agar navigasi/dropdown tidak memblokir UI.
+   Jika user mengganti halaman/periode beberapa kali dengan cepat,
+   render yang belum sempat berjalan dibatalkan dan hanya state terakhir diproses. */
+let sellerBooksDeferredRenderToken = 0;
+
+function sellerBooksScheduleDeferredRender(callback){
+    const token = ++sellerBooksDeferredRenderToken;
+
+    setTimeout(function(){
+        if(token !== sellerBooksDeferredRenderToken){
+            return;
+        }
+
+        try{
+            callback();
+        }catch(error){
+            console.error("Render tertunda SellerBooks gagal:",error);
+        }
+    },0);
+}
+
 function showView(viewId, button, saveHistory = true){
 
     /* =========================================
@@ -17919,22 +17948,21 @@ function showView(viewId, button, saveHistory = true){
 
     targetView.classList.add("active");
 
-    if(viewId === "productAnalysis"){
-        initializeProductAnalysis();
-    }
-
-
-    /* Render hanya halaman aktif agar perpindahan kartu tidak merender seluruh aplikasi. */
-    try{
+    /*
+       Render berat dijadwalkan setelah navigasi selesai.
+       Rincian memakai initializeProductAnalysis() karena fungsi itu
+       sudah sekaligus menyiapkan filter + melakukan render pertama.
+    */
+    sellerBooksScheduleDeferredRender(function(){
         if(viewId === "dashboard" && typeof updateDashboardByPeriod === "function") updateDashboardByPeriod();
         else if(viewId === "marketplace" && typeof renderMarketplaces === "function") renderMarketplaces();
         else if(viewId === "stores" && typeof renderStores === "function") renderStores();
         else if(viewId === "products" && typeof renderProducts === "function") renderProducts();
         else if(viewId === "costs" && typeof renderCosts === "function") renderCosts();
         else if(viewId === "reports" && typeof updateReports === "function") updateReports();
-        else if(viewId === "productAnalysis" && typeof renderProductAnalysis === "function") renderProductAnalysis();
+        else if(viewId === "productAnalysis" && typeof initializeProductAnalysis === "function") initializeProductAnalysis();
         else if(viewId === "settings" && typeof loadSellerBooksSettings === "function") loadSellerBooksSettings();
-    }catch(error){ console.error("Render halaman SellerBooks gagal:",error); }
+    });
 
 
     /* =========================================
@@ -31324,9 +31352,10 @@ function changeDashboardPeriod(){
     });
 
 
-    /* UPDATE DASHBOARD */
-
-    updateDashboardByPeriod();
+    /* UPDATE DASHBOARD — jadwalkan agar UI/dropdown tetap responsif. */
+    sellerBooksScheduleDeferredRender(function(){
+        updateDashboardByPeriod();
+    });
 
 }
 /* =========================================
