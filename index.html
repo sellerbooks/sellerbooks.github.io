@@ -30802,7 +30802,7 @@ function sellerBooksSetDashboardFilterState(patch){
     return sellerBooksDashboardFilterState;
 }
 
-function prepareDailyViewState(){
+function prepareDailyViewState(forceProductAnalysisToday = false){
     const todayKey = getSellerBooksDayKey();
     let dashboardChanged = false;
     let reportChanged = false;
@@ -30823,7 +30823,10 @@ function prepareDailyViewState(){
     }
 
     const productAnalysisDay = sellerBooksStorage.getItem("sellerbooks_product_analysis_view_day");
-    if(productAnalysisDay !== todayKey){
+    if(
+        forceProductAnalysisToday ||
+        productAnalysisDay !== todayKey
+    ){
         sellerBooksStorage.setItem("sellerbooks_product_analysis_view_day", todayKey);
         sellerBooksStorage.setItem("sellerbooks_product_analysis_period", "today");
         productAnalysisChanged = true;
@@ -30837,7 +30840,9 @@ function prepareDailyViewState(){
     };
 }
 
-prepareDailyViewState();
+/* Page load: Rincian Produk selalu mulai dari Hari Ini,
+   sama seperti perilaku refresh Dashboard/Laporan. */
+prepareDailyViewState(true);
 
 /* =========================================
    DASHBOARD FILTER PERIODE
