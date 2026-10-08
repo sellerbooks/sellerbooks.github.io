@@ -7774,34 +7774,17 @@ function getReportTransactionFeePercent(transaction){
 
     /*
        HARI INI:
-       1. Admin % SKU transaksi
-       2. Snapshot Admin % SKU
-       3. Admin % SKU Master Produk
+       1. Admin % SKU Master Produk TERBARU
+       2. Admin % SKU transaksi sebagai fallback
+       3. Snapshot Admin % SKU sebagai fallback
        4. Snapshot Admin % Akun
        5. Admin % Akun Toko
+
+       PATCH P:
+       Selama transaksi masih termasuk hari ini, Master Produk adalah
+       sumber utama Admin % SKU. Snapshot historis dan transaksi lama
+       tidak disentuh.
     */
-    const transactionSkuFee =
-        transaction.adminFeeSku !== undefined &&
-        transaction.adminFeeSku !== null &&
-        transaction.adminFeeSku !== ""
-            ? Number(transaction.adminFeeSku)
-            : NaN;
-
-    if(Number.isFinite(transactionSkuFee) && transactionSkuFee > 0){
-        return transactionSkuFee;
-    }
-
-    const snapshotSkuFee =
-        transaction.adminFeeSkuSnapshot !== undefined &&
-        transaction.adminFeeSkuSnapshot !== null &&
-        transaction.adminFeeSkuSnapshot !== ""
-            ? Number(transaction.adminFeeSkuSnapshot)
-            : NaN;
-
-    if(Number.isFinite(snapshotSkuFee) && snapshotSkuFee > 0){
-        return snapshotSkuFee;
-    }
-
     const transactionSku =
         String(transaction.sku || "")
             .trim()
@@ -7849,10 +7832,33 @@ function getReportTransactionFeePercent(transaction){
                     ? Number(masterProduct.adminFeePercent)
                     : NaN;
 
-            if(Number.isFinite(masterSkuFee) && masterSkuFee > 0){
+            if(Number.isFinite(masterSkuFee)){
                 return masterSkuFee;
             }
         }
+    }
+
+
+    const transactionSkuFee =
+        transaction.adminFeeSku !== undefined &&
+        transaction.adminFeeSku !== null &&
+        transaction.adminFeeSku !== ""
+            ? Number(transaction.adminFeeSku)
+            : NaN;
+
+    if(Number.isFinite(transactionSkuFee) && transactionSkuFee > 0){
+        return transactionSkuFee;
+    }
+
+    const snapshotSkuFee =
+        transaction.adminFeeSkuSnapshot !== undefined &&
+        transaction.adminFeeSkuSnapshot !== null &&
+        transaction.adminFeeSkuSnapshot !== ""
+            ? Number(transaction.adminFeeSkuSnapshot)
+            : NaN;
+
+    if(Number.isFinite(snapshotSkuFee) && snapshotSkuFee > 0){
+        return snapshotSkuFee;
     }
 
     const accountSnapshotValue =
