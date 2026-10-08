@@ -5461,9 +5461,25 @@ document.addEventListener(
 })();
 
 
+let sellerBooksSalesImportsCacheSource = null;
+let sellerBooksSalesImportsCache = null;
+
 function getSalesImportsData(){
 
     try{
+
+        /* PATCH F: cache sumber import agar JSON.parse tidak berulang. */
+        const salesImportsSource =
+            sellerBooksCloudState
+                ? sellerBooksCloudState.sellerbooks_sales_imports
+                : undefined;
+
+        if(
+            sellerBooksSalesImportsCache !== null &&
+            sellerBooksSalesImportsCacheSource === salesImportsSource
+        ){
+            return sellerBooksSalesImportsCache;
+        }
 
         const storageStart = performance.now();
 
@@ -5499,7 +5515,15 @@ function getSalesImportsData(){
                 parseElapsed;
         }
 
-        return parsedSalesImports;
+        sellerBooksSalesImportsCacheSource =
+            salesImportsSource;
+
+        sellerBooksSalesImportsCache =
+            Array.isArray(parsedSalesImports)
+                ? parsedSalesImports
+                : [];
+
+        return sellerBooksSalesImportsCache;
 
     }catch(error){
 
@@ -5513,13 +5537,24 @@ function getSalesImportsData(){
 }
 
 
-function getAllReportTransactions(){
+let sellerBooksReportTransactionsCacheImports = null;
+let sellerBooksReportTransactionsCache = null;
 
-    const mergeStart =
-        performance.now();
+function getAllReportTransactions(){
 
     const imports =
         getSalesImportsData();
+
+    /* PATCH F: cache hasil flatten transaksi selama sumber import sama. */
+    if(
+        sellerBooksReportTransactionsCache !== null &&
+        sellerBooksReportTransactionsCacheImports === imports
+    ){
+        return sellerBooksReportTransactionsCache;
+    }
+
+    const mergeStart =
+        performance.now();
 
     const transactions = [];
 
@@ -5578,7 +5613,10 @@ function getAllReportTransactions(){
             transactions.length;
     }
 
-    return transactions;
+    sellerBooksReportTransactionsCacheImports = imports;
+    sellerBooksReportTransactionsCache = transactions;
+
+    return sellerBooksReportTransactionsCache;
 }
 
 
