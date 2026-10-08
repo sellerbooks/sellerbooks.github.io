@@ -18694,6 +18694,17 @@ let sellerBooksDashboardTransactionsCache = {
     key:"",
     transactions:null
 };
+let sellerBooksDashboardMarketplaceRowsCache = {
+    transactions:null,
+    marketplaces:null,
+    stores:null,
+    products:null,
+    costs:null,
+    period:"",
+    rows:null
+};
+
+
 
 function getDashboardTransactionsForPeriod(period){
 
@@ -19535,7 +19546,19 @@ function renderMarketplacePerformance(){
 
     if(!activeMarketplaces.length){
 
-        performanceBody.innerHTML = `
+        if(!marketplaceRowsCacheHit){
+        sellerBooksDashboardMarketplaceRowsCache = {
+            transactions: transactions,
+            marketplaces: marketplacesData,
+            stores: storesData,
+            products: products,
+            costs: costsData,
+            period: String(currentDashboardPeriod || "today"),
+            rows: rows
+        };
+    }
+
+    performanceBody.innerHTML = `
             <tr>
                 <td
                     colspan="4"
@@ -19559,8 +19582,19 @@ function renderMarketplacePerformance(){
             currentDashboardPeriod
         );
 
+    const marketplaceRowsCacheHit =
+        sellerBooksDashboardMarketplaceRowsCache.rows &&
+        sellerBooksDashboardMarketplaceRowsCache.transactions === transactions &&
+        sellerBooksDashboardMarketplaceRowsCache.marketplaces === marketplacesData &&
+        sellerBooksDashboardMarketplaceRowsCache.stores === storesData &&
+        sellerBooksDashboardMarketplaceRowsCache.products === products &&
+        sellerBooksDashboardMarketplaceRowsCache.costs === costsData &&
+        sellerBooksDashboardMarketplaceRowsCache.period === String(currentDashboardPeriod || "today");
+
     const rows =
-        activeMarketplaces.map(
+        marketplaceRowsCacheHit
+            ? sellerBooksDashboardMarketplaceRowsCache.rows
+            : activeMarketplaces.map(
             function(marketplace){
 
                 const marketplaceId =
