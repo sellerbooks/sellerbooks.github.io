@@ -18410,12 +18410,11 @@ function renderMarketplaces(){
         grid.appendChild(card);
     });
 
-    renderMarketplacePerformance();
-
-    if(typeof renderStores === "function"){
-        renderStores();
-    }
-
+    /*
+       Marketplace hanya merender daftar Marketplace.
+       Dashboard performance dan daftar Akun Toko tidak perlu
+       dihitung ulang saat navigasi ke halaman ini.
+    */
     sellerBooksApplyMarketplaceLanguage();
 }
 
@@ -35109,7 +35108,12 @@ function loadSellerBooksSettings(){
     }
 
     renderSettingsLogo();
-    applySellerBooksSettings();
+    /*
+       Membuka Pengaturan hanya memuat form.
+       Jangan render ulang Dashboard/Laporan/Rincian/halaman lain
+       hanya karena user membuka menu Pengaturan.
+    */
+    applySellerBooksSettings(false);
     sellerBooksSyncLanguageControl();
 }
 
@@ -35188,8 +35192,12 @@ function formatSellerBooksCurrency(value){
 
 }
 
-function applySellerBooksSettings(){
+function applySellerBooksSettings(refreshViews = true){
     renderSettingsLogo();
+
+    if(!refreshViews){
+        return;
+    }
 
     /*
        Refresh tampilan nominal setelah mata uang atau
