@@ -30373,50 +30373,68 @@ function getSellerBooksDayKey(){
    Simpan lokal per akun agar perubahan dropdown tidak
    ikut mengubah sellerBooksCloudState / Supabase.
 ===================================================== */
+let sellerBooksDashboardPreferencesCache = null;
+let sellerBooksDashboardPreferencesCacheKey = "";
+
 function sellerBooksDashboardPreferenceKey(){
     const userId = String(sellerBooksAuthUser?.id || "guest");
     return "sellerbooks_dashboard_prefs_" + userId;
 }
 
 function sellerBooksReadDashboardPreferences(){
+    const cacheKey = sellerBooksDashboardPreferenceKey();
+
+    /* PATCH E: cache preferensi tampilan agar tidak parse localStorage berulang. */
+    if(
+        sellerBooksDashboardPreferencesCache &&
+        sellerBooksDashboardPreferencesCacheKey === cacheKey
+    ){
+        return {...sellerBooksDashboardPreferencesCache};
+    }
+
     let prefs = {};
     try{
         prefs = JSON.parse(
-            window.localStorage.getItem(
-                sellerBooksDashboardPreferenceKey()
-            ) || "{}"
+            window.localStorage.getItem(cacheKey) || "{}"
         ) || {};
     }catch(error){
         prefs = {};
     }
 
-    /*
-       Kompatibilitas satu kali: jika preferensi lama masih berada
-       di cloud state, baca nilainya sebagai fallback. Setelah user
-       mengubah preferensi, penyimpanan berikutnya hanya lokal.
-    */
+    /* Kompatibilitas satu kali dengan preferensi lama di cloud state. */
     const legacy = function(key){
         if(prefs[key] !== undefined && prefs[key] !== null) return prefs[key];
         return sellerBooksCloudState[key];
     };
 
-    return {
+    prefs = {
         period: legacy("sellerbooks_dashboard_period") || "today",
         viewDay: legacy("sellerbooks_dashboard_view_day") || "",
         dateFrom: legacy("sellerbooks_dashboard_date_from") || "",
         dateTo: legacy("sellerbooks_dashboard_date_to") || ""
     };
+
+    sellerBooksDashboardPreferencesCacheKey = cacheKey;
+    sellerBooksDashboardPreferencesCache = {...prefs};
+
+    return {...prefs};
 }
 
 function sellerBooksWriteDashboardPreferences(patch){
     const prefs = sellerBooksReadDashboardPreferences();
+
     Object.keys(patch || {}).forEach(function(key){
         prefs[key] = patch[key];
     });
 
+    sellerBooksDashboardPreferencesCacheKey =
+        sellerBooksDashboardPreferenceKey();
+
+    sellerBooksDashboardPreferencesCache = {...prefs};
+
     try{
         window.localStorage.setItem(
-            sellerBooksDashboardPreferenceKey(),
+            sellerBooksDashboardPreferencesCacheKey,
             JSON.stringify(prefs)
         );
     }catch(error){
@@ -30430,6 +30448,46 @@ function sellerBooksGetDashboardPreference(key, fallback){
         ? prefs[key]
         : fallback;
 }
+
+/* PATCH E: filter Dashboard disimpan di memory, bukan dibaca dari DOM/storage saat render. */
+let sellerBooksDashboardFilterState = {
+    period:"today",
+    dateFrom:"",
+    dateTo:"",
+    viewDay:""
+};
+
+function sellerBooksSyncDashboardFilterState(){
+    const prefs = sellerBooksReadDashboardPreferences();
+
+    sellerBooksDashboardFilterState = {
+        period:prefs.period || "today",
+        dateFrom:prefs.dateFrom || "",
+        dateTo:prefs.dateTo || "",
+        viewDay:prefs.viewDay || ""
+    };
+
+    currentDashboardPeriod =
+        sellerBooksDashboardFilterState.period;
+
+    return sellerBooksDashboardFilterState;
+}
+
+function sellerBooksSetDashboardFilterState(patch){
+    sellerBooksDashboardFilterState = {
+        ...sellerBooksDashboardFilterState,
+        ...(patch || {})
+    };
+
+    if(sellerBooksDashboardFilterState.period){
+        currentDashboardPeriod =
+            sellerBooksDashboardFilterState.period;
+    }
+
+    return sellerBooksDashboardFilterState;
+}
+
+sellerBooksSyncDashboardFilterState();
 
 function prepareDailyViewState(){
     const todayKey = getSellerBooksDayKey();
@@ -30493,6 +30551,11 @@ function sellerBooksCheckWibDayRollover(){
     const state = prepareDailyViewState();
 
     if(state.dashboardChanged){
+        sellerBooksSetDashboardFilterState({
+            period:"today",
+            viewDay:todayKey
+        });
+
         currentDashboardPeriod = "today";
 
         const dashboardPeriod =
@@ -30652,11 +30715,12 @@ let dashboardCustomDateConfirmed = false;
 
 function getDashboardDateRange(){
 
+    /* PATCH E: hindari query DOM untuk setiap transaksi pada filter custom. */
     const fromValue =
-        document.getElementById("dashboardDateFrom")?.value || "";
+        sellerBooksDashboardFilterState.dateFrom || "";
 
     const toValue =
-        document.getElementById("dashboardDateTo")?.value || "";
+        sellerBooksDashboardFilterState.dateTo || "";
 
     return {
         from:fromValue ? getReportDateOnly(fromValue) : null,
@@ -30753,9 +30817,15 @@ function changeDashboardCustomDateRange(){
         }
     }
 
-    sellerBooksWriteDashboardPreferences({dateFrom:fromValue});
+    sellerBooksSetDashboardFilterState({
+        dateFrom:fromValue,
+        dateTo:toValue
+    });
 
-    sellerBooksWriteDashboardPreferences({dateTo:toValue});
+    sellerBooksWriteDashboardPreferences({
+        dateFrom:fromValue,
+        dateTo:toValue
+    });
 
     updateDashboardByPeriod();
 }
@@ -30787,6 +30857,11 @@ function confirmDashboardCustomDateRange(){
         return;
     }
 
+    sellerBooksSetDashboardFilterState({
+        dateFrom:fromValue,
+        dateTo:toValue
+    });
+
     sellerBooksWriteDashboardPreferences({
         dateFrom:fromValue,
         dateTo:toValue
@@ -30812,20 +30887,16 @@ function loadDashboardCustomDates(){
     const to =
         document.getElementById("dashboardDateTo");
 
+    sellerBooksSyncDashboardFilterState();
+
     if(from){
         from.value =
-            sellerBooksGetDashboardPreference(
-                "dateFrom",
-                ""
-            );
+            sellerBooksDashboardFilterState.dateFrom || "";
     }
 
     if(to){
         to.value =
-            sellerBooksGetDashboardPreference(
-                "dateTo",
-                ""
-            );
+            sellerBooksDashboardFilterState.dateTo || "";
     }
 
     updateDashboardCustomDateUI();
@@ -30846,6 +30917,11 @@ function changeDashboardPeriod(){
 
     currentDashboardPeriod =
         periodSelect.value;
+
+    sellerBooksSetDashboardFilterState({
+        period:currentDashboardPeriod,
+        viewDay:getSellerBooksDayKey()
+    });
 
     dashboardCustomDateConfirmed =
         currentDashboardPeriod !== "custom";
@@ -30976,6 +31052,8 @@ document.addEventListener(
                 period:"today"
             });
         }
+
+        sellerBooksSyncDashboardFilterState();
 
         const savedPeriod =
             sellerBooksGetDashboardPreference(
