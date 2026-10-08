@@ -5106,7 +5106,7 @@ function updateReportFilterInfo(
    INISIALISASI LAPORAN
 ===================================================== */
 
-function initializeReports(){
+function initializeReports(renderNow = true){
 
     loadReportMarketplaceFilter();
 
@@ -5114,7 +5114,9 @@ function initializeReports(){
 
     loadDeleteReportMarketplaceFilter();
 
-    applyReportFilters();
+    if(renderNow){
+        applyReportFilters();
+    }
 
 }
 
@@ -15429,6 +15431,8 @@ let sellerBooksCloudReady = false;
 let sellerBooksCloudSaveTimer = null;
 let sellerBooksCloudSavePromise = Promise.resolve();
 let sellerBooksCloudLoading = false;
+let sellerBooksCloudLoadPromise = null;
+let sellerBooksCloudLoadUserId = "";
 let sellerBooksCloudGeneration = 0;
 let sellerBooksCloudUpdatedAt = null;
 
@@ -15894,6 +15898,31 @@ async function sellerBooksMigrateLogoDataUrl(settings){
 
 async function sellerBooksLoadCloudData(){
     if(!sellerBooksAuthUser)return;
+    const loadUserId=String(sellerBooksAuthUser.id||"");
+    if(!loadUserId)return;
+    if(
+        sellerBooksCloudLoadPromise &&
+        sellerBooksCloudLoadUserId === loadUserId
+    ){
+        return sellerBooksCloudLoadPromise;
+    }
+
+    sellerBooksCloudLoadUserId=loadUserId;
+    const currentLoadPromise=sellerBooksLoadCloudDataInternal(loadUserId);
+    sellerBooksCloudLoadPromise=currentLoadPromise;
+
+    try{
+        return await currentLoadPromise;
+    }finally{
+        if(sellerBooksCloudLoadPromise === currentLoadPromise){
+            sellerBooksCloudLoadPromise=null;
+            sellerBooksCloudLoadUserId="";
+        }
+    }
+}
+
+async function sellerBooksLoadCloudDataInternal(loadUserId){
+    if(!sellerBooksAuthUser)return;
 
     /*
        SAFETY GUARD:
@@ -16086,7 +16115,36 @@ async function sellerBooksLoadProfile(user){
     if(reloadError)throw reloadError;
     return profile;
 }
+let sellerBooksApprovalPromise = null;
+let sellerBooksApprovalPromiseUserId = "";
+
 async function sellerBooksCheckApproval(showAlert){
+    if(!sellerBooksAuthUser)return;
+    const approvalUserId=String(sellerBooksAuthUser.id||"");
+    if(!approvalUserId)return;
+
+    if(
+        sellerBooksApprovalPromise &&
+        sellerBooksApprovalPromiseUserId === approvalUserId
+    ){
+        return sellerBooksApprovalPromise;
+    }
+
+    sellerBooksApprovalPromiseUserId=approvalUserId;
+    const currentApprovalPromise=sellerBooksCheckApprovalInternal(showAlert);
+    sellerBooksApprovalPromise=currentApprovalPromise;
+
+    try{
+        return await currentApprovalPromise;
+    }finally{
+        if(sellerBooksApprovalPromise === currentApprovalPromise){
+            sellerBooksApprovalPromise=null;
+            sellerBooksApprovalPromiseUserId="";
+        }
+    }
+}
+
+async function sellerBooksCheckApprovalInternal(showAlert){
     if(!sellerBooksAuthUser)return;
     try{
         sellerBooksProfile=await sellerBooksLoadProfile(sellerBooksAuthUser);
@@ -16104,7 +16162,17 @@ async function sellerBooksCheckApproval(showAlert){
             */
             await sellerBooksLoadCloudData();
             sellerBooksRefreshRuntimeFromCloud();
-            if(typeof initializeReports==="function")initializeReports();
+
+            /*
+               Filter Report tetap disiapkan setelah cloud siap,
+               tetapi jangan langsung render Report di sini.
+               sellerBooksRefreshActiveView() menjadi satu-satunya
+               render awal untuk view yang sedang aktif.
+            */
+            if(typeof initializeReports==="function"){
+                initializeReports(false);
+            }
+
             sellerBooksOpenApplication();
             sellerBooksRefreshActiveView();
             return;
