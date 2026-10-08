@@ -30367,16 +30367,80 @@ function getSellerBooksDayKey(){
     return getIndonesiaTodayKey();
 }
 
+/* =====================================================
+   DASHBOARD VIEW PREFERENCES
+   Preferensi tampilan Dashboard bukan data bisnis.
+   Simpan lokal per akun agar perubahan dropdown tidak
+   ikut mengubah sellerBooksCloudState / Supabase.
+===================================================== */
+function sellerBooksDashboardPreferenceKey(){
+    const userId = String(sellerBooksAuthUser?.id || "guest");
+    return "sellerbooks_dashboard_prefs_" + userId;
+}
+
+function sellerBooksReadDashboardPreferences(){
+    let prefs = {};
+    try{
+        prefs = JSON.parse(
+            window.localStorage.getItem(
+                sellerBooksDashboardPreferenceKey()
+            ) || "{}"
+        ) || {};
+    }catch(error){
+        prefs = {};
+    }
+
+    /*
+       Kompatibilitas satu kali: jika preferensi lama masih berada
+       di cloud state, baca nilainya sebagai fallback. Setelah user
+       mengubah preferensi, penyimpanan berikutnya hanya lokal.
+    */
+    const legacy = function(key){
+        if(prefs[key] !== undefined && prefs[key] !== null) return prefs[key];
+        return sellerBooksCloudState[key];
+    };
+
+    return {
+        period: legacy("sellerbooks_dashboard_period") || "today",
+        viewDay: legacy("sellerbooks_dashboard_view_day") || "",
+        dateFrom: legacy("sellerbooks_dashboard_date_from") || "",
+        dateTo: legacy("sellerbooks_dashboard_date_to") || ""
+    };
+}
+
+function sellerBooksWriteDashboardPreferences(patch){
+    const prefs = sellerBooksReadDashboardPreferences();
+    Object.keys(patch || {}).forEach(function(key){
+        prefs[key] = patch[key];
+    });
+
+    try{
+        window.localStorage.setItem(
+            sellerBooksDashboardPreferenceKey(),
+            JSON.stringify(prefs)
+        );
+    }catch(error){
+        console.warn("Preferensi Dashboard lokal gagal disimpan:",error);
+    }
+}
+
+function sellerBooksGetDashboardPreference(key, fallback){
+    const prefs = sellerBooksReadDashboardPreferences();
+    return prefs[key] !== undefined && prefs[key] !== null
+        ? prefs[key]
+        : fallback;
+}
+
 function prepareDailyViewState(){
     const todayKey = getSellerBooksDayKey();
     let dashboardChanged = false;
     let reportChanged = false;
     let productAnalysisChanged = false;
 
-    const dashboardDay = sellerBooksStorage.getItem("sellerbooks_dashboard_view_day");
+    const dashboardDay = sellerBooksGetDashboardPreference("viewDay", "");
     if(dashboardDay !== todayKey){
-        sellerBooksStorage.setItem("sellerbooks_dashboard_view_day", todayKey);
-        sellerBooksStorage.setItem("sellerbooks_dashboard_period", "today");
+        sellerBooksWriteDashboardPreferences({viewDay:todayKey});
+        sellerBooksWriteDashboardPreferences({period:"today"});
         dashboardChanged = true;
     }
 
@@ -30566,8 +30630,9 @@ function refreshDashboard(){
         );
 
     const savedPeriod =
-        sellerBooksStorage.getItem(
-            "sellerbooks_dashboard_period"
+        sellerBooksGetDashboardPreference(
+            "period",
+            "today"
         );
 
     if(
@@ -30688,15 +30753,9 @@ function changeDashboardCustomDateRange(){
         }
     }
 
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_date_from",
-        fromValue
-    );
+    sellerBooksWriteDashboardPreferences({dateFrom:fromValue});
 
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_date_to",
-        toValue
-    );
+    sellerBooksWriteDashboardPreferences({dateTo:toValue});
 
     updateDashboardByPeriod();
 }
@@ -30760,16 +30819,18 @@ function loadDashboardCustomDates(){
 
     if(from){
         from.value =
-            sellerBooksStorage.getItem(
-                "sellerbooks_dashboard_date_from"
-            ) || "";
+            sellerBooksGetDashboardPreference(
+                "dateFrom",
+                ""
+            );
     }
 
     if(to){
         to.value =
-            sellerBooksStorage.getItem(
-                "sellerbooks_dashboard_date_to"
-            ) || "";
+            sellerBooksGetDashboardPreference(
+                "dateTo",
+                ""
+            );
     }
 
     updateDashboardCustomDateUI();
