@@ -6359,6 +6359,20 @@ async function deleteReportsByDateRange(){
    AMBIL DATA SESUAI FILTER
 ========================================================= */
 
+/* PATCH L: cache hasil filter transaksi Laporan dan hasil agregasi Rincian.
+   Cache hanya berlaku selama sumber transaksi dan filter tetap sama. */
+let sellerBooksReportFilteredTransactionsCache = {
+    sourceTransactions:null,
+    key:"",
+    transactions:null
+};
+
+let sellerBooksProductAnalysisRowsCache = {
+    sourceTransactions:null,
+    key:"",
+    rows:null
+};
+
 function getFilteredReportTransactions(){
 
     const periodElement =
@@ -6401,6 +6415,27 @@ function getFilteredReportTransactions(){
     const transactions =
         getAllReportTransactions();
 
+    const cacheKey = [
+        period,
+        marketplaceId,
+        storeId
+    ].join("|");
+
+    if(
+        sellerBooksReportFilteredTransactionsCache.sourceTransactions === transactions &&
+        sellerBooksReportFilteredTransactionsCache.key === cacheKey &&
+        Array.isArray(sellerBooksReportFilteredTransactionsCache.transactions)
+    ){
+        const cachedTransactions =
+            sellerBooksReportFilteredTransactionsCache.transactions;
+
+        if(window.sellerBooksReportProfiler?.active){
+            window.sellerBooksReportProfiler.filteredTransactionCount =
+                cachedTransactions.length;
+        }
+
+        return cachedTransactions;
+    }
 
     const filteredTransactions =
         transactions.filter(
@@ -6540,6 +6575,12 @@ function getFilteredReportTransactions(){
 
         }
     );
+
+    sellerBooksReportFilteredTransactionsCache = {
+        sourceTransactions: transactions,
+        key: cacheKey,
+        transactions: filteredTransactions
+    };
 
     if(
         window.sellerBooksReportProfiler?.active
@@ -16977,6 +17018,40 @@ function getProductAnalysisTransactions(){
 }
 
 function calculateProductAnalysisRows(){
+    const sourceTransactions =
+        getAllReportTransactions();
+
+    const period =
+        document.getElementById("productAnalysisPeriod")?.value || "";
+
+    const marketplace =
+        document.getElementById("productAnalysisMarketplace")?.value || "";
+
+    const store =
+        document.getElementById("productAnalysisStore")?.value || "";
+
+    const dateFrom =
+        document.getElementById("productAnalysisDateFrom")?.value || "";
+
+    const dateTo =
+        document.getElementById("productAnalysisDateTo")?.value || "";
+
+    const cacheKey = [
+        period,
+        marketplace,
+        store,
+        dateFrom,
+        dateTo
+    ].join("|");
+
+    if(
+        sellerBooksProductAnalysisRowsCache.sourceTransactions === sourceTransactions &&
+        sellerBooksProductAnalysisRowsCache.key === cacheKey &&
+        Array.isArray(sellerBooksProductAnalysisRowsCache.rows)
+    ){
+        return sellerBooksProductAnalysisRowsCache.rows;
+    }
+
     const transactions =
         getProductAnalysisTransactions();
 
@@ -17136,50 +17211,51 @@ function calculateProductAnalysisRows(){
         row.admin += admin;
     });
 
-    return Array.from(rows.values())
-        .map(function(row){
 
-            /*
-               Harga Jual selalu merupakan harga transaksi aktual:
-               Total Penjualan / QTY.
-               Dengan begitu tampilan komputer, browser, dan APK
-               mengikuti hasil transaksi yang sama dan tidak membaca
-               harga Master Produk terbaru untuk transaksi lama.
-            */
-            row.price =
-                Number(row.qty) > 0
-                    ? Number(row.sales) / Number(row.qty)
-                    : 0;
+    
+    const finalRows =
+        Array.from(rows.values())
+            .map(function(row){
+                /*
+                   Harga Jual selalu merupakan harga transaksi aktual:
+                   Total Penjualan / QTY.
+                */
+                row.price =
+                    Number(row.qty) > 0
+                        ? Number(row.sales) / Number(row.qty)
+                        : 0;
 
-            row.name =
-                row.product
-                    ? (row.product.name || row.sku)
-                    : "SKU belum ada di Master Produk";
+                row.name =
+                    row.product
+                        ? (row.product.name || row.sku)
+                        : "SKU belum ada di Master Produk";
 
-            /*
-               Analisis produk:
-               Penjualan - Admin Marketplace - HPP.
-               Packing tidak dibebankan ke SKU karena
-               packing merupakan biaya per order/resi.
-            */
-            row.profit =
-                row.sales -
-                row.admin -
-                row.hpp;
+                row.profit =
+                    row.sales -
+                    row.admin -
+                    row.hpp;
 
-            row.isLoss =
-                row.profit < 0;
+                row.isLoss =
+                    row.profit < 0;
 
-            return row;
-        })
-        .sort(function(a,b){
+                return row;
+            })
+            .sort(function(a,b){
 
-            if(a.isLoss !== b.isLoss){
-                return a.isLoss ? -1 : 1;
-            }
+                if(a.isLoss !== b.isLoss){
+                    return a.isLoss ? -1 : 1;
+                }
 
-            return a.profit - b.profit;
-        });
+                return a.profit - b.profit;
+            });
+
+    sellerBooksProductAnalysisRowsCache = {
+        sourceTransactions: sourceTransactions,
+        key: cacheKey,
+        rows: finalRows
+    };
+
+    return finalRows;
 }
 
 function formatProductAnalysisCurrency(value){
