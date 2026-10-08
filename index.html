@@ -17835,6 +17835,10 @@ function applyProductAnalysisFilters(){
     return false;
 }
 
+/* Refresh halaman harus selalu memulai Rincian dari Hari Ini.
+   Setelah reset pertama, perpindahan menu tidak boleh menghapus pilihan periode. */
+let sellerBooksProductAnalysisRefreshResetDone = false;
+
 function initializeProductAnalysis(){
 
     const period =
@@ -17847,7 +17851,12 @@ function initializeProductAnalysis(){
         const savedDay = sellerBooksStorage.getItem("sellerbooks_product_analysis_view_day");
         const savedPeriod = sellerBooksStorage.getItem("sellerbooks_product_analysis_period");
 
-        if(savedDay !== todayKey){
+        if(!sellerBooksProductAnalysisRefreshResetDone){
+            period.value = "today";
+            sellerBooksStorage.setItem("sellerbooks_product_analysis_view_day", todayKey);
+            sellerBooksStorage.setItem("sellerbooks_product_analysis_period", "today");
+            sellerBooksProductAnalysisRefreshResetDone = true;
+        }else if(savedDay !== todayKey){
             period.value = "today";
             sellerBooksStorage.setItem("sellerbooks_product_analysis_view_day", todayKey);
             sellerBooksStorage.setItem("sellerbooks_product_analysis_period", "today");
