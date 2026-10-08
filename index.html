@@ -18549,18 +18549,36 @@ function sellerBooksDashboardDateKey(value){
     );
 }
 
+/* PATCH H: hindari rebuild grafik Dashboard jika dataset + periode tidak berubah. */
+let sellerBooksDashboardChartsCache = {
+    transactions:null,
+    period:"",
+    rendered:false
+};
+
 function sellerBooksRenderDashboardCharts(transactions){
     const salesChart = document.getElementById("dashboardSalesChart");
     const marketplaceChart = document.getElementById("dashboardMarketplaceChart");
     const info = document.getElementById("dashboardSalesChartInfo");
     if(!salesChart || !marketplaceChart) return;
 
+    const chartTransactions = Array.isArray(transactions) ? transactions : [];
+
+    if(
+        sellerBooksDashboardChartsCache.rendered &&
+        sellerBooksDashboardChartsCache.transactions === chartTransactions &&
+        sellerBooksDashboardChartsCache.period === String(currentDashboardPeriod || "today")
+    ){
+        if(info) info.textContent = sellerBooksDashboardText("periodMovement") + sellerBooksDashboardPeriodText(currentDashboardPeriod);
+        return;
+    }
+
     if(info) info.textContent = sellerBooksDashboardText("periodMovement") + sellerBooksDashboardPeriodText(currentDashboardPeriod);
 
     const buckets = new Map();
     const marketplaceTotals = new Map();
 
-    transactions.forEach(function(item){
+    chartTransactions.forEach(function(item){
         const amount = Number(getReportTransactionSalesAmount(item)) || 0;
         const date = sellerBooksDashboardDateKey(item.importedAt || item.reportDate);
         if(!date) return;
@@ -18658,6 +18676,12 @@ function sellerBooksRenderDashboardCharts(transactions){
         const pct=(pair[1]/mpMax)*100;
         return '<div class="dashboard-marketplace-row"><div class="dashboard-marketplace-name" title="'+pair[0]+'">'+pair[0]+'</div><div class="dashboard-marketplace-track"><div class="dashboard-marketplace-fill" style="width:'+pct+'%"></div></div><div class="dashboard-marketplace-value">'+sellerBooksDashboardFormatShortRupiah(pair[1])+'</div></div>';
     }).join("");
+
+    sellerBooksDashboardChartsCache = {
+        transactions: chartTransactions,
+        period: String(currentDashboardPeriod || "today"),
+        rendered: true
+    };
 }
 
 /* =====================================================
