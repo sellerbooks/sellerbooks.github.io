@@ -18707,68 +18707,74 @@ function getDashboardTransactionsForPeriod(period){
     return transactions;
 }
 
-function renderMarketplacePerformance(){
+/* =====================================================
+   PATCH G: CACHE DASHBOARD MASTER DATA + MARKETPLACE INDEX
+   ===================================================== */
 
-    /*
-       DASHBOARD:
-       1. Kartu atas = TOTAL seluruh marketplace + seluruh akun toko.
-       2. Tabel bawah = RINCIAN setiap marketplace.
-       3. Harga jual dan HPP tetap berasal dari Master Produk.
-       4. Marketplace yang belum memiliki transaksi tetap ditampilkan Rp0.
-    */
+const sellerBooksDashboardMasterArrayCache = {};
 
-    const transactions =
-        getDashboardTransactionsForPeriod(
-            currentDashboardPeriod
-        );
+function sellerBooksGetDashboardMasterArray(key){
 
-    let marketplacesData = [];
-    let storesData = [];
+    const rawValue =
+        sellerBooksCloudState
+            ? sellerBooksCloudState[key]
+            : undefined;
 
-    try{
-        marketplacesData =
-            JSON.parse(
-                sellerBooksStorage.getItem(
-                    "sellerbooks_marketplaces"
-                ) || "[]"
+    const source =
+        typeof rawValue === "string"
+            ? rawValue
+            : (
+                rawValue == null
+                    ? ""
+                    : JSON.stringify(rawValue)
             );
-    }catch(error){
-        marketplacesData = [];
+
+    const cached =
+        sellerBooksDashboardMasterArrayCache[key];
+
+    if(
+        cached &&
+        cached.source === source
+    ){
+        return cached.value;
     }
 
+    let value = [];
+
     try{
-        storesData =
+        const parsed =
             JSON.parse(
-                sellerBooksStorage.getItem(
-                    "sellerbooks_stores"
-                ) || "[]"
+                source || "[]"
             );
+
+        value =
+            Array.isArray(parsed)
+                ? parsed
+                : [];
     }catch(error){
-        storesData = [];
+        value = [];
     }
 
-    const performanceBody =
-        document.getElementById(
-            "performanceMarketplaceBody"
-        );
+    sellerBooksDashboardMasterArrayCache[key] = {
+        source:source,
+        value:value
+    };
 
-    /*
-       =====================================================
-       MASTER PRODUK
-       =====================================================
-    */
+    return value;
+}
 
-    let products = [];
+let sellerBooksDashboardProductMapCache = {
+    source:null,
+    map:null
+};
 
-    try{
-        products =
-            JSON.parse(
-                sellerBooksStorage.getItem(
-                    "sellerbooks_products"
-                ) || "[]"
-            );
-    }catch(error){
-        products = [];
+function sellerBooksGetDashboardProductMap(products){
+
+    if(
+        sellerBooksDashboardProductMapCache.source === products &&
+        sellerBooksDashboardProductMapCache.map
+    ){
+        return sellerBooksDashboardProductMapCache.map;
     }
 
     const productMap =
@@ -18791,6 +18797,327 @@ function renderMarketplacePerformance(){
         }
 
     });
+
+    sellerBooksDashboardProductMapCache = {
+        source:products,
+        map:productMap
+    };
+
+    return productMap;
+}
+
+let sellerBooksDashboardStoresIndexCache = {
+    source:null,
+    index:null
+};
+
+function sellerBooksGetDashboardStoresIndex(stores){
+
+    if(
+        sellerBooksDashboardStoresIndexCache.source === stores &&
+        sellerBooksDashboardStoresIndexCache.index
+    ){
+        return sellerBooksDashboardStoresIndexCache.index;
+    }
+
+    const index =
+        new Map();
+
+    stores.forEach(function(store){
+
+        const marketplaceId =
+            String(
+                store.marketplaceId || ""
+            );
+
+        if(!index.has(marketplaceId)){
+            index.set(
+                marketplaceId,
+                []
+            );
+        }
+
+        index.get(marketplaceId).push(store);
+
+    });
+
+    sellerBooksDashboardStoresIndexCache = {
+        source:stores,
+        index:index
+    };
+
+    return index;
+}
+
+let sellerBooksDashboardTransactionMarketplaceIndexCache = {
+    source:null,
+    index:null
+};
+
+function sellerBooksGetDashboardTransactionMarketplaceIndex(transactions){
+
+    if(
+        sellerBooksDashboardTransactionMarketplaceIndexCache.source === transactions &&
+        sellerBooksDashboardTransactionMarketplaceIndexCache.index
+    ){
+        return sellerBooksDashboardTransactionMarketplaceIndexCache.index;
+    }
+
+    const index =
+        new Map();
+
+    transactions.forEach(function(item){
+
+        const itemMarketplaceId =
+            String(
+                item.marketplaceId || ""
+            )
+            .trim()
+            .toLowerCase();
+
+        const itemMarketplace =
+            String(
+                item.marketplace || ""
+            )
+            .trim()
+            .toLowerCase();
+
+        const keys =
+            new Set([
+                "id:" + itemMarketplaceId,
+                "name:" + itemMarketplace
+            ]);
+
+        if(
+            itemMarketplaceId === "tiktok" ||
+            itemMarketplace === "tiktok" ||
+            itemMarketplace === "tiktok shop"
+        ){
+            keys.add("id:tiktok");
+            keys.add("name:tiktok");
+            keys.add("name:tiktok shop");
+            keys.add("name:tiktokshop");
+        }
+
+        keys.forEach(function(key){
+
+            if(!index.has(key)){
+                index.set(
+                    key,
+                    []
+                );
+            }
+
+            index.get(key).push(item);
+
+        });
+
+    });
+
+    sellerBooksDashboardTransactionMarketplaceIndexCache = {
+        source:transactions,
+        index:index
+    };
+
+    return index;
+}
+
+function sellerBooksGetDashboardMarketplaceTransactions(
+    index,
+    marketplaceId,
+    marketplaceName
+){
+
+    const keys = [
+        "id:" +
+        String(
+            marketplaceId || ""
+        )
+        .trim()
+        .toLowerCase(),
+
+        "name:" +
+        String(
+            marketplaceName || ""
+        )
+        .trim()
+        .toLowerCase()
+    ];
+
+    if(
+        String(marketplaceId || "")
+            .trim()
+            .toLowerCase() === "tiktok"
+    ){
+        keys.push(
+            "name:tiktok",
+            "name:tiktok shop",
+            "name:tiktokshop"
+        );
+    }
+
+    const seen =
+        new Set();
+
+    const result =
+        [];
+
+    keys.forEach(function(key){
+
+        const list =
+            index.get(key) || [];
+
+        list.forEach(function(item){
+
+            if(seen.has(item)){
+                return;
+            }
+
+            seen.add(item);
+            result.push(item);
+
+        });
+
+    });
+
+    return result;
+}
+
+let sellerBooksDashboardMarketplaceCostsCache = {
+    source:null,
+    period:"",
+    index:null
+};
+
+function sellerBooksGetDashboardMarketplaceCosts(
+    costs,
+    period
+){
+
+    if(
+        sellerBooksDashboardMarketplaceCostsCache.source === costs &&
+        sellerBooksDashboardMarketplaceCostsCache.period === period &&
+        sellerBooksDashboardMarketplaceCostsCache.index
+    ){
+        return sellerBooksDashboardMarketplaceCostsCache.index;
+    }
+
+    const index =
+        new Map();
+
+    costs.forEach(function(cost){
+
+        const category =
+            String(
+                cost.category || ""
+            )
+            .trim()
+            .toLowerCase();
+
+        if(
+            category === "packing" ||
+            category.includes("packing")
+        ){
+            return;
+        }
+
+        const dateValue =
+            cost.date ||
+            cost.createdAt;
+
+        if(
+            dateValue &&
+            !isDateInPeriod(
+                dateValue,
+                period
+            )
+        ){
+            return;
+        }
+
+        const marketplaceId =
+            String(
+                cost.marketplaceId || ""
+            )
+            .trim();
+
+        if(!marketplaceId){
+            return;
+        }
+
+        const amount =
+            Number(
+                cost.amount
+            ) || 0;
+
+        index.set(
+            marketplaceId,
+            (
+                index.get(marketplaceId) || 0
+            ) + amount
+        );
+
+    });
+
+    sellerBooksDashboardMarketplaceCostsCache = {
+        source:costs,
+        period:period,
+        index:index
+    };
+
+    return index;
+}
+
+function renderMarketplacePerformance(){
+
+    /*
+       DASHBOARD:
+       1. Kartu atas = TOTAL seluruh marketplace + seluruh akun toko.
+       2. Tabel bawah = RINCIAN setiap marketplace.
+       3. Harga jual dan HPP tetap berasal dari Master Produk.
+       4. Marketplace yang belum memiliki transaksi tetap ditampilkan Rp0.
+    */
+
+    const transactions =
+        getDashboardTransactionsForPeriod(
+            currentDashboardPeriod
+        );
+
+    const marketplacesData =
+        sellerBooksGetDashboardMasterArray(
+            "sellerbooks_marketplaces"
+        );
+
+    const storesData =
+        sellerBooksGetDashboardMasterArray(
+            "sellerbooks_stores"
+        );
+
+    const performanceBody =
+        document.getElementById(
+            "performanceMarketplaceBody"
+        );
+
+    /*
+       =====================================================
+       MASTER PRODUK
+       =====================================================
+    */
+
+    const products =
+        sellerBooksGetDashboardMasterArray(
+            "sellerbooks_products"
+        );
+
+    const productMap =
+        sellerBooksGetDashboardProductMap(
+            products
+        );
+
+    const costsData =
+        sellerBooksGetDashboardMasterArray(
+            "sellerbooks_costs"
+        );
 
     /*
        =====================================================
@@ -18853,56 +19180,45 @@ function renderMarketplacePerformance(){
 
     let totalOtherCosts = 0;
 
-    try{
+    if(Array.isArray(costsData)){
 
-        const costsData =
-            JSON.parse(
-                sellerBooksStorage.getItem(
-                    "sellerbooks_costs"
-                ) || "[]"
-            );
+        costsData.forEach(function(cost){
 
-        if(Array.isArray(costsData)){
+            const category =
+                String(
+                    cost.category || ""
+                )
+                .trim()
+                .toLowerCase();
 
-            costsData.forEach(function(cost){
+            /* Packing sudah dihitung dari transaksi. */
+            if(
+                category === "packing" ||
+                category.includes("packing")
+            ){
+                return;
+            }
 
-                const category =
-                    String(
-                        cost.category || ""
-                    )
-                    .trim()
-                    .toLowerCase();
+            const dateValue =
+                cost.date ||
+                cost.createdAt;
 
-                /* Packing sudah dihitung dari transaksi. */
-                if(
-                    category === "packing" ||
-                    category.includes("packing")
-                ){
-                    return;
-                }
+            if(
+                dateValue &&
+                !isDateInPeriod(
+                    dateValue,
+                    currentDashboardPeriod
+                )
+            ){
+                return;
+            }
 
-                const dateValue =
-                    cost.date ||
-                    cost.createdAt;
+            totalOtherCosts +=
+                Number(cost.amount) || 0;
 
-                if(
-                    dateValue &&
-                    !isDateInPeriod(
-                        dateValue,
-                        currentDashboardPeriod
-                    )
-                ){
-                    return;
-                }
+        });
 
-                totalOtherCosts +=
-                    Number(cost.amount) || 0;
-
-            });
-
-        }
-
-    }catch(error){}
+    }
 
     const totalNetSales =
         totalSales -
@@ -19068,16 +19384,82 @@ function renderMarketplacePerformance(){
        =====================================================
     */
 
+    const storesIndex =
+        sellerBooksGetDashboardStoresIndex(
+            storesData
+        );
+
+    const marketplacesWithStores =
+        new Set();
+
+    storesData.forEach(function(store){
+
+        marketplacesWithStores.add(
+            String(
+                store.marketplaceId || ""
+            )
+        );
+
+    });
+
+    const specialMarketplaceWithStore =
+        {};
+
+    marketplacesData.forEach(function(marketplace){
+
+        if(marketplace.status !== "active"){
+            return;
+        }
+
+        const marketplaceName =
+            String(
+                marketplace.name || ""
+            )
+            .trim()
+            .toLowerCase();
+
+        const isShopeeOrTiktok =
+            marketplaceName === "shopee" ||
+            marketplaceName === "tiktok" ||
+            marketplaceName === "tiktok shop" ||
+            marketplaceName === "tiktokshop";
+
+        if(!isShopeeOrTiktok){
+            return;
+        }
+
+        const marketplaceId =
+            String(
+                marketplace.id || ""
+            );
+
+        if(
+            marketplacesWithStores.has(
+                marketplaceId
+            )
+        ){
+            specialMarketplaceWithStore[
+                marketplaceName === "shopee"
+                    ? "shopee"
+                    : "tiktok"
+            ] = true;
+        }
+
+    });
+
     const activeMarketplaces =
-        marketplacesData.filter(function(marketplace, index, allMarketplaces){
+        marketplacesData.filter(function(marketplace){
+
             if(marketplace.status !== "active"){
                 return false;
             }
 
             const marketplaceName =
-                String(marketplace.name || "")
-                    .trim()
-                    .toLowerCase();
+                String(
+                    marketplace.name || ""
+                )
+                .trim()
+                .toLowerCase();
 
             const isShopeeOrTiktok =
                 marketplaceName === "shopee" ||
@@ -19090,48 +19472,32 @@ function renderMarketplacePerformance(){
             }
 
             const marketplaceId =
-                String(marketplace.id || "");
+                String(
+                    marketplace.id || ""
+                );
 
-            const storesForThisMarketplace =
-                storesData.filter(function(store){
-                    return String(store.marketplaceId || "") === marketplaceId;
-                });
-
-            if(storesForThisMarketplace.length > 0){
+            if(
+                marketplacesWithStores.has(
+                    marketplaceId
+                )
+            ){
                 return true;
             }
 
-            const hasAnotherSameMarketplaceWithStore =
-                allMarketplaces.some(function(otherMarketplace, otherIndex){
-                    if(otherIndex === index || otherMarketplace.status !== "active"){
-                        return false;
-                    }
+            const specialKey =
+                marketplaceName === "shopee"
+                    ? "shopee"
+                    : "tiktok";
 
-                    const otherName =
-                        String(otherMarketplace.name || "")
-                            .trim()
-                            .toLowerCase();
+            /*
+               Pertahankan perilaku lama:
+               untuk Shopee/TikTok duplikat, hanya tampilkan satu
+               jika marketplace lain yang sama sudah memiliki toko.
+            */
+            return !specialMarketplaceWithStore[
+                specialKey
+            ];
 
-                    const sameMarketplace =
-                        (marketplaceName === "shopee" && otherName === "shopee") ||
-                        (
-                            (marketplaceName === "tiktok" || marketplaceName === "tiktok shop" || marketplaceName === "tiktokshop") &&
-                            (otherName === "tiktok" || otherName === "tiktok shop" || otherName === "tiktokshop")
-                        );
-
-                    if(!sameMarketplace){
-                        return false;
-                    }
-
-                    const otherId =
-                        String(otherMarketplace.id || "");
-
-                    return storesData.some(function(store){
-                        return String(store.marketplaceId || "") === otherId;
-                    });
-                });
-
-            return !hasAnotherSameMarketplaceWithStore;
         });
 
     if(!activeMarketplaces.length){
@@ -19154,22 +19520,11 @@ function renderMarketplacePerformance(){
         return;
     }
 
-    /*
-       PATCH C:
-       Parse biaya lain sekali per render Dashboard, bukan sekali
-       untuk setiap marketplace.
-    */
-    let costsData = [];
-    try{
-        costsData =
-            JSON.parse(
-                sellerBooksStorage.getItem(
-                    "sellerbooks_costs"
-                ) || "[]"
-            );
-    }catch(error){
-        costsData = [];
-    }
+    const marketplaceCosts =
+        sellerBooksGetDashboardMarketplaceCosts(
+            costsData,
+            currentDashboardPeriod
+        );
 
     const rows =
         activeMarketplaces.map(
@@ -19188,70 +19543,17 @@ function renderMarketplacePerformance(){
                     .toLowerCase();
 
                 const marketplaceStores =
-                    storesData.filter(
-                        function(store){
-
-                            return (
-                                String(
-                                    store.marketplaceId || ""
-                                ) === marketplaceId
-                            );
-
-                        }
-                    );
+                    storesIndex.get(
+                        marketplaceId
+                    ) || [];
 
                 const marketplaceTransactions =
-                    transactions.filter(
-                        function(item){
-
-                            const itemMarketplaceId =
-                                String(
-                                    item.marketplaceId || ""
-                                )
-                                .trim()
-                                .toLowerCase();
-
-                            const itemMarketplace =
-                                String(
-                                    item.marketplace || ""
-                                )
-                                .trim()
-                                .toLowerCase();
-
-                            if(
-                                itemMarketplaceId ===
-                                marketplaceId.toLowerCase()
-                            ){
-                                return true;
-                            }
-
-                            /*
-                               Fallback untuk data import lama
-                               yang mungkin hanya menyimpan nama
-                               marketplace.
-                            */
-
-                            if(
-                                marketplaceName &&
-                                itemMarketplace ===
-                                marketplaceName
-                            ){
-                                return true;
-                            }
-
-                            if(
-                                marketplaceId === "tiktok" &&
-                                (
-                                    itemMarketplace === "tiktok" ||
-                                    itemMarketplace === "tiktok shop"
-                                )
-                            ){
-                                return true;
-                            }
-
-                            return false;
-
-                        }
+                    sellerBooksGetDashboardMarketplaceTransactions(
+                        sellerBooksGetDashboardTransactionMarketplaceIndex(
+                            transactions
+                        ),
+                        marketplaceId,
+                        marketplaceName
                     );
 
                 let sales = 0;
@@ -19312,80 +19614,10 @@ function renderMarketplacePerformance(){
                     packingCount *
                     getPackingCostPerOrder();
 
-                let otherCosts = 0;
-
-                /*
-                   PATCH C:
-                   sellerbooks_costs sebelumnya di-parse dari localStorage
-                   ulang untuk SETIAP marketplace. Untuk client dengan banyak
-                   marketplace, ini membuat JSON biaya yang sama dibaca dan
-                   di-parse berulang kali dalam satu render Dashboard.
-                   
-                   Sekarang data biaya dibaca sekali di luar loop marketplace.
-                   Perhitungan biaya tetap sama; hanya sumber array-nya yang
-                   dipakai ulang.
-                */
-                if(Array.isArray(costsData)){
-
-                    costsData.forEach(
-                        function(cost){
-
-                            const category =
-                                String(
-                                    cost.category || ""
-                                )
-                                .trim()
-                                .toLowerCase();
-
-                            if(
-                                category === "packing" ||
-                                category.includes("packing")
-                            ){
-                                return;
-                            }
-
-                            const dateValue =
-                                cost.date ||
-                                cost.createdAt;
-
-                            if(
-                                dateValue &&
-                                !isDateInPeriod(
-                                    dateValue,
-                                    currentDashboardPeriod
-                                )
-                            ){
-                                return;
-                            }
-
-                            const costMarketplaceId =
-                                String(
-                                    cost.marketplaceId || ""
-                                )
-                                .trim();
-
-                            if(
-                                costMarketplaceId &&
-                                costMarketplaceId !==
-                                marketplaceId
-                            ){
-                                return;
-                            }
-
-                            if(
-                                costMarketplaceId ===
-                                marketplaceId
-                            ){
-                                otherCosts +=
-                                    Number(
-                                        cost.amount
-                                    ) || 0;
-                            }
-
-                        }
-                    );
-
-                }
+                const otherCosts =
+                    marketplaceCosts.get(
+                        marketplaceId
+                    ) || 0;
 
                 const netSales =
                     sales -
