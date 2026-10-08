@@ -30787,15 +30787,10 @@ function confirmDashboardCustomDateRange(){
         return;
     }
 
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_date_from",
-        fromValue
-    );
-
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_date_to",
-        toValue
-    );
+    sellerBooksWriteDashboardPreferences({
+        dateFrom:fromValue,
+        dateTo:toValue
+    });
 
     dashboardCustomDateConfirmed = true;
 
@@ -30860,14 +30855,10 @@ function changeDashboardPeriod(){
 
     /* SIMPAN PILIHAN */
 
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_period",
-        currentDashboardPeriod
-    );
-    sellerBooksStorage.setItem(
-        "sellerbooks_dashboard_view_day",
-        getSellerBooksDayKey()
-    );
+    sellerBooksWriteDashboardPreferences({
+        period:currentDashboardPeriod,
+        viewDay:getSellerBooksDayKey()
+    });
 
 
     /* UPDATE DASHBOARD */
@@ -30974,18 +30965,22 @@ document.addEventListener(
 
         const todayKey = getSellerBooksDayKey();
         const savedDashboardDay =
-            sellerBooksStorage.getItem(
-                "sellerbooks_dashboard_view_day"
+            sellerBooksGetDashboardPreference(
+                "viewDay",
+                ""
             );
 
         if(savedDashboardDay !== todayKey){
-            sellerBooksStorage.setItem("sellerbooks_dashboard_view_day", todayKey);
-            sellerBooksStorage.setItem("sellerbooks_dashboard_period", "today");
+            sellerBooksWriteDashboardPreferences({
+                viewDay:todayKey,
+                period:"today"
+            });
         }
 
         const savedPeriod =
-            sellerBooksStorage.getItem(
-                "sellerbooks_dashboard_period"
+            sellerBooksGetDashboardPreference(
+                "period",
+                "today"
             );
 
 
