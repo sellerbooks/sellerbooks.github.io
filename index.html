@@ -19001,6 +19001,23 @@ function renderMarketplacePerformance(){
         return;
     }
 
+    /*
+       PATCH C:
+       Parse biaya lain sekali per render Dashboard, bukan sekali
+       untuk setiap marketplace.
+    */
+    let costsData = [];
+    try{
+        costsData =
+            JSON.parse(
+                sellerBooksStorage.getItem(
+                    "sellerbooks_costs"
+                ) || "[]"
+            );
+    }catch(error){
+        costsData = [];
+    }
+
     const rows =
         activeMarketplaces.map(
             function(marketplace){
@@ -19144,78 +19161,78 @@ function renderMarketplacePerformance(){
 
                 let otherCosts = 0;
 
-                try{
+                /*
+                   PATCH C:
+                   sellerbooks_costs sebelumnya di-parse dari localStorage
+                   ulang untuk SETIAP marketplace. Untuk client dengan banyak
+                   marketplace, ini membuat JSON biaya yang sama dibaca dan
+                   di-parse berulang kali dalam satu render Dashboard.
+                   
+                   Sekarang data biaya dibaca sekali di luar loop marketplace.
+                   Perhitungan biaya tetap sama; hanya sumber array-nya yang
+                   dipakai ulang.
+                */
+                if(Array.isArray(costsData)){
 
-                    const costsData =
-                        JSON.parse(
-                            sellerBooksStorage.getItem(
-                                "sellerbooks_costs"
-                            ) || "[]"
-                        );
+                    costsData.forEach(
+                        function(cost){
 
-                    if(Array.isArray(costsData)){
+                            const category =
+                                String(
+                                    cost.category || ""
+                                )
+                                .trim()
+                                .toLowerCase();
 
-                        costsData.forEach(
-                            function(cost){
-
-                                const category =
-                                    String(
-                                        cost.category || ""
-                                    )
-                                    .trim()
-                                    .toLowerCase();
-
-                                if(
-                                    category === "packing" ||
-                                    category.includes("packing")
-                                ){
-                                    return;
-                                }
-
-                                const dateValue =
-                                    cost.date ||
-                                    cost.createdAt;
-
-                                if(
-                                    dateValue &&
-                                    !isDateInPeriod(
-                                        dateValue,
-                                        currentDashboardPeriod
-                                    )
-                                ){
-                                    return;
-                                }
-
-                                const costMarketplaceId =
-                                    String(
-                                        cost.marketplaceId || ""
-                                    )
-                                    .trim();
-
-                                if(
-                                    costMarketplaceId &&
-                                    costMarketplaceId !==
-                                    marketplaceId
-                                ){
-                                    return;
-                                }
-
-                                if(
-                                    costMarketplaceId ===
-                                    marketplaceId
-                                ){
-                                    otherCosts +=
-                                        Number(
-                                            cost.amount
-                                        ) || 0;
-                                }
-
+                            if(
+                                category === "packing" ||
+                                category.includes("packing")
+                            ){
+                                return;
                             }
-                        );
 
-                    }
+                            const dateValue =
+                                cost.date ||
+                                cost.createdAt;
 
-                }catch(error){}
+                            if(
+                                dateValue &&
+                                !isDateInPeriod(
+                                    dateValue,
+                                    currentDashboardPeriod
+                                )
+                            ){
+                                return;
+                            }
+
+                            const costMarketplaceId =
+                                String(
+                                    cost.marketplaceId || ""
+                                )
+                                .trim();
+
+                            if(
+                                costMarketplaceId &&
+                                costMarketplaceId !==
+                                marketplaceId
+                            ){
+                                return;
+                            }
+
+                            if(
+                                costMarketplaceId ===
+                                marketplaceId
+                            ){
+                                otherCosts +=
+                                    Number(
+                                        cost.amount
+                                    ) || 0;
+                            }
+
+                        }
+                    );
+
+                }
 
                 const netSales =
                     sales -
