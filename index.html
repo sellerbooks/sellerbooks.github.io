@@ -23559,6 +23559,19 @@ function saveProductData(){
     */
     sellerBooksRecordTodayProductSnapshots();
 
+    /*
+       Master Produk berubah -> hasil cache Rincian harus dihitung ulang.
+       Hanya membatalkan cache tampilan; tidak mengubah data bisnis,
+       transaksi, snapshot, atau rumus perhitungan.
+    */
+    if(typeof sellerBooksProductAnalysisRowsCache !== "undefined"){
+        sellerBooksProductAnalysisRowsCache = {
+            sourceTransactions:null,
+            key:"",
+            rows:null
+        };
+    }
+
 }
 
 
