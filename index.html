@@ -16938,6 +16938,32 @@ function calculateProductAnalysisRows(){
     const transactions =
         getProductAnalysisTransactions();
 
+    /*
+       PATCH B:
+       Bangun index Master Produk sekali agar setiap transaksi tidak
+       memanggil getMasterProductBySku() berulang-ulang.
+       Ini hanya optimasi lookup; rumus sales/HPP/admin/profit tetap sama.
+    */
+    const productMap = new Map();
+
+    let masterProducts = [];
+    try{
+        masterProducts = JSON.parse(
+            sellerBooksStorage.getItem("sellerbooks_products") || "[]"
+        );
+    }catch(error){
+        masterProducts = [];
+    }
+
+    if(Array.isArray(masterProducts)){
+        masterProducts.forEach(function(product){
+            const sku = String(product?.sku || "").trim().toLowerCase();
+            if(sku){
+                productMap.set(sku, product);
+            }
+        });
+    }
+
     const rows = new Map();
 
     transactions.forEach(function(item){
@@ -16959,7 +16985,7 @@ function calculateProductAnalysisRows(){
                 sales:0,
                 hpp:0,
                 admin:0,
-                product:getMasterProductBySku(sku),
+                product:productMap.get(key) || null,
                 marketplaces:new Set()
             });
         }
@@ -16980,8 +17006,7 @@ function calculateProductAnalysisRows(){
             getReportTransactionSalesAmount(item);
 
         const product =
-            row.product ||
-            getMasterProductBySku(sku);
+            row.product;
 
         const cost =
             getReportTransactionCost(item);
