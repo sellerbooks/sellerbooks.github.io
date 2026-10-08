@@ -21181,8 +21181,17 @@ async function refreshStoreIntegrationStates(force){
         sellerBooksStoreConnectionsInitialized = true;
 
         // Setiap kali status koneksi selesai dibaca dari Supabase,
-        // render ulang kartu akun toko agar tombol mengikuti status terbaru.
-        if(typeof renderStores === "function"){
+        // render ulang kartu akun toko hanya jika halaman Stores sedang aktif.
+        // Polling tetap berjalan dan state koneksi tetap diperbarui di background,
+        // tetapi halaman lain tidak ikut menerima render DOM setiap 1,5 detik.
+        const storesView = document.getElementById("stores");
+        const storesViewIsActive =
+            !!storesView && storesView.classList.contains("active");
+
+        if(
+            storesViewIsActive &&
+            typeof renderStores === "function"
+        ){
             renderStores(true);
         }
     }catch(error){
