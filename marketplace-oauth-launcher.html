@@ -104,11 +104,10 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
       const type=detectMarketplace(marketplaceName);
       if(!type)throw new Error("Marketplace tidak dikenali.");
 
-      // Hanya TikTok Shop dan Lazada yang saat ini sudah aktif.
-      // Shopee, Blibli, Toco, Tokopedia, dan marketplace lain yang belum
-      // memiliki API resmi SellerBooks ditampilkan sebagai "Segera Hadir".
-      // Jangan tampilkan error teknis untuk marketplace yang belum tersedia.
-      if(type!=="tiktok" && type!=="lazada"){
+      // TikTok Shop, Shopee, dan Lazada sudah memiliki alur OAuth backend.
+      // Blibli, Toco, Tokopedia, dan marketplace lain yang belum siap
+      // tetap ditampilkan sebagai "Segera Hadir".
+      if(type!=="tiktok" && type!=="shopee" && type!=="lazada"){
         showComingSoon(marketplaceName||type);
         return;
       }
