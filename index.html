@@ -18311,6 +18311,20 @@ function showView(viewId, button, saveHistory = true){
     }
 
     /*
+       Sembunyikan subtitle topbar pada semua halaman selain Dashboard,
+       karena deskripsi halaman sudah tampil di area konten.
+       Dashboard tetap mempertahankan subtitle topbar.
+    */
+    const topSubtitle = document.getElementById("topSubtitle");
+    if(topSubtitle){
+        topSubtitle.hidden = (viewId !== "dashboard");
+        topSubtitle.setAttribute(
+            "aria-hidden",
+            viewId !== "dashboard" ? "true" : "false"
+        );
+    }
+
+    /*
        Dashboard memakai bahasa akun aktif.
        Halaman login tetap berada di luar engine i18n.
     */
