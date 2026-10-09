@@ -20939,6 +20939,7 @@ async function integrateStoreAccount(storeId){
     */
     const providerMap = {
         tiktok:  "sellerbooks-tiktok-oauth",
+        shopee:  "sellerbooks-shopee-oauth",
         lazada:  "sellerbooks-lazada-oauth"
     };
 
@@ -20951,15 +20952,16 @@ async function integrateStoreAccount(storeId){
 
     if(marketplaceKey.includes("tiktok")){
         endpoint = providerMap.tiktok;
+    }else if(marketplaceKey.includes("shopee")){
+        endpoint = providerMap.shopee;
     }else if(marketplaceKey.includes("lazada")){
         endpoint = providerMap.lazada;
     }
 
     /*
-       Untuk sementara hanya TikTok Shop dan Lazada yang sudah aktif.
-       Marketplace lain JANGAN diteruskan ke OAuth backend karena
-       konektornya belum siap. Tampilkan popup "Segera Hadir" langsung
-       dari halaman SellerBooks agar tidak muncul error konfigurasi OAuth.
+       TikTok Shop, Shopee, dan Lazada memakai lifecycle OAuth yang sama.
+       Shopee menggunakan Edge Function sellerbooks-shopee-oauth yang sudah ada.
+       Marketplace lain tetap menampilkan popup "Segera Hadir".
     */
     if(!endpoint){
         sellerBooksAlert(
