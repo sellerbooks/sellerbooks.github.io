@@ -17559,7 +17559,9 @@ async function downloadProductAnalysisPDF(){
         });
 
         const dateKey = typeof getSellerBooksDayKey === "function" ? getSellerBooksDayKey() : new Date().toISOString().slice(0,10);
-        const fileName = (language === "en" ? "SellerBooks_Product_Details_" : "SellerBooks_Rincian_") + sellerBooksPdfEscapeFileName(dateKey) + ".pdf";
+        /* Samakan pola nama file dengan PDF Laporan: jenis dokumen + periode aktif + tanggal. */
+        const safePeriod = sellerBooksPdfEscapeFileName(periodLabel);
+        const fileName = (language === "en" ? "SellerBooks_Product_Details_" : "SellerBooks_Rincian_") + safePeriod + "_" + sellerBooksPdfEscapeFileName(dateKey) + ".pdf";
 
         /* Samakan mekanisme unduh dengan PDF Laporan agar Android WebView menyimpan file. */
         const blob = doc.output("blob");
