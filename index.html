@@ -17531,6 +17531,13 @@ async function downloadProductAnalysisPDF(){
 
         const dateKey = typeof getSellerBooksDayKey === "function" ? getSellerBooksDayKey() : new Date().toISOString().slice(0,10);
         doc.save("SellerBooks-Product-Details-" + sellerBooksPdfEscapeFileName(dateKey) + ".pdf");
+
+        sellerBooksAlert(
+            (language === "en" ? "✅ Product PDF created successfully.\\n\\n" : "✅ PDF rincian produk berhasil dibuat.\\n\\n") +
+            (language === "en" ? "Period: " : "Periode: ") + periodLabel + "\\n" +
+            "Marketplace: " + marketplaceLabel + "\\n" +
+            (language === "en" ? "Store Account: " : "Akun Toko: ") + storeLabel
+        );
     }catch(error){
         console.error("Download PDF Rincian Produk gagal:",error);
         if(typeof sellerBooksAlert === "function"){
