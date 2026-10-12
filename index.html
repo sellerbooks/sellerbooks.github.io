@@ -17534,8 +17534,8 @@ async function downloadProductAnalysisPDF(){
 
         sellerBooksAlert(
             (language === "en" ? "✅ Product PDF created successfully. " : "✅ PDF rincian produk berhasil dibuat. ") +
-            (language === "en" ? "Period: " : "Periode: ") + periodLabel + "\\n" +
-            "Marketplace: " + marketplaceLabel + "\\n" +
+            (language === "en" ? "Period: " : "Periode: ") + periodLabel + " | " +
+            "Marketplace: " + marketplaceLabel + " | " +
             (language === "en" ? "Store Account: " : "Akun Toko: ") + storeLabel
         );
     }catch(error){
