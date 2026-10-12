@@ -103,7 +103,7 @@ public partial class OAuthWindow : Window
             // atau mencoba window.close().
             if (!string.Equals(
                     uri.Host,
-                    "sellerbooks.github.io",
+                    "sellerbooks.amasaindonesia.com",
                     StringComparison.OrdinalIgnoreCase))
                 return;
 
