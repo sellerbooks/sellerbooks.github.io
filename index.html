@@ -17487,6 +17487,8 @@ async function downloadProductAnalysisPDF(){
         const totalQty = rows.reduce((sum,row)=>sum + (Number(row.qty)||0),0);
         const totalHpp = rows.reduce((sum,row)=>sum + (Number(row.hpp)||0),0);
         const totalProfit = rows.reduce((sum,row)=>sum + (Number(row.profit)||0),0);
+        /* Jumlah resi mengikuti perhitungan total packing pada Laporan, dengan filter Rincian aktif. */
+        const totalResi = calculateReportPacking(getProductAnalysisTransactions());
         const body = rows.map(function(row){
             return [
                 String(row.sku || "-"),
@@ -17495,7 +17497,8 @@ async function downloadProductAnalysisPDF(){
                 sellerBooksPdfFormatRupiah(row.profit),
                 row.isLoss
                     ? (language === "en" ? "LOSS" : "MINUS")
-                    : (language === "en" ? "PROFIT" : "UNTUNG")
+                    : (language === "en" ? "PROFIT" : "UNTUNG"),
+                ""
             ];
         });
         body.push([
@@ -17503,14 +17506,15 @@ async function downloadProductAnalysisPDF(){
             sellerBooksPdfFormatNumber(totalQty),
             sellerBooksPdfFormatRupiah(totalHpp),
             sellerBooksPdfFormatRupiah(totalProfit),
-            ""
+            "",
+            sellerBooksPdfFormatNumber(totalResi)
         ]);
 
         doc.autoTable({
             startY:42,
             margin:{left:14,right:14},
             theme:"grid",
-            head:[["SKU","QTY",language === "en" ? "COGS" : "HPP",language === "en" ? "PRODUCT PROFIT" : "LABA PRODUK","STATUS"]],
+            head:[["SKU","QTY",language === "en" ? "COGS" : "HPP",language === "en" ? "PRODUCT PROFIT" : "LABA PRODUK","STATUS",language === "en" ? "TOTAL WAYBILLS" : "TOTAL RESI"]],
             body:body,
             styles:{font:"helvetica",fontSize:8,cellPadding:2.2,overflow:"linebreak"},
             headStyles:{fontStyle:"bold"},
@@ -17518,8 +17522,9 @@ async function downloadProductAnalysisPDF(){
                 0:{cellWidth:65},
                 1:{cellWidth:25,halign:"right"},
                 2:{cellWidth:45,halign:"right"},
-                3:{cellWidth:50,halign:"right"},
-                4:{cellWidth:30,halign:"center"}
+                3:{cellWidth:45,halign:"right"},
+                4:{cellWidth:25,halign:"center"},
+                5:{cellWidth:32,halign:"right"}
             },
             didParseCell:function(data){
                 if(data.section === "body" && data.row.index === body.length - 1){
