@@ -8863,6 +8863,19 @@ function sellerBooksPdfFormatDateNow(){
     }
 }
 
+function sellerBooksPdfFormatRupiah(value){
+    return formatRupiah(Number(value) || 0);
+}
+
+function sellerBooksPdfFormatNumber(value){
+    const language =
+        typeof sellerBooksCurrentLanguage === "function" &&
+        sellerBooksCurrentLanguage() === "en" ? "en-US" : "id-ID";
+    return (Number(value) || 0).toLocaleString(language,{
+        maximumFractionDigits:2
+    });
+}
+
 function sellerBooksPdfEscapeFileName(value){
     return String(value || "SellerBooks")
         .replace(/[\\\/:*?"<>|]+/g,"-")
