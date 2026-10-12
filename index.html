@@ -17469,7 +17469,7 @@ function formatProductAnalysisCurrency(value){
 
 async function downloadProductAnalysisPDF(){
     const button = document.getElementById("downloadProductAnalysisPDFButton");
-    const language = sellerBooksCurrentLanguage() === "en" ? "en" : "id";
+    const language = String(sellerBooksCurrentLanguage() || "id").trim().toLowerCase().startsWith("en") ? "en" : "id";
     const originalText = button ? button.textContent : "";
 
     try{
