@@ -17559,7 +17559,7 @@ async function downloadProductAnalysisPDF(){
         });
 
         const dateKey = typeof getSellerBooksDayKey === "function" ? getSellerBooksDayKey() : new Date().toISOString().slice(0,10);
-        const fileName = "SellerBooks_Product_Details_" + sellerBooksPdfEscapeFileName(dateKey) + ".pdf";
+        const fileName = (language === "en" ? "SellerBooks_Product_Details_" : "SellerBooks_Rincian_") + sellerBooksPdfEscapeFileName(dateKey) + ".pdf";
 
         /* Samakan mekanisme unduh dengan PDF Laporan agar Android WebView menyimpan file. */
         const blob = doc.output("blob");
