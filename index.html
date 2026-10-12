@@ -17530,7 +17530,27 @@ async function downloadProductAnalysisPDF(){
         });
 
         const dateKey = typeof getSellerBooksDayKey === "function" ? getSellerBooksDayKey() : new Date().toISOString().slice(0,10);
-        doc.save("SellerBooks-Product-Details-" + sellerBooksPdfEscapeFileName(dateKey) + ".pdf");
+        const fileName = "SellerBooks_Product_Details_" + sellerBooksPdfEscapeFileName(dateKey) + ".pdf";
+
+        /* Samakan mekanisme unduh dengan PDF Laporan agar Android WebView menyimpan file. */
+        const blob = doc.output("blob");
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.style.display = "none";
+
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+
+        /* Beri waktu browser/WebView membaca Blob URL sebelum dilepas. */
+        setTimeout(function(){
+            try{
+                URL.revokeObjectURL(url);
+            }catch(error){}
+        },15000);
 
         sellerBooksAlert(
             (language === "en" ? "✅ Product PDF created successfully. " : "✅ PDF rincian produk berhasil dibuat. ") +
