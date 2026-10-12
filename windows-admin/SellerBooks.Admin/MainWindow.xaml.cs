@@ -12,7 +12,7 @@ namespace SellerBooks.Admin;
 
 public partial class MainWindow : Window
 {
-    private const string AppUrl = "https://sellerbooks.github.io/";
+    private const string AppUrl = "https://sellerbooks.amasaindonesia.com/";
     private readonly string _userDataFolder;
     private readonly DispatcherTimer _networkTimer;
     private bool _offline;
@@ -103,10 +103,11 @@ public partial class MainWindow : Window
         web.Settings.UserAgent = web.Settings.UserAgent + " SellerBooksAdmin/1.0";
 
         web.AddWebResourceRequestedFilter(
-            "https://sellerbooks.github.io/*",
+            "https://sellerbooks.amasaindonesia.com/*",
             CoreWebView2WebResourceContext.All);
 
         web.WebResourceRequested += Web_WebResourceRequested;
+        web.NavigationStarting += Web_NavigationStarting;
         web.NavigationCompleted += Web_NavigationCompleted;
         web.NewWindowRequested += Web_NewWindowRequested;
         web.WebMessageReceived += Web_WebMessageReceived;
@@ -119,6 +120,58 @@ public partial class MainWindow : Window
         CoreWebView2WebResourceRequestedEventArgs e)
     {
         e.Request.Headers.SetHeader("Cache-Control", "no-cache");
+    }
+
+    private void Web_NavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e)
+    {
+        if (!Uri.TryCreate(e.Uri, UriKind.Absolute, out var uri))
+            return;
+
+        var scheme = uri.Scheme.ToLowerInvariant();
+        var host = uri.Host.ToLowerInvariant();
+        var isEmail = scheme == "mailto";
+        var isPhone = scheme == "tel";
+        var isWhatsApp = scheme == "whatsapp" ||
+                         host == "wa.me" ||
+                         host == "api.whatsapp.com" ||
+                         host == "web.whatsapp.com";
+
+        if (!isEmail && !isPhone && !isWhatsApp)
+            return;
+
+        e.Cancel = true;
+        try
+        {
+            if (isEmail)
+            {
+                // Buka Gmail Compose langsung; alamat tujuan tetap mengikuti mailto dari website.
+                var recipient = Uri.UnescapeDataString(uri.OriginalString["mailto:".Length..].Split('?')[0]);
+                var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                var compose = "https://mail.google.com/mail/?view=cm&fs=1";
+                if (!string.IsNullOrWhiteSpace(recipient))
+                    compose += "&to=" + Uri.EscapeDataString(recipient);
+                if (!string.IsNullOrWhiteSpace(query["subject"]))
+                    compose += "&su=" + Uri.EscapeDataString(query["subject"]!);
+                if (!string.IsNullOrWhiteSpace(query["body"]))
+                    compose += "&body=" + Uri.EscapeDataString(query["body"]!);
+
+                Process.Start(new ProcessStartInfo { FileName = compose, UseShellExecute = true });
+            }
+            else if (isPhone)
+            {
+                Process.Start(new ProcessStartInfo { FileName = uri.AbsoluteUri, UseShellExecute = true });
+            }
+            else
+            {
+                // Utamakan aplikasi WhatsApp desktop; Windows menangani fallback bila tidak tersedia.
+                Process.Start(new ProcessStartInfo { FileName = uri.AbsoluteUri, UseShellExecute = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, "Tautan tidak dapat dibuka.\\n\\n" + ex.Message,
+                "SellerBooks Admin", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void Web_NavigationCompleted(
@@ -150,7 +203,7 @@ public partial class MainWindow : Window
             if (!Uri.TryCreate(source, UriKind.Absolute, out var sourceUri) ||
                 !string.Equals(
                     sourceUri.Host,
-                    "sellerbooks.github.io",
+                    "sellerbooks.amasaindonesia.com",
                     StringComparison.OrdinalIgnoreCase))
                 return;
         }
@@ -238,7 +291,7 @@ public partial class MainWindow : Window
                         StringComparison.OrdinalIgnoreCase) &&
                     string.Equals(
                         parsedLauncherUri.Host,
-                        "sellerbooks.github.io",
+                        "sellerbooks.amasaindonesia.com",
                         StringComparison.OrdinalIgnoreCase))
                 {
                     launcherUrl = parsedLauncherUri.AbsoluteUri;
