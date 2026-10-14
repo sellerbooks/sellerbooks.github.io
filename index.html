@@ -21092,89 +21092,80 @@ async function disconnectStoreAccount(storeId){
 
 async function connectBlibliStoreManually(store, marketplace){
     const en = sellerBooksCurrentLanguage() === "en";
-    const ask = (label, defaultValue) => window.prompt(label, defaultValue || "");
-    const clientId = ask(en ? "Blibli API Client ID" : "Blibli API Client ID", "");
-    if(clientId === null) return;
-    const clientKey = ask(en ? "Blibli API Client Key (secret)" : "Blibli API Client Key (rahasia)", "");
-    if(clientKey === null) return;
-    const sellerKey = ask(en ? "Blibli API Seller Key from Seller Center > API settings" : "API Seller Key dari Seller Center > Pengaturan API klien", "");
-    if(sellerKey === null) return;
-    const storeCode = ask(en ? "Blibli store code (example: ARA-70501)" : "Kode toko Blibli (contoh: ARA-70501)", "");
-    if(storeCode === null) return;
-    const username = ask(en ? "Email/username used to sign in to Blibli Seller Center" : "Email/username untuk login Blibli Seller Center", "");
-    if(username === null) return;
-    const storeId = ask(en ? "Blibli Store ID (use the value provided by Blibli; default 10001)" : "Store ID Blibli (gunakan nilai dari Blibli; default 10001)", "10001");
-    if(storeId === null) return;
-    const channelId = ask(en ? "Channel ID (default SellerBooks MBI)" : "Channel ID (default SellerBooks MBI)", "SellerBooks MBI");
-    if(channelId === null) return;
-    if(!clientId.trim() || !clientKey.trim() || !sellerKey.trim() || !storeCode.trim() || !username.trim() || !storeId.trim() || !channelId.trim()){
-        sellerBooksAlert(en ? "All Blibli API fields are required. No credentials were saved." : "Semua kolom API Blibli wajib diisi. Kredensial belum disimpan.", sellerBooksStoreText("connectTitle"));
-        return;
-    }
-    const confirmed = await sellerBooksConfirm(
-        en
-            ? "Save the Blibli credentials securely in Supabase Vault and test the connection? The API keys will not be shown in the app after saving."
-            : "Simpan kredensial Blibli secara aman di Supabase Vault dan uji koneksi? API key tidak akan ditampilkan di aplikasi setelah disimpan.",
-        sellerBooksStoreText("connectTitle")
-    );
-    if(!confirmed) return;
-    try{
-        const sessionResult = await sellerBooksSupabase.auth.getSession();
-        const session = sessionResult?.data?.session;
-        if(sessionResult?.error || !session?.access_token) throw new Error(en ? "SellerBooks session expired. Please sign in again." : "Sesi SellerBooks kedaluwarsa. Silakan login kembali.");
-        const upsert = await sellerBooksSupabase.rpc("sellerbooks_api_upsert_connection", {
-            p_store_id: String(store.id),
-            p_marketplace_id: String(store.marketplaceId),
-            p_marketplace: String(marketplace.name || "Blibli")
-        });
-        if(upsert.error) throw upsert.error;
-        const connection = Array.isArray(upsert.data) ? upsert.data[0] : upsert.data;
-        if(!connection?.id) throw new Error(en ? "Could not create the Blibli API connection." : "Tidak bisa membuat koneksi API Blibli.");
-        const credentials = {
-            api_client_id: clientId.trim(),
-            api_client_key: clientKey.trim(),
-            api_seller_key: sellerKey.trim(),
-            store_code: storeCode.trim(),
-            username: username.trim(),
-            store_id: storeId.trim(),
-            channel_id: channelId.trim()
-        };
-        const saved = await sellerBooksSupabase.rpc("sellerbooks_api_set_secret", {
-            p_connection_id: String(connection.id),
-            p_secret: JSON.stringify(credentials)
-        });
-        if(saved.error) throw saved.error;
-        const response = await fetch(SELLERBOOKS_SUPABASE_URL + "/functions/v1/sellerbooks-blibli-test-connection", {
-            method: "POST",
-            headers: {
-                apikey: SELLERBOOKS_SUPABASE_KEY,
-                Authorization: "Bearer " + session.access_token,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({connection_id: String(connection.id)})
-        });
-        const result = await response.json().catch(() => ({}));
-        await refreshStoreIntegrationStates(true);
-        if(!response.ok || !result.ok){
-            throw new Error(result.error || (en ? "Blibli connection test failed." : "Tes koneksi Blibli gagal."));
+    const L = en ? {
+        title:"Connect Blibli API",intro:"Enter your Blibli API credentials to save them securely and test the connection. This step will not import orders.",
+        clientId:"API Client ID",clientKey:"API Client Key",sellerKey:"API Seller Key",storeCode:"Blibli Store Code",
+        username:"Seller Center username / email",storeId:"Store ID",channelId:"Channel ID",
+        note:"Credentials are saved securely and will not be displayed again.",
+        consent:"I confirm these details are correct and agree to save them securely and test the connection.",
+        cancel:"Cancel",submit:"Save & Connect",required:"Complete all fields and confirm the checkbox. Nothing has been saved yet.",
+        session:"SellerBooks session expired. Please sign in again.",create:"Could not create the Blibli API connection.",
+        connected:"Blibli API connected successfully. No orders were imported. You can continue to the order-sync step next.",
+        failed:"Blibli connection failed.",server:"Server error."
+    } : {
+        title:"Hubungkan API Blibli",intro:"Masukkan kredensial API Blibli untuk disimpan dengan aman dan menguji koneksi. Tahap ini tidak mengimpor pesanan.",
+        clientId:"API Client ID",clientKey:"API Client Key",sellerKey:"API Seller Key",storeCode:"Kode Toko Blibli",
+        username:"Username / email Seller Center",storeId:"Store ID",channelId:"Channel ID",
+        note:"Kredensial disimpan dengan aman dan tidak akan ditampilkan kembali.",
+        consent:"Saya memastikan data sudah benar dan setuju menyimpannya dengan aman serta menguji koneksi.",
+        cancel:"Batal",submit:"Simpan & Hubungkan",required:"Lengkapi semua kolom dan centang persetujuan. Belum ada data yang disimpan.",
+        session:"Sesi SellerBooks kedaluwarsa. Silakan login kembali.",create:"Tidak bisa membuat koneksi API Blibli.",
+        connected:"API Blibli berhasil terhubung. Belum ada pesanan yang diimpor. Berikutnya kita lanjutkan tahap pengambilan pesanan.",
+        failed:"Koneksi Blibli gagal.",server:"Terjadi kesalahan server."
+    };
+    const credentials = await new Promise(resolve => {
+        document.getElementById("sellerbooks-blibli-modal")?.remove();
+        if(!document.getElementById("sellerbooks-blibli-modal-style")){
+            const style = document.createElement("style");
+            style.id = "sellerbooks-blibli-modal-style";
+            style.textContent = ".sb-blibli-overlay{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,15,30,.68);backdrop-filter:blur(5px);font-family:inherit}.sb-blibli-dialog{width:min(680px,100%);max-height:92vh;overflow:auto;background:var(--card-bg,#fff);color:var(--text-color,#172033);border:1px solid rgba(120,135,160,.25);border-radius:20px;box-shadow:0 24px 80px rgba(0,0,0,.3);animation:sbBlibliIn .18s ease-out}.sb-blibli-header{display:flex;align-items:flex-start;gap:13px;padding:22px 24px 17px;border-bottom:1px solid rgba(120,135,160,.2)}.sb-blibli-mark{flex:0 0 42px;height:42px;border-radius:13px;display:grid;place-items:center;background:#e7f7ed;color:#087b42;font-size:22px;font-weight:800}.sb-blibli-heading{flex:1;min-width:0}.sb-blibli-heading h2{margin:1px 0 7px;font-size:20px;line-height:1.3;font-weight:750}.sb-blibli-heading p{margin:0;font-size:13px;line-height:1.55;opacity:.76}.sb-blibli-close{border:0;background:transparent;color:inherit;opacity:.65;font-size:28px;cursor:pointer}.sb-blibli-form{padding:20px 24px 24px}.sb-blibli-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.sb-blibli-grid label{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:650}.sb-blibli-grid input{width:100%;min-width:0;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;background:var(--input-bg,#fff);color:var(--text-color,#172033);padding:11px 12px;font:inherit;font-size:14px;outline:none}.sb-blibli-grid input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.13)}.sb-blibli-full{grid-column:1/-1}.sb-blibli-secure{display:flex;gap:9px;margin-top:17px;padding:11px 12px;border-radius:10px;background:rgba(16,185,129,.09);font-size:12px;line-height:1.45}.sb-blibli-consent{display:flex;align-items:flex-start;gap:9px;margin-top:15px;font-size:12px;line-height:1.5;cursor:pointer}.sb-blibli-consent input{margin-top:3px;accent-color:#2563eb}.sb-blibli-error{display:none;margin-top:12px;padding:10px 12px;border-radius:9px;background:#fff1f2;color:#be123c;font-size:12px}.sb-blibli-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}.sb-blibli-actions button{border:0;border-radius:10px;padding:11px 16px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}.sb-blibli-cancel{background:#e8edf5;color:#263247}.sb-blibli-submit{background:#1459d9;color:#fff}.sb-blibli-submit:disabled{opacity:.65;cursor:wait}@keyframes sbBlibliIn{from{opacity:0;transform:translateY(8px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}@media(max-width:560px){.sb-blibli-overlay{padding:9px}.sb-blibli-dialog{border-radius:15px;max-height:95vh}.sb-blibli-header{padding:17px 15px 13px}.sb-blibli-form{padding:15px}.sb-blibli-grid{grid-template-columns:1fr;gap:12px}.sb-blibli-full{grid-column:auto}.sb-blibli-heading h2{font-size:18px}.sb-blibli-actions button{flex:1}}";
+            document.head.appendChild(style);
         }
-        sellerBooksAlert(
-            en
-                ? "Blibli API connected successfully. No orders were imported. You can continue to the order-sync step next."
-                : "API Blibli berhasil terhubung. Belum ada pesanan yang diimpor. Berikutnya kita lanjutkan tahap pengambilan pesanan.",
-            sellerBooksStoreText("connectTitle")
-        );
+        const modal = document.createElement("div");
+        modal.id = "sellerbooks-blibli-modal";
+        modal.className = "sb-blibli-overlay";
+        modal.innerHTML = "<section class=\"sb-blibli-dialog\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"sb-blibli-title\"><header class=\"sb-blibli-header\"><div class=\"sb-blibli-mark\">B</div><div class=\"sb-blibli-heading\"><h2 id=\"sb-blibli-title\">"+L.title+"</h2><p>"+L.intro+"</p></div><button type=\"button\" class=\"sb-blibli-close\" aria-label=\""+L.cancel+"\">×</button></header><form class=\"sb-blibli-form\"><div class=\"sb-blibli-grid\"><label>"+L.clientId+"<input name=\"clientId\" autocomplete=\"off\" required placeholder=\"mta-api-...\" /></label><label>"+L.clientKey+"<input name=\"clientKey\" type=\"password\" autocomplete=\"new-password\" required /></label><label>"+L.sellerKey+"<input name=\"sellerKey\" type=\"password\" autocomplete=\"new-password\" required /></label><label>"+L.storeCode+"<input name=\"storeCode\" required value=\"ARA-70501\" /></label><label>"+L.username+"<input name=\"username\" autocomplete=\"username\" required /></label><label>"+L.storeId+"<input name=\"storeId\" required value=\"10001\" /></label><label class=\"sb-blibli-full\">"+L.channelId+"<input name=\"channelId\" required value=\"SellerBooks MBI\" /></label></div><div class=\"sb-blibli-secure\"><span aria-hidden=\"true\">🔒</span><span>"+L.note+"</span></div><label class=\"sb-blibli-consent\"><input name=\"consent\" type=\"checkbox\" required /><span>"+L.consent+"</span></label><div class=\"sb-blibli-error\" role=\"alert\" aria-live=\"polite\"></div><footer class=\"sb-blibli-actions\"><button type=\"button\" class=\"sb-blibli-cancel\">"+L.cancel+"</button><button type=\"submit\" class=\"sb-blibli-submit\">"+L.submit+"</button></footer></form></section>";
+        document.body.appendChild(modal);
+        const form = modal.querySelector("form");
+        let settled = false;
+        const finish = value => { if(settled)return; settled=true; document.removeEventListener("keydown",onKey); modal.remove(); resolve(value); };
+        const onKey = event => { if(event.key==="Escape") finish(null); };
+        document.addEventListener("keydown",onKey);
+        modal.querySelector(".sb-blibli-close").addEventListener("click",()=>finish(null));
+        modal.querySelector(".sb-blibli-cancel").addEventListener("click",()=>finish(null));
+        modal.addEventListener("click",event=>{if(event.target===modal)finish(null);});
+        form.addEventListener("submit",event=>{
+            event.preventDefault();
+            const d=new FormData(form);
+            const values={api_client_id:String(d.get("clientId")||"").trim(),api_client_key:String(d.get("clientKey")||"").trim(),api_seller_key:String(d.get("sellerKey")||"").trim(),store_code:String(d.get("storeCode")||"").trim(),username:String(d.get("username")||"").trim(),store_id:String(d.get("storeId")||"").trim(),channel_id:String(d.get("channelId")||"").trim()};
+            const error=modal.querySelector(".sb-blibli-error");
+            if(Object.values(values).some(v=>!v)||!d.get("consent")){error.textContent=L.required;error.style.display="block";return;}
+            finish(values);
+        });
+        modal.querySelector('input[name="clientId"]').focus();
+    });
+    if(!credentials)return;
+    try{
+        const sessionResult=await sellerBooksSupabase.auth.getSession();
+        const session=sessionResult?.data?.session;
+        if(sessionResult?.error||!session?.access_token)throw new Error(L.session);
+        const upsert=await sellerBooksSupabase.rpc("sellerbooks_api_upsert_connection",{p_store_id:String(store.id),p_marketplace_id:String(store.marketplaceId),p_marketplace:String(marketplace.name||"Blibli")});
+        if(upsert.error)throw upsert.error;
+        const connection=Array.isArray(upsert.data)?upsert.data[0]:upsert.data;
+        if(!connection?.id)throw new Error(L.create);
+        const saved=await sellerBooksSupabase.rpc("sellerbooks_api_set_secret",{p_connection_id:String(connection.id),p_secret:JSON.stringify(credentials)});
+        if(saved.error)throw saved.error;
+        const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-blibli-test-connection",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id)})});
+        const result=await response.json().catch(()=>({}));
+        await refreshStoreIntegrationStates(true);
+        if(!response.ok||!result.ok)throw new Error(result.error||(en?"Blibli connection test failed.":"Tes koneksi Blibli gagal."));
+        sellerBooksAlert(L.connected,sellerBooksStoreText("connectTitle"));
     }catch(error){
-        console.error("Koneksi Blibli gagal:", error);
+        console.error("Koneksi Blibli gagal:",error);
         await refreshStoreIntegrationStates(true).catch(()=>{});
-        sellerBooksAlert(
-            (en ? "Blibli connection failed.\n\n" : "Koneksi Blibli gagal.\n\n") +
-            (error?.message || (en ? "Server error." : "Terjadi kesalahan server.")),
-            sellerBooksStoreText("connectTitle")
-        );
+        sellerBooksAlert(L.failed+"\n\n"+(error?.message||L.server),sellerBooksStoreText("connectTitle"));
     }
 }
-
 async function integrateStoreAccount(storeId){
 
     const store = stores.find(function(item){
