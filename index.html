@@ -21139,6 +21139,7 @@ async function connectBlibliStoreManually(store, marketplace){
                 "Scroll down to Connect API Client, enter <strong><code>mta-api-adiimasadistribu-6e304</code></strong> without quotation marks, then click Connect.",
                 "Copy the store code and API password into the matching fields in SellerBooks.",
                 "Enter the username/email used for your Blibli Seller Center store.",
+                "Leave Store ID and Channel ID at their default values. Do not change them.",
                 "Tick the consent checkbox and click Save & Connect."
             ] : [
                 "Login pada Seller Center Blibli Anda.",
@@ -21147,6 +21148,7 @@ async function connectBlibliStoreManually(store, marketplace){
                 "Lalu scroll ke bawah, pada Hubungkan API Klien salin kode <strong><code>mta-api-adiimasadistribu-6e304</code></strong> dan paste pada kolom, lalu klik Hubungkan.",
                 "Salin kode toko dan kata sandi API ke kolom yang tersedia di SellerBooks.",
                 "Masukkan username/email toko Blibli Anda.",
+                "Store ID dan Channel ID biarkan default, jangan dirubah.",
                 "Centang persetujuan, lalu klik Simpan & Hubungkan."
             ];
             const example = '<img class="sb-blibli-example" src="/contoh-api-blibli.png" alt="' + (en ? "Blibli Seller Center API settings screenshot" : "Screenshot pengaturan API Seller Center Blibli") + '" loading="lazy" />';
@@ -21157,6 +21159,7 @@ async function connectBlibliStoreManually(store, marketplace){
             help.addEventListener("click", event => { if (event.target === help) closeHelp(); });
         });
         const form = modal.querySelector("form");
+        form.noValidate = true; // Use SellerBooks-localized validation messages instead of browser-language tooltips.
         let settled = false;
         const finish = value => { if(settled)return; settled=true; document.removeEventListener("keydown",onKey); modal.remove(); resolve(value); };
         const onKey = event => { if(event.key==="Escape") finish(null); };
