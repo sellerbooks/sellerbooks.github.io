@@ -21105,7 +21105,7 @@ async function connectBlibliStoreManually(store, marketplace){
     if(username === null) return;
     const storeId = ask(en ? "Blibli Store ID (use the value provided by Blibli; default 10001)" : "Store ID Blibli (gunakan nilai dari Blibli; default 10001)", "10001");
     if(storeId === null) return;
-    const channelId = ask(en ? "Channel ID (default SellerBooks)" : "Channel ID (default SellerBooks)", "SellerBooks");
+    const channelId = ask(en ? "Channel ID (default SellerBooks MBI)" : "Channel ID (default SellerBooks MBI)", "SellerBooks MBI");
     if(channelId === null) return;
     if(!clientId.trim() || !clientKey.trim() || !sellerKey.trim() || !storeCode.trim() || !username.trim() || !storeId.trim() || !channelId.trim()){
         sellerBooksAlert(en ? "All Blibli API fields are required. No credentials were saved." : "Semua kolom API Blibli wajib diisi. Kredensial belum disimpan.", sellerBooksStoreText("connectTitle"));
