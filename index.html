@@ -21093,18 +21093,18 @@ async function disconnectStoreAccount(storeId){
 async function connectBlibliStoreManually(store, marketplace){
     const en = sellerBooksCurrentLanguage() === "en";
     const L = en ? {
-        title:"Connect Blibli API",intro:"Enter your Blibli API credentials to save them securely and test the connection. This step will not import orders.",
-        clientId:"API Client ID",clientKey:"API Client Key",sellerKey:"API Seller Key",storeCode:"Blibli Store Code",
+        title:"Connect Blibli API",intro:"Enter your API Seller Key and store details from your Blibli Seller Center. SellerBooks platform credentials are configured securely on the server. This step tests the connection and does not import orders.",
+        sellerKey:"API Seller Key",storeCode:"Blibli Store Code",
         username:"Seller Center username / email",storeId:"Store ID",channelId:"Channel ID",
         note:"Credentials are saved securely and will not be displayed again.",
-        consent:"I confirm these details are correct and agree to save them securely and test the connection.",
+        consent:"I confirm these details are correct and agree to save them securely in SellerBooks MBI.",
         cancel:"Cancel",submit:"Save & Connect",required:"Complete all fields and confirm the checkbox. Nothing has been saved yet.",
         session:"SellerBooks session expired. Please sign in again.",create:"Could not create the Blibli API connection.",
         connected:"Blibli API connected successfully. No orders were imported. You can continue to the order-sync step next.",
         failed:"Blibli connection failed.",server:"Server error."
     } : {
-        title:"Hubungkan API Blibli",intro:"Masukkan kredensial API Blibli pada pengaturan Seller API di profil Seller Center Blibli agar dapat mengimpor penjualan secara otomatis.",
-        clientId:"API Client ID",clientKey:"API Client Key",sellerKey:"API Seller Key",storeCode:"Kode Toko Blibli",
+        title:"Hubungkan API Blibli",intro:"Masukkan API Seller Key dan data toko dari Seller Center Blibli. Kredensial platform SellerBooks diatur secara aman di server. Tahap ini menguji koneksi dan belum mengimpor pesanan.",
+        sellerKey:"API Seller Key",storeCode:"Kode Toko Blibli",
         username:"Username / email Seller Center",storeId:"Store ID",channelId:"Channel ID",
         note:"Kredensial disimpan dengan aman dan tidak akan ditampilkan kembali.",
         consent:"Saya memastikan data sudah benar dan setuju menyimpannya dengan aman pada SellerBooks MBI.",
@@ -21124,7 +21124,7 @@ async function connectBlibliStoreManually(store, marketplace){
         const modal = document.createElement("div");
         modal.id = "sellerbooks-blibli-modal";
         modal.className = "sb-blibli-overlay";
-        modal.innerHTML = "<section class=\"sb-blibli-dialog\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"sb-blibli-title\"><header class=\"sb-blibli-header\"><div class=\"sb-blibli-mark\">B</div><div class=\"sb-blibli-heading\"><h2 id=\"sb-blibli-title\">"+L.title+"</h2><p>"+L.intro+"</p></div><button type=\"button\" class=\"sb-blibli-close\" aria-label=\""+L.cancel+"\">×</button></header><form class=\"sb-blibli-form\"><div class=\"sb-blibli-grid\"><label>"+L.clientId+"<input name=\"clientId\" autocomplete=\"off\" required placeholder=\"mta-api-...\" /></label><label>"+L.clientKey+"<input name=\"clientKey\" type=\"password\" autocomplete=\"new-password\" required /></label><label>"+L.sellerKey+"<input name=\"sellerKey\" type=\"password\" autocomplete=\"new-password\" required /></label><label>"+L.storeCode+"<input name=\"storeCode\" required placeholder=\"Masukkan kode toko Blibli\" /></label><label>"+L.username+"<input name=\"username\" autocomplete=\"username\" required /></label><label>"+L.storeId+"<input name=\"storeId\" required value=\"10001\" /></label><label class=\"sb-blibli-full\">"+L.channelId+"<input name=\"channelId\" required value=\"SellerBooks MBI\" /></label></div><div class=\"sb-blibli-secure\"><span aria-hidden=\"true\">🔒</span><span>"+L.note+"</span></div><label class=\"sb-blibli-consent\"><input name=\"consent\" type=\"checkbox\" required /><span>"+L.consent+"</span></label><div class=\"sb-blibli-error\" role=\"alert\" aria-live=\"polite\"></div><footer class=\"sb-blibli-actions\"><button type=\"button\" class=\"sb-blibli-cancel\">"+L.cancel+"</button><button type=\"submit\" class=\"sb-blibli-submit\">"+L.submit+"</button></footer></form></section>";
+        modal.innerHTML = "<section class=\"sb-blibli-dialog\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"sb-blibli-title\"><header class=\"sb-blibli-header\"><div class=\"sb-blibli-mark\">B</div><div class=\"sb-blibli-heading\"><h2 id=\"sb-blibli-title\">"+L.title+"</h2><p>"+L.intro+"</p></div><button type=\"button\" class=\"sb-blibli-close\" aria-label=\""+L.cancel+"\">×</button></header><form class=\"sb-blibli-form\"><div class=\"sb-blibli-grid\"><label>"+L.sellerKey+"<input name=\"sellerKey\" type=\"password\" autocomplete=\"new-password\" required placeholder=\""+(en?"Enter the API password you generated":"Masukkan sandi API yang sudah dibuat")+"\" /></label><label>"+L.storeCode+"<input name=\"storeCode\" required placeholder=\"Masukkan kode toko Blibli\" /></label><label>"+L.username+"<input name=\"username\" autocomplete=\"username\" required /></label><label>"+L.storeId+"<input name=\"storeId\" required value=\"10001\" /></label><label class=\"sb-blibli-full\">"+L.channelId+"<input name=\"channelId\" required value=\"SellerBooks MBI\" /></label></div><div class=\"sb-blibli-secure\"><span aria-hidden=\"true\">🔒</span><span>"+L.note+"</span></div><label class=\"sb-blibli-consent\"><input name=\"consent\" type=\"checkbox\" required /><span>"+L.consent+"</span></label><div class=\"sb-blibli-error\" role=\"alert\" aria-live=\"polite\"></div><footer class=\"sb-blibli-actions\"><button type=\"button\" class=\"sb-blibli-cancel\">"+L.cancel+"</button><button type=\"submit\" class=\"sb-blibli-submit\">"+L.submit+"</button></footer></form></section>";
         document.body.appendChild(modal);
         const form = modal.querySelector("form");
         let settled = false;
@@ -21137,7 +21137,7 @@ async function connectBlibliStoreManually(store, marketplace){
         form.addEventListener("submit",event=>{
             event.preventDefault();
             const d=new FormData(form);
-            const values={api_client_id:String(d.get("clientId")||"").trim(),api_client_key:String(d.get("clientKey")||"").trim(),api_seller_key:String(d.get("sellerKey")||"").trim(),store_code:String(d.get("storeCode")||"").trim(),username:String(d.get("username")||"").trim(),store_id:String(d.get("storeId")||"").trim(),channel_id:String(d.get("channelId")||"").trim()};
+            const values={api_seller_key:String(d.get("sellerKey")||"").trim(),store_code:String(d.get("storeCode")||"").trim(),username:String(d.get("username")||"").trim(),store_id:String(d.get("storeId")||"").trim(),channel_id:String(d.get("channelId")||"").trim()};
             const error=modal.querySelector(".sb-blibli-error");
             if(Object.values(values).some(v=>!v)||!d.get("consent")){error.textContent=L.required;error.style.display="block";return;}
             finish(values);
