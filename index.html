@@ -8796,6 +8796,9 @@ function toggleSelectAllReportTransactions(box){
 async function deleteSelectedReportTransactions(){
     const keys=new Set(selectedReportTransactionKeys);
     if(!keys.size){sellerBooksAlert(sellerBooksCurrentLanguage()==="en"?"Please select at least one transaction row.":"Pilih minimal satu baris transaksi.");return;}
+    const prompt=(sellerBooksCurrentLanguage()==="en"?"Permanently delete {count} selected transaction rows? This cannot be undone.":"Hapus permanen {count} baris transaksi yang dipilih? Tindakan ini tidak dapat dibatalkan.").replace("{count}",String(keys.size));
+    if(!await sellerBooksConfirm(prompt))return;
+
     const imports=getSalesImportsData();
     const deletedRefs=[];
     const stockRestoreRecords=[];
@@ -8829,8 +8832,13 @@ async function deleteSelectedReportTransactions(){
         record.transactions=record.transactions.filter(function(transaction,index){return !indexSet.has(index);});
     });
     if(!deletedRefs.length){selectedReportTransactionKeys.clear();renderReportTransactionTable();return;}
-    const prompt=(sellerBooksCurrentLanguage()==="en"?"Permanently delete {count} selected transaction rows? This cannot be undone.":"Hapus permanen {count} baris transaksi yang dipilih? Tindakan ini tidak dapat dibatalkan.").replace("{count}",String(deletedRefs.length));
-    if(!await sellerBooksConfirm(prompt))return;
+    if(!deletedRefs.length){
+        selectedReportTransactionKeys.clear();
+        sellerBooksReportTransactionsCacheImports=null;
+        sellerBooksReportTransactionsCache=null;
+        renderReportTransactionTable();
+        return;
+    }
     const stockResult=restoreProductStockFromDeletedImports(stockRestoreRecords);
     const remainingImports=imports.filter(function(record){return Array.isArray(record.transactions)&&record.transactions.length>0;});
     sellerBooksStorage.setItem("sellerbooks_sales_imports",JSON.stringify(remainingImports));
