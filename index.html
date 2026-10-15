@@ -23980,7 +23980,8 @@ let editingProductId = null;
    SIMPAN DATABASE PRODUK
 ===================================================== */
 
-function saveProductData(){
+function saveProductData(options){
+    options = options || {};
 
     sellerBooksStorage.setItem(
 
@@ -24018,6 +24019,7 @@ function saveProductData(){
        Jika cloud belum siap (misalnya halaman baru mulai memuat), mekanisme
        load cloud tetap menjadi sumber data utama dan save tidak dipaksakan.
     */
+    if(!options.deferCloudPersist){
     try{
         if(typeof sellerBooksCloudSaveTimer !== "undefined" && sellerBooksCloudSaveTimer){
             clearTimeout(sellerBooksCloudSaveTimer);
@@ -24031,6 +24033,7 @@ function saveProductData(){
         }
     }catch(error){
         console.error("Gagal memulai sinkronisasi Master Produk:", error);
+    }
     }
 
 }
@@ -25966,7 +25969,13 @@ const stock = Math.max(
 
 
 
-            saveProductData();
+            saveProductData({deferCloudPersist:true});
+            /* Import mengirim satu snapshot penuh saja. Batalkan debounce yang
+               dipicu oleh perubahan produk dan daily snapshot sebelum save ketat. */
+            if(sellerBooksCloudSaveTimer){
+                clearTimeout(sellerBooksCloudSaveTimer);
+                sellerBooksCloudSaveTimer=null;
+            }
 
             /*
                IMPORT MASTER PRODUK HARUS MENUNGGU KONFIRMASI CLOUD.
@@ -25983,25 +25992,37 @@ const stock = Math.max(
                 });
                 const expectedSkuCount = expectedProducts.length;
                 const expectedSnapshot = sellerBooksCloneCloudState(sellerBooksCloudState);
+                const expectedBySku = new Map(expectedProducts.map(function(product){
+                    return [String(product && product.sku || "").trim().toLowerCase(), product];
+                }));
+                function verifyImportedProducts(savedData){
+                    let savedProducts = savedData && savedData.sellerbooks_products;
+                    if(typeof savedProducts === "string"){
+                        try{ savedProducts = JSON.parse(savedProducts); }
+                        catch(error){ return false; }
+                    }
+                    if(!Array.isArray(savedProducts) || savedProducts.length !== expectedSkuCount) return false;
+                    const savedBySku = new Map(savedProducts.map(function(product){
+                        return [String(product && product.sku || "").trim().toLowerCase(), product];
+                    }));
+                    if(savedBySku.size !== expectedSkuCount) return false;
+                    return Array.from(expectedBySku.entries()).every(function(entry){
+                        const sku=entry[0], expected=entry[1], saved=savedBySku.get(sku);
+                        if(!saved) return false;
+                        return String(saved.name||"")===String(expected.name||"") &&
+                            String(saved.category||"")===String(expected.category||"") &&
+                            Number(saved.price||0)===Number(expected.price||0) &&
+                            Number(saved.cost||0)===Number(expected.cost||0) &&
+                            String(saved.adminFeePercent??"")===String(expected.adminFeePercent??"") &&
+                            Number(saved.stock||0)===Number(expected.stock||0) &&
+                            String(saved.status||"")===String(expected.status||"");
+                    });
+                }
 
                 await sellerBooksPersistCloudDataStrict(
                     expectedSnapshot,
                     function(savedData){
-                        let savedProducts = savedData && savedData.sellerbooks_products;
-                        if(typeof savedProducts === "string"){
-                            try{ savedProducts = JSON.parse(savedProducts); }
-                            catch(error){ return false; }
-                        }
-                        if(!Array.isArray(savedProducts) || savedProducts.length !== expectedSkuCount){
-                            return false;
-                        }
-                        const savedSkuSet = new Set(savedProducts.map(function(product){
-                            return String(product && product.sku || "").trim().toLowerCase();
-                        }).filter(Boolean));
-                        return savedSkuSet.size === expectedSkuCount &&
-                            expectedProducts.every(function(product){
-                                return savedSkuSet.has(String(product && product.sku || "").trim().toLowerCase());
-                            });
+                        return verifyImportedProducts(savedData);
                     }
                 );
 
@@ -26010,16 +26031,8 @@ const stock = Math.max(
                 if(typeof verifiedProducts === "string"){
                     verifiedProducts = JSON.parse(verifiedProducts);
                 }
-                const verifiedSkuSet = new Set((Array.isArray(verifiedProducts) ? verifiedProducts : []).map(function(product){
-                    return String(product && product.sku || "").trim().toLowerCase();
-                }).filter(Boolean));
-                if(!Array.isArray(verifiedProducts) ||
-                   verifiedProducts.length !== expectedSkuCount ||
-                   verifiedSkuSet.size !== expectedSkuCount ||
-                   !expectedProducts.every(function(product){
-                       return verifiedSkuSet.has(String(product && product.sku || "").trim().toLowerCase());
-                   })){
-                    throw new Error("Verifikasi cloud gagal: data Master Produk yang tersimpan tidak sama dengan hasil import.");
+                if(!verifyImportedProducts(verifiedCloudRow.data)){
+                    throw new Error("Verifikasi cloud gagal: SKU atau isi produk yang tersimpan tidak sama dengan hasil import.");
                 }
 
                 renderProducts();
