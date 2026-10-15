@@ -6370,6 +6370,7 @@ async function deleteReportsByDateRange(){
         return;
     }
 
+    sellerBooksDeleteProgressStart();
     /*
        Kembalikan stok TERLEBIH DAHULU berdasarkan import yang
        benar-benar akan dihapus. Setelah itu baru hapus laporan.
@@ -6385,6 +6386,9 @@ async function deleteReportsByDateRange(){
     );
 
     updateReports();
+
+    const cloudConfirmed=await sellerBooksDeleteProgressFinish();
+    if(!cloudConfirmed)return;
 
     sellerBooksAlert(
         sellerBooksReportsText("deleteSuccess") + "\n" +
@@ -25609,7 +25613,8 @@ async function sellerBooksDeleteProgressFinish(){
             clearTimeout(sellerBooksCloudSaveTimer);
             sellerBooksCloudSaveTimer = null;
         }
-        await sellerBooksPersistCloudDataNow();
+        const expectedSnapshot=sellerBooksCloneCloudState(sellerBooksCloudState);
+        await sellerBooksPersistCloudDataStrict(expectedSnapshot);
         sellerBooksImportProgressUpdate(92,"verifying");
         if(sellerBooksCloudDirtyKeys && sellerBooksCloudDirtyKeys.size){
             throw new Error("cloud_save_unconfirmed");
@@ -25688,8 +25693,8 @@ function sellerBooksImportProgressFailure(error){
     if(subtitle)subtitle.textContent= sellerBooksCurrentLanguage()==="EN" ? "Do not refresh or import the file again yet." : "Jangan refresh atau import file lagi dulu.";
     if(percent)percent.textContent="!";
     if(bar){bar.style.width="100%";bar.style.background="#dc2626";}
-    if(stage)stage.textContent=String(error&&error.message||error|| (sellerBooksCurrentLanguage()==="EN" ? "Unknown save error." : "Penyebab belum diketahui."));
-    if(warning)warning.textContent= sellerBooksCurrentLanguage()==="EN" ? "The file may have been processed locally, but cloud persistence has not been verified. Keep this message visible while checking the issue." : "File mungkin sudah diproses di perangkat, tetapi penyimpanan cloud belum terverifikasi. Biarkan pesan ini tampil saat masalah diperiksa.";
+    if(stage)stage.textContent= sellerBooksProgressOperation==="delete" ? (sellerBooksCurrentLanguage()==="EN" ? "Deletion could not be confirmed in the cloud." : "Penghapusan belum dapat dikonfirmasi di cloud.") : (sellerBooksCurrentLanguage()==="EN" ? "Import could not be confirmed in the cloud." : "Import belum dapat dikonfirmasi di cloud.");
+    if(warning)warning.textContent= sellerBooksProgressOperation==="delete" ? (sellerBooksCurrentLanguage()==="EN" ? "Do not refresh or repeat the deletion until the issue is checked." : "Jangan refresh atau ulangi penghapusan sampai masalah diperiksa.") : (sellerBooksCurrentLanguage()==="EN" ? "Do not refresh or import the file again yet." : "Jangan refresh atau import file lagi dulu.");
     if(overlay){
         let close=document.getElementById("sellerBooksImportProgressClose");
         if(!close){
