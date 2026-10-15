@@ -9719,6 +9719,69 @@ async function downloadReportPDF(){
 
 
 /* =========================================================
+   DETAIL PRODUK TERJUAL
+   Tabel tambahan ini memakai filter laporan yang sama dan tidak
+   mengubah mesin perhitungan laporan yang sudah ada.
+========================================================= */
+function renderReportSoldProductTable(){
+    const body = document.getElementById("reportSoldProductBody");
+    if(!body) return;
+
+    const isEN = String(typeof sellerBooksCurrentLanguage === "function" ? sellerBooksCurrentLanguage() : "id").toLowerCase() === "en";
+    const transactions = getFilteredReportTransactions();
+    if(!transactions.length){
+        body.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:28px;color:#64748b;">${isEN ? "No sold product data." : "Belum ada data produk terjual."}</td></tr>`;
+        return;
+    }
+
+    const rows = new Map();
+    transactions.forEach(function(item){
+        const sku = String(item && item.sku || "").trim();
+        const product = sku ? getMasterProductBySku(sku) : null;
+        const category = String(product && product.category || "").trim();
+        const name = category || (isEN ? "Uncategorized" : "Tanpa Kategori");
+        const key = name.toLocaleLowerCase();
+        if(!rows.has(key)) rows.set(key,{name:name,qty:0,hpp:0,profit:0});
+
+        const row = rows.get(key);
+        const qty = Number(item && item.qty) || 0;
+        const sales = getReportTransactionSalesAmount(item);
+        const fee = sales * (getReportTransactionFeePercent(item) / 100);
+        const hpp = product ? getReportTransactionCost(item) * qty : 0;
+        row.qty += qty;
+        row.hpp += hpp;
+        row.profit += sales - fee - hpp;
+    });
+
+    body.innerHTML = Array.from(rows.values()).sort(function(a,b){
+        return a.name.localeCompare(b.name, isEN ? "en" : "id", {sensitivity:"base"});
+    }).map(function(row){
+        return `<tr><td>${escapeHtml(row.name)}</td><td>${Number(row.qty).toLocaleString(isEN ? "en-US" : "id-ID")}</td><td>${formatRupiah(row.hpp)}</td><td>${formatRupiah(row.profit)}</td></tr>`;
+    }).join("");
+
+    const labels = {
+        title: isEN ? "Sold Product Details" : "Detail Produk Terjual",
+        description: isEN ? "Summary of quantity, COGS, and profit by product category." : "Ringkasan jumlah produk, HPP, dan laba berdasarkan kategori produk.",
+        name: isEN ? "Product Name" : "Nama Produk",
+        qty: isEN ? "Total Products" : "Total Produk",
+        hpp: isEN ? "COGS" : "HPP",
+        profit: isEN ? "Profit" : "Laba"
+    };
+    const labelMap = {
+        reportSoldProductTitle:labels.title,
+        reportSoldProductDescription:labels.description,
+        reportSoldProductNameHeader:labels.name,
+        reportSoldProductQtyHeader:labels.qty,
+        reportSoldProductHppHeader:labels.hpp,
+        reportSoldProductProfitHeader:labels.profit
+    };
+    Object.keys(labelMap).forEach(function(id){
+        const el=document.getElementById(id);
+        if(el)el.textContent=labelMap[id];
+    });
+}
+
+/* =========================================================
    UPDATE SEMUA LAPORAN
 ========================================================= */
 
@@ -9743,6 +9806,7 @@ function updateReports(){
     try{ renderReportMarketplaceTable(); }catch(error){ console.error("Laporan marketplace:", error); }
     try{ renderReportStoreTable(); }catch(error){ console.error("Laporan akun toko:", error); }
     try{ renderReportTransactionTable(); }catch(error){ console.error("Detail transaksi:", error); }
+    try{ renderReportSoldProductTable(); }catch(error){ console.error("Detail produk terjual:", error); }
     try{ sellerBooksApplyReportsLanguage(); }catch(error){ console.error("Reports language:", error); }
 
     if(reportProfiler){
@@ -14031,6 +14095,31 @@ document.addEventListener(
             ></div>
         </div>
 
+    </div>
+
+    <!-- TABEL TAMBAHAN: DETAIL PRODUK TERJUAL -->
+    <div class="content-section" id="reportSoldProductSection" style="margin-top:22px;">
+        <div class="section-header">
+            <div>
+                <h3 id="reportSoldProductTitle">Detail Produk Terjual</h3>
+                <p id="reportSoldProductDescription">Ringkasan jumlah produk, HPP, dan laba berdasarkan kategori produk.</p>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th id="reportSoldProductNameHeader">Nama Produk</th>
+                        <th id="reportSoldProductQtyHeader">Total Produk</th>
+                        <th id="reportSoldProductHppHeader">HPP</th>
+                        <th id="reportSoldProductProfitHeader">Laba</th>
+                    </tr>
+                </thead>
+                <tbody id="reportSoldProductBody">
+                    <tr><td colspan="4" style="text-align:center;padding:28px;color:#64748b;">Belum ada data produk terjual.</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
 </section>
