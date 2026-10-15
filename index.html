@@ -25689,8 +25689,8 @@ function sellerBooksImportProgressFailure(error){
     const bar=document.getElementById("sellerBooksImportProgressBar");
     const stage=document.getElementById("sellerBooksImportProgressStage");
     const warning=document.getElementById("sellerBooksImportProgressWarning");
-    if(title)title.textContent= sellerBooksCurrentLanguage()==="EN" ? "Cloud save not confirmed" : "Penyimpanan cloud belum terkonfirmasi";
-    if(subtitle)subtitle.textContent= sellerBooksCurrentLanguage()==="EN" ? "Do not refresh or import the file again yet." : "Jangan refresh atau import file lagi dulu.";
+    if(title)title.textContent=window.sellerBooksProgressOperation==="delete" ? (sellerBooksCurrentLanguage()==="EN" ? "Deletion not confirmed" : "Penghapusan belum terkonfirmasi") : (sellerBooksCurrentLanguage()==="EN" ? "Cloud save not confirmed" : "Penyimpanan cloud belum terkonfirmasi");
+    if(subtitle)subtitle.textContent=window.sellerBooksProgressOperation==="delete" ? (sellerBooksCurrentLanguage()==="EN" ? "Do not refresh or leave this page yet." : "Jangan refresh atau tinggalkan halaman dulu.") : (sellerBooksCurrentLanguage()==="EN" ? "Do not refresh or import the file again yet." : "Jangan refresh atau import file lagi dulu.");
     if(percent)percent.textContent="!";
     if(bar){bar.style.width="100%";bar.style.background="#dc2626";}
     if(stage)stage.textContent= sellerBooksProgressOperation==="delete" ? (sellerBooksCurrentLanguage()==="EN" ? "Deletion could not be confirmed in the cloud." : "Penghapusan belum dapat dikonfirmasi di cloud.") : (sellerBooksCurrentLanguage()==="EN" ? "Import could not be confirmed in the cloud." : "Import belum dapat dikonfirmasi di cloud.");
@@ -31482,6 +31482,12 @@ document.addEventListener(
 ========================================= */
 
 async function logoutSellerBooks(){
+
+    if(window.sellerBooksImportInProgress){
+        const isEN=typeof sellerBooksCurrentLanguage==="function"&&sellerBooksCurrentLanguage()==="EN";
+        sellerBooksAlert(isEN ? "A save is still in progress. Please wait for cloud confirmation before logging out." : "Penyimpanan masih berlangsung. Mohon tunggu konfirmasi cloud sebelum logout.");
+        return;
+    }
 
     try{
 
