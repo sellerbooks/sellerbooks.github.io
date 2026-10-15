@@ -16038,16 +16038,32 @@ async function sellerBooksPersistCloudDataStrict(expectedSnapshot,verification){
     if(!sellerBooksAuthUser||!sellerBooksCloudReady)throw new Error("Sinkronisasi Supabase belum siap.");
 
     const snapshot=expectedSnapshot||sellerBooksCloneCloudState(sellerBooksCloudState);
-    const expectedUpdatedAt=sellerBooksCloudUpdatedAt;
+    const saveUserId=String(sellerBooksAuthUser.id||"");
+    const saveGeneration=sellerBooksCloudGeneration;
 
+    /*
+       PENTING: ambil updated_at setelah seluruh penulisan sebelumnya dalam
+       antrean selesai. Mengambilnya sebelum masuk antrean dapat memakai
+       updated_at lama jika autosave sedang berjalan. Akibatnya import
+       mendapat conflict, memuat ulang snapshot lama, lalu produk baru hilang
+       dari tampilan setelah refresh.
+    */
     sellerBooksCloudSavePromise=sellerBooksCloudSavePromise.then(async function(){
+        if(!sellerBooksAuthUser||String(sellerBooksAuthUser.id||"")!==saveUserId){
+            throw new Error("Akun berubah sebelum import selesai disimpan.");
+        }
+        if(!sellerBooksCloudReady||sellerBooksCloudLoading||
+           sellerBooksCloudGeneration!==saveGeneration){
+            throw new Error("Sinkronisasi cloud berubah saat import berlangsung. Silakan coba lagi.");
+        }
+
+        const expectedUpdatedAt=sellerBooksCloudUpdatedAt;
         const result=await sellerBooksWriteCloudSnapshot(
             snapshot,expectedUpdatedAt,!expectedUpdatedAt,true
         );
 
         if(result.conflict){
-            await sellerBooksReloadCloudAfterConflict();
-            throw new Error("Data berubah di perangkat lain. Operasi kritis dibatalkan agar data tidak tertimpa.");
+            throw new Error("Konflik penyimpanan cloud: data berubah bersamaan. Import tidak dikonfirmasi tersimpan.");
         }
 
         if(typeof verification==="function"&&!verification(result.data)){
