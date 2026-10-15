@@ -8830,6 +8830,23 @@ async function deleteSelectedReportTransactions(){
             record.stockDeductionDetails=remainingDetails.filter(function(detail){return (Number(detail&&detail.deductedQty)||0)>0;});
         }else stockRestoreRecords.push({id:String(record.id||"")+"__selected_rows",transactions:selectedTransactions});
         record.transactions=record.transactions.filter(function(transaction,index){return !indexSet.has(index);});
+
+        /*
+           HAPUS CHECKBOX: perbarui fingerprint setelah sebagian baris dihapus.
+           Fingerprint lama mewakili SELURUH file import sebelum penghapusan.
+           Jika dibiarkan, import ulang file yang sama akan ditolak sebagai
+           duplikat meskipun baris terpilih sudah dihapus dari transaksi.
+           Fingerprint baru hanya mewakili transaksi yang masih tersimpan;
+           baris yang dihapus dapat diimpor kembali, sementara baris lain
+           tetap dilindungi oleh pemeriksaan identitas transaksi.
+        */
+        if(record.transactions.length > 0 && typeof buildSalesImportFingerprint === "function"){
+            record.importFingerprint = buildSalesImportFingerprint(
+                { marketplace: record.marketplace },
+                record.storeId,
+                record.transactions
+            );
+        }
     });
     if(!deletedRefs.length){selectedReportTransactionKeys.clear();renderReportTransactionTable();return;}
     if(!deletedRefs.length){
