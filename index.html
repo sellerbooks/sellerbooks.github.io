@@ -5573,7 +5573,7 @@ function getAllReportTransactions(){
         }
 
         record.transactions.forEach(
-            function(transaction){
+            function(transaction, transactionIndex){
 
                 transactions.push({
 
@@ -5581,6 +5581,9 @@ function getAllReportTransactions(){
 
                     importId:
                         record.id,
+
+                    sourceTransactionIndex:
+                        transactionIndex,
 
                     /*
                        Prioritas tanggal laporan:
@@ -8584,6 +8587,7 @@ function renderReportStoreTable(){
 let reportTransactionPage = 1;
 let reportTransactionPageSize = 20;
 let reportTransactionPaginationFilterKey = "";
+const selectedReportTransactionKeys = new Set();
 
 /* =========================================================
    DETAIL TRANSAKSI
@@ -8612,11 +8616,13 @@ function renderReportTransactionTable(){
         if(reportTransactionPaginationFilterKey !== filterKey){
             reportTransactionPage = 1;
             reportTransactionPaginationFilterKey = filterKey;
+            selectedReportTransactionKeys.clear();
         }
 
         if(!transactions.length){
-            body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:35px;color:#64748b;">Belum ada data penjualan.</td></tr>`;
+            body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:35px;color:#64748b;">Belum ada data penjualan.</td></tr>`;
             if(pagination){ pagination.style.display = "none"; }
+            updateSelectedReportTransactionUI();
             return;
         }
 
@@ -8658,8 +8664,11 @@ function renderReportTransactionTable(){
             const product = getMasterProductBySku(sku);
             const status = product ? "✓ Valid" : "⚠ SKU belum ada";
 
+            const selectionKey = getReportTransactionSelectionKey(item);
+            const isSelected = selectedReportTransactionKeys.has(selectionKey);
             html += `
                 <tr>
+                    <td class="report-transaction-select-column"><input type="checkbox" class="report-transaction-row-checkbox" value="${escapeHtml(selectionKey)}" ${isSelected ? "checked" : ""} aria-label="Pilih transaksi ${escapeHtml(String(item.orderId || sku || ""))}" onchange="toggleReportTransactionSelection(this)"></td>
                     <td>${escapeHtml(formattedDate)}</td>
                     <td>${escapeHtml(item.marketplace || "-")}</td>
                     <td>${escapeHtml(item.storeName || "-")}</td>
@@ -8674,6 +8683,7 @@ function renderReportTransactionTable(){
         });
 
         body.innerHTML = html;
+        updateSelectedReportTransactionUI();
 
         if(pagination){
             pagination.style.display = "flex";
@@ -8750,11 +8760,88 @@ function renderReportTransactionTable(){
 
     }catch(error){
         console.error("Gagal menampilkan Detail Penjualan:", error);
-        body.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:35px;color:#dc2626;">Detail penjualan gagal ditampilkan. Silakan refresh halaman.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:35px;color:#dc2626;">Detail penjualan gagal ditampilkan. Silakan refresh halaman.</td></tr>`;
         if(pagination){ pagination.style.display = "none"; }
     }
 }
 
+function getReportTransactionSelectionKey(item){
+    return String(item && item.importId || "") + "::" + String(item && item.sourceTransactionIndex);
+}
+function updateSelectedReportTransactionUI(){
+    const wrap=document.getElementById("reportTransactionBulkActions");
+    const count=document.getElementById("selectedReportTransactionCount");
+    const label=document.getElementById("selectedReportTransactionLabel");
+    const n=selectedReportTransactionKeys.size;
+    if(wrap)wrap.style.display=n>0?"flex":"none";
+    if(count)count.textContent=String(n);
+    if(label)label.textContent=n?(sellerBooksCurrentLanguage()==="en"?"selected":"dipilih"):"";
+    const all=document.getElementById("selectAllReportTransactions");
+    const boxes=Array.from(document.querySelectorAll("#reportTransactionBody .report-transaction-row-checkbox"));
+    if(all){const checked=boxes.filter(x=>x.checked).length;all.checked=boxes.length>0&&checked===boxes.length;all.indeterminate=checked>0&&checked<boxes.length;}
+}
+function toggleReportTransactionSelection(box){
+    if(!box)return;
+    if(box.checked)selectedReportTransactionKeys.add(box.value);else selectedReportTransactionKeys.delete(box.value);
+    updateSelectedReportTransactionUI();
+}
+function toggleSelectAllReportTransactions(box){
+    if(!box)return;
+    document.querySelectorAll("#reportTransactionBody .report-transaction-row-checkbox").forEach(function(row){
+        row.checked=box.checked;
+        if(box.checked)selectedReportTransactionKeys.add(row.value);else selectedReportTransactionKeys.delete(row.value);
+    });
+    updateSelectedReportTransactionUI();
+}
+async function deleteSelectedReportTransactions(){
+    const keys=new Set(selectedReportTransactionKeys);
+    if(!keys.size){sellerBooksAlert(sellerBooksCurrentLanguage()==="en"?"Please select at least one transaction row.":"Pilih minimal satu baris transaksi.");return;}
+    const imports=getSalesImportsData();
+    const deletedRefs=[];
+    const stockRestoreRecords=[];
+    imports.forEach(function(record){
+        if(!record||!Array.isArray(record.transactions))return;
+        const indexes=[];
+        record.transactions.forEach(function(transaction,index){if(keys.has(String(record.id||"")+"::"+String(index)))indexes.push(index);});
+        if(!indexes.length)return;
+        const indexSet=new Set(indexes);
+        const selectedTransactions=indexes.map(function(index){return record.transactions[index];});
+        indexes.forEach(function(index){deletedRefs.push(String(record.id||"")+"::"+String(index));});
+        if(Array.isArray(record.stockDeductionDetails)){
+            const remainingDetails=record.stockDeductionDetails.map(function(detail){return Object.assign({},detail);});
+            const selectedDetails=[];
+            selectedTransactions.forEach(function(transaction){
+                const sku=String(transaction&&transaction.sku||"").trim().toLowerCase();
+                let needed=Math.max(0,Number(transaction&&transaction.qty)||0);
+                if(!sku||needed<=0)return;
+                remainingDetails.forEach(function(detail){
+                    if(needed<=0||String(detail&&detail.sku||"").trim().toLowerCase()!==sku)return;
+                    const available=Math.max(0,Number(detail&&detail.deductedQty)||0);
+                    if(available<=0)return;
+                    const amount=Math.min(needed,available);detail.deductedQty=available-amount;needed-=amount;
+                    const found=selectedDetails.find(function(entry){return String(entry.productId||"")===String(detail.productId||"")&&String(entry.sku||"").trim().toLowerCase()===sku;});
+                    if(found)found.deductedQty+=amount;else selectedDetails.push({productId:detail.productId||"",sku:detail.sku||transaction.sku,deductedQty:amount});
+                });
+            });
+            stockRestoreRecords.push({id:String(record.id||"")+"__selected_rows",transactions:selectedTransactions,stockDeductionDetails:selectedDetails});
+            record.stockDeductionDetails=remainingDetails.filter(function(detail){return (Number(detail&&detail.deductedQty)||0)>0;});
+        }else stockRestoreRecords.push({id:String(record.id||"")+"__selected_rows",transactions:selectedTransactions});
+        record.transactions=record.transactions.filter(function(transaction,index){return !indexSet.has(index);});
+    });
+    if(!deletedRefs.length){selectedReportTransactionKeys.clear();renderReportTransactionTable();return;}
+    const prompt=(sellerBooksCurrentLanguage()==="en"?"Permanently delete {count} selected transaction rows? This cannot be undone.":"Hapus permanen {count} baris transaksi yang dipilih? Tindakan ini tidak dapat dibatalkan.").replace("{count}",String(deletedRefs.length));
+    if(!await sellerBooksConfirm(prompt))return;
+    const stockResult=restoreProductStockFromDeletedImports(stockRestoreRecords);
+    const remainingImports=imports.filter(function(record){return Array.isArray(record.transactions)&&record.transactions.length>0;});
+    sellerBooksStorage.setItem("sellerbooks_sales_imports",JSON.stringify(remainingImports));
+    selectedReportTransactionKeys.clear();
+    sellerBooksReportTransactionsCacheImports=null;sellerBooksReportTransactionsCache=null;
+    sellerBooksReportFilteredTransactionsCache={sourceTransactions:null,key:"",transactions:null};
+    sellerBooksProductAnalysisRowsCache={sourceTransactions:null,key:"",rows:null};
+    updateReports();
+    const en=sellerBooksCurrentLanguage()==="en";
+    sellerBooksAlert((en?"Selected transaction rows deleted successfully.":"Baris transaksi terpilih berhasil dihapus.")+"\n"+deletedRefs.length+(en?" transaction rows deleted.":" baris transaksi dihapus.")+(stockResult.restoredQty>0?"\n\n"+(en?"Stock restored:":"Stok dikembalikan:")+" "+stockResult.restoredQty+" pcs.":""));
+}
 function goToReportTransactionPage(page){
     const transactions = getFilteredReportTransactions();
     const totalPages = Math.max(1, Math.ceil(transactions.length / reportTransactionPageSize));
@@ -10301,7 +10388,9 @@ document.addEventListener(
     margin-right:3px;
 }
 @media(max-width:650px){
-    .report-transaction-pagination{
+    .report-transaction-select-column{width:44px;min-width:44px;text-align:center;}
+ .report-transaction-select-column input[type="checkbox"]{width:18px;height:18px;cursor:pointer;accent-color:#2563eb;}
+ .report-transaction-pagination{
         align-items:stretch;
         flex-direction:column;
     }
@@ -13822,11 +13911,17 @@ document.addEventListener(
             "
         >
 
-            <table>
+            <div id="reportTransactionBulkActions" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;padding:0 0 14px;">
+            <button type="button" class="secondary-button" id="deleteSelectedReportTransactionsButton" onclick="deleteSelectedReportTransactions()" style="color:#dc2626;border-color:#fecaca;">🗑️ Hapus Terpilih (<span id="selectedReportTransactionCount">0</span>)</button>
+            <span id="selectedReportTransactionLabel" style="font-size:13px;color:#64748b;"></span>
+        </div>
+
+        <table>
 
                 <thead>
 
                     <tr>
+                        <th class="report-transaction-select-column"><input type="checkbox" id="selectAllReportTransactions" aria-label="Pilih semua transaksi di halaman ini" onchange="toggleSelectAllReportTransactions(this)"></th>
 
                         <th>
                             Tanggal
@@ -35075,7 +35170,7 @@ function sellerBooksApplyReportsLanguage(){
         if(p) p.textContent = sellerBooksReportsText("detailsSubtitle");
 
         const th = detailSection.querySelectorAll("thead th");
-        const headers = ["date","marketplace","storeAccount","order","orderId","skuSellerBooks","qty","sales","status"];
+        const headers = ["","date","marketplace","storeAccount","order","orderId","skuSellerBooks","qty","sales","status"];
         th.forEach(function(cell,index){
             if(headers[index]) cell.textContent = sellerBooksReportsText(headers[index]);
         });
