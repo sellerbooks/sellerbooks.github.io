@@ -18485,6 +18485,12 @@ function sellerBooksScheduleDeferredRender(callback){
 
 function showView(viewId, button, saveHistory = true){
 
+    if(window.sellerBooksImportInProgress){
+        const isEN = typeof sellerBooksCurrentLanguage === "function" && sellerBooksCurrentLanguage() === "EN";
+        if(typeof sellerBooksAlert === "function") sellerBooksAlert(isEN ? "Import is still running. Please wait until the save is verified." : "Import masih berjalan. Mohon tunggu sampai penyimpanan terverifikasi.");
+        return;
+    }
+
     /* =========================================
        TUTUP SEMUA HALAMAN
     ========================================= */
@@ -25525,6 +25531,92 @@ async function deleteProduct(id){
 
 
 /* =====================================================
+   IMPORT PROGRESS + PROTEKSI NAVIGASI
+   Progres mencakup pemrosesan file, penyimpanan cloud,
+   dan verifikasi hasil simpan. Tidak mengubah rumus bisnis.
+===================================================== */
+window.sellerBooksImportInProgress = false;
+
+function sellerBooksImportProgressCopy(){
+    const isEN = typeof sellerBooksCurrentLanguage === "function" &&
+        sellerBooksCurrentLanguage() === "EN";
+    return isEN ? {
+        title:"Import in progress",
+        subtitle:"Please wait. Do not refresh or leave this page.",
+        reading:"Reading Excel file…",
+        processing:"Processing product rows…",
+        saving:"Saving data to cloud…",
+        verifying:"Verifying saved data…",
+        done:"Import saved and verified successfully.",
+        warning:"Keep this page open until the cloud save is confirmed."
+    } : {
+        title:"Import sedang berjalan",
+        subtitle:"Mohon tunggu. Jangan refresh atau pindah halaman.",
+        reading:"Membaca file Excel…",
+        processing:"Memproses baris produk…",
+        saving:"Menyimpan data ke cloud…",
+        verifying:"Memastikan data tersimpan…",
+        done:"Import berhasil disimpan dan diverifikasi.",
+        warning:"Biarkan halaman tetap terbuka sampai penyimpanan cloud terkonfirmasi."
+    };
+}
+
+function sellerBooksImportProgressShow(){
+    window.sellerBooksImportInProgress = true;
+    if(!document.getElementById("sellerBooksImportProgressOverlay")){
+        const overlay = document.createElement("div");
+        overlay.id = "sellerBooksImportProgressOverlay";
+        overlay.setAttribute("role","dialog");
+        overlay.setAttribute("aria-modal","true");
+        overlay.setAttribute("aria-live","polite");
+        overlay.style.cssText = "position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.62);backdrop-filter:blur(3px);";
+        overlay.innerHTML = '<div style="width:100%;max-width:460px;background:var(--card-bg,#fff);color:var(--text-primary,#0f172a);border:1px solid rgba(148,163,184,.3);border-radius:20px;padding:24px;box-shadow:0 24px 80px rgba(0,0,0,.28);font-family:inherit;">' +
+          '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">' +
+          '<div style="width:48px;height:48px;flex:0 0 48px;border-radius:14px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:25px;">⇧</div>' +
+          '<div style="flex:1;min-width:0;"><div id="sellerBooksImportProgressTitle" style="font-size:18px;font-weight:800;line-height:1.3;"></div><div id="sellerBooksImportProgressSubtitle" style="font-size:13px;line-height:1.5;color:var(--text-secondary,#64748b);margin-top:4px;"></div></div>' +
+          '<div id="sellerBooksImportProgressPercent" style="font-size:24px;font-weight:800;color:#16a34a;font-variant-numeric:tabular-nums;">0%</div>' +
+          '</div>' +
+          '<div style="height:10px;border-radius:999px;background:#e2e8f0;overflow:hidden;"><div id="sellerBooksImportProgressBar" style="height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#16a34a,#22c55e);transition:width .25s ease;"></div></div>' +
+          '<div id="sellerBooksImportProgressStage" style="font-size:14px;font-weight:700;margin-top:16px;"></div>' +
+          '<div style="display:flex;align-items:flex-start;gap:8px;margin-top:16px;padding:11px 12px;border-radius:12px;background:rgba(234,179,8,.12);color:var(--text-secondary,#64748b);font-size:12px;line-height:1.5;"><span aria-hidden="true">⚠️</span><span id="sellerBooksImportProgressWarning"></span></div>' +
+          '</div>';
+        document.body.appendChild(overlay);
+    }
+    const copy=sellerBooksImportProgressCopy();
+    const title=document.getElementById("sellerBooksImportProgressTitle");
+    const subtitle=document.getElementById("sellerBooksImportProgressSubtitle");
+    const warning=document.getElementById("sellerBooksImportProgressWarning");
+    if(title)title.textContent=copy.title;
+    if(subtitle)subtitle.textContent=copy.subtitle;
+    if(warning)warning.textContent=copy.warning;
+    sellerBooksImportProgressUpdate(3,"reading");
+}
+
+function sellerBooksImportProgressUpdate(percent,stage){
+    const copy=sellerBooksImportProgressCopy();
+    const safePercent=Math.max(0,Math.min(100,Math.round(Number(percent)||0)));
+    const labels={reading:copy.reading,processing:copy.processing,saving:copy.saving,verifying:copy.verifying,done:copy.done};
+    const bar=document.getElementById("sellerBooksImportProgressBar");
+    const number=document.getElementById("sellerBooksImportProgressPercent");
+    const label=document.getElementById("sellerBooksImportProgressStage");
+    if(bar)bar.style.width=safePercent+"%";
+    if(number)number.textContent=safePercent+"%";
+    if(label)label.textContent=labels[stage]||copy.processing;
+}
+
+function sellerBooksImportProgressHide(){
+    window.sellerBooksImportInProgress = false;
+    const overlay=document.getElementById("sellerBooksImportProgressOverlay");
+    if(overlay)overlay.remove();
+}
+
+window.addEventListener("beforeunload",function(event){
+    if(!window.sellerBooksImportInProgress)return;
+    event.preventDefault();
+    event.returnValue="";
+});
+
+/* =====================================================
    IMPORT EXCEL
 ===================================================== */
 
@@ -25539,13 +25631,21 @@ async function importProducts(input){
 
     }
 
+    sellerBooksImportProgressShow();
 
     if(!(await sellerBooksEnsureXLSX())){
+        sellerBooksImportProgressHide();
+        input.value = "";
         return;
     }
 
 
     const reader = new FileReader();
+    reader.onerror = function(){
+        sellerBooksImportProgressHide();
+        input.value = "";
+        sellerBooksAlert(sellerBooksProductText("importError"));
+    };
 
 
     reader.onload = async function(event){
@@ -25554,6 +25654,7 @@ async function importProducts(input){
         try{
 
 
+            sellerBooksImportProgressUpdate(12,"reading");
             const workbook = XLSX.read(
 
                 event.target.result,
@@ -25587,6 +25688,8 @@ async function importProducts(input){
                     }
 
                 );
+
+            sellerBooksImportProgressUpdate(24,"processing");
 
 
 
@@ -25969,6 +26072,7 @@ const stock = Math.max(
 
 
 
+            sellerBooksImportProgressUpdate(68,"saving");
             saveProductData({deferCloudPersist:true});
             /* Import mengirim satu snapshot penuh saja. Batalkan debounce yang
                dipicu oleh perubahan produk dan daily snapshot sebelum save ketat. */
@@ -26019,6 +26123,7 @@ const stock = Math.max(
                     });
                 }
 
+                sellerBooksImportProgressUpdate(80,"saving");
                 await sellerBooksPersistCloudDataStrict(
                     expectedSnapshot,
                     function(savedData){
@@ -26026,6 +26131,7 @@ const stock = Math.max(
                     }
                 );
 
+                sellerBooksImportProgressUpdate(93,"verifying");
                 const verifiedCloudRow = await sellerBooksReadCloudRow();
                 let verifiedProducts = verifiedCloudRow.data && verifiedCloudRow.data.sellerbooks_products;
                 if(typeof verifiedProducts === "string"){
@@ -26035,6 +26141,7 @@ const stock = Math.max(
                     throw new Error("Verifikasi cloud gagal: SKU atau isi produk yang tersimpan tidak sama dengan hasil import.");
                 }
 
+                sellerBooksImportProgressUpdate(100,"done");
                 renderProducts();
                 renderNotifications();
                 sellerBooksAlert(
@@ -26045,6 +26152,7 @@ const stock = Math.max(
                 );
             }catch(saveError){
                 console.error("Import Master Produk gagal diverifikasi di cloud:",saveError);
+                sellerBooksImportProgressUpdate(92,"verifying");
                 sellerBooksAlert("Import belum terkonfirmasi tersimpan di cloud. Jangan tutup halaman atau import ulang. Silakan coba lagi setelah koneksi stabil.");
             }
 
@@ -26065,6 +26173,9 @@ const stock = Math.max(
 
         }
 
+        finally{
+            sellerBooksImportProgressHide();
+        }
 
         /*
            RESET INPUT
