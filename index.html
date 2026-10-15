@@ -24011,6 +24011,28 @@ function saveProductData(){
         };
     }
 
+    /*
+       PERUBAHAN MASTER PRODUK:
+       Mulai sinkronisasi cloud segera, bukan menunggu debounce 250 ms.
+       UI tetap responsif; promise ini hanya menunggu penyimpanan di belakang.
+       Jika cloud belum siap (misalnya halaman baru mulai memuat), mekanisme
+       load cloud tetap menjadi sumber data utama dan save tidak dipaksakan.
+    */
+    try{
+        if(typeof sellerBooksCloudSaveTimer !== "undefined" && sellerBooksCloudSaveTimer){
+            clearTimeout(sellerBooksCloudSaveTimer);
+            sellerBooksCloudSaveTimer = null;
+        }
+        if(typeof sellerBooksPersistCloudDataNow === "function" &&
+           sellerBooksAuthUser &&
+           sellerBooksCloudReady &&
+           !sellerBooksCloudLoading){
+            sellerBooksPersistCloudDataNow();
+        }
+    }catch(error){
+        console.error("Gagal memulai sinkronisasi Master Produk:", error);
+    }
+
 }
 
 
