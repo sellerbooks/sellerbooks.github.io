@@ -27379,7 +27379,27 @@ function getMasterProductBySku(sku){
         runtimeProduct = null;
     }
 
+    /*
+       REGRESSION GUARD:
+       Cache runtime sebelumnya hanya dibangun ulang ketika referensi array
+       products berubah. Jika produk dimuat/diperbarui dengan mutasi array
+       yang sama, cache dapat tertinggal dan SKU yang terlihat di Master
+       Produk tidak ditemukan saat import. Jika kedua cache miss, gunakan
+       pencarian langsung pada data runtime saat ini (perilaku lama).
+    */
     if(!storedProduct && !runtimeProduct){
+        try{
+            const liveProduct = Array.isArray(products)
+                ? products.find(function(item){
+                    return String(item && item.sku || "")
+                        .trim()
+                        .toLowerCase() === normalizedSku;
+                })
+                : null;
+            if(liveProduct){
+                return {...liveProduct};
+            }
+        }catch(error){}
         return null;
     }
 
