@@ -25545,7 +25545,7 @@ async function importProducts(input){
     const reader = new FileReader();
 
 
-    reader.onload = function(event){
+    reader.onload = async function(event){
 
 
         try{
@@ -25968,18 +25968,72 @@ const stock = Math.max(
 
             saveProductData();
 
-            renderProducts();
+            /*
+               IMPORT MASTER PRODUK HARUS MENUNGGU KONFIRMASI CLOUD.
+               Jangan mengumumkan import berhasil sebelum snapshot produk
+               berhasil ditulis dan jumlah SKU hasil simpan terverifikasi.
+            */
+            try{
+                if(!sellerBooksAuthUser || !sellerBooksCloudReady || sellerBooksCloudLoading){
+                    throw new Error("Cloud belum siap. Import belum dapat diverifikasi.");
+                }
 
-            renderNotifications();
+                const expectedProducts = products.map(function(product){
+                    return Object.assign({}, product);
+                });
+                const expectedSkuCount = expectedProducts.length;
+                const expectedSnapshot = sellerBooksCloneCloudState(sellerBooksCloudState);
 
-            sellerBooksAlert(
+                await sellerBooksPersistCloudDataStrict(
+                    expectedSnapshot,
+                    function(savedData){
+                        let savedProducts = savedData && savedData.sellerbooks_products;
+                        if(typeof savedProducts === "string"){
+                            try{ savedProducts = JSON.parse(savedProducts); }
+                            catch(error){ return false; }
+                        }
+                        if(!Array.isArray(savedProducts) || savedProducts.length !== expectedSkuCount){
+                            return false;
+                        }
+                        const savedSkuSet = new Set(savedProducts.map(function(product){
+                            return String(product && product.sku || "").trim().toLowerCase();
+                        }).filter(Boolean));
+                        return savedSkuSet.size === expectedSkuCount &&
+                            expectedProducts.every(function(product){
+                                return savedSkuSet.has(String(product && product.sku || "").trim().toLowerCase());
+                            });
+                    }
+                );
 
-                sellerBooksProductText("importDone")
-                    .replace("{success}",successCount)
-                    .replace("{duplicate}",duplicateCount)
-                    .replace("{error}",errorCount)
+                const verifiedCloudRow = await sellerBooksReadCloudRow();
+                let verifiedProducts = verifiedCloudRow.data && verifiedCloudRow.data.sellerbooks_products;
+                if(typeof verifiedProducts === "string"){
+                    verifiedProducts = JSON.parse(verifiedProducts);
+                }
+                const verifiedSkuSet = new Set((Array.isArray(verifiedProducts) ? verifiedProducts : []).map(function(product){
+                    return String(product && product.sku || "").trim().toLowerCase();
+                }).filter(Boolean));
+                if(!Array.isArray(verifiedProducts) ||
+                   verifiedProducts.length !== expectedSkuCount ||
+                   verifiedSkuSet.size !== expectedSkuCount ||
+                   !expectedProducts.every(function(product){
+                       return verifiedSkuSet.has(String(product && product.sku || "").trim().toLowerCase());
+                   })){
+                    throw new Error("Verifikasi cloud gagal: data Master Produk yang tersimpan tidak sama dengan hasil import.");
+                }
 
-            );
+                renderProducts();
+                renderNotifications();
+                sellerBooksAlert(
+                    sellerBooksProductText("importDone")
+                        .replace("{success}",successCount)
+                        .replace("{duplicate}",duplicateCount)
+                        .replace("{error}",errorCount)
+                );
+            }catch(saveError){
+                console.error("Import Master Produk gagal diverifikasi di cloud:",saveError);
+                sellerBooksAlert("Import belum terkonfirmasi tersimpan di cloud. Jangan tutup halaman atau import ulang. Silakan coba lagi setelah koneksi stabil.");
+            }
 
 
         }
