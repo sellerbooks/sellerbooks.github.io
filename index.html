@@ -9730,7 +9730,7 @@ function renderReportSoldProductTable(){
     const isEN = String(typeof sellerBooksCurrentLanguage === "function" ? sellerBooksCurrentLanguage() : "id").toLowerCase() === "en";
     const transactions = getFilteredReportTransactions();
     if(!transactions.length){
-        body.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:28px;color:#64748b;">${isEN ? "No sold product data." : "Belum ada data produk terjual."}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:#64748b;">${isEN ? "No sold product data." : "Belum ada data produk terjual."}</td></tr>`;
         return;
     }
 
@@ -9756,7 +9756,8 @@ function renderReportSoldProductTable(){
     body.innerHTML = Array.from(rows.values()).sort(function(a,b){
         return a.name.localeCompare(b.name, isEN ? "en" : "id", {sensitivity:"base"});
     }).map(function(row){
-        return `<tr><td>${escapeHtml(row.name)}</td><td>${Number(row.qty).toLocaleString(isEN ? "en-US" : "id-ID")}</td><td>${formatRupiah(row.hpp)}</td><td>${formatRupiah(row.profit)}</td></tr>`;
+        const averageProfit = row.qty > 0 ? row.profit / row.qty : 0;
+        return `<tr><td>${escapeHtml(row.name)}</td><td>${Number(row.qty).toLocaleString(isEN ? "en-US" : "id-ID")}</td><td>${formatRupiah(row.hpp)}</td><td>${formatRupiah(row.profit)}</td><td>${formatRupiah(averageProfit)}</td></tr>`;
     }).join("");
 
     const labels = {
@@ -9765,7 +9766,8 @@ function renderReportSoldProductTable(){
         name: isEN ? "Product Name" : "Nama Produk",
         qty: isEN ? "Total Products" : "Total Produk",
         hpp: isEN ? "COGS" : "HPP",
-        profit: isEN ? "Profit" : "Laba"
+        profit: isEN ? "Profit" : "Laba",
+        averageProfit: isEN ? "Average Profit per Product" : "Rata-rata Laba per Produk"
     };
     const labelMap = {
         reportSoldProductTitle:labels.title,
@@ -9773,7 +9775,8 @@ function renderReportSoldProductTable(){
         reportSoldProductNameHeader:labels.name,
         reportSoldProductQtyHeader:labels.qty,
         reportSoldProductHppHeader:labels.hpp,
-        reportSoldProductProfitHeader:labels.profit
+        reportSoldProductProfitHeader:labels.profit,
+        reportSoldProductAverageProfitHeader:labels.averageProfit
     };
     Object.keys(labelMap).forEach(function(id){
         const el=document.getElementById(id);
@@ -14105,7 +14108,7 @@ document.addEventListener(
                 <p id="reportSoldProductDescription">Ringkasan jumlah produk, HPP, dan laba berdasarkan kategori produk.</p>
             </div>
         </div>
-        <div class="table-container">
+        <div class="table-wrapper" style="overflow-x:auto;">
             <table>
                 <thead>
                     <tr>
@@ -14113,10 +14116,11 @@ document.addEventListener(
                         <th id="reportSoldProductQtyHeader">Total Produk</th>
                         <th id="reportSoldProductHppHeader">HPP</th>
                         <th id="reportSoldProductProfitHeader">Laba</th>
+                        <th id="reportSoldProductAverageProfitHeader">Rata-rata Laba per Produk</th>
                     </tr>
                 </thead>
                 <tbody id="reportSoldProductBody">
-                    <tr><td colspan="4" style="text-align:center;padding:28px;color:#64748b;">Belum ada data produk terjual.</td></tr>
+                    <tr><td colspan="5" style="text-align:center;padding:28px;color:#64748b;">Belum ada data produk terjual.</td></tr>
                 </tbody>
             </table>
         </div>
