@@ -28479,69 +28479,21 @@ function saveSalesImportData(){
             ) || "[]"
         );
 
-    /* =====================================================
-       CEK FILE/ISI IMPORT SUDAH PERNAH DISIMPAN
-       Jika file yang sama sudah pernah masuk untuk marketplace
-       + akun toko yang sama, IMPORT DITOLAK TOTAL.
-       Tidak boleh ada nilai penjualan/QTY baru yang masuk.
-    ===================================================== */
+    /*
+       DUPLIKAT DIPERIKSA PER TRANSAKSI, BUKAN PER FILE SECARA TOTAL.
+       File Excel yang sama boleh diimpor ulang jika sebagian transaksi
+       sebelumnya telah dihapus. Di bawah ini, setiap transaksi akan
+       dibandingkan dengan identitas transaksi yang MASIH tersimpan.
+       Baris yang masih ada tetap dilewati; baris yang sudah dihapus
+       dapat masuk kembali. Jika seluruh baris masih ada, hasil akhirnya
+       tetap ditolak karena tidak ada transaksi baru.
+    */
     const importFingerprint =
         buildSalesImportFingerprint(
             currentSalesImport,
             storeId,
             transactions
         );
-
-    const duplicateImport =
-        imports.some(function(existingImport){
-            if(
-                String(existingImport.marketplace || "").trim().toLowerCase() !==
-                String(currentSalesImport.marketplace || "").trim().toLowerCase()
-            ){
-                return false;
-            }
-
-            if(
-                String(existingImport.storeId || "").trim() !==
-                String(storeId || "").trim()
-            ){
-                return false;
-            }
-
-            if(
-                existingImport.importFingerprint &&
-                String(existingImport.importFingerprint) === importFingerprint
-            ){
-                return true;
-            }
-
-            /*
-               BACKWARD COMPATIBILITY:
-               record lama belum memiliki fingerprint.
-               Buat fingerprint dari transaksi lama agar file
-               yang sama tetap ditolak setelah update ini.
-            */
-            const oldFingerprint =
-                buildSalesImportFingerprint(
-                    {
-                        marketplace: existingImport.marketplace
-                    },
-                    existingImport.storeId,
-                    existingImport.transactions || []
-                );
-
-            return oldFingerprint === importFingerprint;
-        });
-
-    if(duplicateImport){
-        console.warn(
-            "Import ditolak: file/data penjualan yang sama sudah pernah disimpan.",
-            importFingerprint
-        );
-        return null;
-    }
-
-
 
     /* =====================================================
        UPDATE / MERGE IMPORT
