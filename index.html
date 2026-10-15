@@ -25626,6 +25626,35 @@ function sellerBooksImportProgressHide(){
     if(overlay)overlay.remove();
 }
 
+function sellerBooksImportProgressFailure(error){
+    const copy=sellerBooksImportProgressCopy();
+    const overlay=document.getElementById("sellerBooksImportProgressOverlay");
+    const title=document.getElementById("sellerBooksImportProgressTitle");
+    const subtitle=document.getElementById("sellerBooksImportProgressSubtitle");
+    const percent=document.getElementById("sellerBooksImportProgressPercent");
+    const bar=document.getElementById("sellerBooksImportProgressBar");
+    const stage=document.getElementById("sellerBooksImportProgressStage");
+    const warning=document.getElementById("sellerBooksImportProgressWarning");
+    if(title)title.textContent= sellerBooksCurrentLanguage()==="EN" ? "Cloud save not confirmed" : "Penyimpanan cloud belum terkonfirmasi";
+    if(subtitle)subtitle.textContent= sellerBooksCurrentLanguage()==="EN" ? "Do not refresh or import the file again yet." : "Jangan refresh atau import file lagi dulu.";
+    if(percent)percent.textContent="!";
+    if(bar){bar.style.width="100%";bar.style.background="#dc2626";}
+    if(stage)stage.textContent=String(error&&error.message||error|| (sellerBooksCurrentLanguage()==="EN" ? "Unknown save error." : "Penyebab belum diketahui."));
+    if(warning)warning.textContent= sellerBooksCurrentLanguage()==="EN" ? "The file may have been processed locally, but cloud persistence has not been verified. Keep this message visible while checking the issue." : "File mungkin sudah diproses di perangkat, tetapi penyimpanan cloud belum terverifikasi. Biarkan pesan ini tampil saat masalah diperiksa.";
+    if(overlay){
+        let close=document.getElementById("sellerBooksImportProgressClose");
+        if(!close){
+            close=document.createElement("button");
+            close.id="sellerBooksImportProgressClose";
+            close.type="button";
+            close.textContent=sellerBooksCurrentLanguage()==="EN" ? "Close message" : "Tutup pesan";
+            close.style.cssText="margin-top:16px;width:100%;border:0;border-radius:10px;padding:11px 16px;background:#2563eb;color:#fff;font-weight:700;cursor:pointer;";
+            close.onclick=function(){sellerBooksImportProgressHide();};
+            overlay.firstElementChild.appendChild(close);
+        }
+    }
+}
+
 window.addEventListener("beforeunload",function(event){
     if(!window.sellerBooksImportInProgress)return;
     event.preventDefault();
@@ -26168,8 +26197,8 @@ const stock = Math.max(
                 );
             }catch(saveError){
                 console.error("Import Master Produk gagal diverifikasi di cloud:",saveError);
-                sellerBooksImportProgressUpdate(92,"verifying");
-                sellerBooksAlert("Import belum terkonfirmasi tersimpan di cloud. Jangan tutup halaman atau import ulang. Silakan coba lagi setelah koneksi stabil.");
+                sellerBooksImportProgressFailure(saveError);
+                return;
             }
 
 
@@ -26190,7 +26219,11 @@ const stock = Math.max(
         }
 
         finally{
-            sellerBooksImportProgressHide();
+            /* Overlay tetap terlihat jika penyimpanan cloud gagal; hanya ditutup
+               otomatis setelah jalur sukses atau kesalahan pemrosesan umum. */
+            if(!document.getElementById("sellerBooksImportProgressClose")){
+                sellerBooksImportProgressHide();
+            }
         }
 
         /*
