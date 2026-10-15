@@ -25805,53 +25805,30 @@ const stock = Math.max(
     )
 );
 
-                const importedStatus = String(
+                const importedStatusRaw =
+                    row["Status Produk"] !== undefined ? row["Status Produk"] :
+                    (row["Product Status"] !== undefined ? row["Product Status"] :
+                    (row["STATUS PRODUK"] !== undefined ? row["STATUS PRODUK"] :
+                    (row["Status"] !== undefined ? row["Status"] : "Aktif")));
 
-                    row["Status Produk"] || row["Product Status"]
+                const importedStatus = String(importedStatusRaw).trim().toLowerCase();
 
-                    ||
-
-                    row["STATUS PRODUK"]
-
-                    ||
-
-                    row["Status"]
-
-                    ||
-
-                    "Aktif"
-
-                ).toLowerCase();
-
-
-
-                const status =
-
-                    importedStatus === "tidak aktif"
-
-                    ||
-
-                    importedStatus === "inactive"
-
-                    ||
-
-                    importedStatus === "nonaktif"
-
-                    ||
-
-                    importedStatus === "non-active"
-
+                const status = importedStatus === ""
+                    ? ""
+                    : (
+                        importedStatus === "tidak aktif" ||
+                        importedStatus === "inactive" ||
+                        importedStatus === "nonaktif" ||
+                        importedStatus === "non-active"
                     ? "inactive"
-
-                    : "active";
-
+                    : "active");
 
 
                 /*
                    VALIDASI DATA
                 */
 
-                if(!sku || !name){
+                if(!sku){
 
                     errorCount++;
 
@@ -25895,16 +25872,32 @@ const stock = Math.max(
 
                 if(existingProduct){
 
-                    duplicateCount++;
+                    existingProduct.name = name;
+                    existingProduct.category = category;
+                    existingProduct.price = price;
+                    existingProduct.cost = cost;
+                    existingProduct.adminFeePercent = adminFeePercent;
+                    existingProduct.stock = stock;
+                    existingProduct.status = status;
+                    existingProduct.updatedAt = new Date().toISOString();
+
+                    successCount++;
 
                     return;
 
                 }
 
+                if(!name){
 
+                    errorCount++;
+
+                    return;
+
+                }
 
                 /*
-                   SIMPAN PRODUK
+                   SKU BARU:
+                   SIMPAN PRODUK BARU.
                 */
 
                 products.push({
