@@ -16362,7 +16362,14 @@ async function sellerBooksPersistCloudDataStrict(expectedSnapshot,verification){
         sellerBooksCloudState=sellerBooksCloneCloudState(readBack.data);
         sellerBooksCloudDirtyKeys.clear();
         sellerBooksCloudClearRequested=false;
-        await sellerBooksSaveFastCache();
+        /* Supabase read-back above is the durable confirmation.
+           IndexedDB fast-cache failure must not report a saved import as failed:
+           the next page load can rebuild this optional cache from Supabase. */
+        try{
+            await sellerBooksSaveFastCache();
+        }catch(cacheError){
+            console.warn("SellerBooks: cloud save confirmed; fast cache update failed:",cacheError);
+        }
     });
 
     return sellerBooksCloudSavePromise;
