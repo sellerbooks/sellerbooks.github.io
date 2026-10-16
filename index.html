@@ -6370,8 +6370,9 @@ async function deleteReportsByDateRange(){
         return;
     }
 
-    sellerBooksDeleteProgressStart();
     /*
+       Hapus laporan periode tanpa pop-up progress.
+       Pop-up progress tetap dipakai untuk proses Master Produk.
        Kembalikan stok TERLEBIH DAHULU berdasarkan import yang
        benar-benar akan dihapus. Setelah itu baru hapus laporan.
     */
@@ -6387,7 +6388,27 @@ async function deleteReportsByDateRange(){
 
     updateReports();
 
-    const cloudConfirmed=await sellerBooksDeleteProgressFinish();
+    let cloudConfirmed=false;
+    try{
+        if(!sellerBooksAuthUser || !sellerBooksCloudReady || sellerBooksCloudLoading){
+            throw new Error("cloud_not_ready");
+        }
+        if(typeof sellerBooksCloudSaveTimer !== "undefined" && sellerBooksCloudSaveTimer){
+            clearTimeout(sellerBooksCloudSaveTimer);
+            sellerBooksCloudSaveTimer = null;
+        }
+        const expectedSnapshot=sellerBooksCloneCloudState(sellerBooksCloudState);
+        await sellerBooksPersistCloudDataStrict(expectedSnapshot);
+        if(sellerBooksCloudDirtyKeys && sellerBooksCloudDirtyKeys.size){
+            throw new Error("cloud_save_unconfirmed");
+        }
+        cloudConfirmed=true;
+    }catch(error){
+        console.error("Penghapusan laporan periode belum terkonfirmasi di cloud:",error);
+        sellerBooksAlert(sellerBooksCurrentLanguage()==="en"
+            ? "The report deletion could not be confirmed in the cloud. Please check the data before repeating the deletion."
+            : "Penghapusan laporan belum dapat dikonfirmasi di cloud. Periksa data sebelum mengulangi penghapusan.");
+    }
     if(!cloudConfirmed)return;
 
     sellerBooksAlert(
