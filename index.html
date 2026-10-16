@@ -16152,17 +16152,44 @@ async function sellerBooksWriteCloudSnapshot(snapshot,expectedUpdatedAt,allowIns
 }
 
 async function sellerBooksReloadCloudAfterConflict(){
+    /*
+       Jangan membuang perubahan lokal yang belum tersimpan ketika autosave
+       mengalami konflik. Sebelumnya, pemuatan ulang cloud mentah menghapus
+       dirty keys, sehingga import yang baru terlihat bisa hilang setelah refresh.
+       Gabungkan perubahan lokal dengan data cloud terbaru.
+    */
+    const localState=sellerBooksCloneCloudState(sellerBooksCloudState);
+    const baseState=sellerBooksCloneCloudState(sellerBooksCloudBaseState);
+    const dirtyKeys=new Set(sellerBooksCloudDirtyKeys);
     const row=await sellerBooksReadCloudRow();
+    const remoteState=sellerBooksCloneCloudState(row.data);
+    let mergedState;
+    try{
+        mergedState=sellerBooksBuildConcurrentSnapshot(baseState,localState,remoteState);
+    }catch(mergeError){
+        console.error("Konflik cloud: perubahan lokal dipertahankan; pemulihan otomatis dibatalkan.",mergeError);
+        throw mergeError;
+    }
+
     sellerBooksCloudUpdatedAt=row.updatedAt;
-    sellerBooksCloudBaseState=sellerBooksCloneCloudState(row.data);
-    sellerBooksCloudState=sellerBooksCloneCloudState(row.data);
+    sellerBooksCloudBaseState=remoteState;
+    sellerBooksCloudState=sellerBooksCloneCloudState(mergedState);
     sellerBooksCloudDirtyKeys.clear();
+    dirtyKeys.forEach(function(key){
+        if(JSON.stringify(mergedState[key])!==JSON.stringify(remoteState[key])){
+            sellerBooksCloudDirtyKeys.add(key);
+        }
+    });
     sellerBooksCloudClearRequested=false;
     sellerBooksCloudReady=true;
     sellerBooksCloudLoading=false;
     await sellerBooksSaveFastCache();
     sellerBooksRefreshRuntimeFromCloud();
     sellerBooksRefreshAllViewsFromCloud();
+
+    if(sellerBooksCloudDirtyKeys.size){
+        sellerBooksQueueCloudSave();
+    }
     return row;
 }
 
