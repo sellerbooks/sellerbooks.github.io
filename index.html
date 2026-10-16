@@ -16347,13 +16347,19 @@ async function sellerBooksPersistCloudDataStrict(expectedSnapshot,verification){
             throw new Error("Penyimpanan cloud belum dapat dikonfirmasi.");
         }
 
-        if(typeof verification==="function"&&!verification(result.data)){
-            throw new Error("Verifikasi gagal: perubahan belum tersimpan sesuai permintaan.");
+        /* Verifikasi melalui pembacaan baru dari Supabase, bukan hanya
+           respons UPDATE. Ini memastikan record tetap ada setelah refresh. */
+        const readBack=await sellerBooksReadCloudRow();
+        if(!readBack.exists || !readBack.updatedAt){
+            throw new Error("Verifikasi cloud gagal: data tidak ditemukan setelah disimpan.");
+        }
+        if(typeof verification==="function"&&!verification(readBack.data)){
+            throw new Error("Verifikasi gagal: data yang dibaca kembali dari cloud tidak sesuai.");
         }
 
-        sellerBooksCloudUpdatedAt=result.updatedAt;
-        sellerBooksCloudBaseState=sellerBooksCloneCloudState(snapshot);
-        sellerBooksCloudState=sellerBooksCloneCloudState(snapshot);
+        sellerBooksCloudUpdatedAt=readBack.updatedAt;
+        sellerBooksCloudBaseState=sellerBooksCloneCloudState(readBack.data);
+        sellerBooksCloudState=sellerBooksCloneCloudState(readBack.data);
         sellerBooksCloudDirtyKeys.clear();
         sellerBooksCloudClearRequested=false;
         await sellerBooksSaveFastCache();
