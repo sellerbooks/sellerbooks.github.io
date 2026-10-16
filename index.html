@@ -21904,6 +21904,18 @@ async function sellerBooksDispatchExcelToImportPenjualan(queueItem,showResult){
     }
 
     const record=saveSalesImportData();
+    if(record){
+        if(typeof sellerBooksCloudSaveTimer!=="undefined" && sellerBooksCloudSaveTimer){
+            clearTimeout(sellerBooksCloudSaveTimer);
+            sellerBooksCloudSaveTimer=null;
+        }
+        const expectedSnapshot=sellerBooksCloneCloudState(sellerBooksCloudState);
+        await sellerBooksPersistCloudDataStrict(expectedSnapshot,function(savedData){
+            let savedImports=[];
+            try{savedImports=JSON.parse(savedData["sellerbooks_sales_imports"]||"[]")||[];}catch(error){return false;}
+            return savedImports.some(function(item){return String(item.id||"")===String(record.id||"");});
+        });
+    }
     const result={
         new_transactions:record?Number(record.rowCount||0):0,
         new_qty:record?Number(record.totalQty||0):0,
@@ -31326,7 +31338,7 @@ const previewRows = cleanRows;
    FASE 2 - KONFIRMASI KOLOM FINAL
 ===================================================== */
 
-function confirmSalesColumns(){
+async function confirmSalesColumns(){
 
     if(!currentSalesImport){
 
@@ -31493,6 +31505,26 @@ function confirmSalesColumns(){
         return;
     }
 
+    /* Jangan nyatakan import berhasil sebelum snapshot penjualan
+       benar-benar tersimpan dan terkonfirmasi oleh Supabase. */
+    try{
+        if(typeof sellerBooksCloudSaveTimer!=="undefined" && sellerBooksCloudSaveTimer){
+            clearTimeout(sellerBooksCloudSaveTimer);
+            sellerBooksCloudSaveTimer=null;
+        }
+        const expectedSnapshot=sellerBooksCloneCloudState(sellerBooksCloudState);
+        await sellerBooksPersistCloudDataStrict(expectedSnapshot,function(savedData){
+            let savedImports=[];
+            try{savedImports=JSON.parse(savedData["sellerbooks_sales_imports"]||"[]")||[];}catch(error){return false;}
+            return savedImports.some(function(item){return String(item.id||"")===String(record.id||"");});
+        });
+    }catch(error){
+        console.error("Import Penjualan belum terkonfirmasi tersimpan di cloud:",error);
+        sellerBooksAlert(sellerBooksCurrentLanguage()==="en"
+            ? "The import could not be confirmed in the cloud. Please check the report before importing again."
+            : "Import belum dapat dikonfirmasi tersimpan di cloud. Periksa laporan sebelum mengimpor ulang.");
+        return;
+    }
 
     /* TUTUP PREVIEW */
     closeSalesPreview();
