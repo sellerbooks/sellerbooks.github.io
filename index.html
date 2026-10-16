@@ -21986,13 +21986,10 @@ async function sellerBooksDispatchExcelQueue(opts){
 }
 
 function startSellerBooksExcelDispatchWorker(){
-    /*
-       Kontrak: antrean API hanya diproses sebagai tindak lanjut langsung
-       setelah pengguna menekan Pull Orders dan API menghasilkan RAW_FILE_READY.
-       Jangan polling antrean di latar belakang karena dapat berjalan bersamaan
-       dengan import manual dan sinkronisasi cloud.
-    */
+    if(window.__sellerBooksExcelDispatchStarted)return;
     window.__sellerBooksExcelDispatchStarted=true;
+    setTimeout(function(){sellerBooksDispatchExcelQueue({showResult:false}).catch(console.error);},5000);
+    setInterval(function(){sellerBooksDispatchExcelQueue({showResult:false}).catch(console.error);},30000);
 }
 function startSellerBooksTikTokApiQueueWorker(){ startSellerBooksExcelDispatchWorker(); }
 function sellerBooksPullOrderIsEN(){
