@@ -9723,14 +9723,49 @@ async function downloadReportPDF(){
    Tabel tambahan ini memakai filter laporan yang sama dan tidak
    mengubah mesin perhitungan laporan yang sudah ada.
 ========================================================= */
+let reportSoldProductPage = 1;
+let reportSoldProductPageSize = 20;
+let reportSoldProductFilterKey = "";
+
+function goToReportSoldProductPage(page){
+    reportSoldProductPage = Math.max(1, Number(page) || 1);
+    renderReportSoldProductTable();
+}
+
+function changeReportSoldProductPageSize(value){
+    const parsed = Number(value);
+    reportSoldProductPageSize = [20,40,50,80,100].includes(parsed) ? parsed : 20;
+    reportSoldProductPage = 1;
+    renderReportSoldProductTable();
+}
+
 function renderReportSoldProductTable(){
     const body = document.getElementById("reportSoldProductBody");
+    const pagination = document.getElementById("reportSoldProductPagination");
+    const controls = document.getElementById("reportSoldProductPaginationControls");
+    const pageSizeSelect = document.getElementById("reportSoldProductPageSize");
     if(!body) return;
 
     const isEN = String(typeof sellerBooksCurrentLanguage === "function" ? sellerBooksCurrentLanguage() : "id").toLowerCase() === "en";
     const transactions = getFilteredReportTransactions();
+    const filterKey = [
+        document.getElementById("reportPeriod")?.value || "",
+        document.getElementById("reportMarketplace")?.value || "",
+        document.getElementById("reportStore")?.value || "",
+        document.getElementById("reportDateFrom")?.value || "",
+        document.getElementById("reportDateTo")?.value || ""
+    ].join("|");
+    if(reportSoldProductFilterKey !== filterKey){
+        reportSoldProductFilterKey = filterKey;
+        reportSoldProductPage = 1;
+    }
+    const pageSizeLabel = document.getElementById("reportSoldProductPageSizeLabel");
+    const rowsLabel = document.getElementById("reportSoldProductRowsLabel");
+    if(pageSizeLabel) pageSizeLabel.textContent = isEN ? "Show" : "Tampilkan";
+    if(rowsLabel) rowsLabel.textContent = isEN ? "rows" : "baris";
     if(!transactions.length){
         body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:#64748b;">${isEN ? "No sold product data." : "Belum ada data produk terjual."}</td></tr>`;
+        if(pagination) pagination.style.display = "none";
         return;
     }
 
@@ -9753,12 +9788,42 @@ function renderReportSoldProductTable(){
         row.profit += sales - fee - hpp;
     });
 
-    body.innerHTML = Array.from(rows.values()).sort(function(a,b){
+    const sortedRows = Array.from(rows.values()).sort(function(a,b){
         return a.name.localeCompare(b.name, isEN ? "en" : "id", {sensitivity:"base"});
-    }).map(function(row){
+    });
+    const totalPages = Math.max(1, Math.ceil(sortedRows.length / reportSoldProductPageSize));
+    reportSoldProductPage = Math.min(Math.max(1, reportSoldProductPage), totalPages);
+    if(pageSizeSelect) pageSizeSelect.value = String(reportSoldProductPageSize);
+    const startIndex = (reportSoldProductPage - 1) * reportSoldProductPageSize;
+    const endIndex = Math.min(startIndex + reportSoldProductPageSize, sortedRows.length);
+    const visibleRows = sortedRows.slice(startIndex, endIndex);
+    body.innerHTML = visibleRows.map(function(row){
         const averageProfit = row.qty > 0 ? row.profit / row.qty : 0;
         return `<tr><td>${escapeHtml(row.name)}</td><td>${Number(row.qty).toLocaleString(isEN ? "en-US" : "id-ID")}</td><td>${formatRupiah(row.hpp)}</td><td>${formatRupiah(row.profit)}</td><td>${formatRupiah(averageProfit)}</td></tr>`;
     }).join("");
+
+    if(pagination) pagination.style.display = "flex";
+    if(controls){
+        let controlsHtml = `<span class="report-transaction-page-info">${startIndex + 1}-${endIndex} ${isEN ? "of" : "dari"} ${sortedRows.length}</span>`;
+        controlsHtml += `<button type="button" class="report-transaction-page-button" onclick="goToReportSoldProductPage(${reportSoldProductPage - 1})" ${reportSoldProductPage <= 1 ? "disabled" : ""} aria-label="${isEN ? "Previous page" : "Halaman sebelumnya"}">‹</button>`;
+        const maxButtons = 7;
+        let pageStart = Math.max(1, reportSoldProductPage - 3);
+        let pageEnd = Math.min(totalPages, pageStart + maxButtons - 1);
+        pageStart = Math.max(1, pageEnd - maxButtons + 1);
+        if(pageStart > 1){
+            controlsHtml += `<button type="button" class="report-transaction-page-button" onclick="goToReportSoldProductPage(1)">1</button>`;
+            if(pageStart > 2) controlsHtml += `<span class="report-transaction-page-info">...</span>`;
+        }
+        for(let page = pageStart; page <= pageEnd; page++){
+            controlsHtml += `<button type="button" class="report-transaction-page-button ${page === reportSoldProductPage ? "active" : ""}" onclick="goToReportSoldProductPage(${page})" aria-current="${page === reportSoldProductPage ? "page" : "false"}">${page}</button>`;
+        }
+        if(pageEnd < totalPages){
+            if(pageEnd < totalPages - 1) controlsHtml += `<span class="report-transaction-page-info">...</span>`;
+            controlsHtml += `<button type="button" class="report-transaction-page-button" onclick="goToReportSoldProductPage(${totalPages})">${totalPages}</button>`;
+        }
+        controlsHtml += `<button type="button" class="report-transaction-page-button" onclick="goToReportSoldProductPage(${reportSoldProductPage + 1})" ${reportSoldProductPage >= totalPages ? "disabled" : ""}>${isEN ? "Next" : "Berikutnya"} ›</button>`;
+        controls.innerHTML = controlsHtml;
+    }
 
     const labels = {
         title: isEN ? "Sold Product Details" : "Detail Produk Terjual",
@@ -14123,6 +14188,20 @@ document.addEventListener(
                     <tr><td colspan="5" style="text-align:center;padding:28px;color:#64748b;">Belum ada data produk terjual.</td></tr>
                 </tbody>
             </table>
+        </div>
+        <div id="reportSoldProductPagination" class="report-transaction-pagination" style="display:none;">
+            <div class="report-transaction-page-size">
+                <span id="reportSoldProductPageSizeLabel">Tampilkan</span>
+                <select id="reportSoldProductPageSize" onchange="changeReportSoldProductPageSize(this.value)" aria-label="Jumlah baris Detail Produk Terjual">
+                    <option value="20" selected>20</option>
+                    <option value="40">40</option>
+                    <option value="50">50</option>
+                    <option value="80">80</option>
+                    <option value="100">100</option>
+                </select>
+                <span id="reportSoldProductRowsLabel">baris</span>
+            </div>
+            <div id="reportSoldProductPaginationControls" class="report-transaction-pagination-controls"></div>
         </div>
     </div>
 
