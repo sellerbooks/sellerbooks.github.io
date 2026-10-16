@@ -22888,6 +22888,44 @@ async function refreshStoreIntegrationStates(force){
         }
     }catch(error){
         console.warn("Status integrasi akun toko gagal dimuat:",error);
+
+        /*
+           Jangan biarkan halaman Akun Toko menampilkan loading tanpa akhir
+           ketika RPC gagal. Tampilkan pesan yang bisa dipahami dan tombol
+           coba lagi; jangan menandai koneksi sebagai DISCONNECTED karena
+           kegagalan membaca cloud bukan bukti bahwa integrasi terputus.
+        */
+        const storesView = document.getElementById("stores");
+        const grid = document.getElementById("storesGrid");
+        const storesViewIsActive =
+            !!storesView && storesView.classList.contains("active");
+
+        if(storesViewIsActive && grid && !grid.querySelector(".store-card")){
+            const en = String(
+                typeof sellerBooksCurrentLanguage === "function"
+                    ? sellerBooksCurrentLanguage()
+                    : "ID"
+            ).trim().toUpperCase() === "EN";
+
+            grid.innerHTML =
+                '<div class="store-empty">' +
+                    '<div class="store-empty-icon">⚠️</div>' +
+                    '<h3>' +
+                        (en
+                            ? 'Could not load marketplace connection status'
+                            : 'Status integrasi marketplace gagal dimuat') +
+                    '</h3>' +
+                    '<p>' +
+                        (en
+                            ? 'Your connection data has not been changed. Please try again.'
+                            : 'Data integrasi tidak diubah. Silakan coba muat kembali statusnya.') +
+                    '</p>' +
+                    '<button type="button" class="store-action-button store-integrate-button" ' +
+                        'onclick="refreshStoreIntegrationStates(true)">' +
+                        (en ? 'Try again' : 'Coba Lagi') +
+                    '</button>' +
+                '</div>';
+        }
     }finally{
         sellerBooksStoreConnectionsLoading = false;
     }
