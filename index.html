@@ -16286,18 +16286,19 @@ async function sellerBooksPersistCloudDataNow(){
 async function sellerBooksPersistCloudDataStrict(expectedSnapshot,verification){
     if(!sellerBooksAuthUser||!sellerBooksCloudReady)throw new Error("Sinkronisasi Supabase belum siap.");
 
-    const snapshot=expectedSnapshot||sellerBooksCloneCloudState(sellerBooksCloudState);
     const saveUserId=String(sellerBooksAuthUser.id||"");
     const saveGeneration=sellerBooksCloudGeneration;
 
     /*
-       PENTING: ambil updated_at setelah seluruh penulisan sebelumnya dalam
-       antrean selesai. Mengambilnya sebelum masuk antrean dapat memakai
-       updated_at lama jika autosave sedang berjalan. Akibatnya import
-       mendapat conflict, memuat ulang snapshot lama, lalu produk baru hilang
-       dari tampilan setelah refresh.
+       Serialisasi cloud harus pulih walau operasi sebelumnya gagal.
+       Snapshot diambil DI DALAM antrean agar autosave yang selesai lebih
+       dahulu tidak ditimpa snapshot lama dari awal import.
     */
-    sellerBooksCloudSavePromise=sellerBooksCloudSavePromise.then(async function(){
+    sellerBooksCloudSavePromise=sellerBooksCloudSavePromise
+      .catch(function(previousError){
+          console.warn("Melanjutkan antrean cloud setelah operasi sebelumnya gagal:",previousError);
+      })
+      .then(async function(){
         if(!sellerBooksAuthUser||String(sellerBooksAuthUser.id||"")!==saveUserId){
             throw new Error("Akun berubah sebelum import selesai disimpan.");
         }
@@ -16306,13 +16307,44 @@ async function sellerBooksPersistCloudDataStrict(expectedSnapshot,verification){
             throw new Error("Sinkronisasi cloud berubah saat import berlangsung. Silakan coba lagi.");
         }
 
-        const expectedUpdatedAt=sellerBooksCloudUpdatedAt;
-        const result=await sellerBooksWriteCloudSnapshot(
-            snapshot,expectedUpdatedAt,!expectedUpdatedAt,true
-        );
+        /* Gunakan state terbaru, termasuk record import yang baru dibuat. */
+        let snapshot=sellerBooksCloneCloudState(sellerBooksCloudState);
+        let expectedUpdatedAt=sellerBooksCloudUpdatedAt;
+        let result=null;
 
-        if(result.conflict){
-            throw new Error("Konflik penyimpanan cloud: data berubah bersamaan. Import tidak dikonfirmasi tersimpan.");
+        for(let attempt=0;attempt<3;attempt++){
+            try{
+                result=await sellerBooksWriteCloudSnapshot(
+                    snapshot,expectedUpdatedAt,!expectedUpdatedAt,true
+                );
+            }catch(writeError){
+                /* Retry hanya untuk kegagalan jaringan/server sementara.
+                   Update snapshot ke row yang sama bersifat idempotent. */
+                if(attempt>=2)throw writeError;
+                await new Promise(function(resolve){setTimeout(resolve,250*(attempt+1));});
+                continue;
+            }
+
+            if(!result.conflict)break;
+
+            if(attempt>=2){
+                throw new Error("Konflik penyimpanan cloud: data berubah bersamaan. Import tidak dikonfirmasi tersimpan.");
+            }
+
+            const remote=await sellerBooksReadCloudRow();
+            if(!remote.exists&&expectedUpdatedAt){
+                throw new Error("Data cloud tidak ditemukan saat sinkronisasi. Penulisan dibatalkan demi keamanan.");
+            }
+            snapshot=sellerBooksBuildConcurrentSnapshot(
+                sellerBooksCloudBaseState,
+                sellerBooksCloudState,
+                sellerBooksCloneCloudState(remote.data)
+            );
+            expectedUpdatedAt=remote.updatedAt;
+        }
+
+        if(!result||result.conflict){
+            throw new Error("Penyimpanan cloud belum dapat dikonfirmasi.");
         }
 
         if(typeof verification==="function"&&!verification(result.data)){
