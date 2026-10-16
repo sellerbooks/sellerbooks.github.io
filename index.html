@@ -22771,10 +22771,37 @@ async function refreshStoreIntegrationStates(force){
     sellerBooksStoreConnectionsLoading = true;
 
     try{
-        const {data,error} = await sellerBooksSupabase.rpc(
+        /*
+           Batas waktu eksplisit: jika jaringan/RPC Supabase macet,
+           jangan biarkan sellerBooksStoreConnectionsLoading terkunci
+           selamanya. Promise.race tidak membatalkan request yang tertinggal,
+           tetapi memungkinkan UI keluar ke catch/finally dan menyediakan retry.
+        */
+        let connectionTimeoutId = null;
+        const connectionRequest = sellerBooksSupabase.rpc(
             "sellerbooks_api_list_connections"
         );
+        const connectionTimeout = new Promise(function(resolve,reject){
+            connectionTimeoutId = setTimeout(function(){
+                reject(new Error(
+                    "Waktu tunggu status integrasi habis. Periksa koneksi cloud lalu coba lagi."
+                ));
+            },15000);
+        });
 
+        let connectionResult;
+        try{
+            connectionResult = await Promise.race([
+                connectionRequest,
+                connectionTimeout
+            ]);
+        }finally{
+            if(connectionTimeoutId !== null){
+                clearTimeout(connectionTimeoutId);
+            }
+        }
+
+        const {data,error} = connectionResult;
         if(error) throw error;
 
         const next = new Map();
