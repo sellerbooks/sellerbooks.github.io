@@ -6381,6 +6381,11 @@ async function deleteReportsByDateRange(){
             deletedImports
         );
 
+    /* Setelah hapus periode, fingerprint file asal tidak boleh
+       menghalangi import ulang untuk transaksi yang benar-benar dihapus. */
+    remaining.forEach(function(record){
+        if(record && Array.isArray(record.transactions))delete record.importFingerprint;
+    });
     sellerBooksStorage.setItem(
         "sellerbooks_sales_imports",
         JSON.stringify(remaining)
@@ -8883,6 +8888,12 @@ async function deleteSelectedReportTransactions(){
     }
     const stockResult=restoreProductStockFromDeletedImports(stockRestoreRecords);
     const remainingImports=imports.filter(function(record){return Array.isArray(record.transactions)&&record.transactions.length>0;});
+    /* Baris yang dihapus harus bisa diimpor kembali. Fingerprint file lama
+       tidak boleh memblokir baris yang sudah dihapus; identity transaksi
+       tetap mencegah baris yang masih ada menjadi duplikat. */
+    remainingImports.forEach(function(record){
+        if(record && Array.isArray(record.transactions))delete record.importFingerprint;
+    });
     sellerBooksStorage.setItem("sellerbooks_sales_imports",JSON.stringify(remainingImports));
     selectedReportTransactionKeys.clear();
     sellerBooksReportTransactionsCacheImports=null;sellerBooksReportTransactionsCache=null;
