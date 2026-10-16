@@ -22124,7 +22124,7 @@ async function syncTikTokOrdersNow(storeId){
         );
 
         sellerBooksAlert(
-            sellerBooksPullOrderText("failedOrders","TikTok")+"\n\n"
+            sellerBooksPullOrderText("failedOrders","TikTok")+"\n\n"+
             (error?.message||
                 sellerBooksPullOrderText("unexpected","TikTok")),
             sellerBooksPullOrderText("loadingTitle","TikTok")
