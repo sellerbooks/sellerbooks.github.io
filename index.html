@@ -21895,19 +21895,29 @@ async function sellerBooksDispatchExcelToImportPenjualan(queueItem,showResult){
     else if(typeof renderStores==="function") setTimeout(function(){renderStores(true);},300);
 
     if(showResult){
-        const title="Hasil Tarik Order "+marketplaceName;
+        const en=sellerBooksPullOrderIsEN();
+        const title=en?"Order Fetch Results — "+marketplaceName:"Hasil Tarik Order "+marketplaceName;
+        const numberLocale=en?"en-US":"id-ID";
         if(result.new_transactions>0){
             sellerBooksAlert(
-                "Order "+marketplaceName+" berhasil diproses oleh mesin Import Penjualan.\n\n"+
-                "Packing baru: "+result.new_packing_count.toLocaleString("id-ID")+"\n"+
-                "PCS baru: "+result.new_qty.toLocaleString("id-ID")+"\n\n"+
-                "Perhitungan, HPP, admin, packing, snapshot dan laporan dikerjakan oleh mesin Import Penjualan SellerBooks.",
+                en
+                    ? marketplaceName+" orders were successfully processed by the Sales Import engine.\n\n"+
+                      "New packing orders: "+result.new_packing_count.toLocaleString(numberLocale)+"\n"+
+                      "New units: "+result.new_qty.toLocaleString(numberLocale)+"\n\n"+
+                      "Calculations, COGS, admin fees, packing, snapshots, and reports are handled by the SellerBooks Sales Import engine."
+                    : "Order "+marketplaceName+" berhasil diproses oleh mesin Import Penjualan.\n\n"+
+                      "Packing baru: "+result.new_packing_count.toLocaleString(numberLocale)+"\n"+
+                      "PCS baru: "+result.new_qty.toLocaleString(numberLocale)+"\n\n"+
+                      "Perhitungan, HPP, admin, packing, snapshot dan laporan dikerjakan oleh mesin Import Penjualan SellerBooks.",
                 title
             );
         }else{
             sellerBooksAlert(
-                "Data "+marketplaceName+" sudah ada / tidak menghasilkan transaksi baru.\n\n"+
-                "Mesin Import Penjualan melewati data duplikat.",
+                en
+                    ? marketplaceName+" data already exists or produced no new transactions.\n\n"+
+                      "The Sales Import engine skipped duplicate data."
+                    : "Data "+marketplaceName+" sudah ada / tidak menghasilkan transaksi baru.\n\n"+
+                      "Mesin Import Penjualan melewati data duplikat.",
                 title
             );
         }
