@@ -31549,6 +31549,26 @@ async function confirmSalesColumns(){
     }
 
 
+    /* Tampilkan status segera dan cegah klik konfirmasi berulang. */
+    const confirmButton=document.getElementById("confirmSalesColumnsButton");
+    if(confirmButton && confirmButton.dataset.saving==="true")return;
+    const originalButtonText=confirmButton ? confirmButton.textContent : "";
+    if(confirmButton){
+        confirmButton.dataset.saving="true";
+        confirmButton.disabled=true;
+        confirmButton.textContent=sellerBooksCurrentLanguage()==="en"
+            ? "Saving… Please wait"
+            : "Sedang menyimpan…";
+        confirmButton.setAttribute("aria-busy","true");
+    }
+    const restoreConfirmButton=function(){
+        if(!confirmButton)return;
+        confirmButton.dataset.saving="false";
+        confirmButton.disabled=false;
+        confirmButton.textContent=originalButtonText;
+        confirmButton.removeAttribute("aria-busy");
+    };
+
     /* SIMPAN DATA */
     let record = null;
 
@@ -31557,6 +31577,7 @@ async function confirmSalesColumns(){
     }catch(error){
         console.error("SellerBooks: saveSalesImportData gagal:", error);
 
+        restoreConfirmButton();
         sellerBooksAlert(
             sellerBooksSalesImportText("saveError") +
             (error?.message || String(error))
@@ -31567,6 +31588,7 @@ async function confirmSalesColumns(){
 
     if(!record){
 
+        restoreConfirmButton();
         sellerBooksAlert(
             sellerBooksSalesImportText("saveFailed")
         );
@@ -31589,6 +31611,7 @@ async function confirmSalesColumns(){
         });
     }catch(error){
         console.error("Import Penjualan belum terkonfirmasi tersimpan di cloud:",error);
+        restoreConfirmButton();
         sellerBooksAlert(sellerBooksCurrentLanguage()==="en"
             ? "The import could not be confirmed in the cloud. Please check the report before importing again."
             : "Import belum dapat dikonfirmasi tersimpan di cloud. Periksa laporan sebelum mengimpor ulang.");
