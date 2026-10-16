@@ -16378,7 +16378,16 @@ async function sellerBooksPersistCloudDataStrict(expectedSnapshot,verification){
 function sellerBooksQueueCloudSave(){
     if(!sellerBooksAuthUser||!sellerBooksCloudReady)return;
     clearTimeout(sellerBooksCloudSaveTimer);
-    sellerBooksCloudSaveTimer=setTimeout(function(){sellerBooksPersistCloudDataNow();},250);
+    /*
+       Simpan sesegera mungkin setelah perubahan sinkron selesai.
+       Timer 0 ms tetap menggabungkan beberapa setItem dalam satu proses
+       JavaScript, tetapi tidak menahan perubahan selama 250 ms.
+       Semua penulisan tetap diserialisasi oleh sellerBooksCloudSavePromise.
+    */
+    sellerBooksCloudSaveTimer=setTimeout(function(){
+        sellerBooksCloudSaveTimer=null;
+        sellerBooksPersistCloudDataNow();
+    },0);
 }
 
 async function sellerBooksMigrateLogoDataUrl(settings){
