@@ -8901,6 +8901,30 @@ async function deleteSelectedReportTransactions(){
     sellerBooksProductAnalysisRowsCache={sourceTransactions:null,key:"",rows:null};
     updateReports();
     const en=sellerBooksCurrentLanguage()==="en";
+    try{
+        if(typeof sellerBooksCloudSaveTimer!=="undefined" && sellerBooksCloudSaveTimer){
+            clearTimeout(sellerBooksCloudSaveTimer);
+            sellerBooksCloudSaveTimer=null;
+        }
+        const expectedSnapshot=sellerBooksCloneCloudState(sellerBooksCloudState);
+        await sellerBooksPersistCloudDataStrict(expectedSnapshot,function(savedData){
+            let savedImports=[];
+            try{savedImports=JSON.parse(savedData["sellerbooks_sales_imports"]||"[]")||[];}catch(error){return false;}
+            const savedKeys=new Set();
+            savedImports.forEach(function(record){
+                (record.transactions||[]).forEach(function(transaction,index){
+                    savedKeys.add(String(record.id||"")+"::"+String(index));
+                });
+            });
+            return deletedRefs.every(function(ref){return !savedKeys.has(ref);});
+        });
+    }catch(error){
+        console.error("Penghapusan checkbox belum terkonfirmasi tersimpan di cloud:",error);
+        sellerBooksAlert(en
+            ? "The deletion could not be confirmed in the cloud. Please check the report before repeating it."
+            : "Penghapusan belum dapat dikonfirmasi tersimpan di cloud. Periksa laporan sebelum mengulang penghapusan.");
+        return;
+    }
     sellerBooksAlert((en?"Selected transaction rows deleted successfully.":"Baris transaksi terpilih berhasil dihapus.")+"\n"+deletedRefs.length+(en?" transaction rows deleted.":" baris transaksi dihapus.")+(stockResult.restoredQty>0?"\n\n"+(en?"Stock restored:":"Stok dikembalikan:")+" "+stockResult.restoredQty+" pcs.":""));
 }
 function goToReportTransactionPage(page){
