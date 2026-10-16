@@ -16420,12 +16420,20 @@ async function sellerBooksLoadCloudDataInternal(loadUserId){
 
     /*
        SAFETY GUARD:
-       Saat mengambil sumber data utama dari Supabase, semua pending save
-       dari cache/local state dibatalkan. Ini mencegah snapshot lama
-       menimpa data cloud yang baru saja berhasil dibaca.
+       Jangan membuang autosave yang sudah dijadwalkan saat pembacaan cloud
+       dimulai. Operasi simpan yang tertunda harus diberi kesempatan selesai
+       terlebih dahulu agar refresh/login tidak membaca snapshot lama.
     */
+    const hadPendingCloudSave = sellerBooksCloudSaveTimer !== null;
     clearTimeout(sellerBooksCloudSaveTimer);
     sellerBooksCloudSaveTimer=null;
+
+    if(hadPendingCloudSave && sellerBooksCloudReady && !sellerBooksCloudLoading){
+        await sellerBooksPersistCloudDataNow();
+    }else if(sellerBooksCloudSavePromise){
+        await sellerBooksCloudSavePromise;
+    }
+
     sellerBooksCloudGeneration++;
     sellerBooksCloudLoading=true;
     sellerBooksCloudReady=false;
