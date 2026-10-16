@@ -22750,16 +22750,21 @@ async function refreshStoreIntegrationStates(force){
 
     if(sellerBooksStoreConnectionsLoading){
         /*
-           Jika refresh berikutnya datang ketika request sebelumnya masih
-           berjalan, jadwalkan satu refresh ulang agar status CONNECTED
-           tidak terlewat setelah OAuth callback.
+           Request sebelumnya sedang berjalan. Jangan biarkan permintaan
+           yang macet mengunci semua percobaan ulang selamanya.
+           Paksa retry boleh melepaskan lock dan memulai request baru;
+           response lama tidak boleh mengganti state setelah lock diambil
+           oleh request yang lebih baru.
         */
         if(force && !sellerBooksStoreConnectionsQueued){
             sellerBooksStoreConnectionsQueued = true;
             setTimeout(function(){
                 sellerBooksStoreConnectionsQueued = false;
+                if(sellerBooksStoreConnectionsLoading){
+                    sellerBooksStoreConnectionsLoading = false;
+                }
                 refreshStoreIntegrationStates(true);
-            }, 350);
+            }, 1500);
         }
         return;
     }
@@ -23455,6 +23460,15 @@ function sellerBooksStartIntegrationRealtime(){
    RENDER AKUN TOKO
 ===================================================== */
 
+function sellerBooksRetryStoreConnections(){
+    sellerBooksStoreConnectionsLoading=false;
+    sellerBooksStoreConnectionsQueued=false;
+    sellerBooksStoreConnectionsUserId="";
+    const grid=document.getElementById("storesGrid");
+    if(grid)delete grid.dataset.integrationWatchdog;
+    refreshStoreIntegrationStates(true);
+}
+
 function renderStores(skipIntegrationRefresh){
 
     const grid =
@@ -23481,11 +23495,37 @@ function renderStores(skipIntegrationRefresh){
         if(!connectionsReady){
             refreshStoreIntegrationStates(false);
 
-            /* Pertahankan kartu yang sudah terlihat; pada pemuatan awal
-               tampilkan pesan loading agar tidak tampak seolah tombol hilang. */
+            /* Pengaman UI terpisah dari RPC: tampilkan jalan keluar jika
+               permintaan status cloud tidak pernah menyelesaikan promise. */
             if(!grid.querySelector(".store-card")){
                 const en=String(typeof sellerBooksCurrentLanguage==="function"
                     ? sellerBooksCurrentLanguage() : "ID").trim().toUpperCase()==="EN";
+                if(!grid.dataset.integrationWatchdog){
+                    grid.dataset.integrationWatchdog="pending";
+                    setTimeout(function(){
+                        const currentGrid=document.getElementById("storesGrid");
+                        const activeStores=document.getElementById("stores");
+                        if(!currentGrid || !activeStores ||
+                           !activeStores.classList.contains("active") ||
+                           currentGrid.querySelector(".store-card"))return;
+                        const ready= sellerBooksStoreConnectionsUserId===String(
+                            sellerBooksAuthUser?.id||""
+                        ) && !sellerBooksStoreConnectionsLoading;
+                        if(ready){
+                            delete currentGrid.dataset.integrationWatchdog;
+                            renderStores(true);
+                            return;
+                        }
+                        const english=String(typeof sellerBooksCurrentLanguage==="function"
+                            ? sellerBooksCurrentLanguage() : "ID").trim().toUpperCase()==="EN";
+                        currentGrid.innerHTML='<div class="store-empty"><div class="store-empty-icon">⚠️</div><h3>'+
+                            (english?"Store connection status is taking too long":"Pemuatan status integrasi terlalu lama")+
+                            '</h3><p>'+
+                            (english?"Your integration data has not been changed. Retry loading the status.":"Data integrasi tidak diubah. Coba muat ulang status integrasi.")+
+                            '</p><button type="button" class="store-action-button store-integrate-button" onclick="sellerBooksRetryStoreConnections()">'+
+                            (english?"Retry":"Coba Lagi")+'</button></div>';
+                    },18000);
+                }
                 grid.innerHTML='<div class="store-empty"><div class="store-empty-icon">⏳</div><h3>'+
                     (en?"Loading store integration status…":"Memuat status integrasi akun toko…")+
                     '</h3><p>'+
@@ -23494,6 +23534,7 @@ function renderStores(skipIntegrationRefresh){
             }
             return;
         }
+        delete grid.dataset.integrationWatchdog;
     }else if(!skipIntegrationRefresh){
         refreshStoreIntegrationStates(false);
     }
