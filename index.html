@@ -23392,28 +23392,46 @@ function sellerBooksStartIntegrationRealtime(){
 
 function renderStores(skipIntegrationRefresh){
 
-    // Muat status integrasi dari Supabase saat render normal.
-    // Render ulang dari refreshStoreIntegrationStates(true) memakai
-    // skipIntegrationRefresh=true agar tidak terjadi loop.
-    if(!skipIntegrationRefresh){
-        refreshStoreIntegrationStates(false);
-    }
-
     const grid =
-
-        document.getElementById(
-            "storesGrid"
-        );
-
+        document.getElementById("storesGrid");
 
     const count =
-
-        document.getElementById(
-            "storeCount"
-        );
-
+        document.getElementById("storeCount");
 
     if(!grid) return;
+
+    /*
+       Cegah kartu toko dirender sebelum status integrasi selesai dimuat.
+       Sebelumnya render langsung berjalan dengan Map koneksi yang masih
+       kosong, sehingga tombol Tarik Order sementara diganti tombol
+       Integrasikan Akun setelah refresh. Setelah RPC selesai, fungsi
+       refreshStoreIntegrationStates akan memanggil renderStores(true).
+    */
+    if(!skipIntegrationRefresh && sellerBooksAuthUser){
+        const currentUserId=String(sellerBooksAuthUser.id||"");
+        const connectionsReady =
+            sellerBooksStoreConnectionsUserId===currentUserId &&
+            !sellerBooksStoreConnectionsLoading;
+
+        if(!connectionsReady){
+            refreshStoreIntegrationStates(false);
+
+            /* Pertahankan kartu yang sudah terlihat; pada pemuatan awal
+               tampilkan pesan loading agar tidak tampak seolah tombol hilang. */
+            if(!grid.querySelector(".store-card")){
+                const en=String(typeof sellerBooksCurrentLanguage==="function"
+                    ? sellerBooksCurrentLanguage() : "ID").trim().toUpperCase()==="EN";
+                grid.innerHTML='<div class="store-empty"><div class="store-empty-icon">⏳</div><h3>'+
+                    (en?"Loading store integration status…":"Memuat status integrasi akun toko…")+
+                    '</h3><p>'+
+                    (en?"Your connected marketplace buttons will appear shortly.":"Tombol marketplace yang terhubung akan muncul setelah status selesai dimuat.")+
+                    '</p></div>';
+            }
+            return;
+        }
+    }else if(!skipIntegrationRefresh){
+        refreshStoreIntegrationStates(false);
+    }
 
 
     renderStoreMarketplaceFilter();
