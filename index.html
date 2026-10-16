@@ -8824,7 +8824,6 @@ async function deleteSelectedReportTransactions(){
     const prompt=(sellerBooksCurrentLanguage()==="en"?"Permanently delete {count} selected transaction rows? This cannot be undone.":"Hapus permanen {count} baris transaksi yang dipilih? Tindakan ini tidak dapat dibatalkan.").replace("{count}",String(keys.size));
     if(!await sellerBooksConfirm(prompt))return;
 
-    sellerBooksDeleteProgressStart();
     const imports=getSalesImportsData();
     const deletedRefs=[];
     const stockRestoreRecords=[];
@@ -8891,7 +8890,6 @@ async function deleteSelectedReportTransactions(){
     sellerBooksProductAnalysisRowsCache={sourceTransactions:null,key:"",rows:null};
     updateReports();
     const en=sellerBooksCurrentLanguage()==="en";
-    await sellerBooksDeleteProgressFinish();
     if(!window.sellerBooksImportInProgress){
         sellerBooksAlert((en?"Selected transaction rows deleted successfully.":"Baris transaksi terpilih berhasil dihapus.")+"\n"+deletedRefs.length+(en?" transaction rows deleted.":" baris transaksi dihapus.")+(stockResult.restoredQty>0?"\n\n"+(en?"Stock restored:":"Stok dikembalikan:")+" "+stockResult.restoredQty+" pcs.":""));
     }
