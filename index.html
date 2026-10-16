@@ -22034,6 +22034,33 @@ async function sellerBooksDispatchExcelToImportPenjualan(queueItem,showResult){
     return result;
 }
 
+function sellerBooksSetPullOrderBusy(storeId,busy,marketplace){
+    const id=String(storeId||"");
+    const name=String(marketplace||"").toLowerCase();
+    const selector='button[onclick*="syncTikTokOrdersNow"],button[onclick*="syncShopeeOrdersNow"],button[onclick*="syncLazadaOrdersNow"],button[onclick*="syncBlibliOrdersNow"]';
+    document.querySelectorAll(selector).forEach(function(button){
+        const handler=String(button.getAttribute("onclick")||"").toLowerCase();
+        if(id && !handler.includes(id.toLowerCase()))return;
+        if(name && !handler.includes(name.toLowerCase()))return;
+        if(busy){
+            if(button.dataset.sellerbooksPullBusy==="true")return;
+            button.dataset.sellerbooksPullBusy="true";
+            button.dataset.sellerbooksPullOriginalText=button.textContent||"";
+            button.dataset.sellerbooksPullWasDisabled=button.disabled?"true":"false";
+            button.disabled=true;
+            button.setAttribute("aria-busy","true");
+            button.textContent=sellerBooksPullOrderIsEN()?"Fetching & saving…":"Sedang mengambil & menyimpan…";
+        }else if(button.dataset.sellerbooksPullBusy==="true"){
+            button.disabled=button.dataset.sellerbooksPullWasDisabled==="true";
+            button.textContent=button.dataset.sellerbooksPullOriginalText||button.textContent;
+            button.removeAttribute("aria-busy");
+            delete button.dataset.sellerbooksPullBusy;
+            delete button.dataset.sellerbooksPullOriginalText;
+            delete button.dataset.sellerbooksPullWasDisabled;
+        }
+    });
+}
+
 async function sellerBooksDispatchExcelQueue(opts){
     opts=opts||{};
     if(sellerBooksExcelDispatchRunning){
@@ -22130,7 +22157,7 @@ function sellerBooksPullOrderText(key, marketplace, value){
     return copy[key] || key;
 }
 
-async function syncTikTokOrdersNow(storeId){
+async function syncTikTokOrdersNowInternal(storeId){
     const store=stores.find(function(item){
         return String(item.id)===String(storeId);
     });
@@ -22171,6 +22198,7 @@ async function syncTikTokOrdersNow(storeId){
         const now=Math.floor(Date.now()/1000);
         const timeFrom=now-(7*24*60*60);
 
+        sellerBooksSetPullOrderBusy(storeId,true,"TikTok");
         sellerBooksAlert(
             sellerBooksPullOrderText("loading","TikTok"),
             sellerBooksPullOrderText("loadingTitle","TikTok")
@@ -22272,6 +22300,19 @@ async function syncTikTokOrdersNow(storeId){
         );
     }
 }
+async function syncTikTokOrdersNow(storeId){
+    const key=String(storeId||"");
+    if(window.__sellerBooksPullBusyStore===key && key)return;
+    window.__sellerBooksPullBusyStore=key;
+    const store=stores.find(function(item){return String(item.id)===key;});
+    try{
+        return await syncTikTokOrdersNowInternal(storeId);
+    }finally{
+        sellerBooksSetPullOrderBusy(storeId,false,"TikTok");
+        if(window.__sellerBooksPullBusyStore===key)window.__sellerBooksPullBusyStore=null;
+    }
+}
+
 
 /* =====================================================
    TARIK ORDER SHOPEE
@@ -22279,7 +22320,7 @@ async function syncTikTokOrdersNow(storeId){
    Tidak menyentuh mesin TikTok.
 ===================================================== */
 
-async function syncShopeeOrdersNow(storeId){
+async function syncShopeeOrdersNowInternal(storeId){
     const store=stores.find(item=>String(item.id)===String(storeId));
     if(!store){sellerBooksAlert(sellerBooksPullOrderText("missingStore","Shopee"),"Tarik Order Shopee");return;}
     const marketplace=marketplaces.find(item=>item.id===store.marketplaceId);
@@ -22290,6 +22331,7 @@ async function syncShopeeOrdersNow(storeId){
         const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
         if(!session?.access_token)throw new Error(sellerBooksPullOrderText("noSession","Shopee"));
         const now=Date.now(),timeFrom=new Date(now-7*86400000).toISOString(),timeTo=new Date(now).toISOString();
+        sellerBooksSetPullOrderBusy(storeId,true,"Shopee");
         sellerBooksAlert(sellerBooksPullOrderText("loading","Shopee"),sellerBooksPullOrderText("errorTitle","Shopee"));
         const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-sync-orders",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id),time_from:timeFrom,time_to:timeTo})});
         const data=await response.json().catch(()=>({}));
@@ -22299,6 +22341,19 @@ async function syncShopeeOrdersNow(storeId){
         throw new Error(sellerBooksPullOrderText("status","Shopee")+String(data.status||"UNKNOWN"));
     }catch(error){console.error("Tarik order Shopee gagal:",error);sellerBooksAlert(sellerBooksPullOrderText("failedOrders","Shopee")+"\n\n"+(error?.message||"Terjadi kesalahan."),sellerBooksPullOrderText("errorTitle","Shopee"));}
 }
+async function syncShopeeOrdersNow(storeId){
+    const key=String(storeId||"");
+    if(window.__sellerBooksPullBusyStore===key && key)return;
+    window.__sellerBooksPullBusyStore=key;
+    const store=stores.find(function(item){return String(item.id)===key;});
+    try{
+        return await syncShopeeOrdersNowInternal(storeId);
+    }finally{
+        sellerBooksSetPullOrderBusy(storeId,false,"Shopee");
+        if(window.__sellerBooksPullBusyStore===key)window.__sellerBooksPullBusyStore=null;
+    }
+}
+
 
 /* =====================================================
    TARIK ORDER LAZADA
@@ -22306,7 +22361,7 @@ async function syncShopeeOrdersNow(storeId){
    Tidak menyentuh mesin TikTok.
 ===================================================== */
 
-async function syncLazadaOrdersNow(storeId){
+async function syncLazadaOrdersNowInternal(storeId){
     const store=stores.find(item=>String(item.id)===String(storeId));
     if(!store){sellerBooksAlert(sellerBooksPullOrderText("missingStore","Lazada"),"Tarik Order Lazada");return;}
     const marketplace=marketplaces.find(item=>item.id===store.marketplaceId);
@@ -22317,6 +22372,7 @@ async function syncLazadaOrdersNow(storeId){
         const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
         if(!session?.access_token)throw new Error(sellerBooksPullOrderText("noSession","Lazada"));
         const now=Math.floor(Date.now()/1000),timeFrom=now-7*86400,timeTo=now;
+        sellerBooksSetPullOrderBusy(storeId,true,"Lazada");
         sellerBooksAlert(sellerBooksPullOrderText("loading","Lazada"),sellerBooksPullOrderText("errorTitle","Lazada"));
         const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-lazada-sync-orders",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id),time_from:timeFrom,time_to:timeTo})});
         const data=await response.json().catch(()=>({}));
@@ -22329,6 +22385,19 @@ async function syncLazadaOrdersNow(storeId){
         throw new Error(sellerBooksPullOrderText("status","Lazada")+String(result.status||"UNKNOWN"));
     }catch(error){console.error("Tarik order Lazada gagal:",error);sellerBooksAlert(sellerBooksPullOrderText("failedOrders","Lazada")+"\n\n"+(error?.message||"Terjadi kesalahan."),sellerBooksPullOrderText("errorTitle","Lazada"));}
 }
+async function syncLazadaOrdersNow(storeId){
+    const key=String(storeId||"");
+    if(window.__sellerBooksPullBusyStore===key && key)return;
+    window.__sellerBooksPullBusyStore=key;
+    const store=stores.find(function(item){return String(item.id)===key;});
+    try{
+        return await syncLazadaOrdersNowInternal(storeId);
+    }finally{
+        sellerBooksSetPullOrderBusy(storeId,false,"Lazada");
+        if(window.__sellerBooksPullBusyStore===key)window.__sellerBooksPullBusyStore=null;
+    }
+}
+
 
 /* =====================================================
    TARIK ORDER BLIBLI
