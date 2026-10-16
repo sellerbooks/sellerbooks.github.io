@@ -8873,7 +8873,7 @@ async function deleteSelectedReportTransactions(){
             );
         }
     });
-    if(!deletedRefs.length){selectedReportTransactionKeys.clear();renderReportTransactionTable();sellerBooksImportProgressHide();window.sellerBooksProgressOperation="import";return;}
+    if(!deletedRefs.length){selectedReportTransactionKeys.clear();renderReportTransactionTable();return;}
     if(!deletedRefs.length){
         selectedReportTransactionKeys.clear();
         sellerBooksReportTransactionsCacheImports=null;
@@ -8890,30 +8890,7 @@ async function deleteSelectedReportTransactions(){
     sellerBooksProductAnalysisRowsCache={sourceTransactions:null,key:"",rows:null};
     updateReports();
     const en=sellerBooksCurrentLanguage()==="en";
-    // Tetap simpan dan verifikasi perubahan cloud tanpa menampilkan pop-up progress.
-    try{
-        if(!sellerBooksAuthUser || !sellerBooksCloudReady || sellerBooksCloudLoading){
-            throw new Error("cloud_not_ready");
-        }
-        if(typeof sellerBooksCloudSaveTimer !== "undefined" && sellerBooksCloudSaveTimer){
-            clearTimeout(sellerBooksCloudSaveTimer);
-            sellerBooksCloudSaveTimer = null;
-        }
-        const expectedSnapshot=sellerBooksCloneCloudState(sellerBooksCloudState);
-        await sellerBooksPersistCloudDataStrict(expectedSnapshot);
-        if(sellerBooksCloudDirtyKeys && sellerBooksCloudDirtyKeys.size){
-            throw new Error("cloud_save_unconfirmed");
-        }
-    }catch(error){
-        console.error("Penghapusan baris laporan belum terkonfirmasi di cloud:",error);
-        sellerBooksAlert(en
-            ? "The report deletion could not be confirmed in the cloud. Please check the data before repeating the deletion."
-            : "Penghapusan laporan belum dapat dikonfirmasi di cloud. Periksa data sebelum mengulangi penghapusan.");
-        return;
-    }
-    if(!window.sellerBooksImportInProgress){
-        sellerBooksAlert((en?"Selected transaction rows deleted successfully.":"Baris transaksi terpilih berhasil dihapus.")+"\n"+deletedRefs.length+(en?" transaction rows deleted.":" baris transaksi dihapus.")+(stockResult.restoredQty>0?"\n\n"+(en?"Stock restored:":"Stok dikembalikan:")+" "+stockResult.restoredQty+" pcs.":""));
-    }
+    sellerBooksAlert((en?"Selected transaction rows deleted successfully.":"Baris transaksi terpilih berhasil dihapus.")+"\n"+deletedRefs.length+(en?" transaction rows deleted.":" baris transaksi dihapus.")+(stockResult.restoredQty>0?"\n\n"+(en?"Stock restored:":"Stok dikembalikan:")+" "+stockResult.restoredQty+" pcs.":""));
 }
 function goToReportTransactionPage(page){
     const transactions = getFilteredReportTransactions();
