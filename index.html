@@ -22411,7 +22411,7 @@ async function syncLazadaOrdersNow(storeId){
    Adapter Blibli terpisah; data mentah masuk antrean impor
    yang sama dan tetap diproses oleh mesin Import Penjualan.
 ===================================================== */
-async function syncBlibliOrdersNow(storeId){
+async function syncBlibliOrdersNowInternal(storeId){
     const store=stores.find(item=>String(item.id)===String(storeId));
     if(!store){sellerBooksAlert(sellerBooksPullOrderText("missingStore","Blibli"),sellerBooksPullOrderText("loadingTitle","Blibli"));return;}
     const marketplace=marketplaces.find(item=>item.id===store.marketplaceId);
@@ -22431,6 +22431,17 @@ async function syncBlibliOrdersNow(storeId){
         if(data.status==="RAW_FILE_READY"){await sellerBooksDispatchExcelQueue({showResult:true});return;}
         throw new Error(sellerBooksPullOrderText("status","Blibli")+String(data.status||"UNKNOWN"));
     }catch(error){console.error("Tarik order Blibli gagal:",error);sellerBooksAlert(sellerBooksPullOrderText("failedOrders","Blibli")+"\n\n"+(error?.message||"Terjadi kesalahan."),sellerBooksPullOrderText("loadingTitle","Blibli"));}
+}
+async function syncBlibliOrdersNow(storeId){
+    const key=String(storeId||"");
+    if(window.__sellerBooksPullBusyStore===key && key)return;
+    window.__sellerBooksPullBusyStore=key;
+    try{
+        return await syncBlibliOrdersNowInternal(storeId);
+    }finally{
+        sellerBooksSetPullOrderBusy(storeId,false,"Blibli");
+        if(window.__sellerBooksPullBusyStore===key)window.__sellerBooksPullBusyStore=null;
+    }
 }
 
 /* =====================================================
