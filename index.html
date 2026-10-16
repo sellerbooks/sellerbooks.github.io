@@ -21779,6 +21779,8 @@ async function integrateStoreAccount(storeId){
 
 
 let sellerBooksExcelDispatchRunning=false;
+let sellerBooksExcelDispatchRerunRequested=false;
+let sellerBooksExcelDispatchRerunShowResult=false;
 
 async function sellerBooksGetQueueSession(){
     const sessionResult=await sellerBooksSupabase.auth.getSession();
@@ -21915,7 +21917,16 @@ async function sellerBooksDispatchExcelToImportPenjualan(queueItem,showResult){
 
 async function sellerBooksDispatchExcelQueue(opts){
     opts=opts||{};
-    if(sellerBooksExcelDispatchRunning)return;
+    if(sellerBooksExcelDispatchRunning){
+        /*
+           API dapat memasukkan file mentah ketika worker sedang membaca
+           antrean. Jangan hilangkan permintaan itu: jalankan satu putaran
+           lagi setelah worker aktif selesai, dan pertahankan popup hasil.
+        */
+        sellerBooksExcelDispatchRerunRequested=true;
+        if(opts.showResult)sellerBooksExcelDispatchRerunShowResult=true;
+        return;
+    }
     sellerBooksExcelDispatchRunning=true;
     try{
         const session=await sellerBooksGetQueueSession();
@@ -21953,6 +21964,14 @@ async function sellerBooksDispatchExcelQueue(opts){
         }
     }finally{
         sellerBooksExcelDispatchRunning=false;
+        if(sellerBooksExcelDispatchRerunRequested){
+            const showResult=sellerBooksExcelDispatchRerunShowResult;
+            sellerBooksExcelDispatchRerunRequested=false;
+            sellerBooksExcelDispatchRerunShowResult=false;
+            setTimeout(function(){
+                sellerBooksDispatchExcelQueue({showResult:showResult}).catch(console.error);
+            },0);
+        }
     }
 }
 
