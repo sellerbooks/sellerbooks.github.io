@@ -21997,11 +21997,18 @@ async function sellerBooksDispatchExcelToImportPenjualan(queueItem,showResult){
         body:JSON.stringify({status:"IMPORTED",error_message:null,processed_at:new Date().toISOString()})
     });
 
-    if(typeof updateReports==="function") updateReports();
-    if(typeof renderProducts==="function") renderProducts();
-    if(typeof renderNotifications==="function") renderNotifications();
-    if(typeof loadStores==="function") setTimeout(function(){loadStores();},300);
-    else if(typeof renderStores==="function") setTimeout(function(){renderStores(true);},300);
+    /* Refresh noncritical views after the result dialog is queued. Cloud persistence
+       and the queue status update above remain awaited before success is shown. */
+    setTimeout(function(){
+        try{ if(typeof updateReports==="function") updateReports(); }
+        catch(error){ console.warn("SellerBooks: deferred report refresh failed:",error); }
+        try{ if(typeof renderProducts==="function") renderProducts(); }
+        catch(error){ console.warn("SellerBooks: deferred product refresh failed:",error); }
+        try{ if(typeof renderNotifications==="function") renderNotifications(); }
+        catch(error){ console.warn("SellerBooks: deferred notification refresh failed:",error); }
+        if(typeof loadStores==="function") loadStores();
+        else if(typeof renderStores==="function") renderStores(true);
+    },0);
 
     if(showResult){
         const en=sellerBooksPullOrderIsEN();
@@ -22184,6 +22191,12 @@ async function syncTikTokOrdersNowInternal(storeId){
     }
 
     try{
+        sellerBooksSetPullOrderBusy(storeId,true,"TikTok");
+        sellerBooksAlert(
+            sellerBooksPullOrderText("loading","TikTok"),
+            sellerBooksPullOrderText("loadingTitle","TikTok")
+        );
+
         const sessionResult=
             await sellerBooksSupabase.auth.getSession();
 
@@ -22197,12 +22210,6 @@ async function syncTikTokOrdersNowInternal(storeId){
 
         const now=Math.floor(Date.now()/1000);
         const timeFrom=now-(7*24*60*60);
-
-        sellerBooksSetPullOrderBusy(storeId,true,"TikTok");
-        sellerBooksAlert(
-            sellerBooksPullOrderText("loading","TikTok"),
-            sellerBooksPullOrderText("loadingTitle","TikTok")
-        );
 
         const response=await fetch(
             SELLERBOOKS_SUPABASE_URL+
@@ -22328,11 +22335,11 @@ async function syncShopeeOrdersNowInternal(storeId){
     const connection=getStoreIntegrationConnection(store);
     if(!connection||String(connection.connection_status||"").toUpperCase()!=="CONNECTED"){sellerBooksAlert(sellerBooksPullOrderText("notConnected","Shopee"),"Tarik Order Shopee");return;}
     try{
+        sellerBooksSetPullOrderBusy(storeId,true,"Shopee");
+        sellerBooksAlert(sellerBooksPullOrderText("loading","Shopee"),sellerBooksPullOrderText("errorTitle","Shopee"));
         const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
         if(!session?.access_token)throw new Error(sellerBooksPullOrderText("noSession","Shopee"));
         const now=Date.now(),timeFrom=new Date(now-7*86400000).toISOString(),timeTo=new Date(now).toISOString();
-        sellerBooksSetPullOrderBusy(storeId,true,"Shopee");
-        sellerBooksAlert(sellerBooksPullOrderText("loading","Shopee"),sellerBooksPullOrderText("errorTitle","Shopee"));
         const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-shopee-sync-orders",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id),time_from:timeFrom,time_to:timeTo})});
         const data=await response.json().catch(()=>({}));
         if(!response.ok||!data.ok)throw new Error(data.error||sellerBooksPullOrderText("failedFetch","Shopee"));
@@ -22369,11 +22376,11 @@ async function syncLazadaOrdersNowInternal(storeId){
     const connection=getStoreIntegrationConnection(store);
     if(!connection||String(connection.connection_status||"").toUpperCase()!=="CONNECTED"){sellerBooksAlert(sellerBooksPullOrderText("notConnected","Lazada"),"Tarik Order Lazada");return;}
     try{
+        sellerBooksSetPullOrderBusy(storeId,true,"Lazada");
+        sellerBooksAlert(sellerBooksPullOrderText("loading","Lazada"),sellerBooksPullOrderText("errorTitle","Lazada"));
         const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
         if(!session?.access_token)throw new Error(sellerBooksPullOrderText("noSession","Lazada"));
         const now=Math.floor(Date.now()/1000),timeFrom=now-7*86400,timeTo=now;
-        sellerBooksSetPullOrderBusy(storeId,true,"Lazada");
-        sellerBooksAlert(sellerBooksPullOrderText("loading","Lazada"),sellerBooksPullOrderText("errorTitle","Lazada"));
         const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-lazada-sync-orders",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id),time_from:timeFrom,time_to:timeTo})});
         const data=await response.json().catch(()=>({}));
         if(!response.ok||!data.ok)throw new Error(data.error||sellerBooksPullOrderText("failedFetch","Lazada"));
@@ -22412,10 +22419,11 @@ async function syncBlibliOrdersNow(storeId){
     const connection=getStoreIntegrationConnection(store);
     if(!connection||String(connection.connection_status||"").toUpperCase()!=="CONNECTED"){sellerBooksAlert(sellerBooksPullOrderText("notConnected","Blibli"),sellerBooksPullOrderText("loadingTitle","Blibli"));return;}
     try{
+        sellerBooksSetPullOrderBusy(storeId,true,"Blibli");
+        sellerBooksAlert(sellerBooksPullOrderText("loading","Blibli"),sellerBooksPullOrderText("loadingTitle","Blibli"));
         const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
         if(!session?.access_token)throw new Error(sellerBooksPullOrderText("noSession","Blibli"));
         const now=Math.floor(Date.now()/1000),timeFrom=now-7*86400,timeTo=now;
-        sellerBooksAlert(sellerBooksPullOrderText("loading","Blibli"),sellerBooksPullOrderText("loadingTitle","Blibli"));
         const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-blibli-sync-orders",{method:"POST",headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id),time_from:timeFrom,time_to:timeTo})});
         const data=await response.json().catch(()=>({}));
         if(!response.ok||!data.ok)throw new Error(data.error||sellerBooksPullOrderText("failedFetch","Blibli"));
