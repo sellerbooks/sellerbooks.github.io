@@ -16508,6 +16508,13 @@ async function sellerBooksLoadCloudDataInternal(loadUserId){
         await sellerBooksPersistCloudDataNow();
     }
 
+    /* Sinkronkan daftar akun toko dengan tabel master owner-scoped yang dipakai integrasi API. */
+    try{
+        await sellerBooksHydrateStoreTableFromCloud();
+    }catch(storeHydrateError){
+        console.warn("Sinkronisasi master toko SellerBooks dilewati:", storeHydrateError);
+    }
+
     /* Setelah data berhasil berada di Supabase, hapus salinan data aplikasi lama. */
     sellerBooksClearLegacyLocalData();
     sellerBooksSaveFastCache();
@@ -21589,6 +21596,64 @@ async function sellerBooksEnsureCloudStore(store){
         .upsert(row, { onConflict: "owner_user_id,id" });
     if(saved.error) throw saved.error;
     return session;
+}
+
+async function sellerBooksHydrateStoreTableFromCloud(){
+    const sessionResult = await sellerBooksSupabase.auth.getSession();
+    const session = sessionResult?.data?.session;
+    if(sessionResult?.error || !session?.user?.id) return;
+
+    const response = await sellerBooksSupabase
+        .from("sellerbooks_stores")
+        .select("id,marketplace_id,store_code,store_name,description,fee_percent,status,created_at,updated_at")
+        .eq("owner_user_id", session.user.id);
+    if(response.error) throw response.error;
+
+    let localStores = [];
+    try{
+        localStores = JSON.parse(sellerBooksStorageGetItem("sellerbooks_stores") || "[]") || [];
+    }catch(error){
+        localStores = [];
+    }
+    if(!Array.isArray(localStores)) localStores = [];
+
+    const byId = new Map();
+    response.data?.forEach(function(row){
+        byId.set(String(row.id), {
+            id:String(row.id),
+            marketplaceId:String(row.marketplace_id || ""),
+            name:String(row.store_name || ""),
+            code:String(row.store_code || ""),
+            feePercent:Number(row.fee_percent || 0),
+            description:String(row.description || ""),
+            status:String(row.status || "ACTIVE").toUpperCase() === "INACTIVE" ? "inactive" : "active",
+            createdAt:row.created_at || new Date().toISOString(),
+            updatedAt:row.updated_at || row.created_at || new Date().toISOString()
+        });
+    });
+
+    /* Data aplikasi yang sudah ada tetap dipertahankan saat migrasi; untuk ID yang sama,
+       nilai terbaru di user_data menang atas salinan tabel master. */
+    localStores.forEach(function(store){
+        if(!store || !store.id) return;
+        const key=String(store.id);
+        byId.set(key, Object.assign({}, byId.get(key) || {}, store, {id:key}));
+    });
+
+    const merged = Array.from(byId.values());
+    const currentSerialized = JSON.stringify(localStores);
+    const mergedSerialized = JSON.stringify(merged);
+    if(currentSerialized !== mergedSerialized){
+        sellerBooksStorage.setItem("sellerbooks_stores", mergedSerialized);
+        if(typeof stores !== "undefined") stores = merged;
+        if(typeof renderStores === "function") renderStores();
+        if(typeof renderMarketplaceStoreCounts === "function") renderMarketplaceStoreCounts();
+    }
+
+    /* Mirror records into the owner-scoped master table so API RPCs can resolve store IDs. */
+    for(const store of merged){
+        await sellerBooksEnsureCloudStore(store);
+    }
 }
 
 async function connectBlibliStoreManually(store, marketplace){
