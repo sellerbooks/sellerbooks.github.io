@@ -16320,8 +16320,11 @@ async function sellerBooksPersistCloudDataStrict(expectedSnapshot,verification){
 
         for(let attempt=0;attempt<3;attempt++){
             try{
+                /* Jangan kembalikan JSON snapshot penuh dari UPDATE.
+                   Verifikasi di bawah tetap membaca satu kali dari cloud,
+                   jadi payload besar tidak dikirim dua kali. */
                 result=await sellerBooksWriteCloudSnapshot(
-                    snapshot,expectedUpdatedAt,!expectedUpdatedAt,true
+                    snapshot,expectedUpdatedAt,!expectedUpdatedAt,false
                 );
             }catch(writeError){
                 /* Retry hanya untuk kegagalan jaringan/server sementara.
@@ -26219,7 +26222,7 @@ async function sellerBooksDeleteProgressFinish(){
             throw new Error("cloud_save_unconfirmed");
         }
         sellerBooksImportProgressUpdate(100,"done");
-        await new Promise(function(resolve){setTimeout(resolve,500);});
+        /* Tidak perlu menahan overlay 500 ms setelah cloud terverifikasi. */
         sellerBooksImportProgressHide();
         window.sellerBooksProgressOperation = "import";
         return true;
