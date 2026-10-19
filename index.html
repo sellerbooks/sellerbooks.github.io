@@ -21580,10 +21580,20 @@ async function sellerBooksEnsureCloudStore(store){
             ? "Store data is incomplete."
             : "Data toko belum lengkap.");
     }
+    /* UI stores use per-user marketplace IDs (for example marketplace_...),
+       while sellerbooks_stores must reference the canonical connector ID. Keep
+       the original marketplaceId in user_data/UI; normalize only this DB mirror. */
+    const storeMarketplace = Array.isArray(marketplaces)
+        ? marketplaces.find(item => String(item.id) === String(store.marketplaceId))
+        : null;
+    const canonicalMarketplaceId = sellerBooksCanonicalMarketplaceId(
+        store.marketplaceId,
+        storeMarketplace?.name || store.marketplace || ""
+    );
     const row = {
         id: String(store.id),
         owner_user_id: session.user.id,
-        marketplace_id: String(store.marketplaceId),
+        marketplace_id: String(canonicalMarketplaceId),
         store_code: String(store.code || ""),
         store_name: String(store.name).trim(),
         description: String(store.description || ""),
@@ -21750,7 +21760,15 @@ async function connectBlibliStoreManually(store, marketplace){
         if(sessionResult?.error||!session?.access_token)throw new Error(L.session);
         // Ensure this store exists in the authenticated owner's cloud records before creating its API connection.
         await sellerBooksEnsureCloudStore(store);
-        const upsert=await sellerBooksSupabase.rpc("sellerbooks_api_upsert_connection",{p_store_id:String(store.id),p_marketplace_id:String(store.marketplaceId),p_marketplace:String(marketplace.name||"Blibli")});
+        const canonicalMarketplaceId = sellerBooksCanonicalMarketplaceId(
+            store.marketplaceId,
+            marketplace.name || "Blibli"
+        );
+        const upsert=await sellerBooksSupabase.rpc("sellerbooks_api_upsert_connection",{
+            p_store_id:String(store.id),
+            p_marketplace_id:String(canonicalMarketplaceId),
+            p_marketplace:String(marketplace.name||"Blibli")
+        });
         if(upsert.error)throw upsert.error;
         const connection=Array.isArray(upsert.data)?upsert.data[0]:upsert.data;
         if(!connection?.id)throw new Error(L.create);
