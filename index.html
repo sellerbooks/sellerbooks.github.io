@@ -28154,14 +28154,19 @@ function reduceProductStockFromImport(record){
     const missingSkus = [];
     const stockDetails = [];
 
+    /* Bangun indeks sekali: pencarian stok tidak perlu memindai
+       seluruh Master Produk untuk setiap SKU transaksi. */
+    const productsBySku = new Map();
+    products.forEach(function(item){
+        const key = String(item && item.sku || '').trim().toLowerCase();
+        if(key && !productsBySku.has(key)){
+            productsBySku.set(key, item);
+        }
+    });
+
     qtyBySku.forEach(function(qty, sku){
 
-        const product =
-            products.find(function(item){
-                return String(item && item.sku || '')
-                    .trim()
-                    .toLowerCase() === sku;
-            }) || null;
+        const product = productsBySku.get(sku) || null;
 
         if(!product){
             missingSkus.push(sku);
@@ -28328,23 +28333,24 @@ function restoreProductStockFromDeletedImports(deletedImports){
     let restoredQty = 0;
     let productCount = 0;
 
+    /* Indeks berdasarkan ID dan SKU menghindari O(jumlah produk ×
+       jumlah produk yang stoknya perlu dipulihkan). */
+    const productsById = new Map();
+    const productsBySku = new Map();
+    products.forEach(function(item){
+        if(!item) return;
+        const id = String(item.id || '');
+        const sku = String(item.sku || '').trim().toLowerCase();
+        if(id && !productsById.has(id)) productsById.set(id, item);
+        if(sku && !productsBySku.has(sku)) productsBySku.set(sku, item);
+    });
+
     restoreByProduct.forEach(function(info){
 
         const product =
-            products.find(function(item){
-                const sameId =
-                    info.productId &&
-                    String(item && item.id || "") === String(info.productId);
-
-                const sameSku =
-                    String(item && item.sku || "")
-                        .trim()
-                        .toLowerCase() === String(info.sku || "")
-                        .trim()
-                        .toLowerCase();
-
-                return sameId || sameSku;
-            }) || null;
+            (info.productId && productsById.get(String(info.productId))) ||
+            (info.sku && productsBySku.get(String(info.sku).trim().toLowerCase())) ||
+            null;
 
         if(!product){
             return;
