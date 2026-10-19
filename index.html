@@ -9854,7 +9854,7 @@ function renderReportSoldProductTable(){
     body.innerHTML = visibleRows.map(function(row){
         const averageProfit = row.qty > 0 ? row.profit / row.qty : 0;
         const hppPerPcs = row.qty > 0 ? row.hpp / row.qty : 0;
-        return `<tr><td>${escapeHtml(row.name)}</td><td>${Number(row.qty).toLocaleString(isEN ? "en-US" : "id-ID")}</td><td>${formatRupiah(row.hpp)}</td><td>${formatRupiah(row.profit)}</td><td>${formatRupiah(averageProfit)}</td><td>${formatRupiah(hppPerPcs)}</td></tr>`;
+        return `<tr><td>${escapeHtml(row.name)}</td><td>${Number(row.qty).toLocaleString(isEN ? "en-US" : "id-ID")}</td><td>${formatRupiah(row.hpp)}</td><td>${formatRupiah(row.profit)}</td><td>${formatRupiah(hppPerPcs)}</td><td>${formatRupiah(averageProfit)}</td></tr>`;
     }).join("");
 
     if(pagination) pagination.style.display = "flex";
@@ -14238,8 +14238,8 @@ document.addEventListener(
                         <th id="reportSoldProductQtyHeader">Total Produk</th>
                         <th id="reportSoldProductHppHeader">HPP</th>
                         <th id="reportSoldProductProfitHeader">Laba</th>
-                        <th id="reportSoldProductAverageProfitHeader">Rata-rata Laba per Produk</th>
                         <th id="reportSoldProductHppPerPcsHeader">HPP per PCS</th>
+                        <th id="reportSoldProductAverageProfitHeader">Rata-rata Laba per Produk</th>
                     </tr>
                 </thead>
                 <tbody id="reportSoldProductBody">
