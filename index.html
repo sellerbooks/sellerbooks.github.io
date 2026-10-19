@@ -16512,6 +16512,13 @@ async function sellerBooksLoadCloudDataInternal(loadUserId){
         await sellerBooksPersistCloudDataNow();
     }
 
+    /* Sinkronkan daftar akun toko dengan tabel master owner-scoped yang dipakai integrasi API. */
+    try{
+        await sellerBooksHydrateStoreTableFromCloud();
+    }catch(storeHydrateError){
+        console.warn("Sinkronisasi master toko SellerBooks dilewati:", storeHydrateError);
+    }
+
     /* Setelah data berhasil berada di Supabase, hapus salinan data aplikasi lama. */
     sellerBooksClearLegacyLocalData();
     sellerBooksSaveFastCache();
@@ -21564,6 +21571,105 @@ async function disconnectStoreAccount(storeId){
     }
 }
 
+async function sellerBooksEnsureCloudStore(store){
+    const sessionResult = await sellerBooksSupabase.auth.getSession();
+    const session = sessionResult?.data?.session;
+    if(sessionResult?.error || !session?.user?.id || !session?.access_token){
+        throw new Error(sellerBooksCurrentLanguage() === "en"
+            ? "Session expired. Please sign in again."
+            : "Sesi berakhir. Silakan login kembali.");
+    }
+    if(!store || !store.id || !store.marketplaceId || !String(store.name||"").trim()){
+        throw new Error(sellerBooksCurrentLanguage() === "en"
+            ? "Store data is incomplete."
+            : "Data toko belum lengkap.");
+    }
+    /* UI stores use per-user marketplace IDs (for example marketplace_...),
+       while sellerbooks_stores must reference the canonical connector ID. Keep
+       the original marketplaceId in user_data/UI; normalize only this DB mirror. */
+    const storeMarketplace = Array.isArray(marketplaces)
+        ? marketplaces.find(item => String(item.id) === String(store.marketplaceId))
+        : null;
+    const canonicalMarketplaceId = sellerBooksCanonicalMarketplaceId(
+        store.marketplaceId,
+        storeMarketplace?.name || store.marketplace || ""
+    );
+    const row = {
+        id: String(store.id),
+        owner_user_id: session.user.id,
+        marketplace_id: String(canonicalMarketplaceId),
+        store_code: String(store.code || ""),
+        store_name: String(store.name).trim(),
+        description: String(store.description || ""),
+        fee_percent: Number(store.feePercent || 0),
+        status: String(store.status || "active").toUpperCase() === "INACTIVE" ? "INACTIVE" : "ACTIVE",
+        updated_at: new Date().toISOString()
+    };
+    const saved = await sellerBooksSupabase
+        .from("sellerbooks_stores")
+        .upsert(row, { onConflict: "owner_user_id,id" });
+    if(saved.error) throw saved.error;
+    return session;
+}
+
+async function sellerBooksHydrateStoreTableFromCloud(){
+    const sessionResult = await sellerBooksSupabase.auth.getSession();
+    const session = sessionResult?.data?.session;
+    if(sessionResult?.error || !session?.user?.id) return;
+
+    const response = await sellerBooksSupabase
+        .from("sellerbooks_stores")
+        .select("id,marketplace_id,store_code,store_name,description,fee_percent,status,created_at,updated_at")
+        .eq("owner_user_id", session.user.id);
+    if(response.error) throw response.error;
+
+    let localStores = [];
+    try{
+        localStores = JSON.parse(sellerBooksStorageGetItem("sellerbooks_stores") || "[]") || [];
+    }catch(error){
+        localStores = [];
+    }
+    if(!Array.isArray(localStores)) localStores = [];
+
+    const byId = new Map();
+    response.data?.forEach(function(row){
+        byId.set(String(row.id), {
+            id:String(row.id),
+            marketplaceId:String(row.marketplace_id || ""),
+            name:String(row.store_name || ""),
+            code:String(row.store_code || ""),
+            feePercent:Number(row.fee_percent || 0),
+            description:String(row.description || ""),
+            status:String(row.status || "ACTIVE").toUpperCase() === "INACTIVE" ? "inactive" : "active",
+            createdAt:row.created_at || new Date().toISOString(),
+            updatedAt:row.updated_at || row.created_at || new Date().toISOString()
+        });
+    });
+
+    /* Data aplikasi yang sudah ada tetap dipertahankan saat migrasi; untuk ID yang sama,
+       nilai terbaru di user_data menang atas salinan tabel master. */
+    localStores.forEach(function(store){
+        if(!store || !store.id) return;
+        const key=String(store.id);
+        byId.set(key, Object.assign({}, byId.get(key) || {}, store, {id:key}));
+    });
+
+    const merged = Array.from(byId.values());
+    const currentSerialized = JSON.stringify(localStores);
+    const mergedSerialized = JSON.stringify(merged);
+    if(currentSerialized !== mergedSerialized){
+        sellerBooksStorage.setItem("sellerbooks_stores", mergedSerialized);
+        if(typeof stores !== "undefined") stores = merged;
+        if(typeof renderStores === "function") renderStores();
+        if(typeof renderMarketplaceStoreCounts === "function") renderMarketplaceStoreCounts();
+    }
+
+    /* Mirror records into the owner-scoped master table so API RPCs can resolve store IDs. */
+    for(const store of merged){
+        await sellerBooksEnsureCloudStore(store);
+    }
+}
+
 async function connectBlibliStoreManually(store, marketplace){
     const en = sellerBooksCurrentLanguage() === "en";
     const L = en ? {
@@ -21656,7 +21762,17 @@ async function connectBlibliStoreManually(store, marketplace){
         const sessionResult=await sellerBooksSupabase.auth.getSession();
         const session=sessionResult?.data?.session;
         if(sessionResult?.error||!session?.access_token)throw new Error(L.session);
-        const upsert=await sellerBooksSupabase.rpc("sellerbooks_api_upsert_connection",{p_store_id:String(store.id),p_marketplace_id:String(store.marketplaceId),p_marketplace:String(marketplace.name||"Blibli")});
+        // Ensure this store exists in the authenticated owner's cloud records before creating its API connection.
+        await sellerBooksEnsureCloudStore(store);
+        const canonicalMarketplaceId = sellerBooksCanonicalMarketplaceId(
+            store.marketplaceId,
+            marketplace.name || "Blibli"
+        );
+        const upsert=await sellerBooksSupabase.rpc("sellerbooks_api_upsert_connection",{
+            p_store_id:String(store.id),
+            p_marketplace_id:String(canonicalMarketplaceId),
+            p_marketplace:String(marketplace.name||"Blibli")
+        });
         if(upsert.error)throw upsert.error;
         const connection=Array.isArray(upsert.data)?upsert.data[0]:upsert.data;
         if(!connection?.id)throw new Error(L.create);
@@ -24110,7 +24226,7 @@ function closeStoreModal(){
    SIMPAN AKUN TOKO
 ===================================================== */
 
-function saveStore(){
+async function saveStore(){
 
     const marketplaceId =
 
@@ -24157,6 +24273,8 @@ const feePercent =
     ) || 0;
 
 
+
+    const previousStores = JSON.parse(JSON.stringify(stores));
 
     /*
        VALIDASI
@@ -24327,6 +24445,22 @@ if(feePercent < 0 || feePercent > 100){
 
 
 
+    try {
+        const savedStore = editingStoreId
+            ? stores.find(function(item){ return item.id === editingStoreId; })
+            : stores[stores.length - 1];
+        if(savedStore) await sellerBooksEnsureCloudStore(savedStore);
+    } catch(error) {
+        stores = previousStores;
+        console.error("Gagal menyimpan akun toko ke cloud:", error);
+        sellerBooksAlert(
+            sellerBooksCurrentLanguage() === "en"
+                ? "Store could not be saved to the cloud. Check your connection and try again."
+                : "Toko gagal disimpan ke cloud. Periksa koneksi lalu coba lagi."
+        );
+        return;
+    }
+
     saveStoreData();
 
     renderStores();
@@ -24415,7 +24549,7 @@ document.getElementById(
    AKTIF / NONAKTIF TOKO
 ===================================================== */
 
-function toggleStore(id){
+async function toggleStore(id){
 
     const store =
 
@@ -24429,6 +24563,9 @@ function toggleStore(id){
     if(!store) return;
 
 
+    const previousStatus = store.status;
+    const previousUpdatedAt = store.updatedAt;
+
     store.status =
 
         store.status === "active"
@@ -24441,6 +24578,20 @@ function toggleStore(id){
     store.updatedAt =
         new Date().toISOString();
 
+
+    try {
+        await sellerBooksEnsureCloudStore(store);
+    } catch(error) {
+        store.status = previousStatus;
+        store.updatedAt = previousUpdatedAt;
+        console.error("Gagal memperbarui status toko di cloud:", error);
+        sellerBooksAlert(
+            sellerBooksCurrentLanguage() === "en"
+                ? "Store status could not be updated in the cloud. Please try again."
+                : "Status toko gagal diperbarui di cloud. Silakan coba lagi."
+        );
+        return;
+    }
 
     saveStoreData();
 
@@ -24484,6 +24635,38 @@ async function deleteStore(id){
 
     }
 
+
+    try {
+        const sessionResult = await sellerBooksSupabase.auth.getSession();
+        const session = sessionResult?.data?.session;
+        if(sessionResult?.error || !session?.user?.id) {
+            throw new Error("Session expired");
+        }
+        const [connectionsResult, ordersResult] = await Promise.all([
+            sellerBooksSupabase.from("sellerbooks_api_connections").select("id", {count:"exact", head:true}).eq("owner_user_id", session.user.id).eq("store_id", String(id)),
+            sellerBooksSupabase.from("sellerbooks_orders").select("id", {count:"exact", head:true}).eq("owner_user_id", session.user.id).eq("store_id", String(id))
+        ]);
+        if(connectionsResult.error) throw connectionsResult.error;
+        if(ordersResult.error) throw ordersResult.error;
+        if((connectionsResult.count || 0) > 0 || (ordersResult.count || 0) > 0) {
+            sellerBooksAlert(
+                sellerBooksCurrentLanguage() === "en"
+                    ? "This store has API connections or order history. To protect historical data, deactivate it instead of deleting it."
+                    : "Toko ini memiliki koneksi API atau riwayat pesanan. Untuk melindungi data historis, nonaktifkan toko daripada menghapusnya."
+            );
+            return;
+        }
+        const cloudDelete = await sellerBooksSupabase.from("sellerbooks_stores").delete().eq("owner_user_id", session.user.id).eq("id", String(id));
+        if(cloudDelete.error) throw cloudDelete.error;
+    } catch(error) {
+        console.error("Gagal menghapus toko dari cloud:", error);
+        sellerBooksAlert(
+            sellerBooksCurrentLanguage() === "en"
+                ? "Store could not be deleted from the cloud. Please try again."
+                : "Toko gagal dihapus dari cloud. Silakan coba lagi."
+        );
+        return;
+    }
 
     stores =
 
