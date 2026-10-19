@@ -21564,6 +21564,44 @@ async function disconnectStoreAccount(storeId){
     }
 }
 
+async function sellerBooksEnsureCloudStore(store){
+    const sessionResult = await sellerBooksSupabase.auth.getSession();
+    const session = sessionResult?.data?.session;
+    if(sessionResult?.error || !session?.user?.id || !session?.access_token){
+        throw new Error(sellerBooksCurrentLanguage() === "en"
+            ? "Session expired. Please sign in again."
+            : "Sesi berakhir. Silakan login kembali.");
+    }
+    if(!store || !store.id || !store.marketplaceId || !String(store.name || "").trim()){
+        throw new Error(sellerBooksCurrentLanguage() === "en"
+            ? "Store data is incomplete."
+            : "Data toko belum lengkap.");
+    }
+    const storeMarketplace = Array.isArray(marketplaces)
+        ? marketplaces.find(item => String(item.id) === String(store.marketplaceId))
+        : null;
+    const canonicalMarketplaceId = sellerBooksCanonicalMarketplaceId(
+        store.marketplaceId,
+        storeMarketplace?.name || store.marketplace || ""
+    );
+    const row = {
+        id: String(store.id),
+        owner_user_id: session.user.id,
+        marketplace_id: String(canonicalMarketplaceId),
+        store_code: String(store.code || ""),
+        store_name: String(store.name).trim(),
+        description: String(store.description || ""),
+        fee_percent: Number(store.feePercent || 0),
+        status: String(store.status || "active").toUpperCase() === "INACTIVE" ? "INACTIVE" : "ACTIVE",
+        updated_at: new Date().toISOString()
+    };
+    const saved = await sellerBooksSupabase
+        .from("sellerbooks_stores")
+        .upsert(row, { onConflict: "owner_user_id,id" });
+    if(saved.error) throw saved.error;
+    return session;
+}
+
 async function connectBlibliStoreManually(store, marketplace){
     const en = sellerBooksCurrentLanguage() === "en";
     const L = en ? {
@@ -21656,7 +21694,17 @@ async function connectBlibliStoreManually(store, marketplace){
         const sessionResult=await sellerBooksSupabase.auth.getSession();
         const session=sessionResult?.data?.session;
         if(sessionResult?.error||!session?.access_token)throw new Error(L.session);
-        const upsert=await sellerBooksSupabase.rpc("sellerbooks_api_upsert_connection",{p_store_id:String(store.id),p_marketplace_id:String(store.marketplaceId),p_marketplace:String(marketplace.name||"Blibli")});
+        // Mirror the authenticated owner's store into the relational table before creating its API connection.
+        await sellerBooksEnsureCloudStore(store);
+        const canonicalMarketplaceId = sellerBooksCanonicalMarketplaceId(
+            store.marketplaceId,
+            marketplace.name || "Blibli"
+        );
+        const upsert=await sellerBooksSupabase.rpc("sellerbooks_api_upsert_connection",{
+            p_store_id:String(store.id),
+            p_marketplace_id:String(canonicalMarketplaceId),
+            p_marketplace:String(marketplace.name||"Blibli")
+        });
         if(upsert.error)throw upsert.error;
         const connection=Array.isArray(upsert.data)?upsert.data[0]:upsert.data;
         if(!connection?.id)throw new Error(L.create);
