@@ -9818,7 +9818,7 @@ function renderReportSoldProductTable(){
     if(pageSizeLabel) pageSizeLabel.textContent = isEN ? "Show" : "Tampilkan";
     if(rowsLabel) rowsLabel.textContent = isEN ? "rows" : "baris";
     if(!transactions.length){
-        body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:28px;color:#64748b;">${isEN ? "No sold product data." : "Belum ada data produk terjual."}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px;color:#64748b;">${isEN ? "No sold product data." : "Belum ada data produk terjual."}</td></tr>`;
         if(pagination) pagination.style.display = "none";
         return;
     }
@@ -9853,7 +9853,8 @@ function renderReportSoldProductTable(){
     const visibleRows = sortedRows.slice(startIndex, endIndex);
     body.innerHTML = visibleRows.map(function(row){
         const averageProfit = row.qty > 0 ? row.profit / row.qty : 0;
-        return `<tr><td>${escapeHtml(row.name)}</td><td>${Number(row.qty).toLocaleString(isEN ? "en-US" : "id-ID")}</td><td>${formatRupiah(row.hpp)}</td><td>${formatRupiah(row.profit)}</td><td>${formatRupiah(averageProfit)}</td></tr>`;
+        const hppPerPcs = row.qty > 0 ? row.hpp / row.qty : 0;
+        return `<tr><td>${escapeHtml(row.name)}</td><td>${Number(row.qty).toLocaleString(isEN ? "en-US" : "id-ID")}</td><td>${formatRupiah(row.hpp)}</td><td>${formatRupiah(row.profit)}</td><td>${formatRupiah(averageProfit)}</td><td>${formatRupiah(hppPerPcs)}</td></tr>`;
     }).join("");
 
     if(pagination) pagination.style.display = "flex";
@@ -9886,7 +9887,8 @@ function renderReportSoldProductTable(){
         qty: isEN ? "Total Products" : "Total Produk",
         hpp: isEN ? "COGS" : "HPP",
         profit: isEN ? "Profit" : "Laba",
-        averageProfit: isEN ? "Average Profit per Product" : "Rata-rata Laba per Produk"
+        averageProfit: isEN ? "Average Profit per Product" : "Rata-rata Laba per Produk",
+        hppPerPcs: isEN ? "COGS per Unit" : "HPP per PCS"
     };
     const labelMap = {
         reportSoldProductTitle:labels.title,
@@ -9895,7 +9897,8 @@ function renderReportSoldProductTable(){
         reportSoldProductQtyHeader:labels.qty,
         reportSoldProductHppHeader:labels.hpp,
         reportSoldProductProfitHeader:labels.profit,
-        reportSoldProductAverageProfitHeader:labels.averageProfit
+        reportSoldProductAverageProfitHeader:labels.averageProfit,
+        reportSoldProductHppPerPcsHeader:labels.hppPerPcs
     };
     Object.keys(labelMap).forEach(function(id){
         const el=document.getElementById(id);
@@ -14236,10 +14239,11 @@ document.addEventListener(
                         <th id="reportSoldProductHppHeader">HPP</th>
                         <th id="reportSoldProductProfitHeader">Laba</th>
                         <th id="reportSoldProductAverageProfitHeader">Rata-rata Laba per Produk</th>
+                        <th id="reportSoldProductHppPerPcsHeader">HPP per PCS</th>
                     </tr>
                 </thead>
                 <tbody id="reportSoldProductBody">
-                    <tr><td colspan="5" style="text-align:center;padding:28px;color:#64748b;">Belum ada data produk terjual.</td></tr>
+                    <tr><td colspan="6" style="text-align:center;padding:28px;color:#64748b;">Belum ada data produk terjual.</td></tr>
                 </tbody>
             </table>
         </div>
