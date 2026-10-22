@@ -22008,7 +22008,7 @@ function sellerBooksApiImportProfile(marketplace){
         "tiktokshop":{sku:"Seller SKU",qty:"Quantity",price:"SKU Subtotal After Discount"},
         shopee:{sku:"Nomor Referensi SKU",qty:"Jumlah Produk",price:"Subtotal Pesanan"},
         lazada:{sku:"sellerSku",qty:"__LAZADA_QTY_PER_ROW__",price:"unitPrice"},
-        toco:{sku:"SKU",qty:"Jumlah Produk",price:"Total Harga Produk"}
+        toco:{sku:"SKU",qty:"Jumlah Produk",price:"Harga Setelah Diskon"}
     };
     return profiles[key]||null;
 }
@@ -28551,10 +28551,22 @@ function getSalesAmount(row,data){
     }
 
     if(data.marketplace === "Toco"){
-        const tocoTotalIndex = data.headers.findIndex(function(header){
+        /*
+           Toco paidAmount is the line-item amount after discounts.
+           Prefer it for SKU Subtotal After Discount; keep Total Harga Produk
+           only as a fallback for legacy/raw payloads that omit that column.
+        */
+        const discountedIndex = data.headers.findIndex(function(header){
+            return normalizeHeader(header) === "harga setelah diskon";
+        });
+        if(discountedIndex >= 0){
+            const discounted = parseSalesNumber(row[discountedIndex]);
+            if(discounted > 0) return discounted;
+        }
+        const totalIndex = data.headers.findIndex(function(header){
             return normalizeHeader(header) === "total harga produk";
         });
-        return tocoTotalIndex >= 0 ? parseSalesNumber(row[tocoTotalIndex]) : 0;
+        return totalIndex >= 0 ? parseSalesNumber(row[totalIndex]) : 0;
     }
 
     if(data.marketplace === "Blibli"){
