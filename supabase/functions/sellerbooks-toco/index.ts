@@ -243,12 +243,14 @@ async function syncOrders(r: Request) {
     const items = Array.isArray(orderDetail?.items) ? orderDetail.items : [];
     for (const item of items) {
       const quantity = Math.max(1, Number(item?.quantity) || 1);
-      const price = Number(item?.unitPrice ?? item?.price) || 0;
+      const unitPrice = Number(item?.unitPrice ?? item?.price) || 0;
+      const totalPrice = Number(item?.subTotal ?? item?.totalPrice ?? (unitPrice * quantity)) || 0;
+      const discountedPrice = Number(item?.paidAmount ?? item?.unitPrice ?? item?.price) || 0;
       const sku = skuFromItem(item);
       if (!sku) { missingSkuCount++; continue; }
       const tracking = String(orderDetail?.delivery?.tracking?.airWaybill || orderDetail?.delivery?.tracking?.trackingNumber || orderDetail?.delivery?.tracking?.number || orderDetail?.trackingNumber || "");
       rows.push([
-        orderId, sku, price * quantity, quantity, tracking, price,
+        orderId, sku, totalPrice, quantity, tracking, discountedPrice,
         String(orderDetail?.orderDatetime || order?.orderDatetime || order?.createdAt || ""),
         String(orderDetail?.substatus || order?.substatus || orderDetail?.status || order?.status || ""), String(order?.id || ""),
       ]);
