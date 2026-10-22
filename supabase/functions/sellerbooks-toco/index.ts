@@ -126,7 +126,7 @@ async function init(r: Request) {
     return out({ ok: false, error: "Gagal menyiapkan sesi aman integrasi Toco.", stage: "create_state" }, 500);
   }
 
-  const redirect = new URL("https://sellerbooks.github.io/toco-oauth-callback.html");
+  const redirect = new URL("https://sellerbooks.amasaindonesia.com/toco-oauth-callback.html");
   redirect.searchParams.set("store_id", storeId);
   redirect.searchParams.set("marketplace_id", marketplaceId);
   redirect.searchParams.set("state", state);
