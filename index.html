@@ -21766,7 +21766,8 @@ async function integrateStoreAccount(storeId){
     const providerMap = {
         tiktok:  "sellerbooks-tiktok-oauth",
         shopee:  "sellerbooks-shopee-oauth",
-        lazada:  "sellerbooks-lazada-oauth"
+        lazada:  "sellerbooks-lazada-oauth",
+        toco:    "sellerbooks-toco"
     };
 
     const marketplaceKey = String(marketplace.name || "")
@@ -21782,11 +21783,13 @@ async function integrateStoreAccount(storeId){
         endpoint = providerMap.shopee;
     }else if(marketplaceKey.includes("lazada")){
         endpoint = providerMap.lazada;
+    }else if(marketplaceKey.includes("toco")){
+        endpoint = providerMap.toco;
     }
 
     /*
-       TikTok Shop, Shopee, dan Lazada memakai lifecycle OAuth yang sama.
-       Shopee menggunakan Edge Function sellerbooks-shopee-oauth yang sudah ada.
+       TikTok Shop, Shopee, Lazada, dan Toco memakai alur backend masing-masing.
+       Toco menggunakan Edge Function sellerbooks-toco.
        Marketplace lain tetap menampilkan popup "Segera Hadir".
     */
     if(!endpoint){
@@ -22004,7 +22007,8 @@ function sellerBooksApiImportProfile(marketplace){
         tiktok:{sku:"Seller SKU",qty:"Quantity",price:"SKU Subtotal After Discount"},
         "tiktokshop":{sku:"Seller SKU",qty:"Quantity",price:"SKU Subtotal After Discount"},
         shopee:{sku:"Nomor Referensi SKU",qty:"Jumlah Produk",price:"Subtotal Pesanan"},
-        lazada:{sku:"sellerSku",qty:"__LAZADA_QTY_PER_ROW__",price:"unitPrice"}
+        lazada:{sku:"sellerSku",qty:"__LAZADA_QTY_PER_ROW__",price:"unitPrice"},
+        toco:{sku:"SKU",qty:"Jumlah Produk",price:"Harga Setelah Diskon"}
     };
     return profiles[key]||null;
 }
@@ -22543,6 +22547,52 @@ async function syncBlibliOrdersNow(storeId){
         return await syncBlibliOrdersNowInternal(storeId);
     }finally{
         sellerBooksSetPullOrderBusy(storeId,false,"Blibli");
+        if(window.__sellerBooksPullBusyStore===key)window.__sellerBooksPullBusyStore=null;
+    }
+}
+
+/* =====================================================
+   TARIK ORDER TOCO
+   API hanya menyiapkan data mentah; mesin Import Penjualan
+   tetap menjadi satu-satunya mesin deduplikasi/perhitungan.
+===================================================== */
+async function syncTocoOrdersNowInternal(storeId){
+    const store=stores.find(item=>String(item.id)===String(storeId));
+    if(!store){sellerBooksAlert(sellerBooksPullOrderText("missingStore","Toco"),sellerBooksPullOrderText("loadingTitle","Toco"));return;}
+    const marketplace=marketplaces.find(item=>item.id===store.marketplaceId);
+    if(!String(marketplace?.name||"").toLowerCase().replace(/\s+/g,"").includes("toco")){sellerBooksAlert(sellerBooksPullOrderText("wrongMarketplace","Toco"),sellerBooksPullOrderText("loadingTitle","Toco"));return;}
+    const connection=getStoreIntegrationConnection(store);
+    if(!connection||String(connection.connection_status||"").toUpperCase()!=="CONNECTED"){sellerBooksAlert(sellerBooksPullOrderText("notConnected","Toco"),sellerBooksPullOrderText("loadingTitle","Toco"));return;}
+    try{
+        sellerBooksSetPullOrderBusy(storeId,true,"Toco");
+        sellerBooksAlert(sellerBooksPullOrderText("loading","Toco"),sellerBooksPullOrderText("loadingTitle","Toco"));
+        const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
+        if(!session?.access_token)throw new Error(sellerBooksPullOrderText("noSession","Toco"));
+        const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-toco?action=sync-orders",{
+            method:"POST",
+            headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
+            body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id)})
+        });
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok||!data.ok)throw new Error(data.error||sellerBooksPullOrderText("failedFetch","Toco"));
+        if(data.status==="NO_ORDERS"||data.status==="NO_ORDER_ITEMS"){
+            sellerBooksAlert(sellerBooksPullOrderText("noOrders","Toco",Number(data.orders_found||0)),sellerBooksPullOrderText("resultTitle","Toco"));
+            return;
+        }
+        if(data.status==="RAW_FILE_READY"){await sellerBooksDispatchExcelQueue({showResult:true});return;}
+        throw new Error(sellerBooksPullOrderText("status","Toco")+String(data.status||"UNKNOWN"));
+    }catch(error){
+        console.error("Tarik order Toco gagal:",error);
+        sellerBooksAlert(sellerBooksPullOrderText("failedOrders","Toco")+"\n\n"+(error?.message||"Terjadi kesalahan."),sellerBooksPullOrderText("loadingTitle","Toco"));
+    }
+}
+async function syncTocoOrdersNow(storeId){
+    const key=String(storeId||"");
+    if(window.__sellerBooksPullBusyStore===key&&key)return;
+    window.__sellerBooksPullBusyStore=key;
+    try{return await syncTocoOrdersNowInternal(storeId);}
+    finally{
+        sellerBooksSetPullOrderBusy(storeId,false,"Toco");
         if(window.__sellerBooksPullBusyStore===key)window.__sellerBooksPullBusyStore=null;
     }
 }
@@ -23786,6 +23836,7 @@ function renderStores(skipIntegrationRefresh){
         const isShopeeStore = marketplaceKey.includes("shopee");
         const isLazadaStore = marketplaceKey.includes("lazada");
         const isBlibliStore = marketplaceKey.includes("blibli");
+        const isTocoStore = marketplaceKey.includes("toco");
 
         /*
            TikTok tetap memakai mesin yang sudah berjalan.
@@ -23835,6 +23886,8 @@ function renderStores(skipIntegrationRefresh){
 
         else if(isBlibliStore){
             orderSyncButtonHtml = '<div class="store-action-order-row"><button type="button" class="store-action-button store-integrate-button" onclick="syncBlibliOrdersNow(\''+store.id+'\')" title="Tarik Order Blibli">🔄 '+sellerBooksStoreText("syncOrders")+'</button></div>';
+        }else if(isTocoStore){
+            orderSyncButtonHtml = '<div class="store-action-order-row"><button type="button" class="store-action-button store-integrate-button" onclick="syncTocoOrdersNow(\''+store.id+'\')" title="Tarik Order Toco">🔄 '+sellerBooksStoreText("syncOrders")+'</button></div>';
         }
         const integrationButtonHtml = isIntegrated
             ? `
@@ -28397,7 +28450,8 @@ function getReportTransactionSalesAmount(item){
         item.marketplace === "TikTok Shop" ||
         item.marketplace === "Shopee" ||
         item.marketplace === "Blibli" ||
-        item.marketplace === "Lazada"
+        item.marketplace === "Lazada" ||
+        item.marketplace === "Toco"
     ){
         return Number(item.salesAmount) || 0;
     }
@@ -28494,6 +28548,28 @@ function getSalesAmount(row,data){
             : 0;
 
         return masterPrice * qty;
+    }
+
+    if(data.marketplace === "Toco"){
+        /*
+           Toco paidAmount is the line-item amount after discounts.
+           Prefer it for SKU Subtotal After Discount; keep Total Harga Produk
+           only as a fallback for legacy/raw payloads that omit that column.
+        */
+        const discountedIndex = data.headers.findIndex(function(header){
+            return normalizeHeader(header) === "harga setelah diskon";
+        });
+        if(discountedIndex >= 0){
+            const rawDiscounted = row[discountedIndex];
+            if(rawDiscounted !== null && rawDiscounted !== undefined && String(rawDiscounted).trim() !== ""){
+                // Zero is a valid after-discount amount; do not replace it with pre-discount subtotal.
+                return parseSalesNumber(rawDiscounted);
+            }
+        }
+        const totalIndex = data.headers.findIndex(function(header){
+            return normalizeHeader(header) === "total harga produk";
+        });
+        return totalIndex >= 0 ? parseSalesNumber(row[totalIndex]) : 0;
     }
 
     if(data.marketplace === "Blibli"){

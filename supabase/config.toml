@@ -1,0 +1,5 @@
+# Toco's callback is public at the HTTP layer because Toco redirects the seller's browser
+# without a SellerBooks JWT. The function validates the one-time OAuth state itself.
+# The init action independently validates the SellerBooks bearer token.
+[functions.sellerbooks-toco]
+verify_jwt = false
