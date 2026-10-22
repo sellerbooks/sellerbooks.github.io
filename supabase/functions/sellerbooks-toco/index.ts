@@ -46,15 +46,23 @@ function base64UrlBytes(value: string) {
   const padded = base64 + "=".repeat((4 - base64.length % 4) % 4);
   return Uint8Array.from(atob(padded), c => c.charCodeAt(0));
 }
-async function signToco(method: string, path: string, timestamp: string, bodyText = "") {
+async function signToco(
+  method: string, path: string, timestamp: string, bodyText = "",
+  storeClientId = "", storeToken = "",
+) {
   const partnerId = env("TOCO_PARTNER_CLIENT_ID");
   const secret = env("TOCO_PARTNER_SECRET_KEY");
   const bodyHash = await sha256(bodyText);
+  const canonicalHeaders: Record<string, string> = {
+    "x-partner-client-id": partnerId,
+    "x-timestamp": timestamp,
+  };
+  if (storeClientId) canonicalHeaders["x-store-client-id"] = storeClientId;
+  if (storeToken) canonicalHeaders["x-store-token"] = storeToken;
   const lines = [
     method.toUpperCase(),
-    path,
-    "x-partner-client-id:" + partnerId,
-    "x-timestamp:" + timestamp,
+    path.split("?")[0],
+    ...Object.keys(canonicalHeaders).sort().map(name => name + ":" + canonicalHeaders[name]),
     bodyHash,
   ];
   const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
@@ -71,6 +79,140 @@ async function tocoRequest(method: string, path: string, bodyText = "") {
     "Content-Type": "application/json",
   };
   return fetch(TOCO_API + path, { method, headers, ...(method === "GET" ? {} : { body: bodyText }) });
+}
+async function tocoStoreGet(path: string, storeClientId: string, storeToken: string) {
+  const timestamp = String(Date.now());
+  const signed = await signToco("GET", path, timestamp, "", storeClientId, storeToken);
+  return fetch(TOCO_API + path, {
+    method: "GET",
+    headers: {
+      "x-partner-client-id": signed.partnerId,
+      "x-store-client-id": storeClientId,
+      "x-store-token": storeToken,
+      "x-timestamp": timestamp,
+      "x-signature": signed.signature,
+      "Accept": "application/json",
+    },
+  });
+}
+async function syncOrders(r: Request) {
+  const base = env("SUPABASE_URL");
+  const pub = env("SUPABASE_PUBLISHABLE_KEY");
+  const service = env("SUPABASE_SECRET_KEY");
+  const user = await getUser(base, pub, bearer(r));
+  if (!user?.id) return out({ ok: false, error: "Sesi SellerBooks tidak valid. Silakan login kembali." }, 401);
+
+  const body = await r.json().catch(() => ({}));
+  const connectionId = String(body.connection_id || "").trim();
+  const storeId = String(body.store_id || "").trim();
+  if (!connectionId || !storeId) return out({ ok: false, error: "connection_id dan store_id wajib." }, 400);
+
+  const connRes = await rest(base, service,
+    "sellerbooks_api_connections?id=eq." + encodeURIComponent(connectionId) +
+    "&owner_user_id=eq." + encodeURIComponent(user.id) +
+    "&select=id,owner_user_id,store_id,marketplace,marketplace_id,connection_status,vault_secret_id");
+  if (!connRes.ok) return out({ ok: false, error: "Gagal memeriksa koneksi Toco." }, 500);
+  const connRows = await connRes.json().catch(() => []);
+  const conn = Array.isArray(connRows) ? connRows[0] : null;
+  if (!conn) return out({ ok: false, error: "Koneksi Toco tidak ditemukan." }, 404);
+  if (String(conn.store_id) !== storeId) return out({ ok: false, error: "Toko tidak cocok dengan koneksi Toco." }, 403);
+  if (String(conn.marketplace || "").toLowerCase() !== "toco") return out({ ok: false, error: "Koneksi ini bukan Toco." }, 400);
+  if (String(conn.connection_status || "").toUpperCase() !== "CONNECTED") return out({ ok: false, error: "Akun Toco belum terintegrasi." }, 400);
+  if (!conn.vault_secret_id) return out({ ok: false, error: "Kredensial Toco tidak ditemukan di Vault." }, 400);
+
+  const vaultRes = await rpc(base, service, "sellerbooks_get_vault_secret", { p_secret_id: conn.vault_secret_id });
+  if (!vaultRes.ok) return out({ ok: false, error: "Gagal membaca kredensial Toco dari Vault." }, 500);
+  const vaultValue = await vaultRes.json().catch(() => null);
+  const secretText = Array.isArray(vaultValue) ? vaultValue[0]?.decrypted_secret : vaultValue?.decrypted_secret;
+  if (!secretText) return out({ ok: false, error: "Kredensial Toco tidak tersedia di Vault." }, 400);
+  let credential: any;
+  try { credential = JSON.parse(secretText); } catch { return out({ ok: false, error: "Format kredensial Toco tidak valid." }, 400); }
+  const storeClientId = String(credential.store_client_id || "").trim();
+  const storeToken = String(credential.store_token || "").trim();
+  if (!storeClientId || !storeToken) return out({ ok: false, error: "Kredensial akses toko Toco belum lengkap." }, 400);
+
+  const allOrders: any[] = [];
+  let page = 1;
+  let totalPages = 1;
+  const limit = 100;
+  while (page <= totalPages && page <= 100) {
+    const query = new URLSearchParams({ page: String(page), limit: String(limit) });
+    const path = "/partner/stores/orders?" + query.toString();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    let response: Response;
+    let raw = "";
+    try {
+      response = await tocoStoreGet(path, storeClientId, storeToken);
+      raw = await response.text();
+    } finally { clearTimeout(timer); }
+    let payload: any;
+    try { payload = JSON.parse(raw); } catch { payload = null; }
+    if (!response!.ok || payload?.success === false || !Array.isArray(payload?.data)) {
+      const detail = upstreamMessage(raw);
+      console.error(JSON.stringify({ service: "sellerbooks-toco", event: "orders_fetch_failed", user_id: user.id, store_id: storeId, status: response!.status, page, request_id: payload?.requestId || null, detail }));
+      return out({ ok: false, error: detail || "Gagal mengambil pesanan Toco.", stage: "orders_fetch", status: response!.status, request_id: payload?.requestId || null }, 502);
+    }
+    allOrders.push(...payload.data);
+    const pagination = payload.pagination || {};
+    totalPages = Math.max(1, Number(pagination.totalPages || (payload.data.length < limit ? page : page + 1)) || 1);
+    if (!payload.data.length) break;
+    page++;
+  }
+  if (page <= totalPages && page > 100) {
+    return out({ ok: false, error: "Jumlah halaman pesanan Toco melebihi batas aman 100 halaman. Persempit periode dari dashboard Toco lalu coba lagi." }, 413);
+  }
+
+  const headers = ["Nomor Pesanan", "SKU Seller", "Total Produk", "Jumlah Produk", "Nomor Resi/AWB", "Harga Produk", "Tanggal Pesanan", "Status Pesanan", "ID Paket"];
+  const rows: any[][] = [];
+  const seenOrderIds = new Set<string>();
+  for (const order of allOrders) {
+    const orderId = String(order?.invoiceNumber || order?.id || "").trim();
+    if (!orderId) continue;
+    seenOrderIds.add(orderId);
+    const items = Array.isArray(order?.items) ? order.items : [];
+    for (const item of items) {
+      const quantity = Math.max(1, Number(item?.quantity) || 1);
+      const price = Number(item?.price) || 0;
+      const sku = String(item?.sellerSku || item?.sellerSKU || item?.sku || item?.productSku || item?.productName || "").trim();
+      const tracking = String(order?.delivery?.tracking?.trackingNumber || order?.delivery?.tracking?.number || order?.trackingNumber || "");
+      rows.push([
+        orderId, sku, price * quantity, quantity, tracking, price,
+        String(order?.orderDatetime || order?.createdAt || ""),
+        String(order?.substatus || order?.status || ""), String(order?.id || ""),
+      ]);
+    }
+  }
+
+  if (!rows.length) return out({ ok: true, marketplace: "Toco", status: "NO_ORDER_ITEMS", orders_found: seenOrderIds.size, rows_found: 0 });
+
+  const fileName = "AUTO-SYNC-TOCO-" + new Date().toISOString() + ".xlsx";
+  const queueRes = await rest(base, service, "sellerbooks_api_import_queue", {
+    method: "POST",
+    headers: { "Prefer": "return=representation" },
+    body: JSON.stringify({
+      owner_user_id: String(conn.owner_user_id), connection_id: String(conn.id), store_id: String(conn.store_id),
+      marketplace: "Toco", file_name: fileName,
+      file_type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      headers, rows, status: "PENDING",
+    }),
+  });
+  if (!queueRes.ok) {
+    const detail = (await readText(queueRes)).slice(0, 250);
+    console.error(JSON.stringify({ service: "sellerbooks-toco", event: "import_queue_failed", user_id: user.id, store_id: storeId, detail }));
+    return out({ ok: false, error: "Data pesanan berhasil diambil tetapi gagal masuk antrean impor." }, 500);
+  }
+  const queued = await queueRes.json().catch(() => null);
+  const queue = Array.isArray(queued) ? queued[0] : queued;
+  const now = new Date().toISOString();
+  await rest(base, service, "sellerbooks_api_connections?id=eq." + encodeURIComponent(conn.id), {
+    method: "PATCH", body: JSON.stringify({ last_sync_at: now, last_success_at: now, last_error: null, updated_at: now }),
+  });
+  return out({
+    ok: true, marketplace: "Toco", status: "RAW_FILE_READY", orders_found: seenOrderIds.size,
+    rows_found: rows.length, queue_id: queue?.id || null, file_name: fileName,
+    engine: "SELLERBOOKS_IMPORT_PENJUALAN",
+  });
 }
 async function rest(base: string, key: string, path: string, init: RequestInit = {}) {
   const headers = new Headers(init.headers);
@@ -213,6 +355,10 @@ Deno.serve(async (r: Request) => {
     if (r.method !== "POST") return out({ ok: false, error: "Method not allowed." }, 405);
     if (action === "init") return await init(r);
     if (action === "complete") return await complete(r);
+    if (action === "sync-orders") {
+      if (r.method !== "POST") return out({ ok: false, error: "Method not allowed." }, 405);
+      return await syncOrders(r);
+    }
     return out({ ok: false, error: "Invalid Toco action." }, 400);
   } catch (e) {
     console.error(JSON.stringify({ service: "sellerbooks-toco", event: "request_failed", error: e instanceof Error ? e.message : "UNKNOWN" }));
