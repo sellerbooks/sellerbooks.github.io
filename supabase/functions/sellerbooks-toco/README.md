@@ -48,6 +48,7 @@ The callback credential is received in the browser URL because that is Toco's do
 
 - Enforced the 20-second request timeout by passing `AbortController.signal` to the fetch call.
 - Timeout/network failures now return explicit, non-secret error messages and status codes.
+- The connection upsert RPC now receives the validated SellerBooks user's JWT (rather than the public API key as bearer), so user identity/RLS checks can run as the logged-in user.
 - Production `main` and the live site remain unchanged; do not merge or deploy until the Supabase RPC/table contract and real Toco payload SKU mapping are verified.
 
 
