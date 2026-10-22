@@ -187,7 +187,13 @@ async function syncOrders(r: Request) {
   const ordersNeedingDetail = allOrders.filter((order) =>
     !Array.isArray(order?.items) ||
     order.items.length === 0 ||
-    order.items.some((item: any) => !skuFromItem(item))
+    order.items.some((item: any) =>
+      !skuFromItem(item) ||
+      item?.paidAmount === null ||
+      item?.paidAmount === undefined ||
+      item?.subTotal === null ||
+      item?.subTotal === undefined
+    )
   );
   for (let offset = 0; offset < ordersNeedingDetail.length; offset += 5) {
     const batch = ordersNeedingDetail.slice(offset, offset + 5);
