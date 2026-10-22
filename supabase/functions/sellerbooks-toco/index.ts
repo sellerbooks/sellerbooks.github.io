@@ -176,7 +176,7 @@ async function syncOrders(r: Request) {
     page++;
   }
   if (page <= totalPages && page > 100) {
-    return out({ ok: false, error: "Jumlah halaman pesanan Toco melebihi batas aman 100 halaman. Persempit periode dari dashboard Toco lalu coba lagi." }, 413);
+    return out({ ok: false, error: "Sinkronisasi dihentikan karena pesanan Toco melebihi batas aman 100 halaman (maksimal 10.000 pesanan). Belum ada pesanan yang dimasukkan ke antrean; dukungan sinkronisasi bertahap diperlukan untuk akun sebesar ini." }, 413);
   }
 
   // The list endpoint's published sample omits SKU. Resolve missing SKU via the
