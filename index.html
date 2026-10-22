@@ -22008,7 +22008,7 @@ function sellerBooksApiImportProfile(marketplace){
         "tiktokshop":{sku:"Seller SKU",qty:"Quantity",price:"SKU Subtotal After Discount"},
         shopee:{sku:"Nomor Referensi SKU",qty:"Jumlah Produk",price:"Subtotal Pesanan"},
         lazada:{sku:"sellerSku",qty:"__LAZADA_QTY_PER_ROW__",price:"unitPrice"},
-        toco:{sku:"SKU Seller",qty:"Jumlah Produk",price:"Total Produk"}
+        toco:{sku:"SKU",qty:"Jumlah Produk",price:"Total Harga Produk"}
     };
     return profiles[key]||null;
 }
@@ -28450,7 +28450,8 @@ function getReportTransactionSalesAmount(item){
         item.marketplace === "TikTok Shop" ||
         item.marketplace === "Shopee" ||
         item.marketplace === "Blibli" ||
-        item.marketplace === "Lazada"
+        item.marketplace === "Lazada" ||
+        item.marketplace === "Toco"
     ){
         return Number(item.salesAmount) || 0;
     }
@@ -28547,6 +28548,13 @@ function getSalesAmount(row,data){
             : 0;
 
         return masterPrice * qty;
+    }
+
+    if(data.marketplace === "Toco"){
+        const tocoTotalIndex = data.headers.findIndex(function(header){
+            return normalizeHeader(header) === "total harga produk";
+        });
+        return tocoTotalIndex >= 0 ? parseSalesNumber(row[tocoTotalIndex]) : 0;
     }
 
     if(data.marketplace === "Blibli"){
