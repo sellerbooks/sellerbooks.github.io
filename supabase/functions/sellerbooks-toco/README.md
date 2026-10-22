@@ -1,0 +1,44 @@
+# SellerBooks Toco Connector — Staging Setup
+
+This connector is isolated on branch `feature/toco-integration`. It is not live on the production `main` branch yet.
+
+## Added files
+
+- `supabase/functions/sellerbooks-toco/index.ts`: authenticated onboarding init and one-time callback completion.
+- `toco-oauth-callback.html`: receives Toco's redirect, removes query values from browser history, and submits the one-time callback payload to the Edge Function.
+- `supabase/config.toml`: disables gateway JWT verification for this one callback-capable function; the `init` action validates the SellerBooks user token itself.
+- `marketplace-oauth-launcher.html` still needs the Toco provider activation. Do not merge or test the UI until that integration is completed.
+
+## Required Supabase Edge Function secrets
+
+Configure these on the SellerBooks Supabase project only:
+
+- `TOCO_PARTNER_CLIENT_ID`
+- `TOCO_PARTNER_SECRET_KEY`
+- `TOCO_ENCRYPTION_KEY` — Base64-encoded AES key that decodes to exactly 32 bytes.
+- Existing project variables used by SellerBooks functions: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SECRET_KEY` (or the aliases already used by existing functions).
+
+Never put the Secret Key or Encryption Key in HTML, GitHub source, browser storage, or an APK.
+
+## Toco configuration
+
+Register the exact HTTPS callback URL with Toco if their partner dashboard requires allowlisting:
+
+`https://sellerbooks.amasaindonesia.com/toco-oauth-callback.html`
+
+The onboarding session expires after about three minutes; generate a fresh session if the seller does not continue promptly.
+
+## Current limitations / pre-production checks
+
+1. Confirm the production custom domain resolves this GitHub Pages repository and the callback URL is accepted by Toco staging.
+2. Activate Toco in `marketplace-oauth-launcher.html` and verify the parent-page refresh/message handling.
+3. Deploy the Edge Function and its `verify_jwt = false` setting to the SellerBooks Supabase project.
+4. Configure secrets in Supabase; no secret values are committed here.
+5. Validate Toco's exact signature convention with a staging request before onboarding real stores.
+6. Confirm the existing generic RPCs `sellerbooks_api_upsert_connection`, `sellerbooks_api_create_oauth_state`, `sellerbooks_api_consume_oauth_state_v2`, and `sellerbooks_api_complete_marketplace_oauth` are deployed in the SellerBooks Supabase project.
+7. Test successful connection, expired/invalid state, malformed encrypted payload, and duplicate connection behavior.
+8. Implement order retrieval only after onboarding is confirmed. Do not import raw order payloads directly into the sales ledger; follow SellerBooks' manual import/deduplication flow.
+
+## Security notes
+
+The callback credential is received in the browser URL because that is Toco's documented redirect flow. The callback page immediately removes the query string from browser history and forwards the encrypted payload to the server. Configure HTTPS, avoid sharing callback URLs/screenshots, and keep all decryption and long-term credential storage server-side.
