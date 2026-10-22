@@ -426,7 +426,8 @@ async function complete(r: Request) {
     p_connection_id: row.connection_id,
     p_store_id: row.store_id,
     p_marketplace: "Toco",
-    p_external_store_id: row.store_id,
+    // Store the provider's actual external store ID for duplicate-account protection.
+    p_external_store_id: String(store.clientId),
     p_credential: credential,
   });
   const doneRaw = await readText(done);
