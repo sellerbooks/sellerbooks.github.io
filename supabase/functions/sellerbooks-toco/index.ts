@@ -247,7 +247,7 @@ async function syncOrders(r: Request) {
       const quantity = Math.max(1, Number(item?.quantity) || 1);
       const unitPrice = Number(item?.unitPrice ?? item?.price) || 0;
       const totalPrice = Number(item?.subTotal ?? item?.totalPrice ?? (unitPrice * quantity)) || 0;
-      const discountedPrice = Number(item?.paidAmount ?? item?.unitPrice ?? item?.price) || 0;
+      const discountedPrice = Number(item?.paidAmount ?? item?.subTotal ?? item?.totalPrice ?? (unitPrice * quantity)) || 0;
       const sku = skuFromItem(item);
       if (!sku) { missingSkuCount++; continue; }
       const tracking = String(orderDetail?.delivery?.tracking?.airWaybill || orderDetail?.delivery?.tracking?.trackingNumber || orderDetail?.delivery?.tracking?.number || orderDetail?.trackingNumber || "");
