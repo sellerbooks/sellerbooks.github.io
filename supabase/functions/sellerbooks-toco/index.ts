@@ -163,9 +163,10 @@ async function syncOrders(r: Request) {
     return out({ ok: false, error: "Jumlah halaman pesanan Toco melebihi batas aman 100 halaman. Persempit periode dari dashboard Toco lalu coba lagi." }, 413);
   }
 
-  const headers = ["Nomor Pesanan", "SKU Seller", "Total Produk", "Jumlah Produk", "Nomor Resi/AWB", "Harga Produk", "Tanggal Pesanan", "Status Pesanan", "ID Paket"];
+  const headers = ["Invoice Number", "SKU", "Total Harga Produk", "Jumlah Produk", "No. Resi Pesanan", "Harga Setelah Diskon", "Waktu Pesanan Dibuat", "Status Pesanan", "ID Paket"];
   const rows: any[][] = [];
   const seenOrderIds = new Set<string>();
+  let missingSkuCount = 0;
   for (const order of allOrders) {
     const orderId = String(order?.invoiceNumber || order?.id || "").trim();
     if (!orderId) continue;
@@ -174,7 +175,8 @@ async function syncOrders(r: Request) {
     for (const item of items) {
       const quantity = Math.max(1, Number(item?.quantity) || 1);
       const price = Number(item?.price) || 0;
-      const sku = String(item?.sellerSku || item?.sellerSKU || item?.sku || item?.productSku || item?.productName || "").trim();
+      const sku = String(item?.sellerSku || item?.sellerSKU || item?.sku || item?.productSku || item?.product?.sku || item?.variant?.sku || "").trim();
+      if (!sku) { missingSkuCount++; continue; }
       const tracking = String(order?.delivery?.tracking?.trackingNumber || order?.delivery?.tracking?.number || order?.trackingNumber || "");
       rows.push([
         orderId, sku, price * quantity, quantity, tracking, price,
@@ -184,6 +186,13 @@ async function syncOrders(r: Request) {
     }
   }
 
+  if (missingSkuCount > 0) {
+    return out({
+      ok: false, status: "SKU_MAPPING_REQUIRED",
+      error: "Toco mengembalikan " + missingSkuCount + " baris item tanpa SKU. Sinkronisasi dihentikan agar transaksi tidak masuk dengan HPP/laba yang salah.",
+      orders_found: seenOrderIds.size, rows_found: rows.length, rows_missing_sku: missingSkuCount,
+    }, 422);
+  }
   if (!rows.length) return out({ ok: true, marketplace: "Toco", status: "NO_ORDER_ITEMS", orders_found: seenOrderIds.size, rows_found: 0 });
 
   const fileName = "AUTO-SYNC-TOCO-" + new Date().toISOString() + ".xlsx";
