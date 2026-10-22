@@ -179,6 +179,58 @@ async function syncOrders(r: Request) {
     return out({ ok: false, error: "Jumlah halaman pesanan Toco melebihi batas aman 100 halaman. Persempit periode dari dashboard Toco lalu coba lagi." }, 413);
   }
 
+  // The list endpoint's published sample omits SKU. Resolve missing SKU via the
+  // documented order-detail endpoint, which includes productId/externalId/sku.
+  const skuFromItem = (item: any) => String(item?.sellerSku || item?.sellerSKU || item?.sku || item?.productSku || item?.product?.sku || item?.variant?.sku || "").trim();
+  const detailByOrder = new Map<string, any>();
+  const detailFailures: string[] = [];
+  const ordersNeedingDetail = allOrders.filter((order) =>
+    Array.isArray(order?.items) && order.items.some((item: any) => !skuFromItem(item))
+  );
+  for (let offset = 0; offset < ordersNeedingDetail.length; offset += 5) {
+    const batch = ordersNeedingDetail.slice(offset, offset + 5);
+    await Promise.all(batch.map(async (order: any) => {
+      const orderKey = String(order?.id || order?.invoiceNumber || "").trim();
+      const lookupId = String(order?.id || order?.invoiceNumber || "").trim();
+      if (!lookupId) { detailFailures.push(orderKey || "unknown"); return; }
+      const path = "/partner/stores/orders/" + encodeURIComponent(lookupId);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 20000);
+      try {
+        const response = await tocoStoreGet(path, storeClientId, storeToken, controller.signal);
+        const raw = await response.text();
+        let payload: any;
+        try { payload = JSON.parse(raw); } catch { payload = null; }
+        if (!response.ok || payload?.success === false || !Array.isArray(payload?.data?.items)) {
+          detailFailures.push(orderKey);
+          console.error(JSON.stringify({
+            service: "sellerbooks-toco", event: "order_detail_failed",
+            user_id: user.id, store_id: storeId, status: response.status,
+            order_id: orderKey, request_id: payload?.requestId || null,
+          }));
+          return;
+        }
+        detailByOrder.set(orderKey, payload.data);
+      } catch (error) {
+        detailFailures.push(orderKey);
+        console.error(JSON.stringify({
+          service: "sellerbooks-toco", event: "order_detail_network_error",
+          user_id: user.id, store_id: storeId, order_id: orderKey,
+          timed_out: controller.signal.aborted,
+          error: error instanceof Error ? error.name : "UNKNOWN",
+        }));
+      } finally { clearTimeout(timer); }
+    }));
+  }
+  if (detailFailures.length) {
+    return out({
+      ok: false, status: "ORDER_DETAIL_LOOKUP_FAILED",
+      error: "Detail " + detailFailures.length + " pesanan Toco gagal dibaca. Tidak ada data yang dimasukkan ke antrean; silakan coba lagi.",
+      orders_found: new Set(allOrders.map((order: any) => String(order?.invoiceNumber || order?.id || "").trim()).filter(Boolean)).size,
+      details_failed: detailFailures.length,
+    }, 502);
+  }
+
   const headers = ["Invoice Number", "SKU", "Total Harga Produk", "Jumlah Produk", "No. Resi Pesanan", "Harga Setelah Diskon", "Waktu Pesanan Dibuat", "Status Pesanan", "ID Paket"];
   const rows: any[][] = [];
   const seenOrderIds = new Set<string>();
@@ -187,17 +239,18 @@ async function syncOrders(r: Request) {
     const orderId = String(order?.invoiceNumber || order?.id || "").trim();
     if (!orderId) continue;
     seenOrderIds.add(orderId);
-    const items = Array.isArray(order?.items) ? order.items : [];
+    const orderDetail = detailByOrder.get(String(order?.id || order?.invoiceNumber || "").trim()) || order;
+    const items = Array.isArray(orderDetail?.items) ? orderDetail.items : [];
     for (const item of items) {
       const quantity = Math.max(1, Number(item?.quantity) || 1);
-      const price = Number(item?.price) || 0;
-      const sku = String(item?.sellerSku || item?.sellerSKU || item?.sku || item?.productSku || item?.product?.sku || item?.variant?.sku || "").trim();
+      const price = Number(item?.unitPrice ?? item?.price) || 0;
+      const sku = skuFromItem(item);
       if (!sku) { missingSkuCount++; continue; }
-      const tracking = String(order?.delivery?.tracking?.trackingNumber || order?.delivery?.tracking?.number || order?.trackingNumber || "");
+      const tracking = String(orderDetail?.delivery?.tracking?.airWaybill || orderDetail?.delivery?.tracking?.trackingNumber || orderDetail?.delivery?.tracking?.number || orderDetail?.trackingNumber || "");
       rows.push([
         orderId, sku, price * quantity, quantity, tracking, price,
-        String(order?.orderDatetime || order?.createdAt || ""),
-        String(order?.substatus || order?.status || ""), String(order?.id || ""),
+        String(orderDetail?.orderDatetime || order?.orderDatetime || order?.createdAt || ""),
+        String(orderDetail?.substatus || order?.substatus || orderDetail?.status || order?.status || ""), String(order?.id || ""),
       ]);
     }
   }
