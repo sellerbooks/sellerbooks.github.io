@@ -40,5 +40,30 @@ jobs:
           deno-version: v2.x
       - name: Check Toco Edge Function
         run: deno check supabase/functions/sellerbooks-toco/index.ts
+      - name: Check inline JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const cp = require('node:child_process');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const re = /<script\\b([^>]*)>([\\s\\S]*?)<\\/script\\s*>/gi;
+          let match, count = 0;
+          while ((match = re.exec(html))) {
+            const attrs = match[1] || '';
+            if (/\\bsrc\\s*=/.test(attrs)) continue;
+            if (/\\btype\\s*=\\s*["'](?:application\\/(?:ld\\+json|json)|importmap)["']/i.test(attrs)) continue;
+            const code = match[2];
+            if (!code.trim()) continue;
+            const path = `/tmp/sellerbooks-inline-${count++}.js`;
+            fs.writeFileSync(path, code);
+            try {
+              cp.execFileSync(process.execPath, ['--check', path], { stdio: 'inherit' });
+            } catch (error) {
+              console.error(`Inline script block ${count} failed syntax check.`);
+              process.exit(error.status || 1);
+            }
+          }
+          console.log(`Checked ${count} inline JavaScript blocks.`);
+          NODE
       - name: Check patch whitespace
         run: git diff --check
