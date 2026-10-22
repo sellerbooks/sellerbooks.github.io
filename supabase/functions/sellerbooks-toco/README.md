@@ -34,10 +34,10 @@ The onboarding session expires after about three minutes; generate a fresh sessi
 2. Verify Toco routing in `index.html`, the marketplace launcher, and the callback success message/parent refresh behavior.
 3. Deploy the Edge Function and its `verify_jwt = false` setting to the SellerBooks Supabase project.
 4. Configure secrets in Supabase; no secret values are committed here.
-5. Validate Toco's exact signature convention with a staging request before onboarding real stores.
+5. Signature canonicalization now follows the published Toco HMAC guide, including store headers on store-scoped calls and excluding the query string from the signed path. Still validate with a staging request before onboarding real stores.
 6. Confirm the existing generic RPCs `sellerbooks_api_upsert_connection`, `sellerbooks_api_create_oauth_state`, `sellerbooks_api_consume_oauth_state_v2`, and `sellerbooks_api_complete_marketplace_oauth` are deployed in the SellerBooks Supabase project.
 7. Test successful connection, expired/invalid state, malformed encrypted payload, and duplicate connection behavior.
-8. Implement order retrieval only after onboarding is confirmed. Do not import raw order payloads directly into the sales ledger; follow SellerBooks' manual import/deduplication flow.
+8. The `action=sync-orders` route now fetches all pages without a date filter and queues raw item rows for the existing SellerBooks import dispatcher. The dispatcher profile uses Toco's invoice/SKU/quantity/total/date headers. If an order item has no SKU, sync intentionally stops instead of importing a transaction with zero/incorrect HPP. Validate the exact SKU fields in a real Toco staging response before merging.
 
 ## Security notes
 
