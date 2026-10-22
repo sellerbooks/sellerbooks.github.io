@@ -42,3 +42,10 @@ The onboarding session expires after about three minutes; generate a fresh sessi
 ## Security notes
 
 The callback credential is received in the browser URL because that is Toco's documented redirect flow. The callback page immediately removes the query string from browser history and forwards the encrypted payload to the server. Configure HTTPS, avoid sharing callback URLs/screenshots, and keep all decryption and long-term credential storage server-side.
+
+
+## Latest branch-only audit
+
+- Enforced the 20-second request timeout by passing `AbortController.signal` to the fetch call.
+- Timeout/network failures now return explicit, non-secret error messages and status codes.
+- Production `main` and the live site remain unchanged; do not merge or deploy until the Supabase RPC/table contract and real Toco payload SKU mapping are verified.
