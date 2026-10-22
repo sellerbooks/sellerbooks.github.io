@@ -12,8 +12,26 @@ const out = (data: unknown, status = 200) => new Response(JSON.stringify(data), 
 });
 const env = (name: string) => {
   const value = Deno.env.get(name);
-  if (!value) throw new Error("CONFIG_MISSING_" + name);
-  return value;
+  if (value) return value;
+  const aliases: Record<string, string> = {
+    SUPABASE_PUBLISHABLE_KEY: "SUPABASE_ANON_KEY",
+    SUPABASE_SECRET_KEY: "SUPABASE_SERVICE_ROLE_KEY",
+  };
+  const alias = aliases[name];
+  if (alias && Deno.env.get(alias)) return Deno.env.get(alias)!;
+  if (name === "SUPABASE_PUBLISHABLE_KEY") {
+    try {
+      const keys = JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") || "{}");
+      if (keys.default) return keys.default;
+    } catch {}
+  }
+  if (name === "SUPABASE_SECRET_KEY") {
+    try {
+      const keys = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}");
+      if (keys.default) return keys.default;
+    } catch {}
+  }
+  throw new Error("CONFIG_MISSING_" + name);
 };
 const bearer = (r: Request) => {
   const h = r.headers.get("Authorization") || "";
