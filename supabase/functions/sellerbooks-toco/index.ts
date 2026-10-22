@@ -243,11 +243,18 @@ async function syncOrders(r: Request) {
   const rows: any[][] = [];
   const seenOrderIds = new Set<string>();
   let missingSkuCount = 0;
+  let canceledOrdersSkipped = 0;
   for (const order of allOrders) {
     const orderId = String(order?.invoiceNumber || order?.id || "").trim();
     if (!orderId) continue;
     seenOrderIds.add(orderId);
     const orderDetail = detailByOrder.get(String(order?.id || order?.invoiceNumber || "").trim()) || order;
+    // Toco's list/detail API includes canceled orders; never queue these as sales.
+    const orderStatus = String(orderDetail?.status || order?.status || "").trim().toLowerCase();
+    if (orderStatus === "canceled" || orderStatus === "cancelled") {
+      canceledOrdersSkipped++;
+      continue;
+    }
     const items = Array.isArray(orderDetail?.items) ? orderDetail.items : [];
     for (const item of items) {
       const quantity = Math.max(1, Number(item?.quantity) || 1);
@@ -273,7 +280,7 @@ async function syncOrders(r: Request) {
       orders_found: seenOrderIds.size, rows_found: rows.length, rows_missing_sku: missingSkuCount,
     }, 422);
   }
-  if (!rows.length) return out({ ok: true, marketplace: "Toco", status: "NO_ORDER_ITEMS", orders_found: seenOrderIds.size, rows_found: 0 });
+  if (!rows.length) return out({ ok: true, marketplace: "Toco", status: "NO_ORDER_ITEMS", orders_found: seenOrderIds.size, rows_found: 0, canceled_orders_skipped: canceledOrdersSkipped });
 
   const fileName = "AUTO-SYNC-TOCO-" + new Date().toISOString() + ".xlsx";
   const queueRes = await rest(base, service, "sellerbooks_api_import_queue", {
@@ -299,7 +306,7 @@ async function syncOrders(r: Request) {
   });
   return out({
     ok: true, marketplace: "Toco", status: "RAW_FILE_READY", orders_found: seenOrderIds.size,
-    rows_found: rows.length, queue_id: queue?.id || null, file_name: fileName,
+    rows_found: rows.length, canceled_orders_skipped: canceledOrdersSkipped, queue_id: queue?.id || null, file_name: fileName,
     engine: "SELLERBOOKS_IMPORT_PENJUALAN",
   });
 }
