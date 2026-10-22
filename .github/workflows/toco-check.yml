@@ -1,0 +1,44 @@
+name: Toco Integration Checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "supabase/functions/sellerbooks-toco/**"
+      - "supabase/config.toml"
+      - "toco-oauth-callback.html"
+      - "marketplace-oauth-launcher.html"
+      - "index.html"
+      - ".github/workflows/toco-check.yml"
+  push:
+    branches: ["feature/toco-integration"]
+    paths:
+      - "supabase/functions/sellerbooks-toco/**"
+      - "supabase/config.toml"
+      - "toco-oauth-callback.html"
+      - "marketplace-oauth-launcher.html"
+      - "index.html"
+      - ".github/workflows/toco-check.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toco-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    name: Toco Edge Function typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check Toco Edge Function
+        run: deno check supabase/functions/sellerbooks-toco/index.ts
+      - name: Check patch whitespace
+        run: git diff --check
