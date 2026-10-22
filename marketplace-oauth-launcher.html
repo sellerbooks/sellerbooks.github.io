@@ -39,7 +39,8 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
   const PROVIDERS={
     tiktok:{label:"TikTok Shop",endpoint:"sellerbooks-tiktok-oauth"},
     shopee:{label:"Shopee",endpoint:"sellerbooks-shopee-oauth"},
-    lazada:{label:"Lazada",endpoint:"sellerbooks-lazada-oauth"}
+    lazada:{label:"Lazada",endpoint:"sellerbooks-lazada-oauth"},
+    toco:{label:"Toco",endpoint:"sellerbooks-toco"}
   };
 
   function fail(message){
@@ -104,10 +105,9 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
       const type=detectMarketplace(marketplaceName);
       if(!type)throw new Error("Marketplace tidak dikenali.");
 
-      // TikTok Shop, Shopee, dan Lazada sudah memiliki alur OAuth backend.
-      // Blibli, Toco, Tokopedia, dan marketplace lain yang belum siap
-      // tetap ditampilkan sebagai "Segera Hadir".
-      if(type!=="tiktok" && type!=="shopee" && type!=="lazada"){
+      // TikTok Shop, Shopee, Lazada, dan Toco memakai alur backend masing-masing.
+      // Blibli, Tokopedia, dan marketplace lain yang belum siap tetap "Segera Hadir".
+      if(type!=="tiktok" && type!=="shopee" && type!=="lazada" && type!=="toco"){
         showComingSoon(marketplaceName||type);
         return;
       }
@@ -177,7 +177,8 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
     if(
       data.source !== "sellerbooks-tiktok-oauth" &&
       data.source !== "sellerbooks-shopee-oauth" &&
-      data.source !== "sellerbooks-lazada-oauth"
+      data.source !== "sellerbooks-lazada-oauth" &&
+      data.source !== "sellerbooks-toco-oauth"
     ){
       return;
     }
