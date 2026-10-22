@@ -38,7 +38,7 @@
     message.textContent="Toko "+(data.store_name||"Toco")+" berhasil dihubungkan. Anda dapat menutup popup ini dan kembali ke SellerBooks.";
     spinner.style.display="none";
     if(window.opener&&!window.opener.closed){
-      window.opener.postMessage({source:"sellerbooks-toco-oauth",status:"success",store_name:data.store_name||"Toco"},"https://sellerbooks.github.io");
+      window.opener.postMessage({source:"sellerbooks-toco-oauth",status:"success",store_name:data.store_name||"Toco"},"https://sellerbooks.amasaindonesia.com");
     }
     setTimeout(()=>{try{window.close();}catch(e){}},1800);
   }catch(e){fail(e&&e.message?e.message:"Terjadi kesalahan saat menyelesaikan integrasi.");}
