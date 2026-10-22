@@ -22551,6 +22551,52 @@ async function syncBlibliOrdersNow(storeId){
 }
 
 /* =====================================================
+   TARIK ORDER TOCO
+   API hanya menyiapkan data mentah; mesin Import Penjualan
+   tetap menjadi satu-satunya mesin deduplikasi/perhitungan.
+===================================================== */
+async function syncTocoOrdersNowInternal(storeId){
+    const store=stores.find(item=>String(item.id)===String(storeId));
+    if(!store){sellerBooksAlert(sellerBooksPullOrderText("missingStore","Toco"),sellerBooksPullOrderText("loadingTitle","Toco"));return;}
+    const marketplace=marketplaces.find(item=>item.id===store.marketplaceId);
+    if(!String(marketplace?.name||"").toLowerCase().replace(/\s+/g,"").includes("toco")){sellerBooksAlert(sellerBooksPullOrderText("wrongMarketplace","Toco"),sellerBooksPullOrderText("loadingTitle","Toco"));return;}
+    const connection=getStoreIntegrationConnection(store);
+    if(!connection||String(connection.connection_status||"").toUpperCase()!=="CONNECTED"){sellerBooksAlert(sellerBooksPullOrderText("notConnected","Toco"),sellerBooksPullOrderText("loadingTitle","Toco"));return;}
+    try{
+        sellerBooksSetPullOrderBusy(storeId,true,"Toco");
+        sellerBooksAlert(sellerBooksPullOrderText("loading","Toco"),sellerBooksPullOrderText("loadingTitle","Toco"));
+        const session=(await sellerBooksSupabase.auth.getSession())?.data?.session;
+        if(!session?.access_token)throw new Error(sellerBooksPullOrderText("noSession","Toco"));
+        const response=await fetch(SELLERBOOKS_SUPABASE_URL+"/functions/v1/sellerbooks-toco?action=sync-orders",{
+            method:"POST",
+            headers:{apikey:SELLERBOOKS_SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},
+            body:JSON.stringify({connection_id:String(connection.id),store_id:String(store.id)})
+        });
+        const data=await response.json().catch(()=>({}));
+        if(!response.ok||!data.ok)throw new Error(data.error||sellerBooksPullOrderText("failedFetch","Toco"));
+        if(data.status==="NO_ORDERS"||data.status==="NO_ORDER_ITEMS"){
+            sellerBooksAlert(sellerBooksPullOrderText("noOrders","Toco",Number(data.orders_found||0)),sellerBooksPullOrderText("resultTitle","Toco"));
+            return;
+        }
+        if(data.status==="RAW_FILE_READY"){await sellerBooksDispatchExcelQueue({showResult:true});return;}
+        throw new Error(sellerBooksPullOrderText("status","Toco")+String(data.status||"UNKNOWN"));
+    }catch(error){
+        console.error("Tarik order Toco gagal:",error);
+        sellerBooksAlert(sellerBooksPullOrderText("failedOrders","Toco")+"\n\n"+(error?.message||"Terjadi kesalahan."),sellerBooksPullOrderText("loadingTitle","Toco"));
+    }
+}
+async function syncTocoOrdersNow(storeId){
+    const key=String(storeId||"");
+    if(window.__sellerBooksPullBusyStore===key&&key)return;
+    window.__sellerBooksPullBusyStore=key;
+    try{return await syncTocoOrdersNowInternal(storeId);}
+    finally{
+        sellerBooksSetPullOrderBusy(storeId,false,"Toco");
+        if(window.__sellerBooksPullBusyStore===key)window.__sellerBooksPullBusyStore=null;
+    }
+}
+
+/* =====================================================
    HASIL OAUTH SHOPEE
 ===================================================== */
 
@@ -23789,6 +23835,7 @@ function renderStores(skipIntegrationRefresh){
         const isShopeeStore = marketplaceKey.includes("shopee");
         const isLazadaStore = marketplaceKey.includes("lazada");
         const isBlibliStore = marketplaceKey.includes("blibli");
+        const isTocoStore = marketplaceKey.includes("toco");
 
         /*
            TikTok tetap memakai mesin yang sudah berjalan.
@@ -23838,6 +23885,8 @@ function renderStores(skipIntegrationRefresh){
 
         else if(isBlibliStore){
             orderSyncButtonHtml = '<div class="store-action-order-row"><button type="button" class="store-action-button store-integrate-button" onclick="syncBlibliOrdersNow(\''+store.id+'\')" title="Tarik Order Blibli">🔄 '+sellerBooksStoreText("syncOrders")+'</button></div>';
+        }else if(isTocoStore){
+            orderSyncButtonHtml = '<div class="store-action-order-row"><button type="button" class="store-action-button store-integrate-button" onclick="syncTocoOrdersNow(\\''+store.id+'\\')" title="Tarik Order Toco">🔄 '+sellerBooksStoreText("syncOrders")+'</button></div>';
         }
         const integrationButtonHtml = isIntegrated
             ? `
