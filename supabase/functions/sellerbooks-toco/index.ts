@@ -155,7 +155,7 @@ async function complete(r: Request) {
   let rows: any = null;
   try { rows = JSON.parse(stateRaw); } catch {}
   const row = Array.isArray(rows) ? rows[0] : null;
-  if (!stateRes.ok || !row?.connection_id || String(row.marketplace_id || "").toLowerCase() !== "toco") {
+  if (!stateRes.ok || !row?.connection_id) {
     return out({ ok: false, error: "Sesi integrasi Toco tidak valid atau sudah kedaluwarsa." }, 400);
   }
 
