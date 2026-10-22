@@ -185,7 +185,9 @@ async function syncOrders(r: Request) {
   const detailByOrder = new Map<string, any>();
   const detailFailures: string[] = [];
   const ordersNeedingDetail = allOrders.filter((order) =>
-    Array.isArray(order?.items) && order.items.some((item: any) => !skuFromItem(item))
+    !Array.isArray(order?.items) ||
+    order.items.length === 0 ||
+    order.items.some((item: any) => !skuFromItem(item))
   );
   for (let offset = 0; offset < ordersNeedingDetail.length; offset += 5) {
     const batch = ordersNeedingDetail.slice(offset, offset + 5);
