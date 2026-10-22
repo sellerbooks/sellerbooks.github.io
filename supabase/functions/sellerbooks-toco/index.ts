@@ -350,8 +350,10 @@ async function init(r: Request) {
   const marketplaceId = String(body.marketplace_id || "").trim();
   if (!storeId || !marketplaceId) return out({ ok: false, error: "store_id dan marketplace_id wajib.", stage: "request" }, 400);
 
+  // sellerbooks_api_connections uses canonical connector IDs (e.g. "toco"),
+  // while the browser's store.marketplaceId is a per-user marketplace row ID.
   const connRes = await rpcAsUser(base, pub, bearer(r), "sellerbooks_api_upsert_connection", {
-    p_store_id: storeId, p_marketplace_id: marketplaceId, p_marketplace: "Toco",
+    p_store_id: storeId, p_marketplace_id: "toco", p_marketplace: "Toco",
   });
   const connRaw = await readText(connRes);
   let connection: any = null;
