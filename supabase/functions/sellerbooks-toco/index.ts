@@ -249,6 +249,13 @@ async function rest(base: string, key: string, path: string, init: RequestInit =
 async function rpc(base: string, key: string, name: string, body: unknown) {
   return rest(base, key, "rpc/" + name, { method: "POST", body: JSON.stringify(body) });
 }
+async function rpcAsUser(base: string, key: string, accessToken: string, name: string, body: unknown) {
+  return fetch(base + "/rest/v1/rpc/" + name, {
+    method: "POST",
+    headers: { apikey: key, Authorization: "Bearer " + accessToken, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
 async function getUser(base: string, key: string, token: string) {
   if (!token) return null;
   const r = await fetch(base + "/auth/v1/user", { headers: { apikey: key, Authorization: "Bearer " + token } });
@@ -288,7 +295,7 @@ async function init(r: Request) {
   const marketplaceId = String(body.marketplace_id || "").trim();
   if (!storeId || !marketplaceId) return out({ ok: false, error: "store_id dan marketplace_id wajib.", stage: "request" }, 400);
 
-  const connRes = await rpc(base, pub, "sellerbooks_api_upsert_connection", {
+  const connRes = await rpcAsUser(base, pub, bearer(r), "sellerbooks_api_upsert_connection", {
     p_store_id: storeId, p_marketplace_id: marketplaceId, p_marketplace: "Toco",
   });
   const connRaw = await readText(connRes);
