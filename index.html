@@ -21766,7 +21766,8 @@ async function integrateStoreAccount(storeId){
     const providerMap = {
         tiktok:  "sellerbooks-tiktok-oauth",
         shopee:  "sellerbooks-shopee-oauth",
-        lazada:  "sellerbooks-lazada-oauth"
+        lazada:  "sellerbooks-lazada-oauth",
+        toco:    "sellerbooks-toco"
     };
 
     const marketplaceKey = String(marketplace.name || "")
@@ -21782,11 +21783,13 @@ async function integrateStoreAccount(storeId){
         endpoint = providerMap.shopee;
     }else if(marketplaceKey.includes("lazada")){
         endpoint = providerMap.lazada;
+    }else if(marketplaceKey.includes("toco")){
+        endpoint = providerMap.toco;
     }
 
     /*
-       TikTok Shop, Shopee, dan Lazada memakai lifecycle OAuth yang sama.
-       Shopee menggunakan Edge Function sellerbooks-shopee-oauth yang sudah ada.
+       TikTok Shop, Shopee, Lazada, dan Toco memakai alur backend masing-masing.
+       Toco menggunakan Edge Function sellerbooks-toco.
        Marketplace lain tetap menampilkan popup "Segera Hadir".
     */
     if(!endpoint){
