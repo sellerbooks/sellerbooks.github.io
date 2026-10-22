@@ -22007,7 +22007,8 @@ function sellerBooksApiImportProfile(marketplace){
         tiktok:{sku:"Seller SKU",qty:"Quantity",price:"SKU Subtotal After Discount"},
         "tiktokshop":{sku:"Seller SKU",qty:"Quantity",price:"SKU Subtotal After Discount"},
         shopee:{sku:"Nomor Referensi SKU",qty:"Jumlah Produk",price:"Subtotal Pesanan"},
-        lazada:{sku:"sellerSku",qty:"__LAZADA_QTY_PER_ROW__",price:"unitPrice"}
+        lazada:{sku:"sellerSku",qty:"__LAZADA_QTY_PER_ROW__",price:"unitPrice"},
+        toco:{sku:"SKU Seller",qty:"Jumlah Produk",price:"Total Produk"}
     };
     return profiles[key]||null;
 }
@@ -23886,7 +23887,7 @@ function renderStores(skipIntegrationRefresh){
         else if(isBlibliStore){
             orderSyncButtonHtml = '<div class="store-action-order-row"><button type="button" class="store-action-button store-integrate-button" onclick="syncBlibliOrdersNow(\''+store.id+'\')" title="Tarik Order Blibli">🔄 '+sellerBooksStoreText("syncOrders")+'</button></div>';
         }else if(isTocoStore){
-            orderSyncButtonHtml = '<div class="store-action-order-row"><button type="button" class="store-action-button store-integrate-button" onclick="syncTocoOrdersNow(\\''+store.id+'\\')" title="Tarik Order Toco">🔄 '+sellerBooksStoreText("syncOrders")+'</button></div>';
+            orderSyncButtonHtml = '<div class="store-action-order-row"><button type="button" class="store-action-button store-integrate-button" onclick="syncTocoOrdersNow(\''+store.id+'\')" title="Tarik Order Toco">🔄 '+sellerBooksStoreText("syncOrders")+'</button></div>';
         }
         const integrationButtonHtml = isIntegrated
             ? `
