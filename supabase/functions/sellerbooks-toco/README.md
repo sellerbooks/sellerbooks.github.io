@@ -7,7 +7,7 @@ This connector is isolated on branch `feature/toco-integration`. It is not live 
 - `supabase/functions/sellerbooks-toco/index.ts`: authenticated onboarding init and one-time callback completion.
 - `toco-oauth-callback.html`: receives Toco's redirect, removes query values from browser history, and submits the one-time callback payload to the Edge Function.
 - `supabase/config.toml`: disables gateway JWT verification for this one callback-capable function; the `init` action validates the SellerBooks user token itself.
-- `marketplace-oauth-launcher.html` still needs the Toco provider activation. Do not merge or test the UI until that integration is completed.
+- `marketplace-oauth-launcher.html` and the store integration routing in `index.html` now include Toco on this feature branch.
 
 ## Required Supabase Edge Function secrets
 
@@ -31,7 +31,7 @@ The onboarding session expires after about three minutes; generate a fresh sessi
 ## Current limitations / pre-production checks
 
 1. Confirm the production custom domain resolves this GitHub Pages repository and the callback URL is accepted by Toco staging.
-2. Activate Toco in `marketplace-oauth-launcher.html` and verify the parent-page refresh/message handling.
+2. Verify Toco routing in `index.html`, the marketplace launcher, and the callback success message/parent refresh behavior.
 3. Deploy the Edge Function and its `verify_jwt = false` setting to the SellerBooks Supabase project.
 4. Configure secrets in Supabase; no secret values are committed here.
 5. Validate Toco's exact signature convention with a staging request before onboarding real stores.
