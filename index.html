@@ -28560,8 +28560,11 @@ function getSalesAmount(row,data){
             return normalizeHeader(header) === "harga setelah diskon";
         });
         if(discountedIndex >= 0){
-            const discounted = parseSalesNumber(row[discountedIndex]);
-            if(discounted > 0) return discounted;
+            const rawDiscounted = row[discountedIndex];
+            if(rawDiscounted !== null && rawDiscounted !== undefined && String(rawDiscounted).trim() !== ""){
+                // Zero is a valid after-discount amount; do not replace it with pre-discount subtotal.
+                return parseSalesNumber(rawDiscounted);
+            }
         }
         const totalIndex = data.headers.findIndex(function(header){
             return normalizeHeader(header) === "total harga produk";
