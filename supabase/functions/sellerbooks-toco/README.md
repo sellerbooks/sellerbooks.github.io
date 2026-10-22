@@ -52,6 +52,10 @@ The callback credential is received in the browser URL because that is Toco's do
 - Production `main` and the live site remain unchanged; do not merge or deploy until the Supabase RPC/table contract and real Toco payload SKU mapping are verified.
 
 
-## Confirmed blocker from the published Toco order schema
+## SKU resolution audit
 
-The official sample for `GET /partner/stores/orders` shows each item with `productName`, `price`, `quantity`, and `photo`, but no SKU or product/variant ID. The connector therefore refuses to queue rows when SKU is missing. Do not substitute product names as SKU or infer HPP/profit from a name match. Before production, obtain a Toco payload or documented endpoint that provides a stable product/variant identifier and implement an exact, auditable SKU resolution path. If Toco exposes no stable identifier, this endpoint alone cannot safely feed SellerBooks' product-level import.
+- The published `GET /partner/stores/orders` list sample omits SKU, but the documented `GET /partner/stores/orders/{orderId | invoiceNumber}` detail response includes `productId`, `externalId`, `sku`, `variation`, `unitPrice`, `subTotal`, and `paidAmount`.
+- The connector now calls the order-detail endpoint for orders whose list items lack SKU, with five concurrent detail requests and a 20-second timeout per request.
+- If any required order-detail lookup fails, the sync stops before queueing anything. If a detail item still has no SKU, the existing missing-SKU guard also stops the sync. Product names are never treated as SKU.
+- The queue uses price fields returned by Toco where available; SellerBooks' existing Import Penjualan remains responsible for deduplication and product-level calculations.
+- This resolves the documentation-level SKU lookup path, but it is **not yet staging-verified**. Validate the actual payload, API rate limits, price semantics, queue schema, and financial snapshots before merging or deploying.
