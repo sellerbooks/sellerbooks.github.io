@@ -80,11 +80,12 @@ async function tocoRequest(method: string, path: string, bodyText = "") {
   };
   return fetch(TOCO_API + path, { method, headers, ...(method === "GET" ? {} : { body: bodyText }) });
 }
-async function tocoStoreGet(path: string, storeClientId: string, storeToken: string) {
+async function tocoStoreGet(path: string, storeClientId: string, storeToken: string, signal?: AbortSignal) {
   const timestamp = String(Date.now());
   const signed = await signToco("GET", path, timestamp, "", storeClientId, storeToken);
   return fetch(TOCO_API + path, {
     method: "GET",
+    signal,
     headers: {
       "x-partner-client-id": signed.partnerId,
       "x-store-client-id": storeClientId,
@@ -143,7 +144,7 @@ async function syncOrders(r: Request) {
     let response: Response;
     let raw = "";
     try {
-      response = await tocoStoreGet(path, storeClientId, storeToken);
+      response = await tocoStoreGet(path, storeClientId, storeToken, controller.signal);
       raw = await response.text();
     } finally { clearTimeout(timer); }
     let payload: any;
