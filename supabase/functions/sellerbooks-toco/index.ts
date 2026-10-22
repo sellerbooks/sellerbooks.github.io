@@ -146,6 +146,21 @@ async function syncOrders(r: Request) {
     try {
       response = await tocoStoreGet(path, storeClientId, storeToken, controller.signal);
       raw = await response.text();
+    } catch (error) {
+      const timedOut = controller.signal.aborted;
+      console.error(JSON.stringify({
+        service: "sellerbooks-toco", event: "orders_fetch_network_error",
+        user_id: user.id, store_id: storeId, page, timed_out: timedOut,
+        error: error instanceof Error ? error.name : "UNKNOWN",
+      }));
+      return out({
+        ok: false,
+        error: timedOut
+          ? "Permintaan pesanan Toco melewati batas waktu 20 detik. Silakan coba lagi."
+          : "Tidak dapat terhubung ke API Toco. Periksa koneksi lalu coba lagi.",
+        stage: "orders_fetch",
+        timed_out: timedOut,
+      }, timedOut ? 504 : 502);
     } finally { clearTimeout(timer); }
     let payload: any;
     try { payload = JSON.parse(raw); } catch { payload = null; }
