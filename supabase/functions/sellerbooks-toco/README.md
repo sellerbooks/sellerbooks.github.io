@@ -11,7 +11,7 @@ This connector is isolated on branch `feature/toco-integration`. It is not live 
 
 ## Required Supabase Edge Function secrets
 
-Configure these on the SellerBooks Supabase project only:
+Configure these on the Supabase project currently used by this repository's frontend/callback. Do not copy these secrets into another project unless the frontend is intentionally migrated:
 
 - `TOCO_PARTNER_CLIENT_ID`
 - `TOCO_PARTNER_SECRET_KEY`
@@ -19,6 +19,14 @@ Configure these on the SellerBooks Supabase project only:
 - Existing project variables used by SellerBooks functions: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SECRET_KEY` (or the aliases already used by existing functions).
 
 Never put the Secret Key or Encryption Key in HTML, GitHub source, browser storage, or an APK.
+
+## Supabase project routing audit
+
+- This repository's current frontend, launcher, and callback target legacy project `fysaxpqpqexjnlpkbwap`.
+- Read-only inspection confirmed that this legacy project has the required `sellerbooks_api_connections`, `sellerbooks_api_oauth_states`, `sellerbooks_api_import_queue`, `sellerbooks_stores`, and OAuth/Vault RPCs. Its `sellerbooks_marketplaces` row `toco` is `ACTIVE`.
+- The separate SellerBooks-only project `vrgiwzxwnfjhpmxcahwo` has the tables but does not currently expose the OAuth/Vault RPCs required by this connector, and its deployed Edge Function list does not include `sellerbooks-toco`.
+- Therefore this branch must not be deployed to the SellerBooks-only project until the frontend/callback URLs and missing database RPCs are intentionally migrated together. No Supabase deployment or database write was performed during this audit.
+- The callback now passes Toco's actual external store client ID to the completion RPC so the existing database duplicate-account guard can detect the same Toco account connected to another SellerBooks store.
 
 ## Toco configuration
 
