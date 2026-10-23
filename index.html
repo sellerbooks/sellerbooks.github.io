@@ -21770,20 +21770,27 @@ async function integrateStoreAccount(storeId){
         toco:    "sellerbooks-toco"
     };
 
-    const marketplaceKey = String(marketplace.name || "")
-        .toLowerCase()
-        .replace(/\s+/g,"")
-        .replace(/shop$/,"shop");
+    const normalizeMarketplaceKey = function(value){
+        return String(value || "")
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]/g,"");
+    };
+    const marketplaceKey = normalizeMarketplaceKey(marketplace.name);
+    const marketplaceIdKey = normalizeMarketplaceKey(marketplace.id);
+    const canonicalMarketplaceKey = normalizeMarketplaceKey(
+        sellerBooksCanonicalMarketplaceId(marketplace.id, marketplace.name)
+    );
 
     let endpoint = "";
 
-    if(marketplaceKey.includes("tiktok")){
+    if(marketplaceKey.includes("tiktok") || marketplaceIdKey.includes("tiktok") || canonicalMarketplaceKey === "tiktok"){
         endpoint = providerMap.tiktok;
-    }else if(marketplaceKey.includes("shopee")){
+    }else if(marketplaceKey.includes("shopee") || marketplaceIdKey.includes("shopee") || canonicalMarketplaceKey === "shopee"){
         endpoint = providerMap.shopee;
-    }else if(marketplaceKey.includes("lazada")){
+    }else if(marketplaceKey.includes("lazada") || marketplaceIdKey.includes("lazada") || canonicalMarketplaceKey === "lazada"){
         endpoint = providerMap.lazada;
-    }else if(marketplaceKey.includes("toco")){
+    }else if(marketplaceKey.includes("toco") || marketplaceIdKey === "toco" || canonicalMarketplaceKey === "toco"){
         endpoint = providerMap.toco;
     }
 
