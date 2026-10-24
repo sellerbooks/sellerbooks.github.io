@@ -1,0 +1,1 @@
+-- Isolated Shopee OAuth migration: separate internal SellerBooks store ID from external Shopee shop_id.
