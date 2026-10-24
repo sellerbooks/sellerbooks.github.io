@@ -35,8 +35,15 @@ p{font-size:14px;line-height:1.6;color:#64748b;margin:0}
     if(result!=="success"){
         document.getElementById("icon").textContent="!";
         document.getElementById("icon").classList.add("error");
-        document.getElementById("title").textContent="Integrasi Shopee gagal";
-        document.getElementById("message").textContent="Kode: "+reason;
+
+        if(reason==="SHOPEE_ACCOUNT_ALREADY_CONNECTED" || reason==="CONNECTION_FINALIZATION_FAILED"){
+            document.getElementById("title").textContent="Akun Shopee sudah terhubung";
+            document.getElementById("message").textContent=
+                "Akun Shopee ini sudah terhubung ke akun atau toko SellerBooks lain.";
+        }else{
+            document.getElementById("title").textContent="Integrasi Shopee gagal";
+            document.getElementById("message").textContent="Kode: "+reason;
+        }
     }
 
     try{
