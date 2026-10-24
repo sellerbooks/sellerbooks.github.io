@@ -22604,12 +22604,27 @@ function handleShopeeOAuthResult(){
     }
 
     const reason = params.get("reason") || "OAUTH_FAILED";
+    const language = typeof sellerBooksCurrentLanguage === "function"
+        ? sellerBooksCurrentLanguage()
+        : "id";
+    const isEN = String(language || "id").toLowerCase() === "en";
+    const alreadyConnected =
+        reason === "SHOPEE_ACCOUNT_ALREADY_CONNECTED" ||
+        reason === "CONNECTION_FINALIZATION_FAILED";
 
-    sellerBooksAlert(
-        "Integrasi Shopee gagal.\n\n" +
-        "Kode: " + reason,
-        "Integrasikan Akun"
-    );
+    if(alreadyConnected){
+        sellerBooksAlert(
+            isEN
+                ? "This Shopee account is already connected to another SellerBooks account or store."
+                : "Akun Shopee ini sudah terhubung ke akun atau toko SellerBooks lain.",
+            isEN ? "Shopee account already connected" : "Akun Shopee sudah terhubung"
+        );
+    }else{
+        sellerBooksAlert(
+            (isEN ? "Shopee integration failed.\n\nCode: " : "Integrasi Shopee gagal.\n\nKode: ") + reason,
+            isEN ? "Connect Account" : "Integrasikan Akun"
+        );
+    }
 
     try{
 
@@ -22723,20 +22738,32 @@ if(!window.sellerBooksMarketplaceOAuthMessageHandler){
             blibli:"BLIBLI_ACCOUNT_ALREADY_CONNECTED"
         };
 
-        if(reason === alreadyConnectedReasons[marketplace]){
+        const isShopeeAlreadyConnected =
+            marketplace === "shopee" &&
+            (reason === "SHOPEE_ACCOUNT_ALREADY_CONNECTED" ||
+             reason === "CONNECTION_FINALIZATION_FAILED");
+        const isAlreadyConnected =
+            reason === alreadyConnectedReasons[marketplace] ||
+            isShopeeAlreadyConnected;
+        const language = typeof sellerBooksCurrentLanguage === "function"
+            ? sellerBooksCurrentLanguage()
+            : "id";
+        const isEN = String(language || "id").toLowerCase() === "en";
+
+        if(isAlreadyConnected){
 
             sellerBooksAlert(
-                "Akun " + marketplaceLabel +
-                " ini sudah terhubung ke akun atau toko SellerBooks lain.",
-                "Integrasikan Akun"
+                isEN
+                    ? "This " + marketplaceLabel + " account is already connected to another SellerBooks account or store."
+                    : "Akun " + marketplaceLabel + " ini sudah terhubung ke akun atau toko SellerBooks lain.",
+                isEN ? marketplaceLabel + " account already connected" : "Akun " + marketplaceLabel + " sudah terhubung"
             );
 
         }else{
 
             sellerBooksAlert(
-                "Integrasi " + marketplaceLabel +
-                " gagal.\n\nKode: " + reason,
-                "Integrasikan Akun"
+                (isEN ? marketplaceLabel + " integration failed.\n\nCode: " : "Integrasi " + marketplaceLabel + " gagal.\n\nKode: ") + reason,
+                isEN ? "Connect Account" : "Integrasikan Akun"
             );
 
         }
