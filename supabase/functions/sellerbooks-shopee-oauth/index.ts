@@ -189,24 +189,6 @@ async function init(r:Request){
   });
 }
 
-async function findPendingState(base:string,secret:string,storeId:string){
-  const path="sellerbooks_api_oauth_states?store_id=eq."+encodeURIComponent(storeId)+
-    "&consumed_at=is.null&select=owner_user_id,store_id,connection_id,state_hash,expires_at,created_at"+
-    "&order=created_at.desc&limit=10";
-  const r=await rest(base,secret,path);
-  const raw=await responseText(r);
-  if(!r.ok)return null;
-
-  let rows:any[]=[];
-  try{rows=JSON.parse(raw);}catch{return null;}
-
-  const now=Date.now();
-  return rows.find((x:any)=>{
-    const exp=Date.parse(String(x.expires_at||""));
-    return Number.isFinite(exp)&&exp>now;
-  })||null;
-}
-
 async function callback(r:Request){
   const base=env("SUPABASE_URL");
   const secret=env("SUPABASE_SECRET_KEY");
@@ -295,36 +277,17 @@ async function callback(r:Request){
     const verified=String(info?.response?.shop_id??sid);
     if(verified!==String(sid))return fail("SHOP_ID_VERIFY_MISMATCH");
 
-    let st:any=null;
+    // Never infer a store from the external shop_id. Require the one-time OAuth state
+    // generated at init so the callback remains bound to the exact internal store/connection.
+    if(!state)return fail("STATE_MISSING");
 
-    if(state){
-      const c=await rpc(base,secret,"sellerbooks_api_consume_oauth_state",{
-        p_state_hash:await digest(state)
-      });
-      const craw=await responseText(c);
-      let rows:any[]=[];
-      try{rows=JSON.parse(craw);}catch{}
-      st=rows?.[0]||null;
-    }
-
-    /*
-      Shopee's documented callback examples return code + shop_id.
-      If state is not echoed back by the authorization page, fall back
-      to the newest unconsumed state for this shop. The state is still
-      one-time and expires after 10 minutes.
-    */
-    if(!st){
-      st=await findPendingState(base,secret,verified);
-      if(st){
-        const c=await rpc(base,secret,"sellerbooks_api_consume_oauth_state",{
-          p_state_hash:st.state_hash
-        });
-        const craw=await responseText(c);
-        let rows:any[]=[];
-        try{rows=JSON.parse(craw);}catch{}
-        st=rows?.[0]||null;
-      }
-    }
+    const c=await rpc(base,secret,"sellerbooks_api_consume_oauth_state",{
+      p_state_hash:await digest(state)
+    });
+    const craw=await responseText(c);
+    let rows:any[]=[];
+    try{rows=JSON.parse(craw);}catch{}
+    const st=rows?.[0]||null;
 
     if(!st?.connection_id){
       console.error(JSON.stringify({
@@ -334,8 +297,6 @@ async function callback(r:Request){
       }));
       return fail("STATE_INVALID_OR_EXPIRED");
     }
-
-    if(String(st.store_id)!==verified)return fail("SHOP_ID_MISMATCH");
 
     const credential=JSON.stringify({
       provider:"shopee",
