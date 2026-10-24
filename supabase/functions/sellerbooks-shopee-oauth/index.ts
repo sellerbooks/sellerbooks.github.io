@@ -24,7 +24,10 @@ async function digest(s:string){
   return hex(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s))));
 }
 async function hmac(k:string,m:string){
-  const x=await crypto.subtle.importKey("raw",new TextEncoder().encode(k),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
+  // Shopee Sandbox Partner Key values may be displayed with the non-secret "shpk" marker.
+  // The marker is not part of the HMAC secret; remove it only when it is the leading prefix.
+  const secret=k.trim().replace(/^shpk/i,"");
+  const x=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
   return hex(new Uint8Array(await crypto.subtle.sign("HMAC",x,new TextEncoder().encode(m))));
 }
 const env=(n:string)=>{
