@@ -5,7 +5,8 @@ const CORS={
   "Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods":"GET,POST,OPTIONS"
 };
-const HOST="https://partner.shopeemobile.com";
+const HOST="https://partner.test-stable.shopeemobile.com";
+const AUTH_HOST="https://openplatform.sandbox.test-stable.shopee.sg";
 const AUTH_PATH="/api/v2/shop/auth_partner";
 const TOKEN_PATH="/api/v2/auth/token/get";
 const INFO_PATH="/api/v2/shop/get_shop_info";
@@ -165,7 +166,7 @@ async function init(r:Request){
 
   const ts=Math.floor(Date.now()/1000);
   const sign=await hmac(pkey,String(pid)+AUTH_PATH+ts);
-  const a=new URL(HOST+AUTH_PATH);
+  const a=new URL(AUTH_HOST+AUTH_PATH);
   a.searchParams.set("partner_id",String(pid));
   a.searchParams.set("timestamp",String(ts));
   a.searchParams.set("sign",sign);
@@ -233,16 +234,18 @@ async function callback(r:Request){
 
     const ts=Math.floor(Date.now()/1000);
     const sign=await hmac(pkey,String(pid)+TOKEN_PATH+ts);
+    const tokenUrl=new URL(HOST+TOKEN_PATH);
+    tokenUrl.searchParams.set("partner_id",String(pid));
+    tokenUrl.searchParams.set("timestamp",String(ts));
+    tokenUrl.searchParams.set("sign",sign);
 
-    const tr=await fetch(HOST+TOKEN_PATH,{
+    const tr=await fetch(tokenUrl,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
         code,
-        shop_id:sid,
         partner_id:pid,
-        timestamp:ts,
-        sign
+        shop_id:sid
       })
     });
     const traw=await responseText(tr);
@@ -255,7 +258,9 @@ async function callback(r:Request){
         event:"token_exchange_failed",
         shop_id:sid,
         status:tr.status,
-        detail:safeUpstream(traw)
+        detail:safeUpstream(traw),
+        request_id:td?.request_id||td?.response?.request_id||null,
+        upstream_error:td?.error||null
       }));
       return fail("TOKEN_EXCHANGE_FAILED");
     }
