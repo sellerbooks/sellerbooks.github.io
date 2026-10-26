@@ -205,19 +205,32 @@ if (!rows.length) {
     }
   }
 
+const firstItem = all
+  .flatMap((pkg: any) =>
+    Array.isArray(pkg?.orderItems) ? pkg.orderItems :
+    Array.isArray(pkg?.items) ? pkg.items : []
+  )[0];
+
+const firstItemKeys = firstItem
+  ? Object.keys(firstItem).slice(0, 60)
+  : [];
+
   return out({
     ok: true,
     marketplace: "Blibli",
     status: "NO_ROWS_MAPPED",
-    diagnostics: {
-      packages_received: all.length,
-      items_detected: itemsCount,
-      status_counts: statusCounts,
-      first_package_keys: all[0]
-        ? Object.keys(all[0]).slice(0, 40)
-        : [],
-      filter_status: "FP"
-    }
+    
+      diagnostics: {
+        packages_received: all.length,
+        items_detected: itemsCount,
+        status_counts: statusCounts,
+        first_package_keys: all[0]
+          ? Object.keys(all[0]).slice(0, 40)
+          : [],
+        first_item_keys: firstItemKeys,
+        filter_status: "FP"
+      }
+
   });
 }
 
