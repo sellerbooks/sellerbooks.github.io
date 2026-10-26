@@ -10,17 +10,100 @@ const text=async(r:Response)=>{try{return await r.text();}catch{return "";}};
 const raw=(...v:any[])=>{for(const x of v)if(x!==undefined&&x!==null&&String(x).trim()!=="")return x;return "";};
 const iso=(v:any)=>{const n=Number(v);if(Number.isFinite(n)&&n>100000000)return new Date(n).toISOString();const d=new Date(String(v||""));return Number.isNaN(d.getTime())?"":d.toISOString();};
 const headers=["Nomor Pesanan","SKU Seller","Total Produk","Jumlah Produk","Nomor Resi/AWB","Harga Produk","Tanggal Pesanan","Status Pesanan","ID Paket"];
-function rowFor(pkg:any,item:any){
- const orderNo=raw(item?.orderNo,item?.orderNumber,item?.orderId,item?.orderItemId,pkg?.orderNo,pkg?.orderNumber,pkg?.orderId,pkg?.packageId,pkg?.id);
- const sku=raw(item?.sellerSku,item?.sellerSKU,item?.sellerSkuCode,item?.skuSeller,item?.sku);
- const qty=Math.max(0,Number(raw(item?.qty,item?.quantity,item?.itemQuantity,item?.orderedQuantity,1))||1);
- const price=Number(raw(item?.price?.sellingPrice,item?.sellingPrice,item?.sellingPriceAfterDiscount,item?.price,item?.unitPrice,item?.regularPrice,0))||0;
- const created=iso(raw(item?.createdDate,item?.orderCreatedDate,item?.orderDate,pkg?.createdDate,pkg?.orderCreatedDate,pkg?.orderDate));
- const awb=raw(item?.awbNumber,item?.trackingNumber,item?.shippingLabelNumber,pkg?.awbNumber,pkg?.trackingNumber,pkg?.shippingLabelNumber);
- const status=raw(item?.orderItemStatus,item?.status,pkg?.status);
- const packageId=raw(item?.packageId,pkg?.packageId,pkg?.id);
- return [orderNo,sku,price*qty,qty,awb,price,created,status,packageId];
+
+function rowFor(pkg: any, item: any) {
+  const orderNo = raw(
+    item?.orderNo,
+    item?.orderNumber,
+    item?.orderId,
+    item?.orderItemNo,
+    item?.orderItemNumber,
+    item?.orderItemId,
+    item?.id,
+    pkg?.orderNo,
+    pkg?.orderNumber,
+    pkg?.orderId,
+    pkg?.packageId,
+    pkg?.id
+  );
+
+  const sku = raw(
+    item?.sellerSku,
+    item?.sellerSKU,
+    item?.sellerSkuCode,
+    item?.skuSeller,
+    item?.merchantSku,
+    item?.merchantSKU,
+    item?.sku,
+    item?.itemSku
+  );
+
+  const qty = Math.max(
+    0,
+    Number(raw(
+      item?.qty,
+      item?.quantity,
+      item?.itemQuantity,
+      item?.orderedQuantity,
+      1
+    )) || 1
+  );
+
+  const price = Number(raw(
+    item?.price?.sellingPrice,
+    item?.sellingPrice,
+    item?.sellingPriceAfterDiscount,
+    item?.productPrice,
+    item?.price,
+    item?.unitPrice,
+    item?.regularPrice,
+    0
+  )) || 0;
+
+  const created = iso(raw(
+    item?.createdDate,
+    item?.orderCreatedDate,
+    item?.orderDate,
+    pkg?.createdDate,
+    pkg?.orderCreatedDate,
+    pkg?.orderDate
+  ));
+
+  const awb = raw(
+    item?.awbNumber,
+    item?.trackingNumber,
+    item?.shippingLabelNumber,
+    pkg?.awbNumber,
+    pkg?.trackingNumber,
+    pkg?.shippingLabelNumber
+  );
+
+  const status = raw(
+    item?.orderItemStatus,
+    item?.orderStatus,
+    item?.status,
+    pkg?.status
+  );
+
+  const packageId = raw(
+    item?.packageId,
+    pkg?.packageId,
+    pkg?.id
+  );
+
+  return [
+    orderNo,
+    sku,
+    price * qty,
+    qty,
+    awb,
+    price,
+    created,
+    status,
+    packageId
+  ];
 }
+
 Deno.serve(async(req:Request)=>{
  if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
  if(req.method!=="POST")return out({ok:false,error:"Method not allowed"},405);
@@ -95,7 +178,49 @@ Deno.serve(async(req:Request)=>{
     rows.push(row);
    }
   }
-  if(!rows.length)return out({ok:true,marketplace:"Blibli",status:"NO_ORDERS",orders_found:seenOrderIds.size,rows_found:0,filter_status:"FP"});
+  
+if (!rows.length) {
+  const statusCounts: Record<string, number> = {};
+  let itemsCount = 0;
+
+  for (const pkg of all) {
+    const items = [
+      pkg?.orderItems,
+      pkg?.items,
+      pkg?.orderItemList,
+      pkg?.orderItem
+    ].find(Array.isArray) || [];
+
+    itemsCount += items.length;
+
+    for (const item of items) {
+      const status = String(raw(
+        item?.orderItemStatus,
+        item?.orderStatus,
+        item?.status,
+        pkg?.status
+      ) || "STATUS_EMPTY").toUpperCase();
+
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    }
+  }
+
+  return out({
+    ok: true,
+    marketplace: "Blibli",
+    status: "NO_ROWS_MAPPED",
+    diagnostics: {
+      packages_received: all.length,
+      items_detected: itemsCount,
+      status_counts: statusCounts,
+      first_package_keys: all[0]
+        ? Object.keys(all[0]).slice(0, 40)
+        : [],
+      filter_status: "FP"
+    }
+  });
+}
+
   const fileName="AUTO-SYNC-BLIBLI-"+new Date().toISOString()+".xlsx";
   const qr=await rest(sk,"sellerbooks_api_import_queue",{method:"POST",headers:{"Prefer":"return=representation"},body:JSON.stringify({owner_user_id:String(c.owner_user_id),connection_id:String(c.id),store_id:String(c.store_id),marketplace:"Blibli",file_name:fileName,file_type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",headers,rows,status:"PENDING"})});
   if(!qr.ok)throw Error("API_IMPORT_QUEUE_INSERT_FAILED:"+String(await text(qr)).slice(0,300));
