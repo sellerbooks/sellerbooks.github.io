@@ -22185,8 +22185,9 @@ async function sellerBooksDispatchExcelQueue(opts){
         */
         sellerBooksExcelDispatchRerunRequested=true;
         if(opts.showResult)sellerBooksExcelDispatchRerunShowResult=true;
-        return;
+        return {deferred:true,claimedCount:0,retryCount:0,failedCount:0,importedCount:0};
     }
+    const dispatchSummary={deferred:false,claimedCount:0,retryCount:0,failedCount:0,importedCount:0};
     sellerBooksExcelDispatchRunning=true;
     try{
         const session=await sellerBooksGetQueueSession();
@@ -22204,20 +22205,26 @@ async function sellerBooksDispatchExcelQueue(opts){
             if(!claim.ok)continue;
             const claimed=await claim.json();
             if(!Array.isArray(claimed)||!claimed[0])continue;
+            dispatchSummary.claimedCount++;
             try{
                 const result=await sellerBooksDispatchExcelToImportPenjualan(claimed[0],!!opts.showResult);
                 if(result?.retry){
+                    dispatchSummary.retryCount++;
                     await sellerBooksQueueRequest("sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id),{
                         method:"PATCH",headers:{"Prefer":"return=minimal"},
                         body:JSON.stringify({status:"PENDING",processing_started_at:null,error_message:result.error||"Retry"})
                     });
                 }else if(result?.ok===false){
+                    dispatchSummary.failedCount++;
                     await sellerBooksQueueRequest("sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id),{
                         method:"PATCH",headers:{"Prefer":"return=minimal"},
                         body:JSON.stringify({status:"ERROR",error_message:result.error||"Import adapter failed",processed_at:new Date().toISOString()})
                     });
+                }else{
+                    dispatchSummary.importedCount++;
                 }
             }catch(error){
+                dispatchSummary.failedCount++;
                 const message=error?.message||String(error);
                 await sellerBooksQueueRequest("sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id),{
                     method:"PATCH",headers:{"Prefer":"return=minimal"},
@@ -22238,6 +22245,7 @@ async function sellerBooksDispatchExcelQueue(opts){
             },0);
         }
     }
+    return dispatchSummary;
 }
 
 function startSellerBooksExcelDispatchWorker(){
@@ -22540,7 +22548,33 @@ async function syncBlibliOrdersNowInternal(storeId){
         const data=await response.json().catch(()=>({}));
         if(!response.ok||!data.ok)throw new Error(data.error||sellerBooksPullOrderText("failedFetch","Blibli"));
         if(data.status==="NO_ORDERS"){sellerBooksAlert(sellerBooksPullOrderText("noOrders","Blibli",Number(data.orders_found||0)),sellerBooksPullOrderText("resultTitle","Blibli"));return;}
-        if(data.status==="RAW_FILE_READY"){await sellerBooksDispatchExcelQueue({showResult:true});return;}
+        if(data.status==="RAW_FILE_READY"){
+            const dispatch=await sellerBooksDispatchExcelQueue({showResult:true});
+            if(dispatch?.deferred)return;
+            if(dispatch?.claimedCount===0){
+                sellerBooksAlert(
+                    sellerBooksPullOrderIsEN()
+                        ? "Blibli API returned data, but no pending import queue item was found. Please check the Blibli import queue status before retrying."
+                        : "API Blibli mengembalikan data, tetapi tidak ada antrean impor berstatus PENDING. Periksa status antrean Blibli sebelum mencoba lagi.",
+                    sellerBooksPullOrderText("resultTitle","Blibli")
+                );
+            }else if(dispatch?.retryCount>0){
+                sellerBooksAlert(
+                    sellerBooksPullOrderIsEN()
+                        ? "Blibli data is waiting to be retried because the import workspace is not ready. No success is reported yet."
+                        : "Data Blibli menunggu dicoba ulang karena ruang kerja impor belum siap. Belum ada status berhasil.",
+                    sellerBooksPullOrderText("resultTitle","Blibli")
+                );
+            }else if(dispatch?.failedCount>0 && dispatch?.importedCount===0){
+                sellerBooksAlert(
+                    sellerBooksPullOrderIsEN()
+                        ? "Blibli data was fetched, but import failed. Check the import queue error details before retrying."
+                        : "Data Blibli berhasil diambil, tetapi proses impor gagal. Periksa detail error antrean sebelum mencoba lagi.",
+                    sellerBooksPullOrderText("errorTitle","Blibli")
+                );
+            }
+            return;
+        }
         throw new Error(sellerBooksPullOrderText("status","Blibli")+String(data.status||"UNKNOWN"));
     }catch(error){console.error("Tarik order Blibli gagal:",error);sellerBooksAlert(sellerBooksPullOrderText("failedOrders","Blibli")+"\n\n"+(error?.message||"Terjadi kesalahan."),sellerBooksPullOrderText("loadingTitle","Blibli"));}
 }
