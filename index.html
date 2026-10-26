@@ -22007,7 +22007,8 @@ function sellerBooksApiImportProfile(marketplace){
         tiktok:{sku:"Seller SKU",qty:"Quantity",price:"SKU Subtotal After Discount"},
         "tiktokshop":{sku:"Seller SKU",qty:"Quantity",price:"SKU Subtotal After Discount"},
         shopee:{sku:"Nomor Referensi SKU",qty:"Jumlah Produk",price:"Subtotal Pesanan"},
-        lazada:{sku:"sellerSku",qty:"__LAZADA_QTY_PER_ROW__",price:"unitPrice"}
+        lazada:{sku:"sellerSku",qty:"__LAZADA_QTY_PER_ROW__",price:"unitPrice"},
+        blibli:{sku:"SKU Seller",qty:"Jumlah Produk",price:"Harga Produk"}
     };
     return profiles[key]||null;
 }
@@ -22209,6 +22210,11 @@ async function sellerBooksDispatchExcelQueue(opts){
                     await sellerBooksQueueRequest("sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id),{
                         method:"PATCH",headers:{"Prefer":"return=minimal"},
                         body:JSON.stringify({status:"PENDING",processing_started_at:null,error_message:result.error||"Retry"})
+                    });
+                }else if(result?.ok===false){
+                    await sellerBooksQueueRequest("sellerbooks_api_import_queue?id=eq."+encodeURIComponent(item.id),{
+                        method:"PATCH",headers:{"Prefer":"return=minimal"},
+                        body:JSON.stringify({status:"ERROR",error_message:result.error||"Import adapter failed",processed_at:new Date().toISOString()})
                     });
                 }
             }catch(error){
