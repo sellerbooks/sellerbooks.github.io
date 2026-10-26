@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS"};
-const SUPABASE_URL="https://fysaxpqpqexjnlpkbwap.supabase.co";
+const SUPABASE_URL=Deno.env.get("SUPABASE_URL")||"https://fysaxpqpqexjnlpkbwap.supabase.co";
 const BASE="https://api.blibli.com/v2";
 const out=(x:unknown,n=200)=>new Response(JSON.stringify(x),{status:n,headers:{...CORS,"Content-Type":"application/json"}});
 const bearer=(r:Request)=>{const h=r.headers.get("Authorization")||"";return h.toLowerCase().startsWith("bearer ")?h.slice(7).trim():"";};
@@ -9,7 +9,7 @@ const rest=async(k:string,p:string,i:RequestInit={})=>{const h=new Headers(i.hea
 const text=async(r:Response)=>{try{return await r.text();}catch{return "";}};
 const raw=(...v:any[])=>{for(const x of v)if(x!==undefined&&x!==null&&String(x).trim()!=="")return x;return "";};
 const iso=(v:any)=>{const n=Number(v);if(Number.isFinite(n)&&n>100000000)return new Date(n).toISOString();const d=new Date(String(v||""));return Number.isNaN(d.getTime())?"":d.toISOString();};
-const headers=["Nomor Pesanan","SKU Seller","Total Produk","Jumlah Produk","Nomor Resi/AWB","Harga Produk","Tanggal Pesanan","Status Pesanan","ID Paket"];
+const headers=["Nomor Pesanan","SKU Seller","Harga Produk","Jumlah Produk","Nomor Resi/AWB","Tanggal Pesanan","Status Pesanan","ID Paket"];
 function rowFor(pkg:any,item:any){
  const orderNo=raw(item?.orderNo,item?.orderNumber,item?.orderId,item?.orderItemId,pkg?.orderNo,pkg?.orderNumber,pkg?.orderId,pkg?.packageId,pkg?.id);
  const sku=raw(item?.sellerSku,item?.sellerSKU,item?.sellerSkuCode,item?.skuSeller,item?.sku);
@@ -19,7 +19,7 @@ function rowFor(pkg:any,item:any){
  const awb=raw(item?.awbNumber,item?.trackingNumber,item?.shippingLabelNumber,pkg?.awbNumber,pkg?.trackingNumber,pkg?.shippingLabelNumber);
  const status=raw(item?.orderItemStatus,item?.status,pkg?.status);
  const packageId=raw(item?.packageId,pkg?.packageId,pkg?.id);
- return [orderNo,sku,price*qty,qty,awb,price,created,status,packageId];
+ return [orderNo,sku,price,qty,awb,created,status,packageId];
 }
 Deno.serve(async(req:Request)=>{
  if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
@@ -74,12 +74,11 @@ Deno.serve(async(req:Request)=>{
    page++;
   }
   const rows:any[]=[];
-  const seenItems=new Set<string>();
   const seenOrderIds=new Set<string>();
   for(const pkg of all){
    const items=Array.isArray(pkg?.orderItems)?pkg.orderItems:(Array.isArray(pkg?.items)?pkg.items:[]);
    for(const item of items){
-    // Defensive check in case upstream returns statuses outside the requested filter.
+    // Keep only new orders; the Import Penjualan engine owns deduplication.
     const status=String(raw(item?.orderItemStatus,item?.status,pkg?.status)||"").trim().toUpperCase();
     if(status && status!=="FP")continue;
     const row=rowFor(pkg,item);
@@ -87,11 +86,6 @@ Deno.serve(async(req:Request)=>{
     const sku=String(row[1]||"").trim();
     if(!orderId||!sku)continue;
     seenOrderIds.add(orderId);
-    // Deduplicate repeated API results but preserve distinct item rows within one order.
-    const itemId=String(raw(item?.id,item?.orderItemId,item?.orderItemNumber,item?.itemId,item?.sellerSku,item?.sellerSKU,sku));
-    const uniqueKey=orderId+"|"+itemId;
-    if(seenItems.has(uniqueKey))continue;
-    seenItems.add(uniqueKey);
     rows.push(row);
    }
   }
