@@ -16730,7 +16730,20 @@ async function sellerBooksCheckApprovalInternal(showAlert){
         if(status==="suspended"){sellerBooksShowApproval(sellerBooksAccessText("suspended"));return;}
         sellerBooksShowApproval(sellerBooksAccessText("pending"));
         if(showAlert)sellerBooksAlert(sellerBooksAccessText("approvalPending"));
-    }catch(error){console.error(error);sellerBooksShowApproval(sellerBooksAccessText("readError"));}
+    }catch(error){
+        console.error("Pemeriksaan status akun SellerBooks gagal sementara:",error);
+        /*
+           Kegagalan membaca status bukan bukti bahwa akses dicabut.
+           Jika pengguna sudah berada di aplikasi, jangan mengganti Dashboard
+           dengan halaman approval hanya karena request jaringan gagal.
+           Pemeriksaan akun tetap berjalan pada siklus berikutnya.
+        */
+        const app=document.getElementById("app");
+        const appIsVisible=!!app && getComputedStyle(app).display!=="none";
+        if(!appIsVisible){
+            sellerBooksShowApproval(sellerBooksAccessText("readError"));
+        }
+    }
 }
 function sellerBooksOpenApplication(){
     const ownerName = String(sellerBooksProfile?.owner_name || "").trim();
