@@ -5,7 +5,8 @@ const CORS={
   "Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods":"GET,POST,OPTIONS"
 };
-const HOST="https://partner.shopeemobile.com";
+const HOST="https://partner.test-stable.shopeemobile.com";
+const AUTH_HOST="https://openplatform.sandbox.test-stable.shopee.sg";
 const AUTH_PATH="/api/v2/shop/auth_partner";
 const TOKEN_PATH="/api/v2/auth/token/get";
 const INFO_PATH="/api/v2/shop/get_shop_info";
@@ -23,7 +24,10 @@ async function digest(s:string){
   return hex(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s))));
 }
 async function hmac(k:string,m:string){
-  const x=await crypto.subtle.importKey("raw",new TextEncoder().encode(k),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
+  // Shopee Sandbox Partner Key values may be displayed with the non-secret "shpk" marker.
+  // The marker is not part of the HMAC secret; remove it only when it is the leading prefix.
+  const secret=k.trim().replace(/^shpk/i,"");
+  const x=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
   return hex(new Uint8Array(await crypto.subtle.sign("HMAC",x,new TextEncoder().encode(m))));
 }
 const env=(n:string)=>{
@@ -165,7 +169,7 @@ async function init(r:Request){
 
   const ts=Math.floor(Date.now()/1000);
   const sign=await hmac(pkey,String(pid)+AUTH_PATH+ts);
-  const a=new URL(HOST+AUTH_PATH);
+  const a=new URL(AUTH_HOST+AUTH_PATH);
   a.searchParams.set("partner_id",String(pid));
   a.searchParams.set("timestamp",String(ts));
   a.searchParams.set("sign",sign);
@@ -186,24 +190,6 @@ async function init(r:Request){
     authorization_url:a.toString(),
     expires_at:expires
   });
-}
-
-async function findPendingState(base:string,secret:string,storeId:string){
-  const path="sellerbooks_api_oauth_states?store_id=eq."+encodeURIComponent(storeId)+
-    "&consumed_at=is.null&select=owner_user_id,store_id,connection_id,state_hash,expires_at,created_at"+
-    "&order=created_at.desc&limit=10";
-  const r=await rest(base,secret,path);
-  const raw=await responseText(r);
-  if(!r.ok)return null;
-
-  let rows:any[]=[];
-  try{rows=JSON.parse(raw);}catch{return null;}
-
-  const now=Date.now();
-  return rows.find((x:any)=>{
-    const exp=Date.parse(String(x.expires_at||""));
-    return Number.isFinite(exp)&&exp>now;
-  })||null;
 }
 
 async function callback(r:Request){
@@ -233,16 +219,18 @@ async function callback(r:Request){
 
     const ts=Math.floor(Date.now()/1000);
     const sign=await hmac(pkey,String(pid)+TOKEN_PATH+ts);
+    const tokenUrl=new URL(HOST+TOKEN_PATH);
+    tokenUrl.searchParams.set("partner_id",String(pid));
+    tokenUrl.searchParams.set("timestamp",String(ts));
+    tokenUrl.searchParams.set("sign",sign);
 
-    const tr=await fetch(HOST+TOKEN_PATH,{
+    const tr=await fetch(tokenUrl,{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({
         code,
-        shop_id:sid,
         partner_id:pid,
-        timestamp:ts,
-        sign
+        shop_id:sid
       })
     });
     const traw=await responseText(tr);
@@ -255,7 +243,9 @@ async function callback(r:Request){
         event:"token_exchange_failed",
         shop_id:sid,
         status:tr.status,
-        detail:safeUpstream(traw)
+        detail:safeUpstream(traw),
+        request_id:td?.request_id||td?.response?.request_id||null,
+        upstream_error:td?.error||null
       }));
       return fail("TOKEN_EXCHANGE_FAILED");
     }
@@ -290,36 +280,17 @@ async function callback(r:Request){
     const verified=String(info?.response?.shop_id??sid);
     if(verified!==String(sid))return fail("SHOP_ID_VERIFY_MISMATCH");
 
-    let st:any=null;
+    // Never infer a store from the external shop_id. Require the one-time OAuth state
+    // generated at init so the callback remains bound to the exact internal store/connection.
+    if(!state)return fail("STATE_MISSING");
 
-    if(state){
-      const c=await rpc(base,secret,"sellerbooks_api_consume_oauth_state",{
-        p_state_hash:await digest(state)
-      });
-      const craw=await responseText(c);
-      let rows:any[]=[];
-      try{rows=JSON.parse(craw);}catch{}
-      st=rows?.[0]||null;
-    }
-
-    /*
-      Shopee's documented callback examples return code + shop_id.
-      If state is not echoed back by the authorization page, fall back
-      to the newest unconsumed state for this shop. The state is still
-      one-time and expires after 10 minutes.
-    */
-    if(!st){
-      st=await findPendingState(base,secret,verified);
-      if(st){
-        const c=await rpc(base,secret,"sellerbooks_api_consume_oauth_state",{
-          p_state_hash:st.state_hash
-        });
-        const craw=await responseText(c);
-        let rows:any[]=[];
-        try{rows=JSON.parse(craw);}catch{}
-        st=rows?.[0]||null;
-      }
-    }
+    const c=await rpc(base,secret,"sellerbooks_api_consume_oauth_state",{
+      p_state_hash:await digest(state)
+    });
+    const craw=await responseText(c);
+    let rows:any[]=[];
+    try{rows=JSON.parse(craw);}catch{}
+    const st=rows?.[0]||null;
 
     if(!st?.connection_id){
       console.error(JSON.stringify({
@@ -329,8 +300,6 @@ async function callback(r:Request){
       }));
       return fail("STATE_INVALID_OR_EXPIRED");
     }
-
-    if(String(st.store_id)!==verified)return fail("SHOP_ID_MISMATCH");
 
     const credential=JSON.stringify({
       provider:"shopee",
