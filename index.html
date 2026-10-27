@@ -22253,8 +22253,7 @@ async function sellerBooksDispatchExcelQueue(opts){
     }
     if (
     opts.showResult &&
-    !dispatchSummary.deferred &&
-    dispatchSummary.claimedCount > 0
+    !dispatchSummary.deferred
 ) {
     const en = sellerBooksPullOrderIsEN();
     const locale = en ? "en-US" : "id-ID";
@@ -22287,15 +22286,22 @@ async function sellerBooksDispatchExcelQueue(opts){
             title
         );
     } else if (dispatchSummary.importedCount > 0) {
-        sellerBooksAlert(
-            en
-                ? "The fetched data already exists or produced no new transactions.\n\n" +
-                  "Duplicate data was skipped by the Sales Import engine."
-                : "Data yang ditarik sudah ada / tidak menghasilkan transaksi baru.\n\n" +
-                  "Data duplikat dilewati oleh mesin Import Penjualan.",
-            title
-        );
-    }
+    sellerBooksAlert(
+        en
+            ? "The fetched data already exists or produced no new transactions.\n\n" +
+              "Duplicate data was skipped by the Sales Import engine."
+            : "Data yang ditarik sudah ada / tidak menghasilkan transaksi baru.\n\n" +
+              "Data duplikat dilewati oleh mesin Import Penjualan.",
+        title
+    );
+} else {
+    sellerBooksAlert(
+        en
+            ? "Order fetch finished, but no new import items were processed. The data may already have been processed or the queue may be handled by another active worker."
+            : "Tarik Order selesai, tetapi tidak ada item antrean baru yang diproses. Data mungkin sudah diproses sebelumnya atau antrean sedang ditangani worker lain.",
+        title
+    );
+}
 }
 
 return dispatchSummary;
