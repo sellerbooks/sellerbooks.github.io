@@ -22130,7 +22130,7 @@ async function sellerBooksDispatchExcelToImportPenjualan(queueItem,showResult){
         else if(typeof renderStores==="function") renderStores(true);
     },0);
 
-    if(showResult){
+    if(showResult || sellerBooksExcelDispatchRerunShowResult){
         const en=sellerBooksPullOrderIsEN();
         const title=en?"Order Fetch Results — "+marketplaceName:"Hasil Tarik Order "+marketplaceName;
         const numberLocale=en?"en-US":"id-ID";
