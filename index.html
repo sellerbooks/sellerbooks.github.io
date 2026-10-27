@@ -22130,34 +22130,7 @@ async function sellerBooksDispatchExcelToImportPenjualan(queueItem,showResult){
         else if(typeof renderStores==="function") renderStores(true);
     },0);
 
-    if(showResult || sellerBooksExcelDispatchRerunShowResult){
-        const en=sellerBooksPullOrderIsEN();
-        const title=en?"Order Fetch Results — "+marketplaceName:"Hasil Tarik Order "+marketplaceName;
-        const numberLocale=en?"en-US":"id-ID";
-        if(result.new_transactions>0){
-            sellerBooksAlert(
-                en
-                    ? marketplaceName+" orders were successfully processed by the Sales Import engine.\n\n"+
-                      "New packing orders: "+result.new_packing_count.toLocaleString(numberLocale)+"\n"+
-                      "New units: "+result.new_qty.toLocaleString(numberLocale)+"\n\n"+
-                      "Calculations, COGS, admin fees, packing, snapshots, and reports are handled by the SellerBooks Sales Import engine."
-                    : "Order "+marketplaceName+" berhasil diproses oleh mesin Import Penjualan.\n\n"+
-                      "Packing baru: "+result.new_packing_count.toLocaleString(numberLocale)+"\n"+
-                      "PCS baru: "+result.new_qty.toLocaleString(numberLocale)+"\n\n"+
-                      "Perhitungan, HPP, admin, packing, snapshot dan laporan dikerjakan oleh mesin Import Penjualan SellerBooks.",
-                title
-            );
-        }else{
-            sellerBooksAlert(
-                en
-                    ? marketplaceName+" data already exists or produced no new transactions.\n\n"+
-                      "The Sales Import engine skipped duplicate data."
-                    : "Data "+marketplaceName+" sudah ada / tidak menghasilkan transaksi baru.\n\n"+
-                      "Mesin Import Penjualan melewati data duplikat.",
-                title
-            );
-        }
-    }
+   
     return result;
 }
 
@@ -22200,7 +22173,17 @@ async function sellerBooksDispatchExcelQueue(opts){
         if(opts.showResult)sellerBooksExcelDispatchRerunShowResult=true;
         return {deferred:true,claimedCount:0,retryCount:0,failedCount:0,importedCount:0};
     }
-    const dispatchSummary={deferred:false,claimedCount:0,retryCount:0,failedCount:0,importedCount:0};
+    const dispatchSummary={
+    deferred:false,
+    claimedCount:0,
+    retryCount:0,
+    failedCount:0,
+    importedCount:0,
+    newTransactions:0,
+    newQty:0,
+    newPackingCount:0,
+    marketplaces:[]
+};
     sellerBooksExcelDispatchRunning=true;
     try{
         const session=await sellerBooksGetQueueSession();
@@ -22233,9 +22216,19 @@ async function sellerBooksDispatchExcelQueue(opts){
                         method:"PATCH",headers:{"Prefer":"return=minimal"},
                         body:JSON.stringify({status:"ERROR",error_message:result.error||"Import adapter failed",processed_at:new Date().toISOString()})
                     });
-                }else{
-                    dispatchSummary.importedCount++;
-                }
+               }else{
+    dispatchSummary.importedCount++;
+
+    dispatchSummary.newTransactions += Number(result?.new_transactions || 0);
+    dispatchSummary.newQty += Number(result?.new_qty || 0);
+    dispatchSummary.newPackingCount += Number(result?.new_packing_count || 0);
+
+    const market = String(claimed[0].marketplace || "").trim();
+
+    if (market && !dispatchSummary.marketplaces.includes(market)) {
+        dispatchSummary.marketplaces.push(market);
+    }
+}
             }catch(error){
                 dispatchSummary.failedCount++;
                 const message=error?.message||String(error);
@@ -22258,7 +22251,54 @@ async function sellerBooksDispatchExcelQueue(opts){
             },0);
         }
     }
-    return dispatchSummary;
+    if (
+    opts.showResult &&
+    !dispatchSummary.deferred &&
+    dispatchSummary.claimedCount > 0
+) {
+    const en = sellerBooksPullOrderIsEN();
+    const locale = en ? "en-US" : "id-ID";
+
+    const marketLabel =
+        dispatchSummary.marketplaces.join(", ") ||
+        (en ? "marketplaces" : "marketplace");
+
+    const title = en
+        ? "Order Fetch Results — " + marketLabel
+        : "Hasil Tarik Order — " + marketLabel;
+
+    if (dispatchSummary.newTransactions > 0) {
+        sellerBooksAlert(
+            en
+                ? "Orders were successfully processed by the SellerBooks Sales Import engine.\n\n" +
+                  "New transactions: " +
+                  dispatchSummary.newTransactions.toLocaleString(locale) +
+                  "\nNew packing orders: " +
+                  dispatchSummary.newPackingCount.toLocaleString(locale) +
+                  "\nNew units: " +
+                  dispatchSummary.newQty.toLocaleString(locale)
+                : "Order berhasil diproses oleh mesin Import Penjualan SellerBooks.\n\n" +
+                  "Transaksi baru: " +
+                  dispatchSummary.newTransactions.toLocaleString(locale) +
+                  "\nPacking baru: " +
+                  dispatchSummary.newPackingCount.toLocaleString(locale) +
+                  "\nPCS baru: " +
+                  dispatchSummary.newQty.toLocaleString(locale),
+            title
+        );
+    } else if (dispatchSummary.importedCount > 0) {
+        sellerBooksAlert(
+            en
+                ? "The fetched data already exists or produced no new transactions.\n\n" +
+                  "Duplicate data was skipped by the Sales Import engine."
+                : "Data yang ditarik sudah ada / tidak menghasilkan transaksi baru.\n\n" +
+                  "Data duplikat dilewati oleh mesin Import Penjualan.",
+            title
+        );
+    }
+}
+
+return dispatchSummary;
 }
 
 function startSellerBooksExcelDispatchWorker(){
