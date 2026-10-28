@@ -7827,36 +7827,15 @@ function getReportTransactionFeePercent(transaction){
 
     if(transactionSku){
 
-        let masterProduct = null;
-
-        try{
-            const latestProducts =
-                JSON.parse(
-                    sellerBooksStorage.getItem(
-                        "sellerbooks_products"
-                    ) || "[]"
-                );
-
-            if(Array.isArray(latestProducts)){
-                masterProduct =
-                    latestProducts.find(function(product){
-                        return String(product.sku || "")
-                            .trim()
-                            .toLowerCase() === transactionSku;
-                    }) || null;
-            }
-        }catch(error){
-            masterProduct = null;
-        }
-
-        if(!masterProduct && Array.isArray(products)){
-            masterProduct =
-                products.find(function(product){
-                    return String(product.sku || "")
-                        .trim()
-                        .toLowerCase() === transactionSku;
-                }) || null;
-        }
+        /*
+           OPTIMASI PERFORMA:
+           getMasterProductBySku menggunakan index/cache SKU yang sudah
+           tersedia dan menjaga aturan merge sumber storage + runtime.
+           Hindari JSON.parse + Array.find untuk setiap transaksi laporan.
+           Nilai Admin % yang dipilih tetap mengikuti Master Produk terbaru.
+        */
+        const masterProduct =
+            getMasterProductBySku(transaction.sku);
 
         if(masterProduct){
 
