@@ -6492,10 +6492,19 @@ function getFilteredReportTransactions(){
     const transactions =
         getAllReportTransactions();
 
+    /* Custom date range ikut menjadi bagian cache key agar pergantian
+       tanggal tidak memakai hasil filter dari rentang sebelumnya. */
+    const dateFrom =
+        document.getElementById("reportDateFrom")?.value || "";
+    const dateTo =
+        document.getElementById("reportDateTo")?.value || "";
+
     const cacheKey = [
         period,
         marketplaceId,
-        storeId
+        storeId,
+        dateFrom,
+        dateTo
     ].join("|");
 
     if(
@@ -6513,6 +6522,17 @@ function getFilteredReportTransactions(){
 
         return cachedTransactions;
     }
+
+    /* Alias marketplace dibuat sekali per pemfilteran, bukan berulang
+       untuk setiap transaksi yang lolos ke callback. */
+    const marketplaceAliases = {
+        "tiktok":["tiktok","tiktok shop"],
+        "tokopedia":["tokopedia"],
+        "toco":["toco"],
+        "blibli":["blibli"],
+        "shopee":["shopee"],
+        "lazada":["lazada"]
+    };
 
     const filteredTransactions =
         transactions.filter(
@@ -6559,42 +6579,6 @@ function getFilteredReportTransactions(){
         )
         .trim()
         .toLowerCase();
-
-
-    const marketplaceAliases = {
-
-        "tiktok":
-            [
-                "tiktok",
-                "tiktok shop"
-            ],
-
-        "tokopedia":
-            [
-                "tokopedia"
-            ],
-
-        "toco":
-            [
-                "toco"
-            ],
-
-        "blibli":
-            [
-                "blibli"
-            ],
-
-        "shopee":
-            [
-                "shopee"
-            ],
-
-        "lazada":
-            [
-                "lazada"
-            ]
-
-    };
 
 
     const aliases =
