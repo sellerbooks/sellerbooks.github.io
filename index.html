@@ -16320,8 +16320,10 @@ async function sellerBooksPersistCloudDataStrict(expectedSnapshot,verification){
 
         for(let attempt=0;attempt<3;attempt++){
             try{
+                /* Respons update cukup membawa updated_at. Data utuh
+                   tetap diverifikasi lewat read-back Supabase di bawah. */
                 result=await sellerBooksWriteCloudSnapshot(
-                    snapshot,expectedUpdatedAt,!expectedUpdatedAt,true
+                    snapshot,expectedUpdatedAt,!expectedUpdatedAt,false
                 );
             }catch(writeError){
                 /* Retry hanya untuk kegagalan jaringan/server sementara.
@@ -26348,7 +26350,7 @@ async function sellerBooksDeleteProgressFinish(){
             throw new Error("cloud_save_unconfirmed");
         }
         sellerBooksImportProgressUpdate(100,"done");
-        await new Promise(function(resolve){setTimeout(resolve,500);});
+        /* Verifikasi cloud sudah selesai; tidak perlu jeda buatan. */
         sellerBooksImportProgressHide();
         window.sellerBooksProgressOperation = "import";
         return true;
@@ -28280,14 +28282,20 @@ function reduceProductStockFromImport(record){
     const missingSkus = [];
     const stockDetails = [];
 
+    /* Indeks SKU sekali agar lookup tidak memindai Master Produk
+       berulang untuk setiap SKU transaksi. Simpan item pertama agar
+       perilaku produk dengan SKU duplikat tetap sama seperti find(). */
+    const productsBySku = new Map();
+    products.forEach(function(item){
+        const key = String(item && item.sku || '').trim().toLowerCase();
+        if(key && !productsBySku.has(key)){
+            productsBySku.set(key, item);
+        }
+    });
+
     qtyBySku.forEach(function(qty, sku){
 
-        const product =
-            products.find(function(item){
-                return String(item && item.sku || '')
-                    .trim()
-                    .toLowerCase() === sku;
-            }) || null;
+        const product = productsBySku.get(sku) || null;
 
         if(!product){
             missingSkus.push(sku);
@@ -28454,23 +28462,30 @@ function restoreProductStockFromDeletedImports(deletedImports){
     let restoredQty = 0;
     let productCount = 0;
 
+    /* Index berdasarkan ID/SKU. Untuk mempertahankan perilaku find(),
+       pilih kecocokan dengan posisi paling awal di array produk—bukan
+       selalu mengutamakan ID atau SKU. */
+    const productsById = new Map();
+    const productsBySku = new Map();
+    products.forEach(function(item,index){
+        if(!item) return;
+        const id = String(item.id || "");
+        const sku = String(item.sku || "").trim().toLowerCase();
+        if(id && !productsById.has(id)) productsById.set(id, {item:item,index:index});
+        if(sku && !productsBySku.has(sku)) productsBySku.set(sku, {item:item,index:index});
+    });
+
     restoreByProduct.forEach(function(info){
 
-        const product =
-            products.find(function(item){
-                const sameId =
-                    info.productId &&
-                    String(item && item.id || "") === String(info.productId);
-
-                const sameSku =
-                    String(item && item.sku || "")
-                        .trim()
-                        .toLowerCase() === String(info.sku || "")
-                        .trim()
-                        .toLowerCase();
-
-                return sameId || sameSku;
-            }) || null;
+        const idMatch = info.productId
+            ? productsById.get(String(info.productId))
+            : null;
+        const skuKey = String(info.sku || "").trim().toLowerCase();
+        const skuMatch = skuKey ? productsBySku.get(skuKey) : null;
+        const match = idMatch && skuMatch
+            ? (idMatch.index <= skuMatch.index ? idMatch : skuMatch)
+            : (idMatch || skuMatch);
+        const product = match ? match.item : null;
 
         if(!product){
             return;
