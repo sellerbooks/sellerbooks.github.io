@@ -7684,6 +7684,10 @@ function getReportTransactionPrice(transaction){
     return product ? (Number(product.price) || 0) : 0;
 }
 
+/* Cache hanya berlaku untuk nilai raw Master Produk yang sama. */
+let sellerBooksReportMasterProductsRaw = null;
+let sellerBooksReportMasterProductsBySku = new Map();
+
 function getReportTransactionFeePercent(transaction){
 
     /*
@@ -7814,21 +7818,39 @@ function getReportTransactionFeePercent(transaction){
         let masterProduct = null;
 
         try{
-            const latestProducts =
-                JSON.parse(
-                    sellerBooksStorage.getItem(
-                        "sellerbooks_products"
-                    ) || "[]"
-                );
+            /*
+               Cache Master Produk berdasarkan raw storage string.
+               Jika Master Produk berubah, raw string ikut berubah dan
+               cache otomatis dibangun ulang. Map menyimpan SKU pertama
+               agar hasil tetap identik dengan Array.find(), termasuk
+               ketika ada SKU duplikat.
+            */
+            const latestProductsRaw =
+                sellerBooksStorage.getItem("sellerbooks_products") || "[]";
 
-            if(Array.isArray(latestProducts)){
-                masterProduct =
-                    latestProducts.find(function(product){
-                        return String(product.sku || "")
+            if(
+                sellerBooksReportMasterProductsRaw !== latestProductsRaw
+            ){
+                sellerBooksReportMasterProductsRaw = latestProductsRaw;
+                sellerBooksReportMasterProductsBySku = new Map();
+
+                const latestProducts = JSON.parse(latestProductsRaw);
+
+                if(Array.isArray(latestProducts)){
+                    latestProducts.forEach(function(product){
+                        const sku = String(product && product.sku || "")
                             .trim()
-                            .toLowerCase() === transactionSku;
-                    }) || null;
+                            .toLowerCase();
+
+                        if(sku && !sellerBooksReportMasterProductsBySku.has(sku)){
+                            sellerBooksReportMasterProductsBySku.set(sku, product);
+                        }
+                    });
+                }
             }
+
+            masterProduct =
+                sellerBooksReportMasterProductsBySku.get(transactionSku) || null;
         }catch(error){
             masterProduct = null;
         }
