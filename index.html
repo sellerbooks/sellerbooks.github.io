@@ -6802,10 +6802,14 @@ function renderReportSalesSummary(){
             }
 
 
-            productMap.set(
-                sku,
-                product
-            );
+            /* Pertahankan perilaku Array.find(): SKU duplikat
+               harus menggunakan produk pertama, bukan yang terakhir. */
+            if(!productMap.has(sku)){
+                productMap.set(
+                    sku,
+                    product
+                );
+            }
 
         }
     );
