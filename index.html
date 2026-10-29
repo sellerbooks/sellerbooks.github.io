@@ -28591,8 +28591,23 @@ function getSalesAmount(row,data){
         data.marketplace === "TikTok" ||
         data.marketplace === "TikTok Shop"
     ){
-        /* TikTok file export: kolom SKU Subtotal After Discount. */
-        return parseSalesNumber(row[15]);
+        /* TikTok: pulihkan subsidi platform dari kolom SKU Platform Discount.
+           SKU Subtotal After Discount sudah mengurangi diskon platform dan seller.
+           Pendapatan seller = subtotal setelah diskon + subsidi platform.
+           Cari berdasarkan header agar tidak bergantung pada posisi kolom. */
+        const subtotalIndex = data.headers.findIndex(function(header){
+            return normalizeHeader(header) === "sku subtotal after discount";
+        });
+        const platformDiscountIndex = data.headers.findIndex(function(header){
+            return normalizeHeader(header) === "sku platform discount";
+        });
+        const subtotalAfterDiscount = subtotalIndex >= 0
+            ? parseSalesNumber(row[subtotalIndex])
+            : parseSalesNumber(row[15]);
+        const platformDiscount = platformDiscountIndex >= 0
+            ? parseSalesNumber(row[platformDiscountIndex])
+            : 0;
+        return subtotalAfterDiscount + platformDiscount;
     }
 
     if(data.marketplace === "Shopee"){
