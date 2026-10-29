@@ -8012,58 +8012,6 @@ function calculateReportFinancial(){
     let totalAdmin = 0;
 
 
-    const masterProducts = [];
-
-    try{
-
-        const data =
-            JSON.parse(
-                sellerBooksStorage.getItem(
-                    "sellerbooks_products"
-                ) || "[]"
-            );
-
-        if(
-            Array.isArray(data)
-        ){
-
-            data.forEach(function(product){
-
-                masterProducts.push(product);
-
-            });
-
-        }
-
-    }catch(error){}
-
-
-    const productMap =
-        new Map();
-
-
-    masterProducts.forEach(function(product){
-
-        const sku =
-            String(
-                product.sku || ""
-            )
-            .trim()
-            .toLowerCase();
-
-
-        if(sku){
-
-            productMap.set(
-                sku,
-                product
-            );
-
-        }
-
-    });
-
-
     transactions.forEach(function(item){
 
         const sales =
@@ -8093,10 +8041,13 @@ function calculateReportFinancial(){
             .toLowerCase();
 
 
+        /*
+           Lookup memakai cache Master Produk yang sudah dipakai
+           mesin import. Hindari JSON.parse + membangun Map baru
+           setiap kali kartu laporan dirender.
+        */
         const product =
-            productMap.get(
-                sku
-            );
+            getMasterProductBySku(item.sku);
 
 
         if(product){
