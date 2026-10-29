@@ -1,0 +1,41 @@
+name: PR Preview Artifact
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview-artifact:
+    name: Package isolated web preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+
+      - name: Package preview
+        run: |
+          mkdir -p preview
+          cp index.html preview/index.html
+          cat > preview/README.txt <<'EOF'
+          SellerBooks PR preview artifact
+
+          This is a static copy of index.html from the pull request branch.
+          It is not deployed to GitHub Pages and does not alter the production site.
+          Open index.html in a browser to inspect the UI. Live data/auth behavior
+          may require an isolated staging configuration and must not be tested
+          against production data.
+          EOF
+
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sellerbooks-pr-preview
+          path: preview/
+          if-no-files-found: error
+          retention-days: 7

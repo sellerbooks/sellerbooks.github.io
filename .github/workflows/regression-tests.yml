@@ -1,0 +1,21 @@
+name: Regression Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression-tests:
+    name: Lookup optimization regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+      - name: Run Node.js regression tests
+        run: node --test tests/lookup-optimization.test.js
